@@ -5,8 +5,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <cstdint>
-#include <cmath> // NAN, isnan()
-#include <omp.h> // omp_get_thread_num()
+#include <omp.h> // omp_get_thread_num(), omp_get_max_threads()
 
 #ifdef SHOWTIMER
 #include <sys/stat.h>
@@ -17,14 +16,9 @@ double filesize(const char *filename) {
 }
 #endif
 
-// undf stands for "not defined" and is used for representing missing values in the feature matrix
-#define undf NAN
-#define isundf(x) isnan(x)
-
 #include "utils/trie.hpp" // trie data structure
 #include "utils/transpose.hpp" // traspose matrix
 #include "utils/strutils.hpp" // split string
-#include "utils/cpuinfo.hpp" // info from /proc/cpuinfo
 #include "utils/bitarray.hpp" // bit array implementation
 #include "utils/radix.hpp" // sorters
 #include "utils/listqsort.hpp" // sorter for linked lists
@@ -53,21 +47,21 @@ class dp { //each dp is related to a line read from file
 			#endif
 			next(NULL) {
 			features = (float*)malloc(sizeof(float)*maxsize);
-			features[0] = undf;
+			features[0] = 0.0f;
 		}
 		void ins_feature(const unsigned int fid, const float fval) {
 			if(fid>=maxsize) {
 				maxsize = 2*fid+1;
 				features = (float*)realloc(features, sizeof(float)*maxsize);
 			}
-			for(unsigned int i=maxfid+1; i<fid; features[i++]=undf);
+			for(unsigned int i=maxfid+1; i<fid; features[i++]=0.0f);
 			maxfid = fid>maxfid ? fid : maxfid,
 			features[fid] = fval;
 		}
 		float *get_resizedfeatures(const unsigned int size) {
 			if(size>=maxsize and size!=0)
 				features = (float*)realloc(features, sizeof(float)*size);
-			for(unsigned int i=maxfid+1; i<size; features[i++]=undf);
+			for(unsigned int i=maxfid+1; i<size; features[i++]=0.0f);
 			return features;
 		}
 		float get_label() const {
@@ -134,15 +128,17 @@ class dpset {
 		dpset(const char *filename) {
 			FILE *f = fopen(filename, "r");
 			if(f) {
+				const int nth = omp_get_max_threads();
 				#ifdef SHOWTIMER
 				double readingtimer = omp_get_wtime();
 				#endif
 				unsigned int maxfid = INIT_NOFEATURES-1;
 				unsigned int linecounter = 0;
-				unsigned int th_ndps[NPROCESSORS] = {0};
-				bitarray th_usedfid[NPROCESSORS];
+				unsigned int th_ndps[nth];
+				for(int i=0; i<nth; th_ndps[i++]=0);
+				bitarray th_usedfid[nth];
 				trie<dplist> rltrie;
-				#pragma omp parallel num_threads(NPROCESSORS) shared(maxfid, linecounter)
+				#pragma omp parallel num_threads(nth) shared(maxfid, linecounter)
 				while(not feof(f)) {
 					ssize_t nread;
 					size_t linelength = 0;
@@ -176,7 +172,7 @@ class dpset {
 						} else {
 							//read a feature (id,val) from token
 							unsigned int fid = 0;
-							float fval = undf;
+							float fval = 0.0f;
 							if(sscanf(token, "%u:%f", &fid, &fval)!=2) exit(4);
 							//add feature to the current dp
 							newdp->ins_feature(fid, fval),
@@ -200,7 +196,7 @@ class dpset {
 				double processingtimer = omp_get_wtime();
 				#endif
 				//merge thread counters and compute the number of features
-				for(int i=1; i<NPROCESSORS; ++i)
+				for(int i=1; i<nth; ++i)
 					th_usedfid[0] |= th_usedfid[i],
 					th_ndps[0] += th_ndps[i];
 
@@ -267,7 +263,7 @@ class dpset {
 				printf("\tfile = '%s'\n\tno. of datapoints = %u\n\tno. of ranked lists = %u\n\tmax ranked list size = %u\n\tno. of features = %u\n", filename, ndps, nrankedlists, maxrlsize, nfeatures);
 				#ifdef SHOWTIMER
 				processingtimer = omp_get_wtime()-processingtimer;
-				printf("\telapsed time = reading: %.3f seconds (%.2f MB/s) + processing: %.3f seconds\n", readingtimer, filesize(filename)/readingtimer, processingtimer);
+				printf("\telapsed time = reading: %.3f seconds (%.2f MB/s, %d threads) + processing: %.3f seconds\n", readingtimer, filesize(filename)/readingtimer, nth, processingtimer);
 				#endif
 				//free mem from temporary data structures
 				delete[] usedfid,
@@ -309,7 +305,7 @@ class dpset {
 		}
 		void sort_dpbyfeature(unsigned int i, unsigned int *&sorted, unsigned int &sortedsize) {
 			sortedsize = ndps;
-			sorted = idxnanfloat_radixsort(features[i], sortedsize);
+			sorted = idxfloat_radixsort<ascending>(features[i], sortedsize);
 		}
 		float get_label(unsigned int i) const {
 			return labels[i];

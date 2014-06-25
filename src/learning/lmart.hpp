@@ -7,7 +7,6 @@
 #include "learning/ranker.hpp"
 #include "learning/tree/rt.hpp"
 #include "learning/tree/ensemble.hpp"
-#include "utils/cpuinfo.hpp" // info from /proc/cpuinfo
 
 class lmartranker : public ranker {
 	private:
@@ -23,7 +22,7 @@ class lmartranker : public ranker {
 		unsigned int validation_bestmodel = 0xFFFFFFFF;
 		float *pseudoresponses = NULL;  //[0..nentries-1]
 		unsigned int **sortedsid = NULL;
-		unsigned int *sortedsize = NULL;
+		unsigned int sortedsize = 0;
 		permhistogram *hist = NULL;
 		float *cachedweights = NULL; //corresponds to datapoint.cache
 		unsigned int eenrounds = 0; //If no performance gain on validation data is observed in eerounds, stop the training process right away (if eenrounds==0 feature is disabled).
@@ -42,7 +41,6 @@ class lmartranker : public ranker {
 			delete [] validationmodelscores,
 			delete [] pseudoresponses,
 			delete [] sortedsid,
-			delete [] sortedsize,
 			delete [] cachedweights;
 			delete hist;
 		}
@@ -61,10 +59,10 @@ class lmartranker : public ranker {
 			cachedweights = new float[nentries](); //0.0f initialized
 			const unsigned int nfeatures = training_set->get_nfeatures();
 			sortedsid = new unsigned int*[nfeatures],
-			sortedsize = new unsigned int[nfeatures];
+			sortedsize = training_set->get_ndatapoints();
 			#pragma omp parallel for
 			for(unsigned int i=0; i<nfeatures; ++i)
-				training_set->sort_dpbyfeature(i, sortedsid[i], sortedsize[i]);
+				training_set->sort_dpbyfeature(i, sortedsid[i], sortedsize);
 			//for each featureid, init threshold array by keeping track of the list of "unique values" and their max, min
 			thresholds = new float*[nfeatures],
 			thresholds_size = new unsigned int[nfeatures];
@@ -74,13 +72,12 @@ class lmartranker : public ranker {
 				float const* features = training_set->get_fvector(i);
 				//init with values with the 1st sample
 				unsigned int *idx = sortedsid[i];
-				unsigned int idxsize = sortedsize[i];
 				//get_ sample indexes sorted by the fid-th feature
 				unsigned int uniqs_size = 0;
-				float *uniqs = (float*)malloc(sizeof(float)*(nthreshold==0xFFFFFFFF?idxsize+1:nthreshold+1));
+				float *uniqs = (float*)malloc(sizeof(float)*(nthreshold==0xFFFFFFFF?sortedsize+1:nthreshold+1));
 				//skip samples with the same feature value. early exit for if nthreshold!=size_max
 				uniqs[uniqs_size++] = features[idx[0]];
-				for(unsigned int j=1; j<idxsize && (nthreshold==0xFFFFFFFF || uniqs_size!=nthreshold+1); ++j) {
+				for(unsigned int j=1; j<sortedsize && (nthreshold==0xFFFFFFFF || uniqs_size!=nthreshold+1); ++j) {
 					const float fval = features[idx[j]];
 					if(uniqs[uniqs_size-1]<fval) uniqs[uniqs_size++] = fval;
 				}
@@ -94,7 +91,7 @@ class lmartranker : public ranker {
 					thresholds_size[i] = nthreshold+1,
 					thresholds[i] = (float*)malloc(sizeof(float)*(nthreshold+1));
 					float t = features[idx[0]]; //equals fmin
-					const float step = fabs(features[idx[idxsize-1]]-t)/nthreshold; //(fmax-fmin)/nthreshold
+					const float step = fabs(features[idx[sortedsize-1]]-t)/nthreshold; //(fmax-fmin)/nthreshold
 					for(unsigned int j=0; j!=nthreshold; t+=step)
 						thresholds[i][j++] = t;
 					thresholds[i][nthreshold] = FLT_MAX;

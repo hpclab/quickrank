@@ -1,8 +1,6 @@
 #ifndef __METRICSCORER_HPP__
 #define __METRICSCORER_HPP__
 
-#include <cmath> // NAN, isnan()
-
 #include "learning/dpset.hpp"
 #include "utils/symmatrix.hpp" // symetric matrix
 

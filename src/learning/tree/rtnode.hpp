@@ -11,9 +11,9 @@ class rtnode {
 		unsigned int *sampleids = NULL;
 		unsigned int nsampleids = 0;
 		unsigned int featureid = 0xFFFFFFFF;
-		float threshold = NAN;
-		float deviance = NAN;
-		float avglabel = NAN;
+		float threshold = 0.0f;
+		float deviance = 0.0f;
+		float avglabel = 0.0f;
 		rtnode *left = NULL;
 		rtnode *right = NULL;
 		histogram *hist = NULL;

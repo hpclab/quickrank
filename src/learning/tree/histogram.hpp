@@ -1,21 +1,17 @@
 #ifndef __HISTOGRAM_HPP__
 #define __HISTOGRAM_HPP__
 
-#include <cmath> //NAN
-
-static_assert(sizeof(unsigned int)==4,"sizeof(unsigned int) exception!");
-
 #include "learning/dpset.hpp"
 
 struct splitparams {
 	unsigned int best_featureid = 0xFFFFFFFF;
-	float best_threshold = NAN;
-	float deviance = NAN;
-	float lvar = NAN;
-	float lsum = NAN;
+	float best_threshold = 0.0f;
+	float deviance = 0.0f;
+	float lvar = 0.0f;
+	float lsum = 0.0f;
 	unsigned int lcount = 0;
-	float rvar = NAN;
-	float rsum = NAN;
+	float rvar = 0.0f;
+	float rsum = 0.0f;
 	unsigned int rcount = 0;
 };
 
@@ -176,11 +172,11 @@ class temphistogram : public histogram {
 
 class permhistogram : public histogram {
 	public:
-		permhistogram(dpset *dps, float *labels, unsigned int **sortedidx, unsigned int *sortedidxsize, float **thresholds, unsigned int *thresholds_size) : histogram(thresholds, thresholds_size, dps->get_nfeatures()) {
+		permhistogram(dpset *dps, float *labels, unsigned int **sortedidx, unsigned int sortedidxsize, float **thresholds, unsigned int *thresholds_size) : histogram(thresholds, thresholds_size, dps->get_nfeatures()) {
 			stmap = new unsigned int*[nfeatures];
 			#pragma omp parallel for
 			for(unsigned int i=0; i<nfeatures; ++i) {
-				stmap[i] = new unsigned int[sortedidxsize[i]];
+				stmap[i] = new unsigned int[sortedidxsize];
 				unsigned int threshold_size = thresholds_size[i];
 				float *features = dps->get_fvector(i);
 				float *threshold = thresholds[i];
@@ -188,7 +184,7 @@ class permhistogram : public histogram {
 				float sqsum = 0.0f;
 				for(unsigned int last=-1, j, t=0; t<threshold_size; ++t) {
 					//find the first sample exceeding the current threshold
-					for(j=last+1; j<sortedidxsize[i]; ++j) {
+					for(j=last+1; j<sortedidxsize; ++j) {
 						unsigned int k = sortedidx[i][j];
 						if(features[k]>threshold[t]) break;
 						sum += labels[k],

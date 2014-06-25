@@ -1,7 +1,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cfloat>
-#include <cmath>
 #include <time.h>
 
 //#define LOGFILE
