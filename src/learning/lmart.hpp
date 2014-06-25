@@ -215,11 +215,11 @@ class lmartranker : public ranker {
 		float compute_validationmodelscores() {
 			float score = 0.0f;
 			unsigned int nrankedlists = validation_set->get_nrankedlists();
-			unsigned int *rloffsets = validation_set->get_rloffsets();
+			unsigned int *offsets = validation_set->get_rloffsets();
 			#pragma omp parallel for reduction(+:score)
 			for(unsigned int i=0; i<nrankedlists; ++i) {
 				rnklst orig = validation_set->get_ranklist(i);
-				float *sortedlabels = copyextfloat_radixsort<descending>(orig.labels, validationmodelscores+rloffsets[i], orig.size);
+				float *sortedlabels = copyextfloat_radixsort<descending>(orig.labels, validationmodelscores+offsets[i], orig.size);
 				score += scorer->compute_score(rnklst(orig.size, sortedlabels, orig.id));
 				delete[] sortedlabels;
 			}
@@ -312,17 +312,17 @@ class lmartranker : public ranker {
 			for(unsigned int i=0; i<orig.size; ++i)
 				sortedlabels[i] = orig.labels[idx[i]];
 			rnklst tmprl(orig.size, sortedlabels, orig.id);
-			//alloc mem; NOTE re-implement symmetric matrix
-			fsymmatrix *changes = new fsymmatrix(orig.size);
+			//alloc mem
+			fsymmatrix *reschanges = new fsymmatrix(orig.size);
 			//compute temp swap changes on rl
 			fsymmatrix *tmpchanges = scorer->swap_change(tmprl);
 			#pragma omp parallel for
 			for(unsigned int i=0; i<orig.size; ++i)
-				for(unsigned int j=0; j<orig.size; ++j)
-					changes->at(idx[i],idx[j]) = tmpchanges->at(i,j);
+				for(unsigned int j=i; j<orig.size; ++j)
+					reschanges->at(idx[i],idx[j]) = tmpchanges->at(i,j);
 			delete tmpchanges,
 			delete [] idx;
-			return changes;
+			return reschanges;
 		}
 };
 

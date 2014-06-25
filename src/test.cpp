@@ -4,8 +4,7 @@
 #include <cmath>
 #include <cfloat>
 #include <limits>
-#include <cmath> // NAN, isnan()
-#include <omp.h> // omp_get_thread_num()
+#include <omp.h>
 
 #include "learning/dpset.hpp"
 

@@ -128,14 +128,15 @@ class dpset {
 		dpset(const char *filename) {
 			FILE *f = fopen(filename, "r");
 			if(f) {
-				const int nth = omp_get_max_threads();
 				#ifdef SHOWTIMER
 				double readingtimer = omp_get_wtime();
 				#endif
+				const int nth = omp_get_max_threads();
 				unsigned int maxfid = INIT_NOFEATURES-1;
 				unsigned int linecounter = 0;
 				unsigned int th_ndps[nth];
-				for(int i=0; i<nth; th_ndps[i++]=0);
+				for(int i=0; i<nth; ++i)
+					th_ndps[i] = 0;
 				bitarray th_usedfid[nth];
 				trie<dplist> rltrie;
 				#pragma omp parallel num_threads(nth) shared(maxfid, linecounter)
