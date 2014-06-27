@@ -13,4 +13,6 @@ The current implementation provides:
 1) LambdaMART
 
 with the following quality metrics:
-1) NDCG
+1) DCG
+2) NDCG
+3) MAP
