@@ -1,0 +1,18 @@
+QuickRank, a C++ framework for Learning to Rank.
+-------------------------------------------------------------------------------
+Author: Gabriele Capannini (gabriele.capannini@isti.cnr.it)
+Contributors: Claudio Lucchese (claudio.lucchese@isti.cnr.it)
+              Franco Maria Nardini (francomaria.nardini@isti.cnr.it)
+-------------------------------------------------------------------------------
+The QuickRank framework is an optimized and parallel tool for learning
+different types of Learning-To-Rank algorithms. It is written in C++.
+
+It is released under the ADD LICENSE HERE!
+
+The current implementation provides:
+1) LambdaMART
+
+with the following quality metrics:
+1) DCG
+2) NDCG
+3) MAP
