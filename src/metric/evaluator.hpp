@@ -14,15 +14,11 @@ class evaluator {
 		metricscorer *training_scorer = NULL;
 		metricscorer *test_scorer = NULL;
 	public:
-		evaluator(ranker *r, metricscorer *training_scorer, metricscorer *test_scorer, const char *qrfilename=NULL):
+		evaluator(ranker *r, metricscorer *training_scorer, metricscorer *test_scorer):
 			r(r),
 			training_scorer(training_scorer),
 			test_scorer(test_scorer) {
 			printf("> NEW EVALUATOR:\n\tranker type = %s\n\ttrain scorer type = %s\n\ttest scorer type = %s\n", r->whoami(), training_scorer->whoami(), test_scorer?test_scorer->whoami():"not required");
-			if(qrfilename) {
-				training_scorer->load_judgments(qrfilename);
-				if(test_scorer) test_scorer->load_judgments(qrfilename);
-			}
 		}
 		~evaluator() {
 			delete r;

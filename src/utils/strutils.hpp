@@ -14,11 +14,20 @@ inline char *read_token(char *&str, const char exitch='\0') {
 	return token;
 }
 
-bool is_empty(const char *str) {
+inline bool is_empty(const char *str) {
 	if(str)
 		for(size_t i=0; str[i]!='\0'; ++i)
 			if(!ISSPC(str[i])) return false;
 	return true;
+}
+
+inline unsigned int atou(char *str, const char *sep) {
+	while(ISSPC(*str) && *str!='\0') ++str;
+	for(size_t i=0; sep[i]!='\0' && *str!='\0'; ++i, ++str)
+		if(*str!=sep[i]) exit(3);
+	int x = atoi(str);
+	if(x<0) exit(3);
+	return (unsigned int) x;
 }
 
 #endif

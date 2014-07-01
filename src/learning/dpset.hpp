@@ -16,22 +16,21 @@ double filesize(const char *filename) {
 }
 #endif
 
-#include "utils/trie.hpp" // trie data structure
 #include "utils/transpose.hpp" // traspose matrix
 #include "utils/strutils.hpp" // split string
 #include "utils/bitarray.hpp" // bit array implementation
 #include "utils/radix.hpp" // sorters
 #include "utils/listqsort.hpp" // sorter for linked lists
 
-#define SKIP_DPDESCRIPTIONS //comment to store dp descriptions
+#define SKIP_DPDESCRIPTION //comment to store dp descriptions
 #define PRESERVE_DPFILEORDER //uncomment to store datapoints in the same order as in the input file. NOTE dplist.push() is not yet efficient, i.e. O(|dplist|), but dplist are usually short
 #define INIT_NOFEATURES 50 //>0
 
 struct rnklst {
-	rnklst(unsigned int size, float *labels, char const* id) : size(size), labels(labels), id(id) {}
-	const unsigned int size;
+	rnklst(unsigned int size, float *labels, int id) : size(size), labels(labels), id(id) {}
+	unsigned int size;
 	float *labels;
-	char const* id;
+	unsigned int id;
 };
 
 class dp { //each dp is related to a line read from file
@@ -42,7 +41,7 @@ class dp { //each dp is related to a line read from file
 			nline(nline),
 			label(label),
 			features(NULL),
-			#ifndef SKIP_DPDESCRIPTIONS
+			#ifndef SKIP_DPDESCRIPTION
 			description(NULL),
 			#endif
 			next(NULL) {
@@ -67,7 +66,7 @@ class dp { //each dp is related to a line read from file
 		float get_label() const {
 			return label;
 		}
-		#ifndef SKIP_DPDESCRIPTIONS
+		#ifndef SKIP_DPDESCRIPTION
 		void set_description(char *str) {
 			description = str;
 		}
@@ -78,7 +77,7 @@ class dp { //each dp is related to a line read from file
 	private:
 		unsigned int maxsize, maxfid, nline;
 		float label, *features;
-		#ifndef SKIP_DPDESCRIPTIONS
+		#ifndef SKIP_DPDESCRIPTION
 		char *description;
 		#endif
 		dp *next;
@@ -89,10 +88,10 @@ class dp { //each dp is related to a line read from file
 	#endif
 };
 
-//dplist collects datapoints having the same id
+//dplist collects datapoints having the same qid
 class dplist {
 	public:
-		dplist(const char *key) : head(NULL), size(0), rid(strdup(key)) {}
+		dplist(const unsigned int rid) : head(NULL), size(0), rid(rid) {}
 		void push(dp* x) {
 			x->next = head;
 			head = x,
@@ -100,7 +99,8 @@ class dplist {
 		}
 		void pop() {
 			dp* tmp = head;
-			head = head->next;
+			head = head->next,
+			--size;
 			delete tmp;
 		}
 		dp *front() const {
@@ -109,7 +109,7 @@ class dplist {
 		unsigned int get_size() const {
 			return size;
 		}
-		char *get_rid() const {
+		int get_rid() const {
 			return rid;
 		}
 		#ifdef PRESERVE_DPFILEORDER
@@ -118,9 +118,44 @@ class dplist {
 		}
 		#endif
 	private:
-		dp *head;
-		unsigned int size;
-		char *rid;
+		dp *head ;
+		unsigned int size, rid;
+};
+
+class dpcollection {
+	public:
+		dpcollection() : arr(NULL), arrsize(0), nlists(0) {}
+		~dpcollection() {
+			for(unsigned int i=0; i<arrsize; ++i)
+				delete arr[i];
+			free(arr);
+		}
+		void insert(const unsigned int qid, dp* x) {
+			if(qid>=arrsize) {
+				unsigned int newsize = 2*qid+1;
+				arr = (dplist**)realloc(arr, sizeof(dplist*)*newsize);
+				while(arrsize<newsize) arr[arrsize++] = NULL;
+			}
+			if(arr[qid]==NULL)
+				arr[qid] = new dplist(qid),
+				++nlists;
+			arr[qid]->push(x);
+		}
+		unsigned int get_nlists() const {
+			return nlists;
+		}
+		dplist **get_lists() {
+			if(nlists==0)
+				return NULL;
+			dplist **ret = new dplist*[nlists];
+			for(unsigned int i=0, j=0; i<arrsize; ++i)
+				if(arr[i]!=NULL)
+					ret[j++] = arr[i];
+			return ret;
+		}
+	private:
+		dplist **arr;
+		unsigned int arrsize, nlists;
 };
 
 class dpset {
@@ -138,7 +173,7 @@ class dpset {
 				for(int i=0; i<nth; ++i)
 					th_ndps[i] = 0;
 				bitarray th_usedfid[nth];
-				trie<dplist> rltrie;
+				dpcollection coll;
 				#pragma omp parallel num_threads(nth) shared(maxfid, linecounter)
 				while(not feof(f)) {
 					ssize_t nread;
@@ -150,7 +185,7 @@ class dpset {
 					{ nread = getline(&line, &linelength, f), nline = ++linecounter; }
 					//if something is wrong with getline() or line is empty, skip to the next
 					if(nread<=0) { free(line); continue; }
-					char *key = NULL, *token = NULL, *pch = line;
+					char *token = NULL, *pch = line;
 					//skip initial spaces
 					while(ISSPC(*pch) && *pch!='\0') ++pch;
 					//skip comment line
@@ -160,13 +195,13 @@ class dpset {
 					//read label (label is a mandatory field)
 					if(ISEMPTY(token=read_token(pch))) exit(2);
 					//create a new dp for storing the max number of features seen till now
-					dp *newdp = new dp(atof(token), nline, maxfid+1);
-					//read id (id is a mandatory field)
-					if(ISEMPTY(key=read_token(pch))) exit(3);
+					dp *datapoint = new dp(atof(token), nline, maxfid+1);
+					//read qid (qid is a mandatory field)
+					unsigned int qid = atou(read_token(pch), "qid:");
 					//read a sequence of features, namely (fid,fval) pairs, then the ending description
 					while(!ISEMPTY(token=read_token(pch,'#')))
 						if(*token=='#') {
-							#ifndef SKIP_DPDESCRIPTIONS
+							#ifndef SKIP_DPDESCRIPTION
 							newdp->set_description(strdup(++token));
 							#endif
 							*pch = '\0';
@@ -176,7 +211,7 @@ class dpset {
 							float fval = 0.0f;
 							if(sscanf(token, "%u:%f", &fid, &fval)!=2) exit(4);
 							//add feature to the current dp
-							newdp->ins_feature(fid, fval),
+							datapoint->ins_feature(fid, fval),
 							//update used featureids
 							th_usedfid[ith].set_up(fid),
 							//update maxfid (it should be "atomically" managed but its consistency is not a problem)
@@ -184,7 +219,7 @@ class dpset {
 						}
 					//store current sample in trie
 					#pragma omp critical
-					{ rltrie.insert(key)->push(newdp); }
+					{ coll.insert(qid, datapoint); }
 					//update thread dp counter
 					++th_ndps[ith],
 					//free mem
@@ -200,50 +235,48 @@ class dpset {
 				for(int i=1; i<nth; ++i)
 					th_usedfid[0] |= th_usedfid[i],
 					th_ndps[0] += th_ndps[i];
-
-				//make an array with trie data
-				dplist **rlarray = rltrie.get_leaves();
 				//make an array of used features ids
 				unsigned int nfeatureids = th_usedfid[0].get_upcounter();
 				unsigned int *usedfid = th_usedfid[0].get_uparray(nfeatureids);
 				//set counters
 				ndps = th_ndps[0],
-				nrankedlists = rltrie.get_nleaves(),
+				nrankedlists = coll.get_nlists(),
 				nfeatures = usedfid[nfeatureids-1]+1;
+				dplist** dplists = coll.get_lists();
 				//allocate memory
-				#ifndef SKIP_DPDESCRIPTIONS
+				#ifndef SKIP_DPDESCRIPTION
 				descriptions = (char**)malloc(sizeof(char*)*ndps),
 				#endif
 				rloffsets = (unsigned int*)malloc(sizeof(unsigned int)*(nrankedlists+1)),
-				rlids = (char**)malloc(sizeof(char*)*nrankedlists),
+				rlids = (int*)malloc(sizeof(int)*nrankedlists),
 				labels = (float*)malloc(sizeof(float)*ndps);
-				//compute 'rloffsets' values, i.e. prefixsum dplist sizes
-				for(unsigned int i=0, sum=0; i<nrankedlists; ++i) {
-					unsigned int rlsize = rlarray[i]->get_size();
+				//compute 'rloffsets' values (i.e. prefixsum dplist sizes) and populate rlids
+				for(unsigned int i=0, sum=0, rlsize=0; i<nrankedlists; ++i) {
+					rlsize = dplists[i]->get_size(),
+					rlids[i] = dplists[i]->get_rid(),
 					rloffsets[i] = sum;
 					maxrlsize = rlsize>maxrlsize ? rlsize : maxrlsize,
 					sum += rlsize;
 				}
 				rloffsets[nrankedlists] = ndps;
-				//populate matrix (dp-major order)
+				//populate descriptions (if set), labels, and feature matrix (dp-major order)
 				float **tmpfeatures = (float**)malloc(sizeof(float*)*ndps);
 				#pragma omp parallel for
 				for(unsigned int i=0; i<nrankedlists; ++i) {
-					rlids[i] = rlarray[i]->get_rid();
 					#ifdef PRESERVE_DPFILEORDER
-					rlarray[i]->sort_bynline();
+					dplists[i]->sort_bynline();
 					#endif
 					for(unsigned int j=rloffsets[i]; j<rloffsets[i+1]; ++j) {
-						dp *current = rlarray[i]->front();
-						#ifndef SKIP_DPDESCRIPTIONS
-						descriptions[j] = current->get_description(),
+						dp *front = dplists[i]->front();
+						#ifndef SKIP_DPDESCRIPTION
+						descriptions[j] = front->get_description(),
 						#endif
-						tmpfeatures[j] = current->get_resizedfeatures(nfeatures),
-						labels[j] = current->get_label();
-						rlarray[i]->pop();
+						tmpfeatures[j] = front->get_resizedfeatures(nfeatures),
+						labels[j] = front->get_label();
+						dplists[i]->pop();
 					}
 				}
-				//traspose feature matrix to get a feature-major order matrix
+				//traspose current feature matrix to get a feature-major order matrix
 				features = (float**)malloc(sizeof(float*)*nfeatures);
 				for(unsigned int i=0; i<nfeatures; ++i)
 					features[i] = (float*)malloc(sizeof(float)*ndps);
@@ -251,7 +284,6 @@ class dpset {
 				for(unsigned int i=0; i<ndps; ++i)
 					free(tmpfeatures[i]);
 				free(tmpfeatures);
-
 				//delete feature arrays related to skipped featureids and compact the feature matrix
 				for(unsigned int i=0, j=0; i<nfeatureids; ++i, ++j) {
 					while(j!=usedfid[i])
@@ -261,20 +293,19 @@ class dpset {
 				nfeatures = nfeatureids,
 				features = (float**)realloc(features, sizeof(float*)*nfeatureids);
 				//show statistics
-				printf("\tfile = '%s'\n\tno. of datapoints = %u\n\tno. of ranked lists = %u\n\tmax ranked list size = %u\n\tno. of features = %u\n", filename, ndps, nrankedlists, maxrlsize, nfeatures);
+				printf("\tfile = '%s'\n\tno. of datapoints = %u\n\tno. of training queries = %u\n\tmax no. of datapoints in a training query = %u\n\tno. of features = %u\n", filename, ndps, nrankedlists, maxrlsize, nfeatures);
 				#ifdef SHOWTIMER
 				processingtimer = omp_get_wtime()-processingtimer;
 				printf("\telapsed time = reading: %.3f seconds (%.2f MB/s, %d threads) + processing: %.3f seconds\n", readingtimer, filesize(filename)/readingtimer, nth, processingtimer);
 				#endif
 				//free mem from temporary data structures
 				delete[] usedfid,
-				delete[] rlarray;
+				delete[] dplists;
 			} else exit(5);
 		}
 		~dpset() {
 			if(features) for(unsigned int i=0; i<nfeatures; ++i) free(features[i]);
-			if(rlids) for(unsigned int i=0; i<nrankedlists; ++i) free(rlids[i]);
-			#ifndef SKIP_DPDESCRIPTIONS
+			#ifndef SKIP_DPDESCRIPTION
 			if(descriptions) for(unsigned int i=0; i<ndps; ++i) free(descriptions[i]);
 			free(descriptions),
 			#endif
@@ -316,8 +347,8 @@ class dpset {
 		unsigned int *rloffsets = NULL; //[0..nrankedlists] i-th rankedlist begins at rloffsets[i] and ends at rloffsets[i+1]-1
 		float *labels = NULL; //[0..ndps-1]
 		float **features = NULL; //[0..maxfid][0..ndps-1]
-		char **rlids = NULL; //[0..nrankedlists-1]
-		#ifndef SKIP_DPDESCRIPTIONS
+		int *rlids = NULL; //[0..nrankedlists-1]
+		#ifndef SKIP_DPDESCRIPTION
 		char **descriptions = NULL; //[0..ndps-1]
 		#endif
 };

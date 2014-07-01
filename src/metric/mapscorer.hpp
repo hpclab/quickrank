@@ -9,24 +9,13 @@
 
 class mapscorer : public metricscorer {
 	private:
-		class counter {
-			public:
-				counter(const char *junk) : noccurences(0) {};
-				void incr() { ++noccurences; }
-				unsigned int get_noccurences() const { return noccurences; }
-			private:
-				unsigned int noccurences;
-		};
-		trie<counter> relevantdocs;
+		unsigned int *relevantdocs, nrelevantdocs;
 	public:
-		mapscorer(const unsigned int kval=0) { k=kval; }
-		const char *whoami() const { return "MAP"; }
-		void load_judgments(const char *filename) {
-			FILE *f = fopen(filename, "r");
-			if(f) {
-				//copy from dpset.hpp
-				fclose(f);
-			}
+		mapscorer(const unsigned int kval=0) : relevantdocs(NULL), nrelevantdocs(0) {
+			k=kval;
+		}
+		const char *whoami() const {
+			return "MAP";
 		}
 		float compute_score(const rnklst &rl) {
 			float ap = 0.0f;
@@ -35,26 +24,22 @@ class mapscorer : public metricscorer {
 			for(unsigned int i=0; i<rl.size; ++i)
 				if(rl.labels[i]>0.0f)
 					ap += (++count)/(i+1.0f);
-			counter *rc = relevantdocs.lookup(rl.id);
-			if(rc and rc->get_noccurences()>count)
-				count = rc->get_noccurences();
+			count = (rl.id<nrelevantdocs && relevantdocs[rl.id]>count) ? relevantdocs[rl.id] : count;
 			return count==0 ? 0.0f : ap/count;
 		}
 		fsymmatrix *swap_change(const rnklst &rl) {
 			int labels[rl.size];
 			int relcount[rl.size];
-			int count = 0;
+			unsigned int count = 0;
 			for(unsigned int i=0; i<rl.size; ++i) {
-				if(rl.labels[i]>0.0f) //relevant
+				if(rl.labels[i]>0.0f) //relevant if true
 					labels[i] = 1,
 					++count;
 				else
 					labels[i] = 0;
 				relcount[i] = count;
 			}
-			counter *rc = relevantdocs.lookup(rl.id);
-			if(rc and rc->get_noccurences()>(unsigned int)count)
-				count = rc->get_noccurences();
+			count = (rl.id<nrelevantdocs && relevantdocs[rl.id]>count) ? relevantdocs[rl.id] : count;
 			fsymmatrix *changes = new fsymmatrix(rl.size);
 			if(count==0)
 				return changes; //all zeros
