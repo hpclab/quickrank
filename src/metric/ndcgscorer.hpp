@@ -1,7 +1,7 @@
 #ifndef __NDCG_SCORER_HPP__
 #define __NDCG_SCORER_HPP__
 
-/*! \file trie.hpp
+/*! \file ndcgscorer.hpp
  * \brief Normalized Discounted Cumulative Gain (NDCG)
  */
 

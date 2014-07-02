@@ -1,10 +1,23 @@
 #ifndef __STRUTILS_HPP__
 #define __STRUTILS_HPP__
 
+/*! \file strutils.hpp
+ * \brief some useful functions for strings
+ */
+
+/*! \def ISSPC
+ *  \brief return true if \a ch is a space-char
+ */
 #define ISSPC(ch) (ch==' ' || ch=='\t' || ch=='\n' || ch=='\v' || ch=='\f' || ch=='\r')
+
+/*! \def ISEMPTY
+ *  \brief return true if \a str is empty string
+ */
 #define ISEMPTY(str) (*(str)=='\0')
 
-//skip a sequence of spaces (ISSPC) and get the next token which is considered closed at the next space encountered (if exitch is the FIRST not-space of str the function returns immediately).
+/*! \fn read_token(char *&str, const char exitch='\0')
+ *  \brief skip a sequence of spaces (see ISSPC macro) and return the token which is considered closed at the next space encountered (if \a exitch is the FIRST not-space of str the function returns immediately).
+ */
 inline char *read_token(char *&str, const char exitch='\0') {
 	while(ISSPC(*str) && *str!='\0') ++str;
 	if(*str==exitch) return str;
@@ -14,6 +27,9 @@ inline char *read_token(char *&str, const char exitch='\0') {
 	return token;
 }
 
+/*! \fn is_empty(const char *str)
+ *  \brief return true if \a str pointer is NULL or is made of spaces (see ISSPC macro)
+ */
 inline bool is_empty(const char *str) {
 	if(str)
 		for(size_t i=0; str[i]!='\0'; ++i)
@@ -21,7 +37,10 @@ inline bool is_empty(const char *str) {
 	return true;
 }
 
-inline unsigned int atou(char *str, const char *sep) {
+/*! \fn atou(char *str, const char *sep)
+ *  \brief skip a sequence of spaces (see ISSPC macro) and return the unsigned int after \a sep
+ */
+unsigned int inline atou(char *str, const char *sep) {
 	while(ISSPC(*str) && *str!='\0') ++str;
 	for(size_t i=0; sep[i]!='\0' && *str!='\0'; ++i, ++str)
 		if(*str!=sep[i]) exit(3);

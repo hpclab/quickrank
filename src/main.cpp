@@ -22,10 +22,10 @@ int main(int argc, char *argv[]) {
 	flog = fopen("/tmp/ranklib.log", "w");
 	#endif
 	srand(time(NULL));
-	evaluator ev(new lmartranker(), new ndcgscorer(10), new ndcgscorer(3));
-	//evaluator ev(new lmartranker(), new ndcgscorer(10), NULL);
-	ev.evaluate(TRAINFILENAME, VALIDATIONFILENAME, TESTFILENAME, "");
-	//ev.evaluate(TRAINFILENAME, "", "", "");
+	//evaluator ev(new lmartranker(), new ndcgscorer(10), new ndcgscorer(3));
+	evaluator ev(new lmartranker(), new ndcgscorer(10), NULL);
+	//ev.evaluate(TRAINFILENAME, VALIDATIONFILENAME, TESTFILENAME, "");
+	ev.evaluate(TRAINFILENAME, "", "", "");
 	#ifdef LOGFILE
 	fclose(flog);
 	#endif
