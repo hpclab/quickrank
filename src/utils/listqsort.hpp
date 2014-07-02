@@ -1,6 +1,8 @@
 #ifndef __LISTQSORT_HPP__
 #define __LISTQSORT_HPP__
 
+/*! @fn sort single linked lists
+*/
 template<typename T> void listqsort(T *&begin, T *end=NULL) {
 	if(begin!=end) {
 		//split input list in greater/less than pivot (i.e., *begin)

@@ -117,6 +117,9 @@ class lmartranker : public ranker {
 			#ifdef SHOWTIMER
 			printf("\telapsed time for init = %.3f seconds\n", omp_get_wtime()-timer);
 			#endif
+			#ifdef RADIX_STAT
+			printstat_radixsort();
+			#endif
 		}
 		void learn() {
 			training_score = 0.0f,
@@ -179,6 +182,9 @@ class lmartranker : public ranker {
 						validation_bestmodel = ens.get_size()-1,
 						printf("   %+-14f", delta);
 				}
+				#ifdef RADIX_STAT
+				printstat_radixsort();
+				#endif
 				printf("\n");
 			}
 			//Rollback to the best model observed on the validation data

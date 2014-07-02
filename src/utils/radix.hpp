@@ -10,8 +10,24 @@ inline unsigned int iflip(unsigned int x) { return x^(((x>>31)-1)|0x80000000); }
 
 enum sortorder { ascending, descending };
 
+#define RADIX_STAT
+
+#ifdef RADIX_STAT
+unsigned int cnt_nvalues[3] = {0}, cnt_times[3] = {0};
+
+void printstat_radixsort() {
+	for(int i=0;i<3; ++i) {
+		printf(" %.1f(%u)", cnt_times[i]!=0 ? (float)cnt_nvalues[i]/(cnt_times[i]) : 0, cnt_times[i]);
+		cnt_nvalues[i] = 0, cnt_times[i] = 0;
+	}
+}
+#endif
+
 //sort fvalues[]
 template <sortorder const order> void float_radixsort(float *fvalues, const unsigned int nvalues) {
+	#ifdef RADIX_STAT
+	cnt_nvalues[0] += nvalues, ++cnt_times[0];
+	#endif
 	unsigned int lbucket[65536] {0};
 	unsigned int hbucket[65536] {0};
 	// histogramming
@@ -47,6 +63,9 @@ template <sortorder const order> void float_radixsort(float *fvalues, const unsi
 
 //return indexes of ascending sorted fvalues array
 template <sortorder const order> unsigned int *idxfloat_radixsort(float const* fvalues, const unsigned int nvalues) {
+	#ifdef RADIX_STAT
+	cnt_nvalues[1] += nvalues, ++cnt_times[1];
+	#endif
 	unsigned int *ivalues = new unsigned int[nvalues];
 	unsigned int lbucket[65536] {0};
 	unsigned int hbucket[65536] {0};
@@ -81,6 +100,9 @@ template <sortorder const order> unsigned int *idxfloat_radixsort(float const* f
 
 //return a sorted copy of extvalues array. sort is done wrt values of fvalues[]
 template <sortorder const order> float *copyextfloat_radixsort(float const* extvalues, float const* fvalues, const unsigned int nvalues) {
+	#ifdef RADIX_STAT
+	cnt_nvalues[2] += nvalues, ++cnt_times[2];
+	#endif
 	unsigned int lbucket[65536] {0};
 	unsigned int hbucket[65536] {0};
 	for(unsigned int i=0; i<nvalues; ++i) {

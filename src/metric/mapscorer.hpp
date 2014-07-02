@@ -4,7 +4,6 @@
 #include <cstdio>
 
 #include "metric/metricscorer.hpp"
-#include "utils/trie.hpp" // trie data structure
 #include "utils/strutils.hpp" // rtnode string
 
 class mapscorer : public metricscorer {
