@@ -337,7 +337,7 @@ class dpset {
 		}
 		void sort_dpbyfeature(unsigned int i, unsigned int *&sorted, unsigned int &sortedsize) {
 			sortedsize = ndps;
-			sorted = idxfloat_radixsort<ascending>(features[i], sortedsize);
+			sorted = idxfloat_radixsort(features[i], sortedsize);
 		}
 		float get_label(unsigned int i) const {
 			return labels[i];

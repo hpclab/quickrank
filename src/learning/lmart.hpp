@@ -7,6 +7,7 @@
 #include "learning/ranker.hpp"
 #include "learning/tree/rt.hpp"
 #include "learning/tree/ensemble.hpp"
+#include "utils/qsort.hpp"
 
 class lmartranker : public ranker {
 	private:
@@ -117,9 +118,6 @@ class lmartranker : public ranker {
 			#ifdef SHOWTIMER
 			printf("\telapsed time for init = %.3f seconds\n", omp_get_wtime()-timer);
 			#endif
-			#ifdef RADIX_STAT
-			printstat_radixsort();
-			#endif
 		}
 		void learn() {
 			training_score = 0.0f,
@@ -182,9 +180,6 @@ class lmartranker : public ranker {
 						validation_bestmodel = ens.get_size()-1,
 						printf("   %+-14f", delta);
 				}
-				#ifdef RADIX_STAT
-				printstat_radixsort();
-				#endif
 				printf("\n");
 			}
 			//Rollback to the best model observed on the validation data
@@ -225,7 +220,7 @@ class lmartranker : public ranker {
 			#pragma omp parallel for reduction(+:score)
 			for(unsigned int i=0; i<nrankedlists; ++i) {
 				rnklst orig = validation_set->get_ranklist(i);
-				float *sortedlabels = copyextfloat_radixsort<descending>(orig.labels, validationmodelscores+offsets[i], orig.size);
+				float *sortedlabels = copyextfloat_qsort(orig.labels, validationmodelscores+offsets[i], orig.size);
 				score += scorer->compute_score(rnklst(orig.size, sortedlabels, orig.id));
 				delete[] sortedlabels;
 			}
@@ -303,7 +298,7 @@ class lmartranker : public ranker {
 				#pragma omp parallel for reduction(+:avg)
 				for(unsigned int i=0; i<nrankedlists; ++i) {
 					rnklst orig = training_set->get_ranklist(i);
-					float *sortedlabels = copyextfloat_radixsort<descending>(orig.labels, modelscores+offsets[i], orig.size);
+					float *sortedlabels = copyextfloat_qsort(orig.labels, modelscores+offsets[i], orig.size);
 					avg += scorer->compute_score(rnklst(orig.size, sortedlabels, orig.id));
 					delete [] sortedlabels;
 				}
@@ -313,7 +308,7 @@ class lmartranker : public ranker {
 		}
 		fsymmatrix *compute_mchange(const rnklst &orig, const unsigned int offset) {
 			//build a rl made up of label-values picked up from orig order by indexes of modelscores reversely sorted
-			unsigned int *idx = idxfloat_radixsort<descending>(modelscores+offset, orig.size);
+			unsigned int *idx = idxfloat_qsort(modelscores+offset, orig.size);
 			float sortedlabels[orig.size];
 			for(unsigned int i=0; i<orig.size; ++i)
 				sortedlabels[i] = orig.labels[idx[i]];

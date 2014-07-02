@@ -2,6 +2,7 @@
 #define __RANKER_HPP__
 
 #include "learning/dpset.hpp"
+#include "utils/qsort.hpp"
 
 //enum ranker_t { MART, RANKBOOST, RANKNET, ADARANK, COOR_ASCENT, LAMBDARANK, LAMBDAMART, LISTNET, RANDOM_FOREST };
 
@@ -38,7 +39,7 @@ class ranker {
 				unsigned int currdp = rloffsets[i];
 				for(unsigned int j=0; j<rl.size; ++j, ++currdp)
 					scores[j] = eval_dp(featurematrix, currdp);
-				float *sortedlabels = copyextfloat_radixsort<descending>(rl.labels, scores, rl.size);
+				float *sortedlabels = copyextfloat_qsort(rl.labels, scores, rl.size);
 				score += scorer->compute_score(rnklst(rl.size, sortedlabels, rl.id));
 				delete[] sortedlabels;
 			}

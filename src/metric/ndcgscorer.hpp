@@ -11,6 +11,7 @@
 #include "metric/metricscorer.hpp"
 #include "utils/strutils.hpp" // rtnode string
 #include "utils/radix.hpp" // radix sort
+#include "utils/qsort.hpp" // quick sort (for small input)
 
 /*! \def POWEROFTWO
  * raise 2 to the \a p-th power by means of left shift bitwise operator
@@ -43,7 +44,7 @@ float compute_idcg(float const* labels, const unsigned int nlabels, const unsign
 	float *copyoflabels = new float[nlabels];
 	memcpy(copyoflabels, labels, sizeof(float)*nlabels);
 	//sort the copy
-	float_radixsort<descending>(copyoflabels, nlabels);
+	float_qsort(copyoflabels, nlabels);
 	//compute dcg
 	float dcg = compute_dcg(copyoflabels, nlabels, k);
 	//free mem
