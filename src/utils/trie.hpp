@@ -1,15 +1,35 @@
 #ifndef __TRIE_HPP__
 #define __TRIE_HPP__
 
+/*! \file trie.hpp
+ * \brief Implementation of trie data structure
+ */
+
 #include <cstring>
 
-#define ALPHABET_OFFSET '0' //set which char is placed at the first position in child-array
-#define ALPHABET_LENGTH 80 //read chars are mapped into integers belonging to [ALPHABET_OFFSET, ALPHABET_OFFSET+ALPHABET_LENGTH-1]
+/*! \def ALPHABET_OFFSET
+ * \brief define which char is used as first one for the set of possible chars used as children for a node
+ */
+#define ALPHABET_OFFSET '0'
+/*! \def ALPHABET_LENGTH
+ * \brief read chars are mapped into integers belonging to [ALPHABET_OFFSET, ALPHABET_OFFSET+ALPHABET_LENGTH-1]
+ */
+ #define ALPHABET_LENGTH 80
 
+/*! \class trie
+ *  \brief trie implementation
+ *  @tparam T typename of leaves in the trie
+ *  \remark a \a T(char*) constructor is required
+ */
 template <typename T> class trie {
 	public:
+		/** \brief default constructor
+		 */
 		trie() : nleaves(0) { root = new trienode; }
 		~trie() { delete root; }
+		/** \brief traverse the trie for the string \a str and allocate the corresponding path is not yet allocated
+		 * @return poiter to the leaf data
+		 */
 		T *insert(const char *str) {
 			trienode *node = set_path(str);
 			if(!node->leaf)
@@ -17,10 +37,15 @@ template <typename T> class trie {
 				++nleaves;
 			return node->leaf;
 		}
+		/** \brief traverse the trie for the string \a str
+		 * @return poiter to the leaf data if it exists, otherwise NULL is returned
+		 */
 		T *lookup(const char *str) const {
 			trienode *node = get_path(str);
 			return node ? node->leaf : NULL;
 		}
+		/** \brief create a new array made up of the leaves pointers
+		 */
 		T **get_leaves() const {
 			if(nleaves==0)
 				return NULL;
@@ -31,9 +56,13 @@ template <typename T> class trie {
 				return leaves;
 			}
 		}
+		/** \brief return the number of leaves in the trie
+		 */
 		unsigned int get_nleaves() const {
 			return nleaves;
 		}
+		/** \brief return true if the number of leaves in the trie is zero
+		 */
 		bool is_empty() {
 			return nleaves==0;
 		}

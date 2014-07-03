@@ -1,6 +1,10 @@
 #ifndef __QSORT_HPP__
 #define __QSORT_HPP__
 
+/*! \file qsort.hpp
+ * \brief Set of functions implementing descending quick sort for floating point values (ideal for short array)
+ */
+
 #include <cstring>
 
 template <typename T> void inline swap(T &a, T &b) {
@@ -9,6 +13,10 @@ template <typename T> void inline swap(T &a, T &b) {
 	b = tmp;
 }
 
+/*! sort an array of float values
+ *  @param fvalues input float array
+ *  @param nvalues length of \a fvalues
+ */
 void float_qsort(float *arr, const unsigned int size) {
 	int stack[size];
 	int top = 1;
@@ -34,6 +42,11 @@ void float_qsort(float *arr, const unsigned int size) {
 	}
 }
 
+/*! sort an array of float values without modifing the input array and returning permuted indexes of the sorted items
+ *  @param fvalues input float array
+ *  @param nvalues length of \a fvalues
+ *  @return indexes of descending sorted \a fvalues
+ */
 unsigned int *idxfloat_qsort(float const* arr, const unsigned int size) {
 	unsigned int *idxarr = new unsigned int[size];
 	for(unsigned int i=0; i<size; ++i) idxarr[i] = i;
@@ -68,6 +81,12 @@ unsigned int *idxfloat_qsort(float const* arr, const unsigned int size) {
 	return idxarr;
 }
 
+/*! sort an array of float values with respect to another one without modifing the input array and returning permuted indexes of the sorted items
+ *  @param extvalues input float array
+ *  @param fvalues input float array
+ *  @param nvalues length of \a fvalues
+ *  @return a sorted copy of \a extvalues wrt \a fvalues
+ */
 float *copyextfloat_qsort(float const* extarr, float const* arr, const unsigned int size) {
 	float *copyof_arr = new float[size];
 	memcpy(copyof_arr, arr, sizeof(float)*size);

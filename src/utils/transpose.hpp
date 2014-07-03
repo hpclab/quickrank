@@ -10,8 +10,11 @@
  */
 #define TRNSP_BLOCKSIZE 64
 
-/*! \fn transpose(float **output, float **input, const unsigned int n, const unsigned int m)
- *  \brief traspose \a input float matrix made up of \a n rows and \a m columns block by block
+/*! traspose \a input float matrix made up of \a n rows and \a m columns block by block
+ *  @param input matrix to transpose
+ *  @param output trasposed matrix
+ *  @param n number of rows of input matrix
+ *  @param m number of columns of input matrix
  */
 void transpose(float **output, float **input, const unsigned int n, const unsigned int m) {
 	#pragma omp parallel for

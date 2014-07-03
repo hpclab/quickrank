@@ -1,12 +1,28 @@
 #ifndef __BITARRAY_HPP__
 #define __BITARRAY_HPP__
 
+/*! \file bitarray.hpp
+ * \brief Implementation of a bit array
+ */
+
 #include <cstdint>
 
+/*! \def DIV32(i)
+ * \brief integer division of \a i by 32 by means of the bit-wise SHIFT operator
+ */
 #define DIV32(i) ((i)>>5)
+/*! \def MUL32(i)
+ * \brief multiply \a i by 32 by means of the bit-wise SHIFT operator
+ */
 #define MUL32(i) ((i)<<5)
+/*! \def MOD32(i)
+ * \brief return \a i mod 32 by means of the bit-wise AND operator
+ */
 #define MOD32(i) ((i)&0x1F)
 
+/*! return the number of set bit in a 32bits value
+ *  @param n input value
+ */
 inline int32_t bitcounter(int32_t n) {
 	#ifdef __GNUC__
 		return __builtin_popcount(n);
@@ -17,12 +33,19 @@ inline int32_t bitcounter(int32_t n) {
 	#endif
 }
 
+/*! \class bitarray
+ *  \brief bit array implementation (1 bit per element)
+ */
 class bitarray {
 	public:
+		/** \brief default constructor
+		 */
 		bitarray() : data(NULL), datasize(0) {}
 		~bitarray() {
 			free(data);
 		}
+		/** \brief set the \a i-th bit (the data structure is reallocated to store the \a i-th bit if needed)
+		 */
 		void set_up(const unsigned int i) {
 			if(i>=MUL32(datasize)) {
 				unsigned int newdatasize = DIV32(2*i)+1;
@@ -31,15 +54,21 @@ class bitarray {
 			}
 			data[DIV32(i)] |= 1<<MOD32(i);
 		}
+		/** \brief return true the \a i-th bit is set (no check is made on the size of the array)
+		 */
 		bool is_up(const unsigned int i) const {
 			return (data[DIV32(i)]>>MOD32(i))&1;
 		}
+		/** \brief return the number of set bit in the array
+		 */
 		unsigned int get_upcounter() {
 			unsigned int count=0;
 			for(unsigned int i=0; i<datasize; ++i)
 				count += bitcounter(data[i]);
 			return count;
 		}
+		/** \brief return an array of integers made up of the set bits positions
+		 */
 		unsigned int *get_uparray(const unsigned int n) {
 			unsigned int *arr = new unsigned int[n], arrsize=0;
 			for(unsigned int i=0; i<datasize && arrsize<n; ++i)
@@ -47,6 +76,8 @@ class bitarray {
 					if((data[i]>>j)&1) arr[arrsize++] = MUL32(i)+j;
 			return arr;
 		}
+		/** \brief compute bitwse OR of two bit arrays and store the result in the left operand
+		 */
 		bitarray& operator|= (const bitarray& other) {
 			if(datasize<other.datasize) {
 				data = (int32_t*)realloc(data, sizeof(int32_t)*other.datasize);

@@ -2,7 +2,7 @@
 #define __RADIX_HPP__
 
 /*! \file radix.hpp
- * \brief sorting functions for floating point values based on radix sort.
+ * \brief Set of functions implementing descending radix sort for floating point values (ideal for long array)
  */
 
 static_assert(sizeof(float)==4,"sizeof(float) exception!");
@@ -12,8 +12,7 @@ static_assert(sizeof(unsigned int)==4,"sizeof(unsigned int) exception!");
 inline unsigned int flip(unsigned int x) { return x^(-int(x>>31)|0x80000000); } //!<flip a float for sorting: if it's negative, it flips all bits otherwise flips the sign only
 inline unsigned int iflip(unsigned int x) { return x^(((x>>31)-1)|0x80000000); } //!<flip a float back (invert flip)
 
-/*! \fn idxfloat_radixsort
- *  \brief sort an array of float values without modifing the input array and returning permuted indexes of the sorted items
+/*! sort an array of float values without modifing the input array and returning permuted indexes of the sorted items
  *  @param fvalues input float array
  *  @param nvalues length of \a fvalues
  *  @return indexes of ascending sorted \a fvalues
@@ -47,8 +46,7 @@ unsigned int *idxfloat_radixsort(float const* fvalues, const unsigned int nvalue
 
 enum sortorder { ascending, descending };
 
-/*! \fn float_radixsort
- *  \brief sort an array of float values
+/*! sort an array of float values
  *  @param fvalues input float array
  *  @param nvalues length of \a fvalues
  */
@@ -86,8 +84,7 @@ template <sortorder const order> void float_radixsort(float *fvalues, const unsi
 	delete [] aux;
 }
 
-/*! \fn idxfloat_radixsort
- *  \brief sort an array of float values with respect to another one without modifing the input array and returning permuted indexes of the sorted items
+/*! sort an array of float values with respect to another one without modifing the input array and returning permuted indexes of the sorted items
  *  @param extvalues input float array
  *  @param fvalues input float array
  *  @param nvalues length of \a fvalues

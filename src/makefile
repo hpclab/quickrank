@@ -3,7 +3,7 @@ pwd=$(shell echo $(PWD))
 
 compile:
 	@mkdir -p ../bin
-	$(cc) -std=c++11 -Wall -Wextra -Wno-unused-parameter -O3 -march=native -ffast-math -flto -fopenmp -I "." -o ../bin/ranklib main.cpp
+	$(cc) -std=c++11 -Wall -Wextra -Wno-unused-parameter -Ofast -march=native -flto -fopenmp -I "." -o ../bin/ranklib main.cpp
 
 clean:
 	@rm -f *~ ../bin/*
@@ -22,9 +22,9 @@ dataset:
 	@mkdir -p ../bin
 	@mkdir -p ../datasets/rand
 	@$(cc) -O3 rds.cpp -o ../bin/rds
-	@../bin/rds ../datasets/rand/train.txt 150 750 5 100
-	@../bin/rds ../datasets/rand/vali.txt 150 100 5 100
-	@../bin/rds ../datasets/rand/test.txt 150 10 5 100
+	@../bin/rds ../datasets/rand/train.txt 150 750000 5 100
+	@../bin/rds ../datasets/rand/vali.txt 150 150000 5 100
+	@../bin/rds ../datasets/rand/test.txt 150 10000 5 100
 
 test:
 	@mkdir -p ../bin

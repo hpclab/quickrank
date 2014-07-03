@@ -1,6 +1,10 @@
 #ifndef __SYMMATRIX_HPP__
 #define __SYMMATRIX_HPP__
 
+/*! \file symmatrix.hpp
+ * \brief implement a symetric matrix of order n by using n(n+1)/2 elements
+ */
+
 #include <cstdlib>
 
 /*! \def sm2v(i,j,size)

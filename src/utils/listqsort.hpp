@@ -1,7 +1,14 @@
 #ifndef __LISTQSORT_HPP__
 #define __LISTQSORT_HPP__
 
-/*! @fn sort single linked lists
+/*! \file listqsort.hpp
+ * \brief sort single-linked lists
+ */
+
+/*! sort a single-linked list
+ *  @tparam T typename of the list-element
+ *  @param begin points to the begin of the list
+ *  @param end points to the end of the list
 */
 template<typename T> void listqsort(T *&begin, T *end=NULL) {
 	if(begin!=end) {
