@@ -30,7 +30,7 @@ struct rnklst {
 	rnklst(unsigned int size, float *labels, int id) : size(size), labels(labels), id(id) {}
 	unsigned int size;
 	float *labels;
-	unsigned int id;
+	unsigned int id; //qid
 };
 
 class dp { //each dp is related to a line read from file
@@ -119,7 +119,7 @@ class dplist {
 		#endif
 	private:
 		dp *head ;
-		unsigned int size, rid;
+		unsigned int size, rid; //rid=qid
 };
 
 class dpcollection {

@@ -13,9 +13,9 @@ FILE *flog = NULL;
 #include "metric/evaluator.hpp"
 #include "learning/ranker.hpp"
 
-#define TRAINFILENAME "../datasets/rand/train.txt"
-#define VALIDATIONFILENAME "../datasets/rand/vali.txt"
-#define TESTFILENAME "../datasets/rand/test.txt"
+#define TRAINFILENAME "../../ranklib++/datasets/MQ2008/Fold3/train.txt" //"../datasets/rand/train.txt"
+#define VALIDATIONFILENAME "../../ranklib++/datasets/MQ2008/Fold3/vali.txt" //"../datasets/rand/vali.txt"
+#define TESTFILENAME "../../ranklib++/datasets/MQ2008/Fold3/test.txt" //"../datasets/rand/test.txt"
 
 int main(int argc, char *argv[]) {
 	#ifdef LOGFILE

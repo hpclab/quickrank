@@ -3,7 +3,7 @@ pwd=$(shell echo $(PWD))
 
 compile:
 	@mkdir -p ../bin
-	$(cc) -std=c++11 -Wall -Wextra -Wno-unused-parameter -Ofast -march=native -flto -fopenmp -I "." -o ../bin/ranklib main.cpp
+	$(cc) -std=c++11 -Wall -Wextra -Wno-unused-parameter -Ofast -fopenmp -I "." -o ../bin/ranklib main.cpp
 
 clean:
 	@rm -f *~ ../bin/*

@@ -44,7 +44,7 @@ class ensemble {
 			#pragma omp parallel for reduction(+:sum)
 			for(unsigned int i=0; i<size; ++i)
 				sum += arr[i].tree->eval(features, idx) * arr[i].weight;
-			return sum;
+			return sum; //prediction value
 		}
 		void write_outputtofile(FILE *f) {
 			fprintf(f, "\n<ensemble>\n");

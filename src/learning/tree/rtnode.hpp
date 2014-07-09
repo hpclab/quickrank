@@ -47,7 +47,7 @@ class rtnode {
 			enum_leaves(leaves, nleaves, maxsize);
 			return (rtnode**)realloc(leaves, sizeof(rtnode*)*nleaves);
 		}
-		float eval(float const* const* featurematrix, const unsigned int idx) const {
+		float eval(float const* const* featurematrix, const unsigned int idx) const {//prediction
 			if(featureid==0xFFFFFFFF) return avglabel;
 			return featurematrix[featureid][idx]<=threshold ? left->eval(featurematrix, idx) : right->eval(featurematrix, idx);
 		}

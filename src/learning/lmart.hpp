@@ -11,7 +11,7 @@
 
 class lmartranker : public ranker {
 	private:
-		unsigned int ntrees = 10; //the number of trees
+		unsigned int ntrees = 30; //the number of trees
 		float learningrate = 0.1f; //or shrinkage
 		unsigned int nthreshold = 0xFFFFFFFF;
 		unsigned int ntreeleaves = 10;

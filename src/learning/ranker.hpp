@@ -21,7 +21,7 @@ class ranker {
 			delete training_set;
 		}
 
-		virtual float eval_dp(float *const *const features, unsigned int idx) const = 0;
+		virtual float eval_dp(float *const *const features, unsigned int idx) const = 0; //prediction value to store in a file
 		virtual const char *whoami() const = 0;
 		virtual void init() = 0;
 		virtual void learn() = 0;
@@ -43,7 +43,7 @@ class ranker {
 				score += scorer->compute_score(rnklst(rl.size, sortedlabels, rl.id));
 				delete[] sortedlabels;
 			}
-			return score/nrankedlists;
+			return score/nrankedlists;// avg quality (e.g., avg ndcg)
 		}
 		void set_scorer(metricscorer *ms) { scorer = ms; }
 		void set_trainingset(dpset *dps) { training_set = dps; }

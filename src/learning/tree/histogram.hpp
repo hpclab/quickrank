@@ -3,20 +3,7 @@
 
 #include "learning/dpset.hpp"
 
-struct splitparams {
-	unsigned int best_featureid = 0xFFFFFFFF;
-	float best_threshold = 0.0f;
-	float deviance = 0.0f;
-	float lvar = 0.0f;
-	float lsum = 0.0f;
-	unsigned int lcount = 0;
-	float rvar = 0.0f;
-	float rsum = 0.0f;
-	unsigned int rcount = 0;
-};
-
-class histogram {
-	public:
+struct histogram {
 		float **thresholds = NULL; //[0..nfeatures-1]x[0..thresholds_size[i]-1]
 		unsigned int *thresholds_size = NULL;
 		unsigned int **stmap = NULL; //[0..nfeatures-1]x[0..nthresholds-1] //TODO sparse array... maybe is possible to reimplement it
@@ -25,7 +12,6 @@ class histogram {
 		float **sumlbl = NULL; //[0..nfeatures-1]x[0..nthresholds-1]
 		float **sqsumlbl = NULL; //[0..nfeatures-1]x[0..nthresholds-1]
 		unsigned int **count = NULL; //[0..nfeatures-1]x[0..nthresholds-1]
-	public:
 		histogram(float **thresholds, unsigned int *thresholds_size, unsigned int nfeatures) : thresholds(thresholds), thresholds_size(thresholds_size), nfeatures(nfeatures) {
 			sumlbl = new float*[nfeatures],
 			sqsumlbl = new float*[nfeatures],
@@ -66,79 +52,9 @@ class histogram {
 					sumlbl[i][t] += sumlbl[i][t-1],
 					sqsumlbl[i][t] += sqsumlbl[i][t-1];
 		}
-		splitparams *find_bestsplit(const unsigned int minls, const float initvar=FLT_MAX) {
-			//featureidxs to be used for tree splitnodeting
-			unsigned int featuresamples[nfeatures];
-			unsigned int nfeaturesamples = 0;
-			for(unsigned int i=0; i<nfeatures; ++i)
-				featuresamples[nfeaturesamples++] = i;
-			if(samplingrate<1.0f) {
-				//need to make a sub-sampling
-				unsigned int reduced_nfeaturesamples = (unsigned int)floor(samplingrate*nfeaturesamples);
-				while(nfeaturesamples>reduced_nfeaturesamples && nfeaturesamples>1) {
-					unsigned int selected = rand()%nfeaturesamples;
-					featuresamples[selected] = featuresamples[--nfeaturesamples];
-				}
-			}
-			//find best rtnode
-			unsigned int best_featureid = 0xFFFFFFFF;
-			unsigned int best_thresholdid = 0xFFFFFFFF;
-			float best_lvar = 0.0f;
-			float best_rvar = 0.0f;
-			float minvar = initvar;
-			for(unsigned int i=0; i<nfeaturesamples; ++i) {
-				const unsigned int f = featuresamples[i];
-				//define pointer shortcuts
-				float *sumlabels = sumlbl[f];
-				float *sqsumlabels = sqsumlbl[f];
-				unsigned int *samplecount = count[f];
-				//get last elements
-				unsigned int threshold_size = thresholds_size[f];
-				float s = sumlabels[threshold_size-1];
-				float sq = sqsumlabels[threshold_size-1];
-				unsigned int c = samplecount[threshold_size-1];
-				//looking for the feature that minimizes sum of lvar+rvar
-				for(unsigned int t=0; t<threshold_size; ++t) {
-					unsigned int lcount = samplecount[t];
-					unsigned int rcount = c-lcount;
-					if(lcount>=minls && rcount>=minls)  {
-						float lsum = sumlabels[t];
-						float lsqsum = sqsumlabels[t];
-						float lvar = fabs(lsqsum-lsum*lsum/lcount);
-						float rsum = s-lsum;
-						float rsqsum = sq-lsqsum;
-						float rvar = fabs(rsqsum-rsum*rsum/rcount);
-						float sumvar = lvar+rvar;
-						if(FLT_EPSILON+sumvar<minvar) //is required at least an FLT_EPSILON improvment
-							minvar = sumvar,
-							best_lvar = lvar,
-							best_rvar = rvar,
-							best_featureid = f,
-							best_thresholdid = t;
-					}
-				}
-			}
-
-			if(minvar==initvar) return NULL; //unsplitable
-
-			unsigned int last_thresholdidx = thresholds_size[best_featureid]-1;
-
-			splitparams *result = new splitparams();
-			result->best_featureid = best_featureid,
-			result->best_threshold = thresholds[best_featureid][best_thresholdid],
-			result->deviance = minvar,
-			result->lvar = best_lvar,
-			result->lsum = sumlbl[best_featureid][best_thresholdid],
-			result->lcount = count[best_featureid][best_thresholdid];
-			result->rvar = best_rvar,
-			result->rsum = sumlbl[best_featureid][last_thresholdidx]-result->lsum,
-			result->rcount = count[best_featureid][last_thresholdidx]-result->lcount;
-			return result;
-
-		}
 };
 
-class temphistogram : public histogram {
+struct temphistogram : public histogram {
 	public:
 		temphistogram(histogram const* parent, unsigned int const* sampleids, const unsigned int nsampleids, float const* labels) : histogram(parent->thresholds, parent->thresholds_size, parent->nfeatures) {
 			stmap = parent->stmap;
@@ -170,7 +86,7 @@ class temphistogram : public histogram {
 		}
 };
 
-class permhistogram : public histogram {
+struct permhistogram : public histogram {
 	public:
 		permhistogram(dpset *dps, float *labels, unsigned int **sortedidx, unsigned int sortedidxsize, float **thresholds, unsigned int *thresholds_size) : histogram(thresholds, thresholds_size, dps->get_nfeatures()) {
 			stmap = new unsigned int*[nfeatures];
