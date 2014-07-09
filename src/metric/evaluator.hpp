@@ -5,6 +5,7 @@
 #include "metric/ndcgscorer.hpp"
 #include "metric/dcgscorer.hpp"
 #include "learning/lmart.hpp"
+#include "learning/oblrank.hpp"
 
 class evaluator {
 	public:

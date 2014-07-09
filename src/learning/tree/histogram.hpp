@@ -5,14 +5,14 @@
 
 struct histogram {
 		float **thresholds = NULL; //[0..nfeatures-1]x[0..thresholds_size[i]-1]
-		unsigned int *thresholds_size = NULL;
+		unsigned int const *thresholds_size = NULL;
 		unsigned int **stmap = NULL; //[0..nfeatures-1]x[0..nthresholds-1] //TODO sparse array... maybe is possible to reimplement it
 		unsigned int nfeatures = 0;
 		float samplingrate = 1.0f;
 		float **sumlbl = NULL; //[0..nfeatures-1]x[0..nthresholds-1]
 		float **sqsumlbl = NULL; //[0..nfeatures-1]x[0..nthresholds-1]
 		unsigned int **count = NULL; //[0..nfeatures-1]x[0..nthresholds-1]
-		histogram(float **thresholds, unsigned int *thresholds_size, unsigned int nfeatures) : thresholds(thresholds), thresholds_size(thresholds_size), nfeatures(nfeatures) {
+		histogram(float **thresholds, unsigned int const *thresholds_size, unsigned int nfeatures) : thresholds(thresholds), thresholds_size(thresholds_size), nfeatures(nfeatures) {
 			sumlbl = new float*[nfeatures],
 			sqsumlbl = new float*[nfeatures],
 			count = new unsigned int*[nfeatures];
@@ -88,7 +88,7 @@ struct temphistogram : public histogram {
 
 struct permhistogram : public histogram {
 	public:
-		permhistogram(dpset *dps, float *labels, unsigned int **sortedidx, unsigned int sortedidxsize, float **thresholds, unsigned int *thresholds_size) : histogram(thresholds, thresholds_size, dps->get_nfeatures()) {
+		permhistogram(dpset *dps, float *labels, unsigned int **sortedidx, unsigned int sortedidxsize, float **thresholds, unsigned int const *thresholds_size) : histogram(thresholds, thresholds_size, dps->get_nfeatures()) {
 			stmap = new unsigned int*[nfeatures];
 			#pragma omp parallel for
 			for(unsigned int i=0; i<nfeatures; ++i) {
