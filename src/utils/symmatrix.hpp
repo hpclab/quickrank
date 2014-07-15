@@ -59,6 +59,11 @@ template <typename T> class symmatrix {
 		T *vectat(const size_t i, const size_t j) {
 			return &data[i<j ? sm2v(i,j,size) : sm2v(j,i,size)];
 		}
+		/** \brief return matrix size.
+		 */
+		size_t get_size() const {
+			return size;
+		}
 	private:
 		T *data;
 		size_t size;

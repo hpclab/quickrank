@@ -9,140 +9,11 @@
 #include "learning/tree/ensemble.hpp"
 #include "utils/qsort.hpp"
 
-class lmartrt : public rt {
-	public:
-		lmartrt(unsigned int nodes, dpset *dps, float *labels, unsigned int minls) : rt(nodes, dps, labels, minls) {}
-		void fit(histogram *hist) {
-			deviance_maxheap heap;
-			unsigned int taken = 0;
-			unsigned int nsampleids = training_set->get_ndatapoints();
-			unsigned int *sampleids = new unsigned int[nsampleids];
-			for(unsigned int i=0; i<nsampleids; ++i)
-				sampleids[i] = i;
-			root = new rtnode(sampleids, nsampleids, FLT_MAX, 0.0f, hist);
-			if(split(root))
-				heap.push_chidrenof(root);
-			while(heap.is_notempty() && (nodes==0xFFFFFFFF or taken+heap.get_size()<nodes)) {
-				//get node with max deviance from heap
-				rtnode *node = heap.top();
-				//try split
-				if(split(node)) heap.push_chidrenof(node);
-				else ++taken; //unsplitable (i.e. null variance, or after split variance is higher than before, or #samples<minlsd)
-				//remove node from heap
-				heap.pop();
-			}
-			leaves = root->get_leaves(nleaves);
-		}
+class lmart : public ranker {
 	private:
-		//if true the node is splitable if new variance is lt the current node deviance (require_devianceltparent=false in RankLib)
-		bool split(rtnode *node, bool require_devianceltparent=false) {
-			#ifdef LOGFILE
-			static int icounter = 0;
-			#endif
-			if(node->deviance>0.0f) {
-				const float initvar = require_devianceltparent?node->deviance:FLT_MAX;
-				//get current nod hidtogram pointer
-				histogram *h = node->hist;
-				//featureidxs to be used for tree splitnodeting
-				unsigned int featuresamples[h->nfeatures];
-				unsigned int nfeaturesamples = 0;
-				for(unsigned int i=0; i<h->nfeatures; ++i)
-					featuresamples[nfeaturesamples++] = i;
-				if(h->samplingrate<1.0f) {
-					//need to make a sub-sampling
-					unsigned int reduced_nfeaturesamples = (unsigned int)floor(h->samplingrate*nfeaturesamples);
-					while(nfeaturesamples>reduced_nfeaturesamples && nfeaturesamples>1) {
-						unsigned int selectedtoremove = rand()%nfeaturesamples;
-						featuresamples[selectedtoremove] = featuresamples[--nfeaturesamples];
-					}
-				}
-				//find best split
-				unsigned int best_featureid = 0xFFFFFFFF;
-				unsigned int best_thresholdid = 0xFFFFFFFF;
-				float best_lvar = 0.0f;
-				float best_rvar = 0.0f;
-				float minvar = initvar;
-				for(unsigned int i=0; i<nfeaturesamples; ++i) {
-					const unsigned int f = featuresamples[i];
-					//define pointer shortcuts
-					float *sumlabels = h->sumlbl[f];
-					float *sqsumlabels = h->sqsumlbl[f];
-					unsigned int *samplecount = h->count[f];
-					//get last elements
-					unsigned int threshold_size = h->thresholds_size[f];
-					float s = sumlabels[threshold_size-1];
-					float sq = sqsumlabels[threshold_size-1];
-					unsigned int c = samplecount[threshold_size-1];
-					//looking for the feature that minimizes sum of lvar+rvar
-					for(unsigned int t=0; t<threshold_size; ++t) {
-						unsigned int lcount = samplecount[t];
-						unsigned int rcount = c-lcount;
-						if(lcount>=minls && rcount>=minls)  {
-							float lsum = sumlabels[t];
-							float lsqsum = sqsumlabels[t];
-							float lvar = fabs(lsqsum-lsum*lsum/lcount);
-							float rsum = s-lsum;
-							float rsqsum = sq-lsqsum;
-							float rvar = fabs(rsqsum-rsum*rsum/rcount);
-							float sumvar = lvar+rvar;
-							if(FLT_EPSILON+sumvar<minvar) //is required an improvement gt FLT_EPSILON wrt current minvar
-								minvar = sumvar,
-								best_lvar = lvar,
-								best_rvar = rvar,
-								best_featureid = f,
-								best_thresholdid = t;
-						}
-					}
-				}
-				//if minvar is the same of initvalue then the node is unsplitable
-				if(minvar==initvar)
-					return false;
-				//set some result values related to minvar
-				const unsigned int last_thresholdidx = h->thresholds_size[best_featureid]-1;
-				const float best_threshold = h->thresholds[best_featureid][best_thresholdid];
-				const float lsum = h->sumlbl[best_featureid][best_thresholdid];
-				const float rsum = h->sumlbl[best_featureid][last_thresholdidx]-lsum;
-				const unsigned int lcount = h->count[best_featureid][best_thresholdid];
-				const unsigned int rcount = h->count[best_featureid][last_thresholdidx]-lcount;
-				//split samples between left and right child
-				unsigned int *lsamples = new unsigned int[lcount], lsize = 0;
-				unsigned int *rsamples = new unsigned int[rcount], rsize = 0;
-				float const* features = training_set->get_fvector(best_featureid);
-				for(unsigned int i=0, nsampleids=node->nsampleids; i<nsampleids; ++i) {
-					unsigned int k = node->sampleids[i];
-					if(features[k]<=best_threshold) lsamples[lsize++] = k; else rsamples[rsize++] = k;
-				}
-				//create histograms for children
-				temphistogram *lhist = new temphistogram(node->hist, lsamples, lsize, training_labels);
-				temphistogram *rhist = new temphistogram(node->hist, lhist);
-				//update current node
-				node->featureid = best_featureid,
-				node->threshold = best_threshold,
-				node->deviance = minvar,
-				//create children
-				node->left = new rtnode(lsamples, lsize, best_lvar, lsum, lhist),
-				node->right = new rtnode(rsamples, rsize, best_rvar, rsum, rhist);
-				#ifdef LOGFILE
-				fprintf(flog,"SPLIT #%d (%.12f)\n", ++icounter, node->deviance);
-				for(unsigned int i=0; i<lsize; ++i)	fprintf(flog,"%u ", lsamples[i]);
-				fprintf(flog,"| ");
-				for(unsigned int i=0; i<rsize; ++i)	fprintf(flog,"%u ", rsamples[i]);
-				fprintf(flog,"\nVl=%f %f | Vr=%f %f\n%f %u\n", best_lvar, lsum, best_rvar, rsum, best_threshold, best_featureid);
-				#endif
-				return true;
-			}
-			#ifdef LOGFILE
-			fprintf(flog,"SPLIT #%d: UNSPLITABLE\n", ++icounter);
-			#endif
-			return false;
-		}
-};
-
-class lmartranker : public ranker {
-	private:
-		unsigned int ntrees = 30; //the number of trees
+		unsigned int ntrees = 500; //the number of trees
 		float learningrate = 0.1f; //or shrinkage
-		unsigned int nthreshold = 0xFFFFFFFF;
+		unsigned int nthresholds = 0; //if nthresholds==0 no. of thresholds is not limited
 		unsigned int ntreeleaves = 10;
 		unsigned int minleafsupport = 1;
 		float **thresholds = NULL;
@@ -155,12 +26,12 @@ class lmartranker : public ranker {
 		unsigned int sortedsize = 0;
 		permhistogram *hist = NULL;
 		float *cachedweights = NULL; //corresponds to datapoint.cache
-		unsigned int eenrounds = 0; //If no performance gain on validation data is observed in eerounds, stop the training process right away (if eenrounds==0 feature is disabled).
+		unsigned int eenrounds = 500; //If no performance gain on validation data is observed in eerounds, stop the training process right away (if eenrounds==0 feature is disabled).
 		ensemble ens;
 	public:
-		lmartranker() {};
-		lmartranker(dpset *training_set) : ranker(training_set) {}
-		~lmartranker() {
+		lmart() {};
+		lmart(dpset *training_set) : ranker(training_set) {}
+		~lmart() {
 			const unsigned int nfeatures = training_set->get_nfeatures();
 			for(unsigned int i=0; i<nfeatures; ++i)
 				delete [] sortedsid[i],
@@ -178,8 +49,7 @@ class lmartranker : public ranker {
 			return "LAMBDA MART";
 		}
 		void init()  {
-			if(nthreshold==0xFFFFFFFF) printf(">>> INIT:\n\tno. of thresholds has no limits\n");
-			else printf(">>> INIT:\n\tno. of threshold candidates = %u\n", nthreshold);
+			printf(">>> INIT:\n\tno. of threshold candidates = %u (0 means unlimited)\n", nthresholds);
 			#ifdef SHOWTIMER
 			double timer = omp_get_wtime();
 			#endif
@@ -204,27 +74,27 @@ class lmartranker : public ranker {
 				unsigned int *idx = sortedsid[i];
 				//get_ sample indexes sorted by the fid-th feature
 				unsigned int uniqs_size = 0;
-				float *uniqs = (float*)malloc(sizeof(float)*(nthreshold==0xFFFFFFFF?sortedsize+1:nthreshold+1));
-				//skip samples with the same feature value. early exit for if nthreshold!=size_max
+				float *uniqs = (float*)malloc(sizeof(float)*(nthresholds==0?sortedsize+1:nthresholds+1));
+				//skip samples with the same feature value. early exit for if nthresholds!=size_max
 				uniqs[uniqs_size++] = features[idx[0]];
-				for(unsigned int j=1; j<sortedsize && (nthreshold==0xFFFFFFFF || uniqs_size!=nthreshold+1); ++j) {
+				for(unsigned int j=1; j<sortedsize && (nthresholds==0 || uniqs_size!=nthresholds+1); ++j) {
 					const float fval = features[idx[j]];
 					if(uniqs[uniqs_size-1]<fval) uniqs[uniqs_size++] = fval;
 				}
 				//define thresholds
-				if(uniqs_size<=nthreshold || nthreshold==0xFFFFFFFF) {
+				if(uniqs_size<=nthresholds || nthresholds==0) {
 					uniqs[uniqs_size++] = FLT_MAX;
 					thresholds_size[i] = uniqs_size,
 					thresholds[i] = (float*)realloc(uniqs, sizeof(float)*uniqs_size);
 				} else {
 					free(uniqs),
-					thresholds_size[i] = nthreshold+1,
-					thresholds[i] = (float*)malloc(sizeof(float)*(nthreshold+1));
+					thresholds_size[i] = nthresholds+1,
+					thresholds[i] = (float*)malloc(sizeof(float)*(nthresholds+1));
 					float t = features[idx[0]]; //equals fmin
-					const float step = fabs(features[idx[sortedsize-1]]-t)/nthreshold; //(fmax-fmin)/nthreshold
-					for(unsigned int j=0; j!=nthreshold; t+=step)
+					const float step = fabs(features[idx[sortedsize-1]]-t)/nthresholds; //(fmax-fmin)/nthresholds
+					for(unsigned int j=0; j!=nthresholds; t+=step)
 						thresholds[i][j++] = t;
-					thresholds[i][nthreshold] = FLT_MAX;
+					thresholds[i][nthresholds] = FLT_MAX;
 				}
 			}
 			if(validation_set) {
@@ -232,14 +102,16 @@ class lmartranker : public ranker {
 				validationmodelscores = new float[ndatapoints]();
 			}
 			#ifdef LOGFILE
+			fprintf(flog, "sortedsid\n");
 			for(unsigned int i=0; i<nfeatures; ++i) {
-				for(unsigned int j=0; j<sortedsize[i]; ++j)
+				for(unsigned int j=0; j<sortedsize; ++j)
 					fprintf(flog, "%u ", sortedsid[i][j]);
 				fprintf(flog, "\n");
 			}
+			fprintf(flog, "thresholds\n");
 			for(unsigned int i=0; i<nfeatures; ++i) {
 				for(unsigned int j=0; j<thresholds_size[i]-1; ++j)
-					fprintf(flog, "%f ", thresholds[i][j]);
+					fprintf(flog, "%.4f ", thresholds[i][j]);
 				fprintf(flog, "\n");
 			}
 			#endif
@@ -266,7 +138,7 @@ class lmartranker : public ranker {
 				//update the histogram with these training_seting labels (the feature histogram will be used to find the best tree rtnode)
 				hist->update(pseudoresponses, training_set->get_ndatapoints());
 				//Fit a regression tree
-				lmartrt tree(ntreeleaves, training_set, pseudoresponses, minleafsupport);
+				rt tree(ntreeleaves, training_set, pseudoresponses, minleafsupport);
 				#ifdef SHOWTIMER
 				++timercounter,
 				timervalues[0] -= omp_get_wtime();
@@ -334,9 +206,7 @@ class lmartranker : public ranker {
 		void write_outputtofile(const char *filename) {
 			FILE *f = fopen(filename, "w");
 			if(f) {
-				fprintf(f, "## no. of tree(s) = %u\n## learning rate = %f\n## no. of tree leaves = %u\n## min no. of leaves = %u\n", ntrees, learningrate, ntreeleaves, minleafsupport);
-				if(eenrounds>0)
-					fprintf(f, "## stop training if no gain is obtained for %u consecutive round(s)\n", eenrounds);
+				fprintf(f, "## LambdaMART\n## No. of trees = %u\n## No. of leaves = %u\n## No. of threshold candidates = %d\n## Learning rate = %f\n## Stop early = %u\n\n", ntrees, ntreeleaves, nthresholds==0?-1:(int)nthresholds, learningrate, eenrounds);
 				ens.write_outputtofile(f);
 				fclose(f);
 			}
@@ -348,9 +218,9 @@ class lmartranker : public ranker {
 			unsigned int *offsets = validation_set->get_rloffsets();
 			#pragma omp parallel for reduction(+:score)
 			for(unsigned int i=0; i<nrankedlists; ++i) {
-				rnklst orig = validation_set->get_ranklist(i);
+				qlist orig = validation_set->get_ranklist(i);
 				float *sortedlabels = copyextfloat_qsort(orig.labels, validationmodelscores+offsets[i], orig.size);
-				score += scorer->compute_score(rnklst(orig.size, sortedlabels, orig.id));
+				score += scorer->compute_score(qlist(orig.size, sortedlabels, orig.qid));
 				delete[] sortedlabels;
 			}
 			return nrankedlists ? score/nrankedlists : 0.0f;
@@ -361,17 +231,17 @@ class lmartranker : public ranker {
 			#pragma omp parallel for
 			for(unsigned int i=0; i<nrankedlists; ++i) {
 				const unsigned int offset = rloffsets[i];
-				rnklst rl = training_set->get_ranklist(i);
-				fsymmatrix *changes = compute_mchange(rl, offset);
+				qlist ql = training_set->get_ranklist(i);
+				fsymmatrix *changes = compute_mchange(ql, offset);
 				float *lambdas = pseudoresponses+offset;
 				float *weights = cachedweights+offset;
-				for(unsigned int j=0; j<rl.size; ++j)
+				for(unsigned int j=0; j<ql.size; ++j)
 					lambdas[j] = 0.0f,
 					weights[j] = 0.0f;
-				for(unsigned int j=0; j<rl.size; ++j) {
-					float jthlabel = rl.labels[j];
-					for(unsigned int k=0; k<rl.size; ++k) if(k!=j) {
-						float kthlabel = rl.labels[k];
+				for(unsigned int j=0; j<ql.size; ++j) {
+					float jthlabel = ql.labels[j];
+					for(unsigned int k=0; k<ql.size; ++k) if(k!=j) {
+						float kthlabel = ql.labels[k];
 						float deltandcg = fabs(changes->at(j,k));
 						if(jthlabel>kthlabel) {
 							float rho = 1.0/(1.0+exp(modelscores[offset+j]-modelscores[offset+k]));
@@ -387,9 +257,10 @@ class lmartranker : public ranker {
 				delete changes;
 			}
 			#ifdef LOGFILE
+			fprintf(flog,"pseudoresponses\n");
 			const unsigned int nentries = training_set->get_ndatapoints();
 			for(unsigned int i=0; i<nentries; ++i)
-				fprintf(flog,"%f ", pseudoresponses[i]);
+				fprintf(flog,"%.4f ", pseudoresponses[i]);
 			fprintf(flog,"\n");
 			#endif
 		}
@@ -426,30 +297,42 @@ class lmartranker : public ranker {
 			if(nrankedlists) {
 				#pragma omp parallel for reduction(+:avg)
 				for(unsigned int i=0; i<nrankedlists; ++i) {
-					rnklst orig = training_set->get_ranklist(i);
+					qlist orig = training_set->get_ranklist(i);
 					float *sortedlabels = copyextfloat_qsort(orig.labels, modelscores+offsets[i], orig.size);
-					avg += scorer->compute_score(rnklst(orig.size, sortedlabels, orig.id));
+					avg += scorer->compute_score(qlist(orig.size, sortedlabels, orig.qid));
 					delete [] sortedlabels;
 				}
 				avg /= nrankedlists;
 			}
 			return avg;
 		}
-		fsymmatrix *compute_mchange(const rnklst &orig, const unsigned int offset) {
-			//build a rl made up of label-values picked up from orig order by indexes of modelscores reversely sorted
+		fsymmatrix *compute_mchange(const qlist &orig, const unsigned int offset) {
+			//build a ql made up of label values picked up from orig order by indexes of modelscores reversely sorted
 			unsigned int *idx = idxfloat_qsort(modelscores+offset, orig.size);
 			float sortedlabels[orig.size];
 			for(unsigned int i=0; i<orig.size; ++i)
 				sortedlabels[i] = orig.labels[idx[i]];
-			rnklst tmprl(orig.size, sortedlabels, orig.id);
+			qlist tmprl(orig.size, sortedlabels, orig.qid);
 			//alloc mem
 			fsymmatrix *reschanges = new fsymmatrix(orig.size);
-			//compute temp swap changes on rl
+			//compute temp swap changes on ql
 			fsymmatrix *tmpchanges = scorer->swap_change(tmprl);
 			#pragma omp parallel for
 			for(unsigned int i=0; i<orig.size; ++i)
 				for(unsigned int j=i; j<orig.size; ++j)
 					reschanges->at(idx[i],idx[j]) = tmpchanges->at(i,j);
+			#ifdef LOGFILE
+			unsigned int changes_size = tmpchanges->get_size();
+			fprintf(flog, "changes %u :", changes_size);
+			for(unsigned int ii=0; ii<tmprl.size; ++ii)
+				fprintf(flog, " %u(%.3f)", idx[ii], modelscores[ii+offset]);
+			fprintf(flog, "\n");
+			for(unsigned int ii=0; ii<changes_size; ++ii) {
+				for(unsigned int jj=0; jj<changes_size; ++jj)
+					fprintf(flog, "%.3f ", tmpchanges->at(ii,jj));
+				fprintf(flog, "\n");
+			}
+			#endif
 			delete tmpchanges,
 			delete [] idx;
 			return reschanges;

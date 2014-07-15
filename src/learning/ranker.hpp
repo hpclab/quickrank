@@ -34,16 +34,15 @@ class ranker {
 			float score = 0.0f;
 			#pragma omp parallel for reduction(+:score)
 			for(unsigned int i=0; i<nrankedlists; ++i) {
-				rnklst rl = samples->get_ranklist(i);
-				float scores[rl.size];
-				unsigned int currdp = rloffsets[i];
-				for(unsigned int j=0; j<rl.size; ++j, ++currdp)
-					scores[j] = eval_dp(featurematrix, currdp);
-				float *sortedlabels = copyextfloat_qsort(rl.labels, scores, rl.size);
-				score += scorer->compute_score(rnklst(rl.size, sortedlabels, rl.id));
-				delete[] sortedlabels;
+				qlist ql = samples->get_ranklist(i);
+				float scores[ql.size];
+				for(unsigned int j=0, offset=rloffsets[i]; j<ql.size; )
+					scores[j++] = eval_dp(featurematrix, offset++);
+				float *sortedlabels = copyextfloat_qsort(ql.labels, scores, ql.size);
+				score += scorer->compute_score(qlist(ql.size, sortedlabels, ql.qid));
+				delete [] sortedlabels;
 			}
-			return score/nrankedlists;// avg quality (e.g., avg ndcg)
+			return nrankedlists ? score/nrankedlists : 0.0f;
 		}
 		void set_scorer(metricscorer *ms) { scorer = ms; }
 		void set_trainingset(dpset *dps) { training_set = dps; }

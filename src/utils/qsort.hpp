@@ -30,8 +30,9 @@ void float_qsort(float *arr, const unsigned int size) {
 		for(int j=l; j<h; ++j)
 			if(p<arr[j])
 				swap(arr[++i], arr[j]);
-		swap(arr[++i], arr[h]);
- 		if(i-1>l) {
+		if(arr[++i]<arr[h])
+			swap(arr[i], arr[h]);
+		if(i-1>l) {
 			stack[++top] = l;
 			stack[++top] = i-1;
 		}
@@ -66,9 +67,10 @@ unsigned int *idxfloat_qsort(float const* arr, const unsigned int size) {
 				swap(copyof_arr[++i], copyof_arr[j]);
 				swap(idxarr[i], idxarr[j]);
 			}
-		swap(copyof_arr[++i], copyof_arr[h]);
-		swap(idxarr[i], idxarr[h]);
- 		if(i-1>l) {
+		if(copyof_arr[++i]<copyof_arr[h])
+			swap(copyof_arr[i], copyof_arr[h]),
+			swap(idxarr[i], idxarr[h]);
+		if(i-1>l) {
 			stack[++top] = l;
 			stack[++top] = i-1;
 		}
@@ -106,9 +108,10 @@ float *copyextfloat_qsort(float const* extarr, float const* arr, const unsigned 
 				swap(copyof_arr[++i], copyof_arr[j]);
 				swap(copyof_extarr[i], copyof_extarr[j]);
 			}
-		swap(copyof_arr[++i], copyof_arr[h]);
-		swap(copyof_extarr[i], copyof_extarr[h]);
- 		if(i-1>l) {
+		if(copyof_arr[++i]<copyof_arr[h])
+			swap(copyof_arr[i], copyof_arr[h]),
+			swap(copyof_extarr[i], copyof_extarr[h]);
+		if(i-1>l) {
 			stack[++top] = l;
 			stack[++top] = i-1;
 		}

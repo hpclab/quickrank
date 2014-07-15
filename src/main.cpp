@@ -13,19 +13,18 @@ FILE *flog = NULL;
 #include "metric/evaluator.hpp"
 #include "learning/ranker.hpp"
 
-#define TRAINFILENAME "../../ranklib++/datasets/MQ2008/Fold3/train.txt" //"../datasets/rand/train.txt"
-#define VALIDATIONFILENAME "../../ranklib++/datasets/MQ2008/Fold3/vali.txt" //"../datasets/rand/vali.txt"
-#define TESTFILENAME "../../ranklib++/datasets/MQ2008/Fold3/test.txt" //"../datasets/rand/test.txt"
+#define TRAINFILENAME "/data/letor-tois/Fold1/train.txt" //"../datasets/MQ2008/Fold1/train.txt"
+#define VALIDATIONFILENAME "/data/letor-tois/Fold1/vali.txt" //"../datasets/MQ2008/Fold1/vali.txt"
+#define TESTFILENAME "/data/letor-tois/Fold1/test.txt" //"../datasets/MQ2008/Fold1/test.txt"
 
 int main(int argc, char *argv[]) {
 	#ifdef LOGFILE
-	flog = fopen("/tmp/ranklib.log", "w");
+	flog = fopen("/tmp/quickrank.log", "w");
 	#endif
 	srand(time(NULL));
-	//evaluator ev(new lmartranker(), new ndcgscorer(10), new ndcgscorer(3));
-	evaluator ev(new lmartranker(), new ndcgscorer(10), NULL);
-	//ev.evaluate(TRAINFILENAME, VALIDATIONFILENAME, TESTFILENAME, "");
-	ev.evaluate(TRAINFILENAME, "", "", "");
+	evaluator ev(new lmart(), new ndcgscorer(10), new ndcgscorer(10));
+	ev.evaluate(TRAINFILENAME, VALIDATIONFILENAME, TESTFILENAME, "");
+	//ev.evaluate(TRAINFILENAME, "", "", "");
 	#ifdef LOGFILE
 	fclose(flog);
 	#endif

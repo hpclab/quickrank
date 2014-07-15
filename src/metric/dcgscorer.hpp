@@ -11,23 +11,23 @@ class dcgscorer : public metricscorer {
 	public:
 		dcgscorer(const unsigned int kval=10) { k = kval; }
 		const char *whoami() const { return "DCG"; }
-		float compute_score(const rnklst &rl) {
-			if(rl.size<=0)
+		float compute_score(const qlist &ql) {
+			if(ql.size<=0)
 				return -1.0;
-			const unsigned int size = (k>rl.size or k<=0) ? rl.size : k;
+			const unsigned int size = (k>ql.size or k<=0) ? ql.size : k;
 			float dcg = 0.0f;
 			for(unsigned int i=0; i<size; ++i)
-				dcg += (POWEROFTWO(rl.labels[i])-1.0f)/log2(i+2.0f);
+				dcg += (POWEROFTWO(ql.labels[i])-1.0f)/log2(i+2.0f);
 			return dcg;
 		}
-		fsymmatrix *swap_change(const rnklst &rl) {
-			fsymmatrix *changes = new fsymmatrix(rl.size);
-			unsigned int size = rl.size<k ? rl.size : k;
+		fsymmatrix *swap_change(const qlist &ql) {
+			fsymmatrix *changes = new fsymmatrix(ql.size);
+			unsigned int size = ql.size<k ? ql.size : k;
 			#pragma omp parallel for
 			for(unsigned int i=0; i<size; ++i) {
 				float *vchanges = changes->vectat(i,i+1);
-				for(unsigned int j=i+1; j<rl.size; ++j)
-					*vchanges++ = (1.0f/log2(i+2.0f)-1.0f/log2(j+2.0f))*(POWEROFTWO(rl.labels[i])-POWEROFTWO(rl.labels[j]));
+				for(unsigned int j=i+1; j<ql.size; ++j)
+					*vchanges++ = (1.0f/log2(i+2.0f)-1.0f/log2(j+2.0f))*(POWEROFTWO(ql.labels[i])-POWEROFTWO(ql.labels[j]));
 			}
 			return changes;
 		}

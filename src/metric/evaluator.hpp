@@ -5,7 +5,7 @@
 #include "metric/ndcgscorer.hpp"
 #include "metric/dcgscorer.hpp"
 #include "learning/lmart.hpp"
-//#include "learning/oblrank.hpp"
+#include "learning/matrixnet.hpp"
 
 class evaluator {
 	public:

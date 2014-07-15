@@ -26,11 +26,11 @@ double filesize(const char *filename) {
 #define PRESERVE_DPFILEORDER //uncomment to store datapoints in the same order as in the input file. NOTE dplist.push() is not yet efficient, i.e. O(|dplist|), but dplist are usually short
 #define INIT_NOFEATURES 50 //>0
 
-struct rnklst {
-	rnklst(unsigned int size, float *labels, int id) : size(size), labels(labels), id(id) {}
-	unsigned int size;
-	float *labels;
-	unsigned int id; //qid
+struct qlist {
+	qlist(unsigned int size, float *labels, int qid) : size(size), labels(labels), qid(qid) {}
+	unsigned int const size;
+	float const *labels;
+	unsigned int const qid;
 };
 
 class dp { //each dp is related to a line read from file
@@ -91,7 +91,7 @@ class dp { //each dp is related to a line read from file
 //dplist collects datapoints having the same qid
 class dplist {
 	public:
-		dplist(const unsigned int rid) : head(NULL), size(0), rid(rid) {}
+		dplist(const unsigned int qid) : head(NULL), size(0), qid(qid) {}
 		void push(dp* x) {
 			x->next = head;
 			head = x,
@@ -109,8 +109,8 @@ class dplist {
 		unsigned int get_size() const {
 			return size;
 		}
-		int get_rid() const {
-			return rid;
+		int get_qid() const {
+			return qid;
 		}
 		#ifdef PRESERVE_DPFILEORDER
 		void sort_bynline() {
@@ -119,7 +119,7 @@ class dplist {
 		#endif
 	private:
 		dp *head ;
-		unsigned int size, rid; //rid=qid
+		unsigned int size, qid;
 };
 
 class dpcollection {
@@ -202,7 +202,7 @@ class dpset {
 					while(!ISEMPTY(token=read_token(pch,'#')))
 						if(*token=='#') {
 							#ifndef SKIP_DPDESCRIPTION
-							newdp->set_description(strdup(++token));
+							datapoint->set_description(strdup(++token));
 							#endif
 							*pch = '\0';
 						} else {
@@ -253,7 +253,7 @@ class dpset {
 				//compute 'rloffsets' values (i.e. prefixsum dplist sizes) and populate rlids
 				for(unsigned int i=0, sum=0, rlsize=0; i<nrankedlists; ++i) {
 					rlsize = dplists[i]->get_size(),
-					rlids[i] = dplists[i]->get_rid(),
+					rlids[i] = dplists[i]->get_qid(),
 					rloffsets[i] = sum;
 					maxrlsize = rlsize>maxrlsize ? rlsize : maxrlsize,
 					sum += rlsize;
@@ -323,8 +323,8 @@ class dpset {
 		unsigned int get_nrankedlists() const {
 			return nrankedlists;
 		}
-		rnklst get_ranklist(unsigned int i) {
-			return rnklst(rloffsets[i+1]-rloffsets[i], labels+rloffsets[i], rlids[i]);
+		qlist get_ranklist(unsigned int i) {
+			return qlist(rloffsets[i+1]-rloffsets[i], labels+rloffsets[i], rlids[i]);
 		}
 		float *get_fvector(unsigned int i) const {
 			return features[i];

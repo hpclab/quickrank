@@ -7,7 +7,7 @@ struct histogram {
 		float **thresholds = NULL; //[0..nfeatures-1]x[0..thresholds_size[i]-1]
 		unsigned int const *thresholds_size = NULL;
 		unsigned int **stmap = NULL; //[0..nfeatures-1]x[0..nthresholds-1] //TODO sparse array... maybe is possible to reimplement it
-		unsigned int nfeatures = 0;
+		unsigned int const nfeatures = 0;
 		float samplingrate = 1.0f;
 		float **sumlbl = NULL; //[0..nfeatures-1]x[0..nthresholds-1]
 		float **sqsumlbl = NULL; //[0..nfeatures-1]x[0..nthresholds-1]
@@ -40,10 +40,10 @@ struct histogram {
 					sqsumlbl[i][t] = 0.0f;
 			#pragma omp parallel for
 			for(unsigned int i=0; i<nfeatures; ++i)
-				for(unsigned int k=0; k<nlabels; ++k) {
-					const unsigned int t = stmap[i][k];
-					sumlbl[i][t] += labels[k],
-					sqsumlbl[i][t] += labels[k]*labels[k];
+				for(unsigned int j=0; j<nlabels; ++j) {
+					const unsigned int t = stmap[i][j];
+					sumlbl[i][t] += labels[j],
+					sqsumlbl[i][t] += labels[j]*labels[j];
 					//count doesn't change, so no need to re-compute
 				}
 			#pragma omp parallel for
