@@ -4,7 +4,7 @@
 #include <time.h>
 
 //#define LOGFILE
-#define SHOWTIMER
+//#define SHOWTIMER
 
 #ifdef LOGFILE
 FILE *flog = NULL;
@@ -13,9 +13,9 @@ FILE *flog = NULL;
 #include "metric/evaluator.hpp"
 #include "learning/ranker.hpp"
 
-#define TRAINFILENAME "/data/letor-tois/Fold1/train.txt" //"../datasets/MQ2008/Fold1/train.txt"
-#define VALIDATIONFILENAME "/data/letor-tois/Fold1/vali.txt" //"../datasets/MQ2008/Fold1/vali.txt"
-#define TESTFILENAME "/data/letor-tois/Fold1/test.txt" //"../datasets/MQ2008/Fold1/test.txt"
+#define TRAINFILENAME "/data/gabriele/letor-tois/Fold1/train.txt" //"../datasets/MQ2008/Fold1/train.txt" //
+#define VALIDATIONFILENAME "/data/gabriele/letor-tois/Fold1/vali.txt" //"../datasets/MQ2008/Fold1/vali.txt" //
+#define TESTFILENAME "/data/gabriele/letor-tois/Fold1/test.txt" //"../datasets/MQ2008/Fold1/test.txt" //
 
 int main(int argc, char *argv[]) {
 	#ifdef LOGFILE

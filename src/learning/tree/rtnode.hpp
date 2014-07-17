@@ -1,8 +1,6 @@
 #ifndef __RTNODE_HPP__
 #define __RTNODE_HPP__
 
-#include <cmath> //NAN
-
 #include "learning/dpset.hpp"
 #include "learning/tree/histogram.hpp"
 
@@ -12,8 +10,8 @@ class rtnode {
 		unsigned int nsampleids = 0;
 		unsigned int featureid = 0xFFFFFFFF;
 		float threshold = 0.0f;
-		float deviance = 0.0f;
-		float avglabel = 0.0f;
+		double deviance = 0.0f;
+		double avglabel = 0.0f;
 		rtnode *left = NULL;
 		rtnode *right = NULL;
 		histogram *hist = NULL;
@@ -31,7 +29,7 @@ class rtnode {
 			}
 		}
 	public:
-		rtnode(unsigned int *sampleids, unsigned int nsampleids, float deviance, float sumlabel, histogram* hist) :
+		rtnode(unsigned int *sampleids, unsigned int nsampleids, double deviance, double sumlabel, histogram* hist) :
 			sampleids(sampleids), nsampleids(nsampleids), deviance(deviance), hist(hist) {
 			avglabel = sumlabel/nsampleids;
 		}
@@ -40,9 +38,9 @@ class rtnode {
 			delete left,
 			delete right;
 		}
-		rtnode** get_leaves(unsigned int &nleaves) {
-			rtnode** leaves = NULL;
-			unsigned int maxsize = 0;
+		rtnode** get_leaves(unsigned int &nleaves, const unsigned int initsize=0) {
+			rtnode** leaves = initsize>0 ? (rtnode**)malloc(sizeof(rtnode*)*initsize) : NULL;
+			unsigned int maxsize = initsize;
 			nleaves = 0;
 			enum_leaves(leaves, nleaves, maxsize);
 			return (rtnode**)realloc(leaves, sizeof(rtnode*)*nleaves);

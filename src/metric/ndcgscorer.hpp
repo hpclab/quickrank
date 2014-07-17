@@ -13,11 +13,6 @@
 #include "utils/radix.hpp" // radix sort
 #include "utils/qsort.hpp" // quick sort (for small input)
 
-/*! \def USE_IDCGCACHE
- * enable cache for idcg values
- */
-#define USE_IDCGCACHE
-
 /*! \def POWEROFTWO
  * raise 2 to the (int) \a p-th power by means of left shift bitwise operator
  */
@@ -58,40 +53,6 @@ float compute_idcg(float const* labels, const unsigned int nlabels, const unsign
 	return dcg;
 }
 
-/*! \class Cache ideal Discounted Cumulative Gain (iDCG) values.
-*/
-class idcg_cache {
-	private:
-		float *cache = NULL;
-		unsigned int cachesize = 0;
-		const float undef = -FLT_MAX;
-	public:
-		~idcg_cache() {
-			delete [] cache;
-		}
-		/*! operator()
-		 * \brief cache iDCG values of encountered ranklists. if \a ql.qid doesn't exist in the data structure, the related value is computed and memorized for the next utilization.
-		 * @param ql input rankedlist.
-		 * @param k maximum number of entities that can be recommended.
-		 * @return iDCG of \a ql.
-		 * \remark cached values are accessed only by their \a id value. As a consequence returned values correspond to the ones computed for the first \a k value passed.
-		 */
-		float operator() (const qlist &ql, const unsigned int k) {
-			if(ql.qid>=cachesize || cache[ql.qid]==undef) {
-				#pragma omp critical
-				{
-					if(ql.qid>=cachesize) {
-						unsigned int newcachesize = 2*ql.qid+1;
-						cache = (float*)realloc(cache,sizeof(float)*newcachesize);
-						while(cachesize<newcachesize) cache[cachesize++] = undef;
-					}
-					cache[ql.qid] = compute_idcg(ql.labels, ql.size, k);
-				}
-			}
-			return cache[ql.qid];
-		}
-};
-
 /*! \class Cache Normalized Discounted Cumulative Gain (nDCG) values.
 */
 class ndcgscorer : public metricscorer {
@@ -112,11 +73,7 @@ class ndcgscorer : public metricscorer {
 		float compute_score(const qlist &ql) {
 			if(ql.size==0) return -1.0f;
 			const unsigned int size = k<ql.size ? k : ql.size;
-			#ifdef USE_IDCGCACHE
-			const float idcg = ic(ql, size); //NOTE size==k in RankLib
-			#else
-			const float idcg = compute_idcg(ql.labels, ql.size, size); //NOTE size==k in RankLib
-			#endif
+			const float idcg = compute_idcg(ql.labels, ql.size, size);
 			return idcg>0.0f ? compute_dcg(ql.labels, ql.size, size)/idcg : 0.0f;
 		}
 		/* Compute score
@@ -124,11 +81,7 @@ class ndcgscorer : public metricscorer {
 		fsymmatrix *swap_change(const qlist &ql) {
 			const unsigned int size = k<ql.size ? k : ql.size;
 			//compute the ideal ndcg
-			#ifdef USE_IDCGCACHE
-			const float idcg = ic(ql, size);
-			#else
 			const float idcg = compute_idcg(ql.labels, ql.size, size);
-			#endif
 			#ifdef LOGFILE
 			fprintf(flog, "idcg %f :", idcg);
 			for(unsigned int i=0; i<ql.size; ++i)
@@ -147,10 +100,6 @@ class ndcgscorer : public metricscorer {
 			}
 			return changes;
 		}
-	private:
-		#ifdef USE_IDCGCACHE
-		idcg_cache ic;
-		#endif
 };
 
 #undef POWEROFTWO

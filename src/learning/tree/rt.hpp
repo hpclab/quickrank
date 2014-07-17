@@ -10,33 +10,35 @@
 #include "learning/tree/rtnode.hpp"
 #include "learning/tree/histogram.hpp"
 
-class deviance_maxheap : public maxheap<rtnode*> {
+class deviance_maxheap : public maxheap<rtnode*, double> {
 	public:
+		~deviance_maxheap() {
+			for(size_t i=1; i<=arrsize; ++i)
+				delete arr[i].val->hist;
+		}
 		void push_chidrenof(rtnode *parent) {
 			push(parent->left->deviance, parent->left);
 			push(parent->right->deviance, parent->right);
 		}
 		void pop() {
+			delete top()->sampleids,
 			delete top()->hist;
+			top()->sampleids = NULL,
 			top()->hist = NULL;
-			maxheap<rtnode*>::pop();
-		}
-		~deviance_maxheap() {
-			for(size_t i=1; i<=arrsize; ++i)
-				delete arr[i].val->hist;
+			maxheap<rtnode*, double>::pop();
 		}
 };
 
 class rt {
 	protected:
-		unsigned int nodes = 10; //0xFFFFFFFF for unlimited number of nodes (the size of the tree will then be controlled only by minls)
-		unsigned int minls = 1; //minls>0
+		const unsigned int nodes; //0 for unlimited number of nodes (the size of the tree will then be controlled only by minls)
+		const unsigned int minls; //minls>0
 		dpset *training_set = NULL;
 		float *training_labels = NULL;
-	public:
-		rtnode *root = NULL;
 		rtnode **leaves = NULL;
 		unsigned int nleaves = 0;
+	public:
+		rtnode *root = NULL;
 	public:
 		rt(unsigned int nodes, dpset *dps, float *labels, unsigned int minls) :
 			nodes(nodes),
@@ -57,30 +59,53 @@ class rt {
 			unsigned int taken = 0;
 			unsigned int nsampleids = training_set->get_ndatapoints();
 			unsigned int *sampleids = new unsigned int[nsampleids];
+			#pragma omp parallel for
 			for(unsigned int i=0; i<nsampleids; ++i)
 				sampleids[i] = i;
 			root = new rtnode(sampleids, nsampleids, FLT_MAX, 0.0f, hist);
 			if(split(root))
 				heap.push_chidrenof(root);
-			while(heap.is_notempty() && (nodes==0xFFFFFFFF or taken+heap.get_size()<nodes)) {
-				//get node with max deviance from heap
+			while(heap.is_notempty() && (nodes==0 or taken+heap.get_size()<nodes)) {
+				//get node with highest deviance from heap
 				rtnode *node = heap.top();
-				//try split
-				if(split(node)) heap.push_chidrenof(node);
-				else ++taken; //unsplitable (i.e. null variance, or after split variance is higher than before, or #samples<minlsd)
+				//try split current node
+				if(split(node)) heap.push_chidrenof(node); else ++taken; //unsplitable (i.e. null variance, or after split variance is higher than before, or #samples<minlsd)
 				//remove node from heap
 				heap.pop();
 			}
 			leaves = root->get_leaves(nleaves);
 		}
-	private:
-		//if true the node is splitable if new variance is lt the current node deviance (require_devianceltparent=false in RankLib)
-		bool split(rtnode *node, bool require_devianceltparent=false) {
+		float update_output(float const *pseudoresponses, float const *cachedweights) {
+			float maxlabel = -FLT_MAX;
+			#pragma omp parallel for reduction(max:maxlabel)
+			for(unsigned int i=0; i<nleaves; ++i) {
+				float s1 = 0.0f;
+				float s2 = 0.0f;
+				const unsigned int *sampleids = leaves[i]->sampleids;
+				const unsigned int nsampleids = leaves[i]->nsampleids;
+				for(unsigned int j=0; j<nsampleids; ++j) {
+					unsigned int k = sampleids[j];
+					s1 += pseudoresponses[k],
+					s2 += cachedweights[k];
+				}
+				float s = s1/s2;
+				leaves[i]->avglabel = s;
+				if(s>maxlabel)
+					maxlabel = s;
+			}
 			#ifdef LOGFILE
-			static int icounter = 0;
+			fprintf(flog, "\nleaves:\n");
+			for(unsigned int i=0; i<nleaves; ++i)
+				fprintf(flog, "%f ", leaves[i]->avglabel);
+			fprintf(flog, "(%u)\n", nleaves);
 			#endif
+			return maxlabel;
+		}
+	private:
+		//if require_devianceltparent is true the node is split if minvar is lt the current node deviance (require_devianceltparent=false in RankLib)
+		bool split(rtnode *node, bool require_devianceltparent=false) {
 			if(node->deviance>0.0f) {
-				const float initvar = require_devianceltparent?node->deviance:FLT_MAX;
+				const double initvar = require_devianceltparent?node->deviance:DBL_MAX;
 				//get current nod hidtogram pointer
 				histogram *h = node->hist;
 				//featureidxs to be used for tree splitnodeting
@@ -97,46 +122,67 @@ class rt {
 					}
 				}
 				//find best split
-				unsigned int best_featureid = 0xFFFFFFFF;
-				unsigned int best_thresholdid = 0xFFFFFFFF;
-				float best_lvar = 0.0f;
-				float best_rvar = 0.0f;
-				float minvar = initvar;
+				const int nth = omp_get_num_procs();
+				double thread_minvar[nth];
+				double thread_best_lvar[nth];
+				double thread_best_rvar[nth];
+				unsigned int thread_best_featureid[nth];
+				unsigned int thread_best_thresholdid[nth];
+				for(int i=0; i<nth; ++i)
+					thread_minvar[i] = initvar,
+					thread_best_lvar[i] = 0.0f,
+					thread_best_rvar[i] = 0.0f,
+					thread_best_featureid[i] = -1,
+					thread_best_thresholdid[i] = -1;
+				#pragma omp parallel for
 				for(unsigned int i=0; i<nfeaturesamples; ++i) {
+					//get thread identification number
+					const int ith = omp_get_thread_num();
+					//get feature id
 					const unsigned int f = featuresamples[i];
 					//define pointer shortcuts
-					float *sumlabels = h->sumlbl[f];
-					float *sqsumlabels = h->sqsumlbl[f];
+					double *sumlabels = h->sumlbl[f];
+					double *sqsumlabels = h->sqsumlbl[f];
 					unsigned int *samplecount = h->count[f];
 					//get last elements
 					unsigned int threshold_size = h->thresholds_size[f];
-					float s = sumlabels[threshold_size-1];
-					float sq = sqsumlabels[threshold_size-1];
+					double s = sumlabels[threshold_size-1];
+					double sq = sqsumlabels[threshold_size-1];
 					unsigned int c = samplecount[threshold_size-1];
-					//looking for the feature that minimizes sum of lvar+rvar
+					//looking for the feature that minimizes sumvar
 					for(unsigned int t=0; t<threshold_size; ++t) {
 						unsigned int lcount = samplecount[t];
 						unsigned int rcount = c-lcount;
 						if(lcount>=minls && rcount>=minls)  {
-							float lsum = sumlabels[t];
-							float lsqsum = sqsumlabels[t];
-							float lvar = fabs(lsqsum-lsum*lsum/lcount);
-							float rsum = s-lsum;
-							float rsqsum = sq-lsqsum;
-							float rvar = fabs(rsqsum-rsum*rsum/rcount);
-							float sumvar = lvar+rvar;
-							#ifdef LOGFILE
-							fprintf(flog,"%.4f f=%u t=%u\n", sumvar, f, t);
-							#endif
-							if(sumvar<minvar)
-								minvar = sumvar,
-								best_lvar = lvar,
-								best_rvar = rvar,
-								best_featureid = f,
-								best_thresholdid = t;
+							double lsum = sumlabels[t];
+							double lsqsum = sqsumlabels[t];
+							double lvar = fabs(lsqsum-lsum*lsum/lcount);
+							double rsum = s-lsum;
+							double rsqsum = sq-lsqsum;
+							double rvar = fabs(rsqsum-rsum*rsum/rcount);
+							double sumvar = lvar+rvar;
+							if(sumvar<thread_minvar[ith])
+								thread_minvar[ith] = sumvar,
+								thread_best_lvar[ith] = lvar,
+								thread_best_rvar[ith] = rvar,
+								thread_best_featureid[ith] = f,
+								thread_best_thresholdid[ith] = t;
 						}
 					}
 				}
+				//get best minvar among thread partial results
+				double minvar = thread_minvar[0];
+				double best_lvar = thread_best_lvar[0];
+				double best_rvar = thread_best_rvar[0];
+				unsigned int best_featureid = thread_best_featureid[0];
+				unsigned int best_thresholdid = thread_best_thresholdid[0];
+				for(int i=1; i<nth; ++i)
+					if(thread_minvar[i]<minvar)
+						minvar = thread_minvar[i],
+						best_lvar = thread_best_lvar[i],
+						best_rvar = thread_best_rvar[i],
+						best_featureid = thread_best_featureid[i],
+						best_thresholdid = thread_best_thresholdid[i];
 				//if minvar is the same of initvalue then the node is unsplitable
 				if(minvar==initvar)
 					return false;
@@ -166,7 +212,7 @@ class rt {
 				node->left = new rtnode(lsamples, lsize, best_lvar, lsum, lhist),
 				node->right = new rtnode(rsamples, rsize, best_rvar, rsum, rhist);
 				#ifdef LOGFILE
-				fprintf(flog,"SPLIT #%d (dev=%.4f) minvar=%.4f th*=%.4f fid*=%u\n\t", ++icounter, node->deviance, minvar, best_threshold, best_featureid);
+				fprintf(flog,"SPLIT (dev=%.4f) minvar=%.4f th*=%.4f fid*=%u\n\t", node->deviance, minvar, best_threshold, best_featureid);
 				for(unsigned int i=0; i<lsize; ++i)	fprintf(flog,"%u ", lsamples[i]);
 				fprintf(flog,"| ");
 				for(unsigned int i=0; i<rsize; ++i)	fprintf(flog,"%u ", rsamples[i]);
@@ -174,9 +220,6 @@ class rt {
 				#endif
 				return true;
 			}
-			#ifdef LOGFILE
-			fprintf(flog,"SPLIT #%d: UNSPLITABLE\n", ++icounter);
-			#endif
 			return false;
 		}
 };

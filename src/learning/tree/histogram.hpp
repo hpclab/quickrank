@@ -9,17 +9,17 @@ struct histogram {
 		unsigned int **stmap = NULL; //[0..nfeatures-1]x[0..nthresholds-1] //TODO sparse array... maybe is possible to reimplement it
 		unsigned int const nfeatures = 0;
 		float samplingrate = 1.0f;
-		float **sumlbl = NULL; //[0..nfeatures-1]x[0..nthresholds-1]
-		float **sqsumlbl = NULL; //[0..nfeatures-1]x[0..nthresholds-1]
+		double **sumlbl = NULL; //[0..nfeatures-1]x[0..nthresholds-1]
+		double **sqsumlbl = NULL; //[0..nfeatures-1]x[0..nthresholds-1]
 		unsigned int **count = NULL; //[0..nfeatures-1]x[0..nthresholds-1]
 		histogram(float **thresholds, unsigned int const *thresholds_size, unsigned int nfeatures) : thresholds(thresholds), thresholds_size(thresholds_size), nfeatures(nfeatures) {
-			sumlbl = new float*[nfeatures],
-			sqsumlbl = new float*[nfeatures],
+			sumlbl = new double*[nfeatures],
+			sqsumlbl = new double*[nfeatures],
 			count = new unsigned int*[nfeatures];
 			for(unsigned int i=0; i<nfeatures; ++i) {
 				const unsigned int threshold_size = thresholds_size[i];
-				sumlbl[i] = new float[threshold_size]();
-				sqsumlbl[i] = new float[threshold_size]();
+				sumlbl[i] = new double[threshold_size]();
+				sqsumlbl[i] = new double[threshold_size]();
 				count[i] = new unsigned int[threshold_size]();
 			}
 		}
@@ -96,8 +96,8 @@ struct permhistogram : public histogram {
 				unsigned int threshold_size = thresholds_size[i];
 				float *features = dps->get_fvector(i);
 				float *threshold = thresholds[i];
-				float sum = 0.0f;
-				float sqsum = 0.0f;
+				double sum = 0.0f;
+				double sqsum = 0.0f;
 				for(unsigned int last=-1, j, t=0; t<threshold_size; ++t) {
 					//find the first sample exceeding the current threshold
 					for(j=last+1; j<sortedidxsize; ++j) {

@@ -166,7 +166,7 @@ class dpset {
 				#ifdef SHOWTIMER
 				double readingtimer = omp_get_wtime();
 				#endif
-				const int nth = omp_get_max_threads();
+				const int nth = omp_get_num_procs();
 				unsigned int maxfid = INIT_NOFEATURES-1;
 				unsigned int linecounter = 0;
 				unsigned int th_ndps[nth];

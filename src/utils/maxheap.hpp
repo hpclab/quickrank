@@ -11,7 +11,7 @@
 /*! \class mahheap
  *  \brief max-heap implementation with key of type float
  */
-template<typename val_t>class maxheap {
+template<typename val_t, typename key_t>class maxheap {
 	public:
 		/** \brief default constructor
 		 * @param initsize set the initial size of the data structure if available
@@ -35,11 +35,11 @@ template<typename val_t>class maxheap {
 		size_t get_size() const {
 			return arrsize;
 		}
-		/** \brief push a new element in the heap and realloc the data structre size if full
+		/** \brief push a new element in the heap and resize the data structure if it is full
 		 * @param key ordering key of the new element
 		 * @param val value of the new element
 		 */
-		void push(const float key, const val_t &val) {
+		void push(const key_t &key, const val_t &val) {
 			if(++arrsize==memsize) {
 				memsize = 2*memsize+1;
 				arr = (item*)realloc(arr, sizeof(item)*memsize);
@@ -69,9 +69,9 @@ template<typename val_t>class maxheap {
 		}
 	protected:
 		struct item {
-			item(float key) : key(key) {}
-			item(float key, val_t val) : key(key), val(val) {}
-			float key;
+			item(key_t key) : key(key) {}
+			item(key_t key, val_t val) : key(key), val(val) {}
+			key_t key;
 			val_t val;
 		};
 		item *arr;

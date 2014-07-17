@@ -5,7 +5,7 @@
 #include "metric/ndcgscorer.hpp"
 #include "metric/dcgscorer.hpp"
 #include "learning/lmart.hpp"
-#include "learning/matrixnet.hpp"
+//#include "learning/matrixnet.hpp"
 
 class evaluator {
 	public:
@@ -51,7 +51,7 @@ class evaluator {
 			r->learn();
 			r->write_outputtofile("/tmp/output.xml");
 			if(testset) {
-				printf(">>> TESTING:\n\t%s@%u on test data = %f\n", test_scorer->whoami(), test_scorer->get_k(), r->compute_score(testset, test_scorer));
+				printf(">>> TESTING:\n\t%s@%u on test data = %.4f\n", test_scorer->whoami(), test_scorer->get_k(), r->compute_score(testset, test_scorer));
 				delete testset;
 			}
 		}

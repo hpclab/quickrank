@@ -12,22 +12,24 @@ class ensemble {
 			float weight = 0.0f;
 			float maxlabel = 0.0f;
 		};
-		unsigned int size, maxsize;
-		wt *arr;
+		unsigned int size = 0;
+		wt *arr = NULL;
 	public:
-		ensemble(unsigned int initsize=0) : size(0), maxsize(initsize), arr(NULL) {
-			if(initsize>0) arr = (wt*)malloc(sizeof(wt)*initsize);
-		}
 		~ensemble() {
 			for(unsigned int i=0; i<size; ++i)
 				delete arr[i].tree;
 			free(arr);
 		}
-		void push(rtnode *tree, const float weight, const float maxlabel)	{
-			if(size==maxsize) {
-				maxsize = 2*maxsize+1;
-				arr = (wt*)realloc(arr, sizeof(wt)*maxsize);
+		void set_capacity(const unsigned int ntrees) {
+			if(arr) {
+				for(unsigned int i=0; i<size; ++i)
+					delete arr[i].tree;
+				free(arr);
 			}
+			arr = (wt*)malloc(sizeof(wt)*ntrees),
+			size = 0;
+		}
+		void push(rtnode *tree, const float weight, const float maxlabel)	{
 			arr[size++] = wt(tree, weight, maxlabel);
 		}
 		void pop() {
@@ -43,7 +45,7 @@ class ensemble {
 			float sum = 0.0f;
 			#pragma omp parallel for reduction(+:sum)
 			for(unsigned int i=0; i<size; ++i)
-				sum += arr[i].tree->eval(features, idx) * arr[i].weight;
+				sum += arr[i].tree->eval(features, idx)*arr[i].weight;
 			return sum; //prediction value
 		}
 		void write_outputtofile(FILE *f) {
