@@ -10,29 +10,31 @@
 #include "utils/qsort.hpp"
 
 class lmart : public ranker {
+	public:
+		const unsigned int ntrees; //>0
+		const float learningrate; //>0.0f
+		const unsigned int nthresholds; //if nthresholds==0 no. of thresholds is not limited
+		const unsigned int ntreeleaves;
+		const unsigned int minleafsupport; //>0
+		const unsigned int esr; //If no performance gain on validation data is observed in eerounds, stop the training process right away (if esr==0 feature is disabled).
 	private:
-		unsigned int ntrees = 10000; //the number of trees
-		float learningrate = 0.1f; //or shrinkage
-		unsigned int nthresholds = 0; //if nthresholds==0 no. of thresholds is not limited
-		unsigned int ntreeleaves = 10;
-		unsigned int minleafsupport = 1;
 		float **thresholds = NULL;
 		unsigned int *thresholds_size = NULL;
 		float *modelscores = NULL; //[0..nentries-1]
 		float *validationmodelscores = NULL; //[0..nentries-1]
 		unsigned int validation_bestmodel = 0;
 		float *pseudoresponses = NULL;  //[0..nentries-1]
+		float *cachedweights = NULL; //corresponds to datapoint.cache
 		unsigned int **sortedsid = NULL;
 		unsigned int sortedsize = 0;
-		permhistogram *hist = NULL;
-		float *cachedweights = NULL; //corresponds to datapoint.cache
-		unsigned int eenrounds = 0; //If no performance gain on validation data is observed in eerounds, stop the training process right away (if eenrounds==0 feature is disabled).
+		basehistogram *hist = NULL;
 		ensemble ens;
 	public:
-		lmart() {};
-		lmart(dpset *training_set) : ranker(training_set) {}
+		lmart(unsigned int ntrees, float learningrate, unsigned int nthresholds, unsigned int ntreeleaves, unsigned int minleafsupport, unsigned int esr) : ntrees(ntrees), learningrate(learningrate), nthresholds(nthresholds), ntreeleaves(ntreeleaves), minleafsupport(minleafsupport), esr(esr) {
+			printf("\tranker type = 'λMart'\n\tno. of trees = %u\n\tlearning rate = %f\n\tno. of thresholds = %u (0 means unlimited)\n\tno. of tree leaves = %u\n\tmin leaf support = %u\n\tno. of no gain rounds before early stop = %u (0 means unlimited)\n", ntrees, learningrate, nthresholds, ntreeleaves, minleafsupport, esr);
+		};
 		~lmart() {
-			const unsigned int nfeatures = training_set->get_nfeatures();
+			const unsigned int nfeatures = training_set ? training_set->get_nfeatures() : 0;
 			for(unsigned int i=0; i<nfeatures; ++i)
 				delete [] sortedsid[i],
 				free(thresholds[i]);
@@ -49,7 +51,7 @@ class lmart : public ranker {
 			return "LAMBDA MART";
 		}
 		void init()  {
-			printf(">>> INIT:\n\tno. of threshold candidates = %u (0 means unlimited)\n", nthresholds);
+			printf("Initialization:\n");
 			#ifdef SHOWTIMER
 			double timer = omp_get_wtime();
 			#endif
@@ -75,7 +77,7 @@ class lmart : public ranker {
 				//get_ sample indexes sorted by the fid-th feature
 				unsigned int uniqs_size = 0;
 				float *uniqs = (float*)malloc(sizeof(float)*(nthresholds==0?sortedsize+1:nthresholds+1));
-				//skip samples with the same feature value. early exit for if nthresholds!=size_max
+				//skip samples with the same feature value. early stop for if nthresholds!=size_max
 				uniqs[uniqs_size++] = features[idx[0]];
 				for(unsigned int j=1; j<sortedsize && (nthresholds==0 || uniqs_size!=nthresholds+1); ++j) {
 					const float fval = features[idx[j]];
@@ -115,17 +117,19 @@ class lmart : public ranker {
 				fprintf(flog, "\n");
 			}
 			#endif
-			hist = new permhistogram(training_set, pseudoresponses, sortedsid, sortedsize, thresholds, thresholds_size);
+			hist = new basehistogram(training_set, pseudoresponses, sortedsid, sortedsize, thresholds, thresholds_size);
 			#ifdef SHOWTIMER
-			printf("\telapsed time for init = %.3f seconds\n", omp_get_wtime()-timer);
+			printf("\telapsed time = %.3f seconds\n", omp_get_wtime()-timer);
 			#endif
+			printf("\tdone\n");
 		}
 		void learn() {
 			training_score = 0.0f,
 			validation_bestscore = 0.0f;
-			printf(">>> TRAINING:\n\tno. of tree(s) = %u\n\tlearning rate = %f\n\tno. of tree leaves = %u\n\tmin no. of leaves = %u\n", ntrees, learningrate, ntreeleaves, minleafsupport);
-			if(eenrounds) printf("\tstop training if no gain is obtained for %u consecutive rounds\n", eenrounds);
-			printf("\n\titeration training-score validation-score validation-gain\n\t---------------------------------------------------------\n");
+			printf("Training:\n");
+			printf("\t---------------------------------------------\n");
+			printf("\titeration training validation validation-gain\n");
+			printf("\t---------------------------------------------\n");
 			#ifdef SHOWTIMER
 			#define NTIMERS 2
 			double timervalues[NTIMERS];
@@ -136,7 +140,7 @@ class lmart : public ranker {
 			//set max capacity of the ensamble
 			ens.set_capacity(ntrees);
 			//start iterations
-			for(unsigned int m=0; m<ntrees && (eenrounds==0 || m<=validation_bestmodel+eenrounds); ++m) {
+			for(unsigned int m=0; m<ntrees && (esr==0 || m<=validation_bestmodel+esr); ++m) {
 				compute_pseudoresponses();
 				//update the histogram with these training_seting labels (the feature histogram will be used to find the best tree rtnode)
 				hist->update(pseudoresponses, training_set->get_ndatapoints());
@@ -153,13 +157,13 @@ class lmart : public ranker {
 				//update the outputs of the tree (with gamma computed using the Newton-Raphson method)
 				float maxlabel = tree.update_output(pseudoresponses, cachedweights);
 				//add this tree to the ensemble (our model)
-				ens.push(tree.root, learningrate, maxlabel);
+				ens.push(tree.get_proot(), learningrate, maxlabel);
 				//Update the model's outputs on all training samples
 				unsigned int ndatapoints = training_set->get_ndatapoints();
 				float **featurematrix = training_set->get_fmatrix();
 				#pragma omp parallel for
 				for(unsigned int i=0; i<ndatapoints; ++i)
-					modelscores[i] += learningrate*tree.root->eval(featurematrix, i);
+					modelscores[i] += learningrate*tree.eval(featurematrix, i);
 				#ifdef SHOWTIMER
 				timervalues[1] -= omp_get_wtime();
 				#endif
@@ -168,21 +172,20 @@ class lmart : public ranker {
 				#ifdef SHOWTIMER
 				timervalues[1] += omp_get_wtime();
 				#endif
-				printf("\t%-9u %-14.4f", m+1, training_score);
+				printf("\t#%-8u %-8.4f", m+1, training_score);
 				//Evaluate the current model on the validation data (if available)
 				if(validation_set) {
 					unsigned int ndatapoints = validation_set->get_ndatapoints();
 					float **featurematrix = validation_set->get_fmatrix();
 					#pragma omp parallel for
 					for(unsigned int i=0; i<ndatapoints; ++i)
-						validationmodelscores[i] += learningrate*tree.root->eval(featurematrix, i);
+						validationmodelscores[i] += learningrate*tree.eval(featurematrix, i);
 					float validation_score = compute_validationmodelscores();
-					printf(" %-14.4f", validation_score);
-					if(validation_score>validation_bestscore || validation_bestscore==0.0f) {
-						printf("   %+-14.8f", validation_score-validation_bestscore);
+					printf(" %-8.4f", validation_score);
+					if(validation_score>validation_bestscore || validation_bestscore==0.0f)
 						validation_bestscore = validation_score,
-						validation_bestmodel = ens.get_size()-1;
-					}
+						validation_bestmodel = ens.get_size()-1,
+						printf("   *");
 				}
 				printf("\n");
 			}
@@ -190,18 +193,19 @@ class lmart : public ranker {
 			while(ens.is_notempty() && ens.get_size()>validation_bestmodel+1)
 				ens.pop();
 			//Finishing up
-			training_score = compute_score(training_set, scorer); //scorer.score(rank(samples));
-			printf("\t---------------------------------------------------------\n\t%s@%u on training data = %.4f\n", scorer->whoami(), scorer->get_k(), training_score);
+			training_score = compute_score(training_set, scorer);
+			printf("\t---------------------------------------------\n");
+			printf("\t%s@%u on training data = %.4f\n", scorer->whoami(), scorer->get_k(), training_score);
 			if(validation_set) {
-				validation_bestscore = compute_score(validation_set, scorer); //scorer.score(rank(validationSamples));
+				validation_bestscore = compute_score(validation_set, scorer);
 				printf("\t%s@%u on validation data = %.4f\n", scorer->whoami(), scorer->get_k(), validation_bestscore);
 			}
 			#ifdef SHOWTIMER
-			printf("\n");
 			for(int i=0; i<NTIMERS; ++i)
 				printf("\tavg '%s' elapsed time = %.3f seconds\n", timerlabels[i], timervalues[i]/timercounter);
 			#undef NTIMERS
 			#endif
+			printf("\tdone\n");
 		}
 		float eval_dp(float *const *const features, unsigned int idx) const {
 			return ens.eval(features, idx);
@@ -209,7 +213,7 @@ class lmart : public ranker {
 		void write_outputtofile(const char *filename) {
 			FILE *f = fopen(filename, "w");
 			if(f) {
-				fprintf(f, "## LambdaMART\n## No. of trees = %u\n## No. of leaves = %u\n## No. of threshold candidates = %d\n## Learning rate = %f\n## Stop early = %u\n\n", ntrees, ntreeleaves, nthresholds==0?-1:(int)nthresholds, learningrate, eenrounds);
+				fprintf(f, "## LambdaMART\n## No. of trees = %u\n## No. of leaves = %u\n## No. of threshold candidates = %d\n## Learning rate = %f\n## Stop early = %u\n\n", ntrees, ntreeleaves, nthresholds==0?-1:(int)nthresholds, learningrate, esr);
 				ens.write_outputtofile(f);
 				fclose(f);
 			}

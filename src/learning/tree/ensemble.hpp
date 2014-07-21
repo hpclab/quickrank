@@ -7,8 +7,8 @@
 class ensemble {
 	private:
 		struct wt {
-			wt(rtnode *tree, float weight, float maxlabel) : tree(tree), weight(weight), maxlabel(maxlabel) {}
-			rtnode *tree = NULL;
+			wt(rtnode *root, float weight, float maxlabel) : root(root), weight(weight), maxlabel(maxlabel) {}
+			rtnode *root = NULL;
 			float weight = 0.0f;
 			float maxlabel = 0.0f;
 		};
@@ -17,23 +17,23 @@ class ensemble {
 	public:
 		~ensemble() {
 			for(unsigned int i=0; i<size; ++i)
-				delete arr[i].tree;
+				delete arr[i].root;
 			free(arr);
 		}
-		void set_capacity(const unsigned int ntrees) {
+		void set_capacity(const unsigned int n) {
 			if(arr) {
 				for(unsigned int i=0; i<size; ++i)
-					delete arr[i].tree;
+					delete arr[i].root;
 				free(arr);
 			}
-			arr = (wt*)malloc(sizeof(wt)*ntrees),
+			arr = (wt*)malloc(sizeof(wt)*n),
 			size = 0;
 		}
-		void push(rtnode *tree, const float weight, const float maxlabel)	{
-			arr[size++] = wt(tree, weight, maxlabel);
+		void push(rtnode *root, const float weight, const float maxlabel)	{
+			arr[size++] = wt(root, weight, maxlabel);
 		}
 		void pop() {
-			delete arr[--size].tree;
+			delete arr[--size].root;
 		}
 		unsigned int get_size() const {
 			return size;
@@ -45,17 +45,16 @@ class ensemble {
 			float sum = 0.0f;
 			#pragma omp parallel for reduction(+:sum)
 			for(unsigned int i=0; i<size; ++i)
-				sum += arr[i].tree->eval(features, idx)*arr[i].weight;
-			return sum; //prediction value
+				sum += arr[i].root->eval(features, idx)*arr[i].weight;
+			return sum;
 		}
 		void write_outputtofile(FILE *f) {
 			fprintf(f, "\n<ensemble>\n");
 			for(unsigned int i=0; i<size; ++i) {
-				//fprintf(f, "\t<tree id=\"%u\" weight=\"%.3f\" maxlabel=\"%.3f\">\n", i+1, arr[i].weight, arr[i].maxlabel);
 				fprintf(f, "\t<tree id=\"%u\" weight=\"%.3f\">\n", i+1, arr[i].weight);
-				if(arr[i].tree) {
+				if(arr[i].root) {
 					fprintf(f, "\t\t<split>\n");
-					arr[i].tree->write_outputtofile(f, 2);
+					arr[i].root->write_outputtofile(f, 2);
 					fprintf(f, "\t\t</split>\n");
 				}
 				fprintf(f, "\t</tree>\n");

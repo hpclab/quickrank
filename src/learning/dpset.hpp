@@ -5,7 +5,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <cstdint>
-#include <omp.h> // omp_get_thread_num(), omp_get_max_threads()
+#include <omp.h>
 
 #ifdef SHOWTIMER
 #include <sys/stat.h>

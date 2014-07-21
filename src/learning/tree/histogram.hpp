@@ -3,7 +3,8 @@
 
 #include "learning/dpset.hpp"
 
-struct histogram {
+class histogram {
+	public:
 		float **thresholds = NULL; //[0..nfeatures-1]x[0..thresholds_size[i]-1]
 		unsigned int const *thresholds_size = NULL;
 		unsigned int **stmap = NULL; //[0..nfeatures-1]x[0..nthresholds-1] //TODO sparse array... maybe is possible to reimplement it
@@ -12,6 +13,7 @@ struct histogram {
 		double **sumlbl = NULL; //[0..nfeatures-1]x[0..nthresholds-1]
 		double **sqsumlbl = NULL; //[0..nfeatures-1]x[0..nthresholds-1]
 		unsigned int **count = NULL; //[0..nfeatures-1]x[0..nthresholds-1]
+	public:
 		histogram(float **thresholds, unsigned int const *thresholds_size, unsigned int nfeatures) : thresholds(thresholds), thresholds_size(thresholds_size), nfeatures(nfeatures) {
 			sumlbl = new double*[nfeatures],
 			sqsumlbl = new double*[nfeatures],
@@ -21,6 +23,34 @@ struct histogram {
 				sumlbl[i] = new double[threshold_size]();
 				sqsumlbl[i] = new double[threshold_size]();
 				count[i] = new unsigned int[threshold_size]();
+			}
+		}
+		histogram(histogram const* parent, unsigned int const* sampleids, const unsigned int nsampleids, float const* labels) : histogram(parent->thresholds, parent->thresholds_size, parent->nfeatures) {
+			stmap = parent->stmap;
+			#pragma omp parallel for
+			for(unsigned int i=0; i<nfeatures; ++i) {
+				for(unsigned int j=0; j<nsampleids; ++j) {
+					const unsigned int k = sampleids[j];
+					const unsigned int t = stmap[i][k];
+					sumlbl[i][t] += labels[k],
+					sqsumlbl[i][t] += labels[k]*labels[k],
+					count[i][t]++;
+				}
+				for(unsigned int t=1; t<thresholds_size[i]; ++t)
+					sumlbl[i][t] += sumlbl[i][t-1],
+					sqsumlbl[i][t] += sqsumlbl[i][t-1],
+					count[i][t] += count[i][t-1];
+			}
+		}
+		histogram(histogram const* parent, histogram const* left) : histogram(parent->thresholds, parent->thresholds_size, parent->nfeatures) {
+			stmap = parent->stmap;
+			#pragma omp parallel for
+			for(unsigned int i=0; i<nfeatures; ++i) {
+				const unsigned int nthresholds = thresholds_size[i];
+				for(unsigned int t=0; t<nthresholds; ++t)
+					sumlbl[i][t] = parent->sumlbl[i][t]-left->sumlbl[i][t],
+					sqsumlbl[i][t] += parent->sqsumlbl[i][t]-left->sqsumlbl[i][t],
+					count[i][t] += parent->count[i][t]-left->count[i][t];
 			}
 		}
 		~histogram() {
@@ -54,41 +84,9 @@ struct histogram {
 		}
 };
 
-struct temphistogram : public histogram {
+class basehistogram : public histogram {
 	public:
-		temphistogram(histogram const* parent, unsigned int const* sampleids, const unsigned int nsampleids, float const* labels) : histogram(parent->thresholds, parent->thresholds_size, parent->nfeatures) {
-			stmap = parent->stmap;
-			#pragma omp parallel for
-			for(unsigned int i=0; i<nfeatures; ++i) {
-				for(unsigned int j=0; j<nsampleids; ++j) {
-					const unsigned int k = sampleids[j];
-					const unsigned int t = stmap[i][k];
-					sumlbl[i][t] += labels[k],
-					sqsumlbl[i][t] += labels[k]*labels[k],
-					count[i][t]++;
-				}
-				for(unsigned int t=1; t<thresholds_size[i]; ++t)
-					sumlbl[i][t] += sumlbl[i][t-1],
-					sqsumlbl[i][t] += sqsumlbl[i][t-1],
-					count[i][t] += count[i][t-1];
-			}
-		}
-		temphistogram(histogram const* parent, histogram const* left) : histogram(parent->thresholds, parent->thresholds_size, parent->nfeatures) {
-			stmap = parent->stmap;
-			#pragma omp parallel for
-			for(unsigned int i=0; i<nfeatures; ++i) {
-				const unsigned int nthresholds = thresholds_size[i];
-				for(unsigned int t=0; t<nthresholds; ++t)
-					sumlbl[i][t] = parent->sumlbl[i][t]-left->sumlbl[i][t],
-					sqsumlbl[i][t] += parent->sqsumlbl[i][t]-left->sqsumlbl[i][t],
-					count[i][t] += parent->count[i][t]-left->count[i][t];
-			}
-		}
-};
-
-struct permhistogram : public histogram {
-	public:
-		permhistogram(dpset *dps, float *labels, unsigned int **sortedidx, unsigned int sortedidxsize, float **thresholds, unsigned int const *thresholds_size) : histogram(thresholds, thresholds_size, dps->get_nfeatures()) {
+		basehistogram(dpset *dps, float *labels, unsigned int **sortedidx, unsigned int sortedidxsize, float **thresholds, unsigned int const *thresholds_size) : histogram(thresholds, thresholds_size, dps->get_nfeatures()) {
 			stmap = new unsigned int*[nfeatures];
 			#pragma omp parallel for
 			for(unsigned int i=0; i<nfeatures; ++i) {
@@ -114,7 +112,7 @@ struct permhistogram : public histogram {
 				}
 			}
 		}
-		~permhistogram() {
+		~basehistogram() {
 			for(unsigned int i=0; i<nfeatures; ++i)
 				delete [] stmap[i];
 			delete [] stmap;

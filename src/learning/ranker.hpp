@@ -4,23 +4,19 @@
 #include "learning/dpset.hpp"
 #include "utils/qsort.hpp"
 
-//enum ranker_t { MART, RANKBOOST, RANKNET, ADARANK, COOR_ASCENT, LAMBDARANK, LAMBDAMART, LISTNET, RANDOM_FOREST };
-
 class ranker {
 	protected:
 		metricscorer *scorer = NULL;
 		dpset *training_set = NULL;
 		dpset *validation_set = NULL;
-		float training_score = 0.0;
-		float validation_bestscore = 0.0;
+		float training_score = 0.0f;
+		float validation_bestscore = 0.0f;
 	public:
 		ranker() {}
-		ranker(dpset *training_set) : training_set(training_set) {}
 		virtual ~ranker() {
 			delete validation_set,
 			delete training_set;
 		}
-
 		virtual float eval_dp(float *const *const features, unsigned int idx) const = 0; //prediction value to store in a file
 		virtual const char *whoami() const = 0;
 		virtual void init() = 0;
@@ -45,8 +41,8 @@ class ranker {
 			return nrankedlists ? score/nrankedlists : 0.0f;
 		}
 		void set_scorer(metricscorer *ms) { scorer = ms; }
-		void set_trainingset(dpset *dps) { training_set = dps; }
-		void set_validationset(dpset *dps) { validation_set = dps; }
+		void set_trainingset(dpset *trainingset) { training_set = trainingset; }
+		void set_validationset(dpset *validationset) { validation_set = validationset; }
 };
 
 #endif

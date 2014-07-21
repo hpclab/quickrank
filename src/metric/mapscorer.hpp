@@ -11,6 +11,7 @@ class mapscorer : public metricscorer {
 		unsigned int *relevantdocs, nrelevantdocs;
 	public:
 		mapscorer(const unsigned int kval=0) : relevantdocs(NULL), nrelevantdocs(0) {
+			printf("\tscorer type = map@%u\n", kval);
 			k=kval;
 		}
 		const char *whoami() const {

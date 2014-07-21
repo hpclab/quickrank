@@ -4,68 +4,78 @@
 #include <cfloat>
 #include <cmath>
 #include <cstring>
+#include <omp.h>
 
 #include "utils/maxheap.hpp"
 #include "learning/dpset.hpp"
 #include "learning/tree/rtnode.hpp"
 #include "learning/tree/histogram.hpp"
 
-class deviance_maxheap : public maxheap<rtnode*, double> {
+typedef maxheap<rtnode*> rt_maxheap;
+
+class deviance_maxheap : public rt_maxheap {
 	public:
-		~deviance_maxheap() {
-			for(size_t i=1; i<=arrsize; ++i)
-				delete arr[i].val->hist;
-		}
+		deviance_maxheap(unsigned int initsize) : rt_maxheap(initsize) {}
 		void push_chidrenof(rtnode *parent) {
 			push(parent->left->deviance, parent->left);
 			push(parent->right->deviance, parent->right);
 		}
 		void pop() {
-			delete top()->sampleids,
-			delete top()->hist;
-			top()->sampleids = NULL,
-			top()->hist = NULL;
-			maxheap<rtnode*, double>::pop();
+			rtnode *node = top();
+			delete [] node->sampleids,
+			delete node->hist;
+			node->sampleids = NULL,
+			node->nsampleids = 0,
+			node->hist = NULL;
+			rt_maxheap::pop();
 		}
 };
 
 class rt {
 	protected:
-		const unsigned int nodes; //0 for unlimited number of nodes (the size of the tree will then be controlled only by minls)
+		const unsigned int nrequiredleaves; //0 for unlimited number of nodes (the size of the tree will then be controlled only by minls)
 		const unsigned int minls; //minls>0
 		dpset *training_set = NULL;
 		float *training_labels = NULL;
 		rtnode **leaves = NULL;
 		unsigned int nleaves = 0;
-	public:
 		rtnode *root = NULL;
 	public:
-		rt(unsigned int nodes, dpset *dps, float *labels, unsigned int minls) :
-			nodes(nodes),
+		rt(unsigned int nrequiredleaves, dpset *dps, float *labels, unsigned int minls) :
+			nrequiredleaves(nrequiredleaves),
 			minls(minls),
 			training_set(dps),
 			training_labels(labels) {
 		}
 		~rt() {
-			for(unsigned int i=0; i<nleaves; ++i) {
-				delete [] leaves[i]->sampleids;
-				leaves[i]->sampleids = NULL,
-				leaves[i]->nsampleids = 0;
+			if(root) {
+				delete [] root->sampleids;
+				root->sampleids = NULL,
+				root->nsampleids = 0;
 			}
+			//if leaves[0] is the root, hist cannot be deallocated and sampleids has been already deallocated
+			for(unsigned int i=0; i<nleaves; ++i)
+				if(leaves[i]!=root) {
+					delete [] leaves[i]->sampleids,
+					delete leaves[i]->hist;
+					leaves[i]->hist = NULL,
+					leaves[i]->sampleids = NULL,
+					leaves[i]->nsampleids = 0;
+				}
 			free(leaves);
 		}
 		void fit(histogram *hist) {
-			deviance_maxheap heap;
+			deviance_maxheap heap(nrequiredleaves);
 			unsigned int taken = 0;
 			unsigned int nsampleids = training_set->get_ndatapoints();
 			unsigned int *sampleids = new unsigned int[nsampleids];
 			#pragma omp parallel for
 			for(unsigned int i=0; i<nsampleids; ++i)
 				sampleids[i] = i;
-			root = new rtnode(sampleids, nsampleids, FLT_MAX, 0.0f, hist);
+			root = new rtnode(sampleids, nsampleids, DBL_MAX, 0.0, hist);
 			if(split(root))
 				heap.push_chidrenof(root);
-			while(heap.is_notempty() && (nodes==0 or taken+heap.get_size()<nodes)) {
+			while(heap.is_notempty() && (nrequiredleaves==0 or taken+heap.get_size()<nrequiredleaves)) {
 				//get node with highest deviance from heap
 				rtnode *node = heap.top();
 				//try split current node
@@ -73,7 +83,11 @@ class rt {
 				//remove node from heap
 				heap.pop();
 			}
-			leaves = root->get_leaves(nleaves);
+			//visit tree and save leaves in a leaves[] array
+			unsigned int capacity = nrequiredleaves;
+			leaves = capacity ? (rtnode**)malloc(sizeof(rtnode*)*capacity) : NULL,
+			nleaves = 0;
+			root->save_leaves(leaves, nleaves, capacity);
 		}
 		float update_output(float const *pseudoresponses, float const *cachedweights) {
 			float maxlabel = -FLT_MAX;
@@ -100,6 +114,12 @@ class rt {
 			fprintf(flog, "(%u)\n", nleaves);
 			#endif
 			return maxlabel;
+		}
+		float eval(float const* const* featurematrix, const unsigned int idx) const {
+			return root->eval(featurematrix, idx);
+		}
+		rtnode *get_proot() const {
+			return root;
 		}
 	private:
 		//if require_devianceltparent is true the node is split if minvar is lt the current node deviance (require_devianceltparent=false in RankLib)
@@ -130,10 +150,10 @@ class rt {
 				unsigned int thread_best_thresholdid[nth];
 				for(int i=0; i<nth; ++i)
 					thread_minvar[i] = initvar,
-					thread_best_lvar[i] = 0.0f,
-					thread_best_rvar[i] = 0.0f,
-					thread_best_featureid[i] = -1,
-					thread_best_thresholdid[i] = -1;
+					thread_best_lvar[i] = 0.0,
+					thread_best_rvar[i] = 0.0,
+					thread_best_featureid[i] = uint_max,
+					thread_best_thresholdid[i] = uint_max;
 				#pragma omp parallel for
 				for(unsigned int i=0; i<nfeaturesamples; ++i) {
 					//get thread identification number
@@ -202,8 +222,8 @@ class rt {
 					if(features[k]<=best_threshold) lsamples[lsize++] = k; else rsamples[rsize++] = k;
 				}
 				//create histograms for children
-				temphistogram *lhist = new temphistogram(node->hist, lsamples, lsize, training_labels);
-				temphistogram *rhist = new temphistogram(node->hist, lhist);
+				histogram *lhist = new histogram(node->hist, lsamples, lsize, training_labels);
+				histogram *rhist = new histogram(node->hist, lhist);
 				//update current node
 				node->featureid = best_featureid,
 				node->threshold = best_threshold,
