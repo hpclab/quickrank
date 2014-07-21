@@ -65,16 +65,23 @@ int main(int argc, char *argv[]) {
 	//instantiate a new evaluator with read arguments
 	evaluator ev(r, training_scorer, test_scorer);
 	//read filenames to be passed to the evaluator from the last argv[]
-	if(argi+3<argc) {
-		char *training_filename = strcmp(argv[argi+0],"-") ? argv[argi+0] : NULL;
-		char *validation_filename = strcmp(argv[argi+1],"-") ? argv[argi+1] : NULL;
-		char *test_filename = strcmp(argv[argi+2],"-") ? argv[argi+2] : NULL;
-		char *features_filename = strcmp(argv[argi+3],"-") ? argv[argi+3] : NULL;
-		printf("Filenames:\n\ttraining_file = %s\n\tvalidation_file = %s\n\ttest_file = %s\n\tfeatures_file = %s\n", training_filename, validation_filename, test_filename, features_filename);
+	if(argi+4<argc) {
+		printf("Filenames:\n");
+		char *training_filename = strcmp(argv[argi],"-") ? argv[argi] : NULL;
+		printf("\ttraining_filename = '%s'\n", training_filename), ++argi;
+		char *validation_filename = strcmp(argv[argi],"-") ? argv[argi] : NULL;
+		printf("\tvalidation_filename = '%s'n", validation_filename), ++argi;
+		char *test_filename = strcmp(argv[argi],"-") ? argv[argi] : NULL;
+		printf("\ttest_filename = '%s'\n", test_filename), ++argi;
+		char *features_filename = strcmp(argv[argi],"-") ? argv[argi] : NULL;
+		printf("\tfeatures_filename = '%s'\n", features_filename), ++argi;
+		char *output_filename = strcmp(argv[argi],"-") ? argv[argi] : NULL;
+		printf("\toutput_filename = '%s'\n", output_filename), ++argi;
 		ev.evaluate(training_filename, validation_filename, test_filename, features_filename);
+		if(output_filename) ev.write(output_filename);
 	} else exit(19);
 	//warnings for unexpected arguments
-	if(argi+4!=argc)
+	if(argi!=argc)
 		printf("warning: unexpected arguments\n");
 	#ifdef LOGFILE
 	fclose(flog);

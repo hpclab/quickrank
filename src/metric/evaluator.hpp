@@ -44,7 +44,6 @@ class evaluator {
 			r->set_scorer(training_scorer);
 			r->init();
 			r->learn();
-			r->write_outputtofile("/tmp/output.xml");
 			if(testset) {
 				printf("Testing:\n");
 				#ifdef SHOWTIMER
@@ -61,6 +60,11 @@ class evaluator {
 				printf("\tdone\n");
 				delete testset;
 			}
+		}
+		void write(const char *filename) {
+			printf("Writing output:\n\tfilename = '%s'\n", filename);
+			r->write_outputtofile(filename);
+			printf("\tdone\n");
 		}
 };
 
