@@ -102,7 +102,7 @@ class rt {
 					s1 += pseudoresponses[k],
 					s2 += cachedweights[k];
 				}
-				float s = s1/s2;
+				float s = s2>0.0f ? s1/s2 : 0.0f;
 				leaves[i]->avglabel = s;
 				if(s>maxlabel)
 					maxlabel = s;

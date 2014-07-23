@@ -21,7 +21,7 @@ class evaluator {
 			delete training_scorer;
 			delete test_scorer;
 		}
-		void evaluate(const char *trainingfilename, const char *validationfilename, const char *testfilename, const char *featurefilename) {
+		void evaluate(const char *trainingfilename, const char *validationfilename, const char *testfilename, const char *featurefilename, const char *outputfilename) {
 			if(not is_empty(trainingfilename)) {
 				printf("Reading Training dataset:\n");
 				r->set_trainingset(new dpset(trainingfilename));
@@ -38,6 +38,8 @@ class evaluator {
 			if(not is_empty(featurefilename)) {
 				// init featureidxs from file
 			}
+			if(not is_empty(outputfilename))
+				r->set_outputfilename(outputfilename);
 			if(normalize) {
 				//normalization
 			}
@@ -61,9 +63,9 @@ class evaluator {
 				delete testset;
 			}
 		}
-		void write(const char *filename) {
-			printf("Writing output:\n\tfilename = '%s'\n", filename);
-			r->write_outputtofile(filename);
+		void write() {
+			printf("Writing output:\n");
+			r->write_outputtofile();
 			printf("\tdone\n");
 		}
 };

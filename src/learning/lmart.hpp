@@ -12,12 +12,12 @@
 class lmart : public ranker {
 	public:
 		const unsigned int ntrees; //>0
-		const float learningrate; //>0.0f
+		const float shrinkage; //>0.0f
 		const unsigned int nthresholds; //if nthresholds==0 no. of thresholds is not limited
 		const unsigned int ntreeleaves;
 		const unsigned int minleafsupport; //>0
 		const unsigned int esr; //If no performance gain on validation data is observed in eerounds, stop the training process right away (if esr==0 feature is disabled).
-	private:
+	protected:
 		float **thresholds = NULL;
 		unsigned int *thresholds_size = NULL;
 		float *modelscores = NULL; //[0..nentries-1]
@@ -30,8 +30,8 @@ class lmart : public ranker {
 		basehistogram *hist = NULL;
 		ensemble ens;
 	public:
-		lmart(unsigned int ntrees, float learningrate, unsigned int nthresholds, unsigned int ntreeleaves, unsigned int minleafsupport, unsigned int esr) : ntrees(ntrees), learningrate(learningrate), nthresholds(nthresholds), ntreeleaves(ntreeleaves), minleafsupport(minleafsupport), esr(esr) {
-			printf("\tranker type = 'λMart'\n\tno. of trees = %u\n\tlearning rate = %f\n\tno. of thresholds = %u (0 means unlimited)\n\tno. of tree leaves = %u\n\tmin leaf support = %u\n\tno. of no gain rounds before early stop = %u (0 means unlimited)\n", ntrees, learningrate, nthresholds, ntreeleaves, minleafsupport, esr);
+		lmart(unsigned int ntrees, float shrinkage, unsigned int nthresholds, unsigned int ntreeleaves, unsigned int minleafsupport, unsigned int esr, const bool verbose=true) : ntrees(ntrees), shrinkage(shrinkage), nthresholds(nthresholds), ntreeleaves(ntreeleaves), minleafsupport(minleafsupport), esr(esr) {
+			if(verbose) printf("\tranker type = 'λMart'\n\tno. of trees = %u\n\tshrinkage = %f\n\tno. of thresholds = %u (0 means unlimited)\n\tno. of tree leaves = %u\n\tmin leaf support = %u\n\tno. of no gain rounds before early stop = %u (0 means unlimited)\n", ntrees, shrinkage, nthresholds, ntreeleaves, minleafsupport, esr);
 		};
 		~lmart() {
 			const unsigned int nfeatures = training_set ? training_set->get_nfeatures() : 0;
@@ -157,13 +157,13 @@ class lmart : public ranker {
 				//update the outputs of the tree (with gamma computed using the Newton-Raphson method)
 				float maxlabel = tree.update_output(pseudoresponses, cachedweights);
 				//add this tree to the ensemble (our model)
-				ens.push(tree.get_proot(), learningrate, maxlabel);
+				ens.push(tree.get_proot(), shrinkage, maxlabel);
 				//Update the model's outputs on all training samples
 				unsigned int ndatapoints = training_set->get_ndatapoints();
 				float **featurematrix = training_set->get_fmatrix();
 				#pragma omp parallel for
 				for(unsigned int i=0; i<ndatapoints; ++i)
-					modelscores[i] += learningrate*tree.eval(featurematrix, i);
+					modelscores[i] += shrinkage*tree.eval(featurematrix, i);
 				#ifdef SHOWTIMER
 				timervalues[1] -= omp_get_wtime();
 				#endif
@@ -179,7 +179,7 @@ class lmart : public ranker {
 					float **featurematrix = validation_set->get_fmatrix();
 					#pragma omp parallel for
 					for(unsigned int i=0; i<ndatapoints; ++i)
-						validationmodelscores[i] += learningrate*tree.eval(featurematrix, i);
+						validationmodelscores[i] += shrinkage*tree.eval(featurematrix, i);
 					float validation_score = compute_validationmodelscores();
 					printf(" %-8.4f", validation_score);
 					if(validation_score>validation_bestscore || validation_bestscore==0.0f)
@@ -188,6 +188,12 @@ class lmart : public ranker {
 						printf("   *");
 				}
 				printf("\n");
+				if(partialsave_niterations!=0 and output_filename and (m+1)%partialsave_niterations==0) {
+					int ndigits = 1+(int)log10(ntrees);
+					char filename[1000];
+					sprintf(filename, "%s.%0*u.xml", output_filename, ndigits, m+1);
+					write_outputtofile(filename);
+				}
 			}
 			//Rollback to the best model observed on the validation data
 			while(ens.is_notempty() && ens.get_size()>validation_bestmodel+1)
@@ -210,27 +216,31 @@ class lmart : public ranker {
 		float eval_dp(float *const *const features, unsigned int idx) const {
 			return ens.eval(features, idx);
 		}
-		void write_outputtofile(const char *filename) {
-			FILE *f = fopen(filename, "w");
-			if(f) {
-				fprintf(f, "## LambdaMART\n## No. of trees = %u\n## No. of leaves = %u\n## No. of threshold candidates = %d\n## Learning rate = %f\n## Stop early = %u\n\n", ntrees, ntreeleaves, nthresholds==0?-1:(int)nthresholds, learningrate, esr);
-				ens.write_outputtofile(f);
-				fclose(f);
+		void write_outputtofile() {
+			if(output_filename) {
+				char filename[1000];
+				sprintf(filename, "%s.xml", output_filename);
+				write_outputtofile(filename);
+				printf("\tmodel filename = '%s'\n", filename);
 			}
+
 		}
 	protected:
 		float compute_validationmodelscores() {
 			float score = 0.0f;
 			unsigned int nrankedlists = validation_set->get_nrankedlists();
 			unsigned int *offsets = validation_set->get_rloffsets();
-			#pragma omp parallel for reduction(+:score)
-			for(unsigned int i=0; i<nrankedlists; ++i) {
-				qlist orig = validation_set->get_ranklist(i);
-				float *sortedlabels = copyextfloat_qsort(orig.labels, validationmodelscores+offsets[i], orig.size);
-				score += scorer->compute_score(qlist(orig.size, sortedlabels, orig.qid));
-				delete[] sortedlabels;
+			if(nrankedlists) {
+				#pragma omp parallel for reduction(+:score)
+				for(unsigned int i=0; i<nrankedlists; ++i) {
+					qlist orig = validation_set->get_ranklist(i);
+					float *sortedlabels = copyextfloat_qsort(orig.labels, validationmodelscores+offsets[i], orig.size);
+					score += scorer->compute_score(qlist(orig.size, sortedlabels, orig.qid));
+					delete[] sortedlabels;
+				}
+				score /= nrankedlists;
 			}
-			return nrankedlists ? score/nrankedlists : 0.0f;
+			return score;
 		}
 		void compute_pseudoresponses() {
 			const unsigned int nrankedlists = training_set->get_nrankedlists();
@@ -317,6 +327,14 @@ class lmart : public ranker {
 			delete tmpchanges,
 			delete [] idx;
 			return reschanges;
+		}
+		void write_outputtofile(char *filename) {
+			FILE *f = fopen(filename, "w");
+			if(f) {
+				fprintf(f, "## LambdaMART\n## No. of trees = %u\n## No. of leaves = %u\n## No. of threshold candidates = %d\n## Learning rate = %f\n## Stop early = %u\n\n", ntrees, ntreeleaves, nthresholds==0?-1:(int)nthresholds, shrinkage, esr);
+				ens.write_outputtofile(f);
+				fclose(f);
+			}
 		}
 };
 

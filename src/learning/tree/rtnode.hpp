@@ -20,7 +20,7 @@ class rtnode {
 	public:
 		rtnode(unsigned int *sampleids, unsigned int nsampleids, double deviance, double sumlabel, histogram* hist) :
 			sampleids(sampleids), nsampleids(nsampleids), deviance(deviance), hist(hist) {
-			avglabel = sumlabel/nsampleids;
+			avglabel = nsampleids ? sumlabel/nsampleids : 0.0;
 		}
 		~rtnode() {
 			delete left,

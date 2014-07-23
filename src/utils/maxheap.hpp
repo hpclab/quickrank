@@ -6,7 +6,7 @@
  */
 
 #include <cstdlib>
-#include <cmath>
+#include <cfloat>
 
 /*! \class mahheap
  *  \brief max-heap implementation with key of type float
