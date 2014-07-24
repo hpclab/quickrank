@@ -129,8 +129,8 @@ class rt {
 				//get current nod hidtogram pointer
 				histogram *h = node->hist;
 				//featureidxs to be used for tree splitnodeting
-				unsigned int featuresamples[h->nfeatures];
-				unsigned int nfeaturesamples = h->nfeatures;
+				unsigned int nfeaturesamples = training_set->get_nfeatures();
+				unsigned int featuresamples[nfeaturesamples];
 				for(unsigned int i=0; i<nfeaturesamples; ++i)
 					featuresamples[i] = i;
 				if(h->samplingrate<1.0f) {
@@ -146,13 +146,13 @@ class rt {
 				double thread_minvar[nth];
 				double thread_best_lvar[nth];
 				double thread_best_rvar[nth];
-				unsigned int thread_best_featureid[nth];
+				unsigned int thread_best_featureidx[nth];
 				unsigned int thread_best_thresholdid[nth];
 				for(int i=0; i<nth; ++i)
 					thread_minvar[i] = initvar,
 					thread_best_lvar[i] = 0.0,
 					thread_best_rvar[i] = 0.0,
-					thread_best_featureid[i] = uint_max,
+					thread_best_featureidx[i] = uint_max,
 					thread_best_thresholdid[i] = uint_max;
 				#pragma omp parallel for
 				for(unsigned int i=0; i<nfeaturesamples; ++i) {
@@ -185,7 +185,7 @@ class rt {
 								thread_minvar[ith] = sumvar,
 								thread_best_lvar[ith] = lvar,
 								thread_best_rvar[ith] = rvar,
-								thread_best_featureid[ith] = f,
+								thread_best_featureidx[ith] = f,
 								thread_best_thresholdid[ith] = t;
 						}
 					}
@@ -194,29 +194,29 @@ class rt {
 				double minvar = thread_minvar[0];
 				double best_lvar = thread_best_lvar[0];
 				double best_rvar = thread_best_rvar[0];
-				unsigned int best_featureid = thread_best_featureid[0];
+				unsigned int best_featureidx = thread_best_featureidx[0];
 				unsigned int best_thresholdid = thread_best_thresholdid[0];
 				for(int i=1; i<nth; ++i)
 					if(thread_minvar[i]<minvar)
 						minvar = thread_minvar[i],
 						best_lvar = thread_best_lvar[i],
 						best_rvar = thread_best_rvar[i],
-						best_featureid = thread_best_featureid[i],
+						best_featureidx = thread_best_featureidx[i],
 						best_thresholdid = thread_best_thresholdid[i];
 				//if minvar is the same of initvalue then the node is unsplitable
 				if(minvar==initvar)
 					return false;
 				//set some result values related to minvar
-				const unsigned int last_thresholdidx = h->thresholds_size[best_featureid]-1;
-				const float best_threshold = h->thresholds[best_featureid][best_thresholdid];
-				const float lsum = h->sumlbl[best_featureid][best_thresholdid];
-				const float rsum = h->sumlbl[best_featureid][last_thresholdidx]-lsum;
-				const unsigned int lcount = h->count[best_featureid][best_thresholdid];
-				const unsigned int rcount = h->count[best_featureid][last_thresholdidx]-lcount;
+				const unsigned int last_thresholdidx = h->thresholds_size[best_featureidx]-1;
+				const float best_threshold = h->thresholds[best_featureidx][best_thresholdid];
+				const float lsum = h->sumlbl[best_featureidx][best_thresholdid];
+				const float rsum = h->sumlbl[best_featureidx][last_thresholdidx]-lsum;
+				const unsigned int lcount = h->count[best_featureidx][best_thresholdid];
+				const unsigned int rcount = h->count[best_featureidx][last_thresholdidx]-lcount;
 				//split samples between left and right child
 				unsigned int *lsamples = new unsigned int[lcount], lsize = 0;
 				unsigned int *rsamples = new unsigned int[rcount], rsize = 0;
-				float const* features = training_set->get_fvector(best_featureid);
+				float const* features = training_set->get_fvector(best_featureidx);
 				for(unsigned int i=0, nsampleids=node->nsampleids; i<nsampleids; ++i) {
 					unsigned int k = node->sampleids[i];
 					if(features[k]<=best_threshold) lsamples[lsize++] = k; else rsamples[rsize++] = k;
@@ -225,7 +225,8 @@ class rt {
 				histogram *lhist = new histogram(node->hist, lsamples, lsize, training_labels);
 				histogram *rhist = new histogram(node->hist, lhist);
 				//update current node
-				node->featureid = best_featureid,
+				node->featureidx = best_featureidx,
+				node->featureid = training_set->get_featureid(best_featureidx),
 				node->threshold = best_threshold,
 				node->deviance = minvar,
 				//create children

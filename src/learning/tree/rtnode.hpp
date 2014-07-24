@@ -10,7 +10,8 @@ class rtnode {
 	public:
 		unsigned int *sampleids = NULL;
 		unsigned int nsampleids = 0;
-		unsigned int featureid = uint_max;
+		unsigned int featureidx = uint_max; //refer the index in the feature matrix
+		unsigned int featureid = uint_max; //refer to the id occuring in the dataset file
 		float threshold = 0.0f;
 		double deviance = 0.0;
 		double avglabel = 0.0;
@@ -27,7 +28,7 @@ class rtnode {
 			delete right;
 		}
 		void save_leaves(rtnode **&leaves, unsigned int &nleaves, unsigned int &capacity) {
-			if(featureid==uint_max) {
+			if(featureidx==uint_max) {
 				if(nleaves==capacity) {
 					capacity = 2*capacity+1;
 					leaves = (rtnode**)realloc(leaves, sizeof(rtnode*)*capacity);
@@ -39,10 +40,10 @@ class rtnode {
 			}
 		}
 		bool is_leaf() const {
-			return featureid==uint_max;
+			return featureidx==uint_max;
 		}
 		float eval(float const* const* featurematrix, const unsigned int idx) const {
-			return featureid==uint_max ? avglabel : (featurematrix[featureid][idx]<=threshold ? left->eval(featurematrix, idx) : right->eval(featurematrix, idx));
+			return featureidx==uint_max ? avglabel : (featurematrix[featureidx][idx]<=threshold ? left->eval(featurematrix, idx) : right->eval(featurematrix, idx));
 		}
 		void write_outputtofile(FILE *f, const int indentsize) {
 			char indent[indentsize+1];

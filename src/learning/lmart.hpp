@@ -31,7 +31,7 @@ class lmart : public ranker {
 		ensemble ens;
 	public:
 		lmart(unsigned int ntrees, float shrinkage, unsigned int nthresholds, unsigned int ntreeleaves, unsigned int minleafsupport, unsigned int esr, const bool verbose=true) : ntrees(ntrees), shrinkage(shrinkage), nthresholds(nthresholds), ntreeleaves(ntreeleaves), minleafsupport(minleafsupport), esr(esr) {
-			if(verbose) printf("\tranker type = 'λMart'\n\tno. of trees = %u\n\tshrinkage = %f\n\tno. of thresholds = %u (0 means unlimited)\n\tno. of tree leaves = %u\n\tmin leaf support = %u\n\tno. of no gain rounds before early stop = %u (0 means unlimited)\n", ntrees, shrinkage, nthresholds, ntreeleaves, minleafsupport, esr);
+			if(verbose) printf("\tranker type = '%s'\n\tno. of trees = %u\n\tshrinkage = %f\n\tno. of thresholds = %u (0 means unlimited)\n\tno. of tree leaves = %u\n\tmin leaf support = %u\n\tno. of no gain rounds before early stop = %u (0 means unlimited)\n", whoami(), ntrees, shrinkage, nthresholds, ntreeleaves, minleafsupport, esr);
 		};
 		~lmart() {
 			const unsigned int nfeatures = training_set ? training_set->get_nfeatures() : 0;
@@ -188,10 +188,10 @@ class lmart : public ranker {
 						printf("   *");
 				}
 				printf("\n");
-				if(partialsave_niterations!=0 and output_filename and (m+1)%partialsave_niterations==0) {
+				if(partialsave_niterations!=0 and output_basename and (m+1)%partialsave_niterations==0) {
 					int ndigits = 1+(int)log10(ntrees);
 					char filename[1000];
-					sprintf(filename, "%s.%0*u.xml", output_filename, ndigits, m+1);
+					sprintf(filename, "%s.%0*u.xml", output_basename, ndigits, m+1);
 					write_outputtofile(filename);
 				}
 			}
@@ -217,9 +217,9 @@ class lmart : public ranker {
 			return ens.eval(features, idx);
 		}
 		void write_outputtofile() {
-			if(output_filename) {
+			if(output_basename) {
 				char filename[1000];
-				sprintf(filename, "%s.xml", output_filename);
+				sprintf(filename, "%s.xml", output_basename);
 				write_outputtofile(filename);
 				printf("\tmodel filename = '%s'\n", filename);
 			}

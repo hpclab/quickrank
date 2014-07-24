@@ -80,21 +80,21 @@ int main(int argc, char *argv[]) {
 	char *validation_filename;
 	char *test_filename;
 	char *features_filename;
-	char *output_filename;
+	char *output_basename;
 	if(argi+4<argc) {
 		printf("Filenames:\n");
 		training_filename = strcmp(argv[argi],"-") ? argv[argi] : NULL;
-		printf("\ttraining_filename = '%s'\n", training_filename), ++argi;
+		printf("\ttraining file = '%s'\n", training_filename), ++argi;
 		validation_filename = strcmp(argv[argi],"-") ? argv[argi] : NULL;
-		printf("\tvalidation_filename = '%s'\n", validation_filename), ++argi;
+		printf("\tvalidation file = '%s'\n", validation_filename), ++argi;
 		test_filename = strcmp(argv[argi],"-") ? argv[argi] : NULL;
-		printf("\ttest_filename = '%s'\n", test_filename), ++argi;
+		printf("\ttest file = '%s'\n", test_filename), ++argi;
 		features_filename = strcmp(argv[argi],"-") ? argv[argi] : NULL;
-		printf("\tfeatures_filename = '%s'\n", features_filename), ++argi;
-		output_filename = strcmp(argv[argi],"-") ? argv[argi] : NULL;
-		printf("\toutput_filename = '%s'\n", output_filename), ++argi;
-		ev.evaluate(training_filename, validation_filename, test_filename, features_filename, output_filename);
-		if(output_filename)
+		printf("\tfeatures file = '%s'\n", features_filename), ++argi;
+		output_basename = strcmp(argv[argi],"-") ? argv[argi] : NULL;
+		printf("\toutput basename = '%s'\n", output_basename), ++argi;
+		ev.evaluate(training_filename, validation_filename, test_filename, features_filename, output_basename);
+		if(output_basename)
 			ev.write();
 	} else exit(15);
 

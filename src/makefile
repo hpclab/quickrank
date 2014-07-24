@@ -1,9 +1,10 @@
+## valgrind do not support instruction produced by option "-march=native"
 cc=$(shell dpkg -l|tr -s [:blank:] ' '|grep "^ii g++"|cut -f2 -d' '|sort|tail -n1)
 pwd=$(shell echo $(PWD))
 
 compile:
 	@mkdir -p ../bin
-	$(cc) -std=c++11 -Wall -Wextra -Wno-unused-parameter -Ofast -fopenmp -flto -I "." -o ../bin/qr main.cpp
+	$(cc) -std=c++11 -Wall -Wextra -Wno-unused-parameter -march=native -Ofast -fopenmp -flto -I "." -o ../bin/qr main.cpp
 
 clean:
 	@rm -f *~ ../bin/*
@@ -16,6 +17,8 @@ edit:
 
 sync:
 	rsync -quaRc --delete . gabriele@node1.novello.isti.cnr.it:$(pwd)
+	rsync -quaRc --delete . gabriele@node4.novello.isti.cnr.it:$(pwd)
+	rsync -quaRc --delete . gabriele@node5.novello.isti.cnr.it:$(pwd)
 	rsync -quaRc --delete . gabriele@barbera1.isti.cnr.it:$(pwd)
 
 dataset:
@@ -25,10 +28,3 @@ dataset:
 	@../bin/rds ../datasets/rand/train.txt 20 100 5 10
 	@../bin/rds ../datasets/rand/vali.txt 20 20 5 10
 	@../bin/rds ../datasets/rand/test.txt 20 10 5 10
-
-test:
-	@mkdir -p ../bin
-	$(cc) -std=c++11 -Wall -Wextra -Wno-unused-parameter -Ofast -fopenmp -I "." -o ../bin/test test.cpp && ../bin/test || echo "ERROR EXIT CODE $$?"
-
-valgrind:
-	@valgrind --tool=memcheck --leak-check=full ../bin/qr

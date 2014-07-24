@@ -237,7 +237,7 @@ class dpset {
 					th_ndps[0] += th_ndps[i];
 				//make an array of used features ids
 				unsigned int nfeatureids = th_usedfid[0].get_upcounter();
-				unsigned int *usedfid = th_usedfid[0].get_uparray(nfeatureids);
+				usedfid = th_usedfid[0].get_uparray(nfeatureids);
 				//set counters
 				ndps = th_ndps[0],
 				nrankedlists = coll.get_nlists(),
@@ -299,8 +299,7 @@ class dpset {
 				printf("\telapsed time = reading: %.3f seconds (%.2f MB/s, %d threads) + processing: %.3f seconds\n", readingtimer, filesize(filename)/readingtimer, nth, processingtimer);
 				#endif
 				//free mem from temporary data structures
-				delete[] usedfid,
-				delete[] dplists;
+				delete [] dplists;
 			} else exit(5);
 		}
 		~dpset() {
@@ -313,6 +312,7 @@ class dpset {
 			free(labels),
 			free(features),
 			free(rlids);
+			delete [] usedfid;
 		}
 		unsigned int get_nfeatures() const {
 			return nfeatures;
@@ -342,12 +342,16 @@ class dpset {
 		float get_label(unsigned int i) const {
 			return labels[i];
 		}
+		unsigned int get_featureid(unsigned int fidx) const {
+			return usedfid[fidx];
+		}
 	private:
 		unsigned int nrankedlists = 0, ndps = 0, nfeatures = 0, maxrlsize = 0;
 		unsigned int *rloffsets = NULL; //[0..nrankedlists] i-th rankedlist begins at rloffsets[i] and ends at rloffsets[i+1]-1
 		float *labels = NULL; //[0..ndps-1]
 		float **features = NULL; //[0..maxfid][0..ndps-1]
 		int *rlids = NULL; //[0..nrankedlists-1]
+		unsigned int *usedfid = NULL; //
 		#ifndef SKIP_DPDESCRIPTION
 		char **descriptions = NULL; //[0..ndps-1]
 		#endif

@@ -12,13 +12,13 @@ class ranker {
 		float training_score = 0.0f;
 		float validation_bestscore = 0.0f;
 		unsigned int partialsave_niterations = 0;
-		char *output_filename = NULL;
+		char *output_basename = NULL;
 	public:
 		ranker() {}
 		virtual ~ranker() {
 			delete validation_set,
 			delete training_set;
-			free(output_filename);
+			free(output_basename);
 		}
 		virtual float eval_dp(float *const *const features, unsigned int idx) const = 0; //prediction value to store in a file
 		virtual const char *whoami() const = 0;
@@ -47,7 +47,7 @@ class ranker {
 		void set_trainingset(dpset *trainingset) { training_set = trainingset; }
 		void set_validationset(dpset *validationset) { validation_set = validationset; }
 		void set_partialsave(unsigned int niterations) { partialsave_niterations = niterations; }
-		void set_outputfilename(const char *filename) { output_filename = strdup(filename); }
+		void set_outputfilename(const char *filename) { output_basename = strdup(filename); }
 };
 
 #endif
