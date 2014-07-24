@@ -10,14 +10,15 @@ class rtnode {
 	public:
 		unsigned int *sampleids = NULL;
 		unsigned int nsampleids = 0;
-		unsigned int featureidx = uint_max; //refer the index in the feature matrix
-		unsigned int featureid = uint_max; //refer to the id occuring in the dataset file
 		float threshold = 0.0f;
 		double deviance = 0.0;
 		double avglabel = 0.0;
 		rtnode *left = NULL;
 		rtnode *right = NULL;
 		histogram *hist = NULL;
+	private:
+		unsigned int featureidx = uint_max; //refer the index in the feature matrix
+		unsigned int featureid = uint_max; //refer to the id occuring in the dataset file
 	public:
 		rtnode(unsigned int *sampleids, unsigned int nsampleids, double deviance, double sumlabel, histogram* hist) :
 			sampleids(sampleids), nsampleids(nsampleids), deviance(deviance), hist(hist) {
@@ -26,6 +27,11 @@ class rtnode {
 		~rtnode() {
 			delete left,
 			delete right;
+		}
+		void set_feature(unsigned int fidx, unsigned int fid) {
+			//if(fidx==uint_max or fid==uint_max) exit(7);
+			featureidx = fidx,
+			featureid = fid;
 		}
 		void save_leaves(rtnode **&leaves, unsigned int &nleaves, unsigned int &capacity) {
 			if(featureidx==uint_max) {

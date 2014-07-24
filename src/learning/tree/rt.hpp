@@ -225,8 +225,7 @@ class rt {
 				histogram *lhist = new histogram(node->hist, lsamples, lsize, training_labels);
 				histogram *rhist = new histogram(node->hist, lhist);
 				//update current node
-				node->featureidx = best_featureidx,
-				node->featureid = training_set->get_featureid(best_featureidx),
+				node->set_feature(best_featureidx, training_set->get_featureid(best_featureidx)),
 				node->threshold = best_threshold,
 				node->deviance = minvar,
 				//create children
