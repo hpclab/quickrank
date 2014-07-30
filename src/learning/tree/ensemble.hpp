@@ -51,7 +51,7 @@ class ensemble {
 		void write_outputtofile(FILE *f) {
 			fprintf(f, "\n<ensemble>\n");
 			for(unsigned int i=0; i<size; ++i) {
-				fprintf(f, "\t<tree id=\"%u\" weight=\"%.3f\">\n", i+1, arr[i].weight);
+				fprintf(f, "\t<tree id=\"%u\" weight=\"%.8f\">\n", i+1, arr[i].weight);
 				if(arr[i].root) {
 					fprintf(f, "\t\t<split>\n");
 					arr[i].root->write_outputtofile(f, 2);

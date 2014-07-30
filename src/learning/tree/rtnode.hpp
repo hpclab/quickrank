@@ -56,10 +56,10 @@ class rtnode {
 			for(int i=0; i<indentsize; indent[i++]='\t');
 			indent[indentsize] = '\0';
 			if(featureid==uint_max)
-				fprintf(f, "%s\t<output> %.3f </output>\n", indent, avglabel);
+				fprintf(f, "%s\t<output> %.8f </output>\n", indent, avglabel);
 			else {
 				fprintf(f, "%s\t<feature> %u </feature>\n", indent, featureid);
-				fprintf(f, "%s\t<threshold> %.3f </threshold>\n", indent, threshold);
+				fprintf(f, "%s\t<threshold> %.8f </threshold>\n", indent, threshold);
 				fprintf(f, "%s\t<split pos=\"left\">\n", indent);
 				left->write_outputtofile(f, indentsize+1);
 				fprintf(f, "%s\t</split>\n", indent);
