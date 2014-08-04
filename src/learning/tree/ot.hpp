@@ -25,9 +25,9 @@ class ot : public rt {
 			unsigned int featuresamples[nfeaturesamples];
 			for(unsigned int i=0; i<nfeaturesamples; ++i)
 				featuresamples[i] = i;
-			if(hist->samplingrate<1.0f) {
+			if(featuresamplingrate<1.0f) {
 				//need to make a sub-sampling
-				unsigned int reduced_nfeaturesamples = (unsigned int)floor(hist->samplingrate*nfeaturesamples);
+				unsigned int reduced_nfeaturesamples = (unsigned int)ceil(featuresamplingrate*nfeaturesamples);
 				while(nfeaturesamples>reduced_nfeaturesamples && nfeaturesamples>1) {
 					unsigned int featuretoremove = rand()%nfeaturesamples;
 					featuresamples[featuretoremove] = featuresamples[--nfeaturesamples];
@@ -153,17 +153,18 @@ class ot : public rt {
 				double sq = sqsumlabels[threshold_size-1];
 				unsigned int c = samplecount[threshold_size-1];
 				//looking for the feature that minimizes sum of lvar+rvar
-				for(unsigned int t=0; t<threshold_size; ++t) {
-					unsigned int lcount = samplecount[t];
-					unsigned int rcount = c-lcount;
-					if(lcount>=minls && rcount>=minls && sumvar[f][t]!=invalid) {
-						double lsum = sumlabels[t];
-						double lsqsum = sqsumlabels[t];
-						double rsum = s-lsum;
-						double rsqsum = sq-lsqsum;
-						sumvar[f][t] += fabs(lsqsum-lsum*lsum/lcount)+fabs(rsqsum-rsum*rsum/rcount);
-					} else sumvar[f][t] = invalid;
-				}
+				for(unsigned int t=0; t<threshold_size; ++t)
+					if(sumvar[f][t]!=invalid) {
+						unsigned int lcount = samplecount[t];
+						unsigned int rcount = c-lcount;
+						if(lcount>=minls && rcount>=minls) {
+							double lsum = sumlabels[t];
+							double lsqsum = sqsumlabels[t];
+							double rsum = s-lsum;
+							double rsqsum = sq-lsqsum;
+							sumvar[f][t] += fabs(lsqsum-lsum*lsum/lcount)+fabs(rsqsum-rsum*rsum/rcount);
+						} else sumvar[f][t] = invalid;
+					}
 			}
 		}
 		const double invalid = -DBL_MAX;

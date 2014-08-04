@@ -7,9 +7,8 @@ class histogram {
 	public:
 		float **thresholds = NULL; //[0..nfeatures-1]x[0..thresholds_size[i]-1]
 		unsigned int const *thresholds_size = NULL;
-		unsigned int **stmap = NULL; //[0..nfeatures-1]x[0..nthresholds-1] //TODO sparse array... maybe is possible to reimplement it
-		unsigned int const nfeatures = 0;
-		float samplingrate = 1.0f;
+		unsigned int **stmap = NULL; //[0..nfeatures-1]x[0..nthresholds-1]
+		const unsigned int nfeatures = 0;
 		double **sumlbl = NULL; //[0..nfeatures-1]x[0..nthresholds-1]
 		double **sqsumlbl = NULL; //[0..nfeatures-1]x[0..nthresholds-1]
 		unsigned int **count = NULL; //[0..nfeatures-1]x[0..nthresholds-1]
@@ -49,8 +48,8 @@ class histogram {
 				const unsigned int nthresholds = thresholds_size[i];
 				for(unsigned int t=0; t<nthresholds; ++t)
 					sumlbl[i][t] = parent->sumlbl[i][t]-left->sumlbl[i][t],
-					sqsumlbl[i][t] += parent->sqsumlbl[i][t]-left->sqsumlbl[i][t],
-					count[i][t] += parent->count[i][t]-left->count[i][t];
+					sqsumlbl[i][t] = parent->sqsumlbl[i][t]-left->sqsumlbl[i][t],
+					count[i][t] = parent->count[i][t]-left->count[i][t];
 			}
 		}
 		~histogram() {
@@ -66,8 +65,8 @@ class histogram {
 			#pragma omp parallel for
 			for(unsigned int i=0; i<nfeatures; ++i)
 				for(unsigned int t=0; t<thresholds_size[i]; ++t)
-					sumlbl[i][t] = 0.0f,
-					sqsumlbl[i][t] = 0.0f;
+					sumlbl[i][t] = 0.0,
+					sqsumlbl[i][t] = 0.0;
 			#pragma omp parallel for
 			for(unsigned int i=0; i<nfeatures; ++i)
 				for(unsigned int j=0; j<nlabels; ++j) {
@@ -82,11 +81,21 @@ class histogram {
 					sumlbl[i][t] += sumlbl[i][t-1],
 					sqsumlbl[i][t] += sqsumlbl[i][t-1];
 		}
+		void transform_intorightchild(histogram const* left) {
+			#pragma omp parallel for
+			for(unsigned int i=0; i<nfeatures; ++i) {
+				const unsigned int nthresholds = thresholds_size[i];
+				for(unsigned int t=0; t<nthresholds; ++t)
+					sumlbl[i][t] -= left->sumlbl[i][t],
+					sqsumlbl[i][t] -= left->sqsumlbl[i][t],
+					count[i][t] -= left->count[i][t];
+			}
+		}
 };
 
-class basehistogram : public histogram {
+class roothistogram : public histogram {
 	public:
-		basehistogram(dpset *dps, float *labels, unsigned int **sortedidx, unsigned int sortedidxsize, float **thresholds, unsigned int const *thresholds_size) : histogram(thresholds, thresholds_size, dps->get_nfeatures()) {
+		roothistogram(dpset *dps, float *labels, unsigned int **sortedidx, unsigned int sortedidxsize, float **thresholds, unsigned int const *thresholds_size) : histogram(thresholds, thresholds_size, dps->get_nfeatures()) {
 			stmap = new unsigned int*[nfeatures];
 			#pragma omp parallel for
 			for(unsigned int i=0; i<nfeatures; ++i) {
@@ -94,8 +103,8 @@ class basehistogram : public histogram {
 				unsigned int threshold_size = thresholds_size[i];
 				float *features = dps->get_fvector(i);
 				float *threshold = thresholds[i];
-				double sum = 0.0f;
-				double sqsum = 0.0f;
+				double sum = 0.0;
+				double sqsum = 0.0;
 				for(unsigned int last=-1, j, t=0; t<threshold_size; ++t) {
 					//find the first sample exceeding the current threshold
 					for(j=last+1; j<sortedidxsize; ++j) {
@@ -112,7 +121,7 @@ class basehistogram : public histogram {
 				}
 			}
 		}
-		~basehistogram() {
+		~roothistogram() {
 			for(unsigned int i=0; i<nfeatures; ++i)
 				delete [] stmap[i];
 			delete [] stmap;

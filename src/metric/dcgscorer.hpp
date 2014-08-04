@@ -9,7 +9,7 @@
 
 class dcgscorer : public metricscorer {
 	public:
-		dcgscorer(const unsigned int kval=10) { k = kval; }
+		dcgscorer(const unsigned int kval) { k = kval; }
 		const char *whoami() const { return "DCG"; }
 		float compute_score(const qlist &ql) {
 			if(ql.size<=0)

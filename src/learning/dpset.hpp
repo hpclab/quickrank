@@ -296,7 +296,7 @@ class dpset {
 				printf("\tfile = '%s'\n\tno. of datapoints = %u\n\tno. of training queries = %u\n\tmax no. of datapoints in a training query = %u\n\tno. of features = %u\n", filename, ndps, nrankedlists, maxrlsize, nfeatures);
 				#ifdef SHOWTIMER
 				processingtimer = omp_get_wtime()-processingtimer;
-				printf("\telapsed time = reading: %.3f seconds (%.2f MB/s, %d threads) + processing: %.3f seconds\n", readingtimer, filesize(filename)/readingtimer, nth, processingtimer);
+				printf("\t\e[0;33mreading: %.3f seconds (%.0fMB/s, %d threads)\n\tpost-processing: %.3f seconds\e[0m\n", readingtimer, filesize(filename)/readingtimer, nth, processingtimer);
 				#endif
 				//free mem from temporary data structures
 				delete [] dplists;
@@ -323,7 +323,7 @@ class dpset {
 		unsigned int get_nrankedlists() const {
 			return nrankedlists;
 		}
-		qlist get_ranklist(unsigned int i) {
+		qlist get_qlist(unsigned int i) const {
 			return qlist(rloffsets[i+1]-rloffsets[i], labels+rloffsets[i], rlids[i]);
 		}
 		float *get_fvector(unsigned int i) const {

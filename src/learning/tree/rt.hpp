@@ -40,6 +40,7 @@ class rt {
 		rtnode **leaves = NULL;
 		unsigned int nleaves = 0;
 		rtnode *root = NULL;
+		float featuresamplingrate = 1.0f;
 	public:
 		rt(unsigned int nrequiredleaves, dpset *dps, float *labels, unsigned int minls) :
 			nrequiredleaves(nrequiredleaves),
@@ -89,30 +90,23 @@ class rt {
 			nleaves = 0;
 			root->save_leaves(leaves, nleaves, capacity);
 		}
-		float update_output(float const *pseudoresponses, float const *cachedweights) {
-			float maxlabel = -FLT_MAX;
+		double update_output(float const *pseudoresponses, float const *cachedweights) {
+			double maxlabel = -DBL_MAX;
 			#pragma omp parallel for reduction(max:maxlabel)
 			for(unsigned int i=0; i<nleaves; ++i) {
-				float s1 = 0.0f;
-				float s2 = 0.0f;
-				const unsigned int *sampleids = leaves[i]->sampleids;
+				double s1 = 0.0f;
+				double s2 = 0.0f;
 				const unsigned int nsampleids = leaves[i]->nsampleids;
+				const unsigned int *sampleids = leaves[i]->sampleids;
 				for(unsigned int j=0; j<nsampleids; ++j) {
 					unsigned int k = sampleids[j];
 					s1 += pseudoresponses[k],
 					s2 += cachedweights[k];
 				}
-				float s = s2>0.0f ? s1/s2 : 0.0f;
-				leaves[i]->avglabel = s;
-				if(s>maxlabel)
-					maxlabel = s;
+				leaves[i]->avglabel = s2>=DBL_EPSILON ? s1/s2 : 0.0;
+				if(leaves[i]->avglabel>maxlabel)
+					maxlabel = leaves[i]->avglabel;
 			}
-			#ifdef LOGFILE
-			fprintf(flog, "\nleaves:\n");
-			for(unsigned int i=0; i<nleaves; ++i)
-				fprintf(flog, "%f ", leaves[i]->avglabel);
-			fprintf(flog, "(%u)\n", nleaves);
-			#endif
 			return maxlabel;
 		}
 		float eval(float const* const* featurematrix, const unsigned int idx) const {
@@ -130,12 +124,13 @@ class rt {
 				histogram *h = node->hist;
 				//featureidxs to be used for tree splitnodeting
 				unsigned int nfeaturesamples = training_set->get_nfeatures();
-				unsigned int featuresamples[nfeaturesamples];
-				for(unsigned int i=0; i<nfeaturesamples; ++i)
-					featuresamples[i] = i;
-				if(h->samplingrate<1.0f) {
-					//need to make a sub-sampling
-					unsigned int reduced_nfeaturesamples = (unsigned int)floor(h->samplingrate*nfeaturesamples);
+				unsigned int *featuresamples = NULL;
+				//need to make a sub-sampling
+				if(featuresamplingrate<1.0f) {
+					featuresamples = new unsigned int[nfeaturesamples];
+					for(unsigned int i=0; i<nfeaturesamples; ++i)
+						featuresamples[i] = i;
+					unsigned int reduced_nfeaturesamples = (unsigned int)floor(featuresamplingrate*nfeaturesamples);
 					while(nfeaturesamples>reduced_nfeaturesamples && nfeaturesamples>1) {
 						unsigned int selectedtoremove = rand()%nfeaturesamples;
 						featuresamples[selectedtoremove] = featuresamples[--nfeaturesamples];
@@ -156,10 +151,10 @@ class rt {
 					thread_best_thresholdid[i] = uint_max;
 				#pragma omp parallel for
 				for(unsigned int i=0; i<nfeaturesamples; ++i) {
+					//get feature id
+					const unsigned int f = featuresamples ? featuresamples[i] : i;
 					//get thread identification number
 					const int ith = omp_get_thread_num();
-					//get feature id
-					const unsigned int f = featuresamples[i];
 					//define pointer shortcuts
 					double *sumlabels = h->sumlbl[f];
 					double *sqsumlabels = h->sqsumlbl[f];
@@ -190,6 +185,8 @@ class rt {
 						}
 					}
 				}
+				//free feature samples
+				delete [] featuresamples;
 				//get best minvar among thread partial results
 				double minvar = thread_minvar[0];
 				double best_lvar = thread_best_lvar[0];
@@ -223,7 +220,15 @@ class rt {
 				}
 				//create histograms for children
 				histogram *lhist = new histogram(node->hist, lsamples, lsize, training_labels);
-				histogram *rhist = new histogram(node->hist, lhist);
+				histogram *rhist = NULL;
+				if(node==root)
+					rhist = new histogram(node->hist, lhist);
+				else {
+					//we can save some new/delete by converting parent histogram into the right-child one
+					node->hist->transform_intorightchild(lhist),
+					rhist = node->hist;
+					node->hist = NULL;
+				}
 				//update current node
 				node->set_feature(best_featureidx, training_set->get_featureid(best_featureidx)),
 				node->threshold = best_threshold,
@@ -231,13 +236,6 @@ class rt {
 				//create children
 				node->left = new rtnode(lsamples, lsize, best_lvar, lsum, lhist),
 				node->right = new rtnode(rsamples, rsize, best_rvar, rsum, rhist);
-				#ifdef LOGFILE
-				fprintf(flog,"SPLIT (dev=%.4f) minvar=%.4f th*=%.4f fid*=%u\n\t", node->deviance, minvar, best_threshold, best_featureid);
-				for(unsigned int i=0; i<lsize; ++i)	fprintf(flog,"%u ", lsamples[i]);
-				fprintf(flog,"| ");
-				for(unsigned int i=0; i<rsize; ++i)	fprintf(flog,"%u ", rsamples[i]);
-				fprintf(flog,"\n\tvl=%.4f %.4f | vr=%.4f %.4f\n", best_lvar, lsum, best_rvar, rsum);
-				#endif
 				return true;
 			}
 			return false;

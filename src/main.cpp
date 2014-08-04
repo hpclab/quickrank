@@ -3,26 +3,17 @@
 #include <cstring>
 #include <time.h>
 
-//#define LOGFILE
-//#define SHOWTIMER
-
-#ifdef LOGFILE
-FILE *flog = NULL;
-#endif
+#define SHOWTIMER
 
 #include "metric/evaluator.hpp"
 #include "learning/ranker.hpp"
 
 int main(int argc, char *argv[]) {
 	srand(time(NULL));
-	#ifdef LOGFILE
-	flog = fopen("/tmp/quickrank.log", "w");
-	#endif
 	//index of current argv[]
 	int argi = 1;
 	//read ranker type and its parameters
 	ranker *r = NULL;
-	printf("New ranker:\n");
 	if(argi+6<argc && strcmp(argv[argi],"lm")==0) {
 		unsigned int ntrees = atoi(argv[++argi]);
 		float shrinkage = atof(argv[++argi]);
@@ -40,10 +31,12 @@ int main(int argc, char *argv[]) {
 		unsigned int esr = atoi(argv[++argi]);
 		r = new matrixnet(ntrees, shrinkage, nthresholds, treedepth, minleafsupport, esr), ++argi;
 	} else exit(11);
+	//show ranker parameters
+	printf("New ranker:\n");
+	r->showme();
 
 	//read metric scorer for the training phase and its parameters
 	metricscorer *training_scorer = NULL;
-	printf("New training scorer:\n");
 	if(argi+1<argc && strcmp(argv[argi],"ndcg")==0) {
 		unsigned int k = atoi(argv[++argi]);
 		training_scorer = new ndcgscorer(k), ++argi;
@@ -51,19 +44,25 @@ int main(int argc, char *argv[]) {
 		unsigned int k = atoi(argv[++argi]);
 		training_scorer = new mapscorer(k), ++argi;
 	} else exit(12);
+	//show metric scorer parameters
+	printf("New training scorer:\n");
+	training_scorer->showme();
 
 	//read metric scorer for the test phase and its parameters
 	metricscorer *test_scorer = NULL;
-	printf("New test scorer:\n");
 	if(argi+1<argc && strcmp(argv[argi],"ndcg")==0) {
 		unsigned int k = atoi(argv[++argi]);
 		test_scorer = new ndcgscorer(k), ++argi;
 	} else if(argi+1<argc && strcmp(argv[argi],"map")==0) {
 		unsigned int k = atoi(argv[++argi]);
-		training_scorer = new mapscorer(k), ++argi;
+		test_scorer = new mapscorer(k), ++argi;
 	} else if(argi<argc && strcmp(argv[argi],"-")==0) {
-		printf("\t(skipped)\n"), ++argi;
-	}else exit(13);
+		++argi;
+	} else exit(13);
+	//show test scorer parameters
+	printf("New test scorer:\n");
+	if(test_scorer) test_scorer->showme();
+	else printf("\t(skipped)\n");
 
 	//instantiate a new evaluator with read arguments
 	evaluator ev(r, training_scorer, test_scorer);
@@ -101,8 +100,5 @@ int main(int argc, char *argv[]) {
 	//warnings for unexpected arguments
 	if(argi!=argc)
 		printf("warning: unexpected arguments\n");
-	#ifdef LOGFILE
-	fclose(flog);
-	#endif
 	return 0;
 }
