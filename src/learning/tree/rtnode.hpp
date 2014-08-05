@@ -52,7 +52,7 @@ class rtnode {
 			return featureidx==uint_max ? avglabel : (featurematrix[featureidx][idx]<=threshold ? left->eval(featurematrix, idx) : right->eval(featurematrix, idx));
 		}
 		void write_outputtofile(FILE *f, const int indentsize) {
-			char indent[indentsize+1];
+			char* indent = new char [indentsize+1]; // char indent[indentsize+1];
 			for(int i=0; i<indentsize; indent[i++]='\t');
 			indent[indentsize] = '\0';
 			if(featureid==uint_max)
@@ -67,6 +67,7 @@ class rtnode {
 				right->write_outputtofile(f, indentsize+1);
 				fprintf(f, "%s\t</split>\n", indent);
 			}
+			delete [] indent;
 		}
 };
 

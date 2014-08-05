@@ -88,7 +88,11 @@ class rt {
 			leaves = capacity ? (rtnode**)malloc(sizeof(rtnode*)*capacity) : NULL,
 			nleaves = 0;
 			root->save_leaves(leaves, nleaves, capacity);
+
+			// TODO: (by cla) is memory of "unpopped" de-allocated?
 		}
+
+		// TODO: (by cla) This is very specific to lmart
 		float update_output(float const *pseudoresponses, float const *cachedweights) {
 			float maxlabel = -FLT_MAX;
 			#pragma omp parallel for reduction(max:maxlabel)
@@ -130,7 +134,7 @@ class rt {
 				histogram *h = node->hist;
 				//featureidxs to be used for tree splitnodeting
 				unsigned int nfeaturesamples = training_set->get_nfeatures();
-				unsigned int featuresamples[nfeaturesamples];
+				unsigned int* featuresamples = new unsigned int [nfeaturesamples]; // unsigned int featuresamples[nfeaturesamples];
 				for(unsigned int i=0; i<nfeaturesamples; ++i)
 					featuresamples[i] = i;
 				if(h->samplingrate<1.0f) {
@@ -143,11 +147,11 @@ class rt {
 				}
 				//find best split
 				const int nth = omp_get_num_procs();
-				double thread_minvar[nth];
-				double thread_best_lvar[nth];
-				double thread_best_rvar[nth];
-				unsigned int thread_best_featureidx[nth];
-				unsigned int thread_best_thresholdid[nth];
+				double* thread_minvar = new double [nth]; // double thread_minvar[nth];
+				double* thread_best_lvar = new double [nth]; //double thread_best_lvar[nth];
+				double* thread_best_rvar = new double [nth]; // double thread_best_rvar[nth];
+				unsigned int* thread_best_featureidx = new unsigned int [nth]; // unsigned int thread_best_featureidx[nth];
+				unsigned int* thread_best_thresholdid = new unsigned int [nth]; // unsigned int thread_best_thresholdid[nth];
 				for(int i=0; i<nth; ++i)
 					thread_minvar[i] = initvar,
 					thread_best_lvar[i] = 0.0,
@@ -203,6 +207,13 @@ class rt {
 						best_rvar = thread_best_rvar[i],
 						best_featureidx = thread_best_featureidx[i],
 						best_thresholdid = thread_best_thresholdid[i];
+				// free some memory
+				delete [] thread_minvar;
+				delete [] featuresamples;
+				delete [] thread_best_lvar;
+				delete [] thread_best_rvar;
+				delete [] thread_best_featureidx;
+				delete [] thread_best_thresholdid;
 				//if minvar is the same of initvalue then the node is unsplitable
 				if(minvar==initvar)
 					return false;

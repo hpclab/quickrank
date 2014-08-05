@@ -297,10 +297,12 @@ class lmart : public ranker {
 			}
 			return avg;
 		}
+
+		// TODO: (by cla) this doesn't need to be full if k<qlist.size
 		fsymmatrix *compute_mchange(const qlist &orig, const unsigned int offset) {
 			//build a ql made up of label values picked up from orig order by indexes of modelscores reversely sorted
 			unsigned int *idx = idxfloat_qsort(modelscores+offset, orig.size);
-			float sortedlabels[orig.size];
+			float* sortedlabels = new float [orig.size]; // float sortedlabels[orig.size];
 			for(unsigned int i=0; i<orig.size; ++i)
 				sortedlabels[i] = orig.labels[idx[i]];
 			qlist tmprl(orig.size, sortedlabels, orig.qid);
@@ -326,6 +328,7 @@ class lmart : public ranker {
 			#endif
 			delete tmpchanges,
 			delete [] idx;
+			delete [] sortedlabels;
 			return reschanges;
 		}
 		void write_outputtofile(char *filename) {

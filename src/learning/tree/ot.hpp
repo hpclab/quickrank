@@ -22,7 +22,7 @@ class ot : public rt {
 				sampleids[i] = i;
 			//featureidxs to be used for "tree"
 			unsigned int nfeaturesamples = training_set->get_nfeatures();
-			unsigned int featuresamples[nfeaturesamples];
+			unsigned int* featuresamples = new unsigned int [nfeaturesamples]; // unsigned int featuresamples[nfeaturesamples];
 			for(unsigned int i=0; i<nfeaturesamples; ++i)
 				featuresamples[i] = i;
 			if(hist->samplingrate<1.0f) {
@@ -56,9 +56,9 @@ class ot : public rt {
 					fill(sumvar, featuresamples, nfeaturesamples, nodearray[i]->hist);
 				//find best split in the matrix
 				const int nth = omp_get_num_procs();
-				double thread_minvar[nth];
-				unsigned int thread_best_featureidx[nth];
-				unsigned int thread_best_thresholdid[nth];
+				double* thread_minvar = new double [nth]; // double thread_minvar[nth];
+				unsigned int* thread_best_featureidx = new unsigned int [nth]; // unsigned int thread_best_featureidx[nth];
+				unsigned int* thread_best_thresholdid = new unsigned int [nth]; // unsigned int thread_best_thresholdid[nth];
 				for(int i=0; i<nth; ++i)
 					thread_minvar[i] = DBL_MAX,
 					thread_best_featureidx[i] = uint_max,
@@ -82,6 +82,9 @@ class ot : public rt {
 						minvar = thread_minvar[i],
 						best_featureidx = thread_best_featureidx[i],
 						best_thresholdid = thread_best_thresholdid[i];
+				delete [] thread_minvar;
+				delete [] thread_best_featureidx;
+				delete [] thread_best_thresholdid;
 				if(minvar==invalid || minvar==DBL_MAX) break; //node is unsplittable
 				//init next depth
 				#pragma omp parallel for
@@ -137,6 +140,7 @@ class ot : public rt {
 			delete [] sumvar,
 			//delete temp data
 			delete [] nodearray;
+			delete [] featuresamples;
 		}
 	private:
 		void fill(double **sumvar, unsigned int const *featuresamples, const unsigned int nfeaturesamples, histogram const *h) {

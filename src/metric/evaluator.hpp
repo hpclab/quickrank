@@ -17,6 +17,7 @@ class evaluator {
 	public:
 		evaluator(ranker *r, metricscorer *training_scorer, metricscorer *test_scorer): r(r), training_scorer(training_scorer), test_scorer(test_scorer) {}
 		~evaluator() {
+			// TODO: (by cla) Do not delete objected you didn't create. Move.
 			delete r;
 			delete training_scorer;
 			delete test_scorer;
@@ -24,9 +25,11 @@ class evaluator {
 		void evaluate(const char *trainingfilename, const char *validationfilename, const char *testfilename, const char *featurefilename, const char *outputfilename) {
 			if(not is_empty(trainingfilename)) {
 				printf("Reading Training dataset:\n");
+				// TODO: (by cla) Where is the delete of this dpset?
 				r->set_trainingset(new dpset(trainingfilename));
 			} else exit(6);
 			if(not is_empty(validationfilename)) {
+				// TODO: (by cla) Where is the delete of this dpset?
 				printf("Reading validation dataset:\n");
 				r->set_validationset(new dpset(validationfilename));
 			}

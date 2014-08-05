@@ -6,6 +6,9 @@
 //#define LOGFILE
 //#define SHOWTIMER
 
+// TODO: (by cla) Add some logging facility and remove any printf.
+// TODO: (by cla) Give names to error codes.
+
 #ifdef LOGFILE
 FILE *flog = NULL;
 #endif

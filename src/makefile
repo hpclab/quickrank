@@ -1,10 +1,34 @@
 ## valgrind do not support instruction produced by option "-march=native"
-cc=$(shell dpkg -l|tr -s [:blank:] ' '|grep "^ii g++"|cut -f2 -d' '|sort|tail -n1)
+# cc=$(shell dpkg -l|tr -s [:blank:] ' '|grep "^ii g++"|cut -f2 -d' '|sort|tail -n1)
 pwd=$(shell echo $(PWD))
+
+# added for brew compatibility
+cc=
+ifndef cc
+ifneq ($(shell whereis g++-4.8),)
+cc=g++-4.8
+endif
+endif
+
+ifndef cc
+ifneq ($(shell whereis g++-4.9),)
+cc=g++-4.9
+endif
+endif
+
+ifndef cc
+#ifneq ($(shell brew ls --versions gcc49),)
+ifneq ($(shell /usr/local/Cellar/gcc49/4.9.0/bin/g++-4.9 --version),)
+cc=/usr/local/Cellar/gcc49/4.9.0/bin/g++-4.9
+endif
+endif
+
+
+all: compile # added for eclipse compatibility
 
 compile:
 	@mkdir -p ../bin
-	$(cc) -std=c++11 -Wall -Wextra -Wno-unused-parameter -march=native -Ofast -fopenmp -flto -I "." -o ../bin/qr main.cpp
+	$(cc) -std=c++11 -Wall -pedantic -march=native -Ofast -fopenmp -flto -I "." -o ../bin/qr main.cpp
 
 clean:
 	@rm -f *~ ../bin/*

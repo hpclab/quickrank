@@ -34,12 +34,13 @@ class ranker {
 			//#pragma omp parallel for reduction(+:score)
 			for(unsigned int i=0; i<nrankedlists; ++i) {
 				qlist ql = samples->get_ranklist(i);
-				float scores[ql.size];
+				float* scores = new float [ql.size]; // float scores[ql.size];
 				for(unsigned int j=0, offset=rloffsets[i]; j<ql.size; )
 					scores[j++] = eval_dp(featurematrix, offset++);
 				float *sortedlabels = copyextfloat_qsort(ql.labels, scores, ql.size);
 				score += scorer->compute_score(qlist(ql.size, sortedlabels, ql.qid));
 				delete [] sortedlabels;
+				delete [] scores;
 			}
 			return nrankedlists ? score/nrankedlists : 0.0f;
 		}

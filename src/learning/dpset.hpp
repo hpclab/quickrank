@@ -169,10 +169,10 @@ class dpset {
 				const int nth = omp_get_num_procs();
 				unsigned int maxfid = INIT_NOFEATURES-1;
 				unsigned int linecounter = 0;
-				unsigned int th_ndps[nth];
-				for(int i=0; i<nth; ++i)
-					th_ndps[i] = 0;
-				bitarray th_usedfid[nth];
+				unsigned int* th_ndps = new unsigned int [nth] (); // unsigned int th_ndps[nth];
+				//for(int i=0; i<nth; ++i)
+				//	th_ndps[i] = 0;
+				bitarray* th_usedfid = new bitarray[nth]; // bitarray th_usedfid[nth];
 				dpcollection coll;
 				#pragma omp parallel num_threads(nth) shared(maxfid, linecounter)
 				while(not feof(f)) {
@@ -243,6 +243,9 @@ class dpset {
 				nrankedlists = coll.get_nlists(),
 				nfeatures = usedfid[nfeatureids-1]+1;
 				dplist** dplists = coll.get_lists();
+				// free some memory
+				delete [] th_ndps;
+				delete [] th_usedfid;
 				//allocate memory
 				#ifndef SKIP_DPDESCRIPTION
 				descriptions = (char**)malloc(sizeof(char*)*ndps),
@@ -299,6 +302,7 @@ class dpset {
 				printf("\telapsed time = reading: %.3f seconds (%.2f MB/s, %d threads) + processing: %.3f seconds\n", readingtimer, filesize(filename)/readingtimer, nth, processingtimer);
 				#endif
 				//free mem from temporary data structures
+				// TODO: (by cla) is each dplist deleted ?
 				delete [] dplists;
 			} else exit(5);
 		}

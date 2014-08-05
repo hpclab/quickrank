@@ -19,8 +19,9 @@ inline unsigned int iflip(unsigned int x) { return x^(((x>>31)-1)|0x80000000); }
  */
 unsigned int *idxfloat_radixsort(float const* fvalues, const unsigned int nvalues) {
 	unsigned int *ivalues = new unsigned int[nvalues];
-	unsigned int lbucket[65536] {0};
-	unsigned int hbucket[65536] {0};
+	// TODO: (by cla) The following was not working with mac compiler
+	unsigned int* lbucket = new unsigned int[65536] (); // unsigned int lbucket[65536] {0};
+	unsigned int* hbucket = new unsigned int[65536] (); // unsigned int hbucket[65536] {0};
 	for(unsigned int i=0; i<nvalues; ++i) {
 		//feature values are flipped so at to be possible to apply radix sort
 		unsigned int flippedvalue = flip(*(unsigned int*)(fvalues+i));
@@ -41,6 +42,8 @@ unsigned int *idxfloat_radixsort(float const* fvalues, const unsigned int nvalue
 	for(unsigned int i=0; i<nvalues; ++i)
 		ivalues[++hbucket[aux[i].value>>16]] = aux[i].id;
 	delete [] aux;
+	delete [] lbucket;
+	delete [] hbucket;
 	return ivalues;
 }
 

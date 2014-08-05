@@ -61,6 +61,7 @@ class ndcgscorer : public metricscorer {
 		 * @param k maximum number of entities that can be recommended.
 		*/
 		ndcgscorer(const unsigned int kval) {
+			// TODO: (by cla) Move logging out of the constructors.
 			printf("\tscorer type = ndcg@%u\n", kval);
 			k = kval;
 		}

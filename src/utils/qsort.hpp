@@ -18,7 +18,7 @@ template <typename T> void inline swap(T &a, T &b) {
  *  @param nvalues length of \a fvalues
  */
 void float_qsort(float *arr, const unsigned int size) {
-	int stack[size];
+	int* stack = new int [size]; // int stack[size];
 	int top = 1;
 	stack[0] = 0,
 	stack[1] = size-1;
@@ -41,6 +41,7 @@ void float_qsort(float *arr, const unsigned int size) {
 			stack[++top] = h;
 		}
 	}
+	delete [] stack;
 }
 
 /*! sort an array of float values without modifing the input array and returning permuted indexes of the sorted items
@@ -53,7 +54,7 @@ unsigned int *idxfloat_qsort(float const* arr, const unsigned int size) {
 	for(unsigned int i=0; i<size; ++i) idxarr[i] = i;
 	float *copyof_arr = new float[size];
 	memcpy(copyof_arr, arr, sizeof(float)*size);
-	int stack[size];
+	int* stack = new int [size]; // int stack[size];
 	int top = 1;
 	stack[0] = 0,
 	stack[1] = size-1;
@@ -79,6 +80,7 @@ unsigned int *idxfloat_qsort(float const* arr, const unsigned int size) {
 			stack[++top] = h;
 		}
 	}
+	delete [] stack;
 	delete [] copyof_arr;
 	return idxarr;
 }
@@ -94,7 +96,7 @@ float *copyextfloat_qsort(float const* extarr, float const* arr, const unsigned 
 	memcpy(copyof_arr, arr, sizeof(float)*size);
 	float *copyof_extarr = new float[size];
 	memcpy(copyof_extarr, extarr, sizeof(float)*size);
-	int stack[size];
+	int* stack = new int [size]; // int stack[size];
 	int top = 1;
 	stack[0] = 0,
 	stack[1] = size-1;
@@ -120,6 +122,7 @@ float *copyextfloat_qsort(float const* extarr, float const* arr, const unsigned 
 			stack[++top] = h;
 		}
 	}
+	delete [] stack;
 	delete [] copyof_arr;
 	return copyof_extarr;
 }
