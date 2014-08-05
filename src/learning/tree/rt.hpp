@@ -224,7 +224,7 @@ class rt {
 				if(node==root)
 					rhist = new histogram(node->hist, lhist);
 				else {
-					//we can save some new/delete by converting parent histogram into the right-child one
+					//save some new/delete by converting parent histogram into the right-child one
 					node->hist->transform_intorightchild(lhist),
 					rhist = node->hist;
 					node->hist = NULL;

@@ -31,7 +31,7 @@ class evaluator {
 				r->set_validationset(new dpset(validationfilename));
 			}
 			dpset *testset = NULL;
-			if(not is_empty(testfilename) and test_scorer) {
+			if(test_scorer and not is_empty(testfilename)) {
 				printf("Reading test dataset:\n");
 				testset = new dpset(testfilename);
 			}

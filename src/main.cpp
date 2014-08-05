@@ -9,6 +9,7 @@
 #include "learning/ranker.hpp"
 
 int main(int argc, char *argv[]) {
+	//set seed for rand()
 	srand(time(NULL));
 	//index of current argv[]
 	int argi = 1;
@@ -62,7 +63,7 @@ int main(int argc, char *argv[]) {
 	//show test scorer parameters
 	printf("New test scorer:\n");
 	if(test_scorer) test_scorer->showme();
-	else printf("\t(skipped)\n");
+	else printf("\t(null)\n");
 
 	//instantiate a new evaluator with read arguments
 	evaluator ev(r, training_scorer, test_scorer);

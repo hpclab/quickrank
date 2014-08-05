@@ -13,10 +13,10 @@ class lmart : public ranker {
 	public:
 		const unsigned int ntrees; //>0
 		const float shrinkage; //>0.0f
-		const unsigned int nthresholds; //if nthresholds==0 no. of thresholds is not limited
-		const unsigned int ntreeleaves;
+		const unsigned int nthresholds; //if nthresholds==0 then no. of thresholds is not limited
+		const unsigned int ntreeleaves; //>0
 		const unsigned int minleafsupport; //>0
-		const unsigned int esr; //If no performance gain on validation data is observed in eerounds, stop the training process right away (if esr==0 feature is disabled).
+		const unsigned int esr; //If no performance gain on validation data is observed in 'esr' rounds, stop the training process right away (if esr==0 feature is disabled).
 	protected:
 		float **thresholds = NULL;
 		unsigned int *thresholds_size = NULL;
