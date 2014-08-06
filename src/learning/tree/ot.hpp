@@ -25,9 +25,9 @@ class ot : public rt {
 			unsigned int* featuresamples = new unsigned int [nfeaturesamples]; // unsigned int featuresamples[nfeaturesamples];
 			for(unsigned int i=0; i<nfeaturesamples; ++i)
 				featuresamples[i] = i;
-			if(hist->samplingrate<1.0f) {
+			if(featuresamplingrate<1.0f) {
 				//need to make a sub-sampling
-				unsigned int reduced_nfeaturesamples = (unsigned int)floor(hist->samplingrate*nfeaturesamples);
+				unsigned int reduced_nfeaturesamples = (unsigned int)ceil(featuresamplingrate*nfeaturesamples);
 				while(nfeaturesamples>reduced_nfeaturesamples && nfeaturesamples>1) {
 					unsigned int featuretoremove = rand()%nfeaturesamples;
 					featuresamples[featuretoremove] = featuresamples[--nfeaturesamples];
@@ -89,43 +89,53 @@ class ot : public rt {
 				//init next depth
 				#pragma omp parallel for
 				for(unsigned int i=lbegin; i<lend; ++i) {
-					histogram *h = nodearray[i]->hist;
-					rtnode *n = nodearray[i];
+					rtnode *node = nodearray[i];
 					//calculate some values related to best_featureidx and best_thresholdid
-					const unsigned int last_thresholdid = h->thresholds_size[best_featureidx]-1;
-					const unsigned int lcount = h->count[best_featureidx][best_thresholdid];
-					const unsigned int rcount = h->count[best_featureidx][last_thresholdid]-lcount;
-					const double lsum = h->sumlbl[best_featureidx][best_thresholdid];
-					const double lsqsum = h->sqsumlbl[best_featureidx][best_thresholdid];
+					const unsigned int last_thresholdid = node->hist->thresholds_size[best_featureidx]-1;
+					const unsigned int lcount = node->hist->count[best_featureidx][best_thresholdid];
+					const unsigned int rcount = node->hist->count[best_featureidx][last_thresholdid]-lcount;
+					const double lsum = node->hist->sumlbl[best_featureidx][best_thresholdid];
+					const double lsqsum = node->hist->sqsumlbl[best_featureidx][best_thresholdid];
 					const double best_lvar = fabs(lsqsum-lsum*lsum/lcount);
-					const double rsum = h->sumlbl[best_featureidx][last_thresholdid]-lsum;
-					const double rsqsum = h->sqsumlbl[best_featureidx][last_thresholdid]-lsqsum;
+					const double rsum = node->hist->sumlbl[best_featureidx][last_thresholdid]-lsum;
+					const double rsqsum = node->hist->sqsumlbl[best_featureidx][last_thresholdid]-lsqsum;
 					const double best_rvar = fabs(rsqsum-rsum*rsum/rcount);
-					const float best_threshold = h->thresholds[best_featureidx][best_thresholdid];
+					const float best_threshold = node->hist->thresholds[best_featureidx][best_thresholdid];
 					//split samples between left and right child
 					unsigned int *lsamples = new unsigned int[lcount], lsize = 0;
 					unsigned int *rsamples = new unsigned int[rcount], rsize = 0;
 					float const* features = training_set->get_fvector(best_featureidx);
-					for(unsigned int h=0, nsampleids=n->nsampleids; h<nsampleids; ++h) {
-						const unsigned int k = n->sampleids[h];
+					for(unsigned int j=0, nsampleids=node->nsampleids; j<nsampleids; ++j) {
+						const unsigned int k = node->sampleids[j];
 						if(features[k]<=best_threshold) lsamples[lsize++] = k; else rsamples[rsize++] = k;
 					}
 					//create new histograms (except for the last level when nodes are leaves)
-					histogram *hleft = depth==treedepth-1 ? NULL : new histogram(h, lsamples, lsize, training_labels);
-					histogram *hright = depth==treedepth-1 ? NULL : new histogram(h, hleft);
+					histogram *lhist = NULL;
+					histogram *rhist = NULL;
+					if(depth!=treedepth-1) {
+						lhist = new histogram(node->hist, lsamples, lsize, training_labels);
+						if(node==root)
+							rhist = new histogram(node->hist, lhist);
+						else {
+							//save some new/delete by converting parent histogram into the right-child one
+							node->hist->transform_intorightchild(lhist),
+							rhist = node->hist;
+							node->hist = NULL;
+						}
+					}
 					//update current node
-					n->left = nodearray[2*i+1] = new rtnode(lsamples, lsize, best_lvar, lsum, hleft),
-					n->right = nodearray[2*i+2] = new rtnode(rsamples, rsize, best_rvar, rsum, hright),
-					n->set_feature(best_featureidx, training_set->get_featureid(best_featureidx)),
-					n->threshold = best_threshold,
-					n->deviance = minvar;
+					node->left = nodearray[2*i+1] = new rtnode(lsamples, lsize, best_lvar, lsum, lhist),
+					node->right = nodearray[2*i+2] = new rtnode(rsamples, rsize, best_rvar, rsum, rhist),
+					node->set_feature(best_featureidx, training_set->get_featureid(best_featureidx)),
+					node->threshold = best_threshold,
+					node->deviance = minvar;
 					//free mem
 					if(depth) {
-						delete n->hist,
-						delete [] n->sampleids;
-						n->hist = NULL,
-						n->sampleids = NULL,
-						n->nsampleids = 0;
+						delete node->hist,
+						delete [] node->sampleids;
+						node->hist = NULL,
+						node->sampleids = NULL,
+						node->nsampleids = 0;
 					}
 				}
 			}
@@ -143,31 +153,32 @@ class ot : public rt {
 			delete [] featuresamples;
 		}
 	private:
-		void fill(double **sumvar, unsigned int const *featuresamples, const unsigned int nfeaturesamples, histogram const *h) {
+		void fill(double **sumvar, unsigned int const *featuresamples, const unsigned int nfeaturesamples, histogram const *hist) {
 			#pragma omp parallel for
 			for(unsigned int i=0; i<nfeaturesamples; ++i) {
 				const unsigned int f = featuresamples[i];
 				//define pointer shortcuts
-				double *sumlabels = h->sumlbl[f];
-				double *sqsumlabels = h->sqsumlbl[f];
-				unsigned int *samplecount = h->count[f];
+				double *sumlabels = hist->sumlbl[f];
+				double *sqsumlabels = hist->sqsumlbl[f];
+				unsigned int *samplecount = hist->count[f];
 				//get last elements
-				unsigned int threshold_size = h->thresholds_size[f];
+				unsigned int threshold_size = hist->thresholds_size[f];
 				double s = sumlabels[threshold_size-1];
 				double sq = sqsumlabels[threshold_size-1];
 				unsigned int c = samplecount[threshold_size-1];
 				//looking for the feature that minimizes sum of lvar+rvar
-				for(unsigned int t=0; t<threshold_size; ++t) {
-					unsigned int lcount = samplecount[t];
-					unsigned int rcount = c-lcount;
-					if(lcount>=minls && rcount>=minls && sumvar[f][t]!=invalid) {
-						double lsum = sumlabels[t];
-						double lsqsum = sqsumlabels[t];
-						double rsum = s-lsum;
-						double rsqsum = sq-lsqsum;
-						sumvar[f][t] += fabs(lsqsum-lsum*lsum/lcount)+fabs(rsqsum-rsum*rsum/rcount);
-					} else sumvar[f][t] = invalid;
-				}
+				for(unsigned int t=0; t<threshold_size; ++t)
+					if(sumvar[f][t]!=invalid) {
+						unsigned int lcount = samplecount[t];
+						unsigned int rcount = c-lcount;
+						if(lcount>=minls && rcount>=minls) {
+							double lsum = sumlabels[t];
+							double lsqsum = sqsumlabels[t];
+							double rsum = s-lsum;
+							double rsqsum = sq-lsqsum;
+							sumvar[f][t] += fabs(lsqsum-lsum*lsum/lcount)+fabs(rsqsum-rsum*rsum/rcount);
+						} else sumvar[f][t] = invalid;
+					}
 			}
 		}
 		const double invalid = -DBL_MAX;

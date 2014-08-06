@@ -41,9 +41,9 @@ edit:
 
 sync:
 	rsync -quaRc --delete . gabriele@node1.novello.isti.cnr.it:$(pwd)
-	rsync -quaRc --delete . gabriele@node4.novello.isti.cnr.it:$(pwd)
-	rsync -quaRc --delete . gabriele@node5.novello.isti.cnr.it:$(pwd)
-	rsync -quaRc --delete . gabriele@barbera1.isti.cnr.it:$(pwd)
+#rsync -quaRc --delete . gabriele@cerino:$(pwd)
+#rsync -quaRc --delete . gabriele@node5.novello.isti.cnr.it:$(pwd)
+#rsync -quaRc --delete . gabriele@barbera1.isti.cnr.it:$(pwd)
 
 dataset:
 	@mkdir -p ../bin
@@ -52,3 +52,7 @@ dataset:
 	@../bin/rds ../datasets/rand/train.txt 20 100 5 10
 	@../bin/rds ../datasets/rand/vali.txt 20 20 5 10
 	@../bin/rds ../datasets/rand/test.txt 20 10 5 10
+
+tgz:
+	mkdir -p ../backup
+	tar -czf ../backup/quickrank_$$(date +%Y%m%d_%H%M%S).tgz .

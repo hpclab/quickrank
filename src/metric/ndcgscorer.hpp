@@ -61,8 +61,6 @@ class ndcgscorer : public metricscorer {
 		 * @param k maximum number of entities that can be recommended.
 		*/
 		ndcgscorer(const unsigned int kval) {
-			// TODO: (by cla) Move logging out of the constructors.
-			printf("\tscorer type = ndcg@%u\n", kval);
 			k = kval;
 		}
 		/** Return a string contatining the name of the metric scorer;
@@ -84,12 +82,6 @@ class ndcgscorer : public metricscorer {
 			const unsigned int size = k<ql.size ? k : ql.size;
 			//compute the ideal ndcg
 			const float idcg = compute_idcg(ql.labels, ql.size, size);
-			#ifdef LOGFILE
-			fprintf(flog, "idcg %f :", idcg);
-			for(unsigned int i=0; i<ql.size; ++i)
-				fprintf(flog, " %.0f", ql.labels[i]);
-			fprintf(flog, "\n");
-			#endif
 			fsymmatrix *changes = new fsymmatrix(ql.size);
 			if(idcg>0.0f) {
 				#pragma omp parallel for

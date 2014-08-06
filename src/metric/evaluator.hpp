@@ -34,7 +34,7 @@ class evaluator {
 				r->set_validationset(new dpset(validationfilename));
 			}
 			dpset *testset = NULL;
-			if(not is_empty(testfilename) and test_scorer) {
+			if(test_scorer and not is_empty(testfilename)) {
 				printf("Reading test dataset:\n");
 				testset = new dpset(testfilename);
 			}
@@ -60,7 +60,7 @@ class evaluator {
 				#endif
 				printf("\t%s@%u on test data = %.4f\n", test_scorer->whoami(), test_scorer->get_k(), score);
 				#ifdef SHOWTIMER
-				printf("\telapsed time = %.3f seconds\n", timer);
+				printf("\t\e[0;33m%.3f seconds\e[0m\n", timer);
 				#endif
 				printf("\tdone\n");
 				delete testset;

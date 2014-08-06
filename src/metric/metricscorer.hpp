@@ -8,7 +8,7 @@ typedef symmatrix<float> fsymmatrix;
 
 class metricscorer {
 	protected:
-		unsigned int k = 10;
+		unsigned int k;
 	public:
 		virtual ~metricscorer() {}
 		void set_k(const unsigned int _k) { k = _k; }
@@ -16,6 +16,7 @@ class metricscorer {
 		virtual const char *whoami() const = 0;
 		virtual float compute_score(const qlist &ql) = 0;
 		virtual fsymmatrix *swap_change(const qlist &ql) = 0;
+		virtual void showme() { printf("\tscorer type = '%s@%u'\n", whoami(), k); };
 };
 
 #endif
