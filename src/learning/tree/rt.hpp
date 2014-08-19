@@ -40,14 +40,8 @@ class rt {
 		rtnode **leaves = NULL;
 		unsigned int nleaves = 0;
 		rtnode *root = NULL;
-		float featuresamplingrate = 1.0f;
 	public:
-		rt(unsigned int nrequiredleaves, dpset *dps, float *labels, unsigned int minls) :
-			nrequiredleaves(nrequiredleaves),
-			minls(minls),
-			training_set(dps),
-			training_labels(labels) {
-		}
+		rt(unsigned int nrequiredleaves, dpset *dps, float *labels, unsigned int minls) : nrequiredleaves(nrequiredleaves), minls(minls), training_set(dps), training_labels(labels) {}
 		~rt() {
 			if(root) {
 				delete [] root->sampleids;
@@ -74,13 +68,13 @@ class rt {
 			for(unsigned int i=0; i<nsampleids; ++i)
 				sampleids[i] = i;
 			root = new rtnode(sampleids, nsampleids, DBL_MAX, 0.0, hist);
-			if(split(root))
+			if(split(root, 1.0f, false))
 				heap.push_chidrenof(root);
 			while(heap.is_notempty() && (nrequiredleaves==0 or taken+heap.get_size()<nrequiredleaves)) {
 				//get node with highest deviance from heap
 				rtnode *node = heap.top();
 				//try split current node
-				if(split(node)) heap.push_chidrenof(node); else ++taken; //unsplitable (i.e. null variance, or after split variance is higher than before, or #samples<minlsd)
+				if(split(node, 1.0f, false)) heap.push_chidrenof(node); else ++taken; //unsplitable (i.e. null variance, or after split variance is higher than before, or #samples<minlsd)
 				//remove node from heap
 				heap.pop();
 			}
@@ -120,9 +114,9 @@ class rt {
 		}
 	private:
 		//if require_devianceltparent is true the node is split if minvar is lt the current node deviance (require_devianceltparent=false in RankLib)
-		bool split(rtnode *node, bool require_devianceltparent=false) {
+		bool split(rtnode *node, const float featuresamplingrate, const bool require_devianceltparent) {
 			if(node->deviance>0.0f) {
-				const double initvar = require_devianceltparent?node->deviance:DBL_MAX;
+				const double initvar = require_devianceltparent ? node->deviance : DBL_MAX;
 				//get current nod hidtogram pointer
 				histogram *h = node->hist;
 				//featureidxs to be used for tree splitnodeting
@@ -133,10 +127,11 @@ class rt {
 					featuresamples = new unsigned int[nfeaturesamples];
 					for(unsigned int i=0; i<nfeaturesamples; ++i)
 						featuresamples[i] = i;
-					unsigned int reduced_nfeaturesamples = (unsigned int)floor(featuresamplingrate*nfeaturesamples);
+					//need to make a sub-sampling
+					const unsigned int reduced_nfeaturesamples = floor(featuresamplingrate*nfeaturesamples);
 					while(nfeaturesamples>reduced_nfeaturesamples && nfeaturesamples>1) {
-						unsigned int selectedtoremove = rand()%nfeaturesamples;
-						featuresamples[selectedtoremove] = featuresamples[--nfeaturesamples];
+						const unsigned int i = rand()%nfeaturesamples;
+						featuresamples[i] = featuresamples[--nfeaturesamples];
 					}
 				}
 				//find best split
@@ -154,7 +149,7 @@ class rt {
 					thread_best_thresholdid[i] = uint_max;
 				#pragma omp parallel for
 				for(unsigned int i=0; i<nfeaturesamples; ++i) {
-					//get feature id
+					//get feature idx
 					const unsigned int f = featuresamples ? featuresamples[i] : i;
 					//get thread identification number
 					const int ith = omp_get_thread_num();

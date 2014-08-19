@@ -1,6 +1,8 @@
 #ifndef __STRUTILS_HPP__
 #define __STRUTILS_HPP__
 
+#include <cctype>
+
 /*! \file strutils.hpp
  * \brief some useful functions for strings
  */
@@ -47,6 +49,11 @@ unsigned int inline atou(char *str, const char *sep) {
 	int x = atoi(str);
 	if(x<0) exit(3);
 	return (unsigned int) x;
+}
+
+int cisrtcmp(const char *a, const char* b) {
+	while(*a!='\0' && *b!='\0') if(tolower(*a)!=tolower(*b)) return 1; else ++a, ++b;
+	return (*a!='\0' || *b!='\0') ? 1 : 0;
 }
 
 #endif

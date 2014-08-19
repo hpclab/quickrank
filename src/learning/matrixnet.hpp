@@ -13,19 +13,13 @@ class matrixnet : public lmart {
 	public:
 		const unsigned int treedepth; //>0
 	public:
-		matrixnet(unsigned int ntrees, float shrinkage, unsigned int nthresholds, unsigned int treedepth, unsigned int minleafsupport, unsigned int esr, const bool verbose=true) : lmart(ntrees, shrinkage, nthresholds, 1<<treedepth, minleafsupport, esr), treedepth(treedepth) {}
+		matrixnet(unsigned int ntrees, float shrinkage, unsigned int nthresholds, unsigned int treedepth, unsigned int minleafsupport, unsigned int esr) : lmart(ntrees, shrinkage, nthresholds, 1<<treedepth, minleafsupport, esr), treedepth(treedepth) {}
 		const char *whoami() const {
 			return "MATRIX NET";
 		}
 		void showme() {
-			printf("\tranker type = '%s'\n", whoami());
-			printf("\tno. of trees = %u\n", ntrees);
-			printf("\tshrinkage = %f\n", shrinkage);
-			if(nthresholds) printf("\tno. of thresholds = %u\n", nthresholds); else printf("\tno. of thresholds = unlimited\n");
+			lmart::showme();
 			printf("\ttree depth = %u\n", treedepth);
-			printf("\tno. of tree leaves = %u\n", ntreeleaves);
-			printf("\tmin leaf support = %u\n", minleafsupport);
-			if(esr) printf("\tno. of no gain rounds before early stop = %u\n", esr);
 		}
 		void learn() {
 			training_score = 0.0f,
@@ -90,7 +84,7 @@ class matrixnet : public lmart {
 				printf("\t%s@%u on validation data = %.4f\n", scorer->whoami(), scorer->get_k(), validation_bestscore);
 			}
 			#ifdef SHOWTIMER
-			printf("\t\e[0;33m%.3f seconds\e[0m\n", timer);
+			printf("\t\033[1melapsed time = %.3f seconds\033[0m\n", timer);
 			#endif
 			printf("\tdone\n");
 		}

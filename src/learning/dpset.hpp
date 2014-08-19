@@ -296,10 +296,10 @@ class dpset {
 				nfeatures = nfeatureids,
 				features = (float**)realloc(features, sizeof(float*)*nfeatureids);
 				//show statistics
-				printf("\tfile = '%s'\n\tno. of datapoints = %u\n\tno. of training queries = %u\n\tmax no. of datapoints in a training query = %u\n\tno. of features = %u\n", filename, ndps, nrankedlists, maxrlsize, nfeatures);
+				printf("\tfile = %s\n\tno. of datapoints = %u\n\tno. of training queries = %u\n\tmax no. of datapoints in a training query = %u\n\tno. of features = %u\n", filename, ndps, nrankedlists, maxrlsize, nfeatures);
 				#ifdef SHOWTIMER
 				processingtimer = omp_get_wtime()-processingtimer;
-				printf("\t\e[0;33mreading: %.3f seconds (%.0fMB/s, %d threads)\n\tpost-processing: %.3f seconds\e[0m\n", readingtimer, filesize(filename)/readingtimer, nth, processingtimer);
+				printf("\t\033[1melapsed reading time = %.3f seconds (%.0fMB/s, %d threads)\n\telapsed post-processing time = %.3f seconds\033[0m\n", readingtimer, filesize(filename)/readingtimer, nth, processingtimer);
 				#endif
 				//free mem from temporary data structures
 				// TODO: (by cla) is each dplist deleted ?

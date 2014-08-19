@@ -22,17 +22,6 @@ class ot : public rt {
 				sampleids[i] = i;
 			//featureidxs to be used for "tree"
 			unsigned int nfeaturesamples = training_set->get_nfeatures();
-			unsigned int* featuresamples = new unsigned int [nfeaturesamples]; // unsigned int featuresamples[nfeaturesamples];
-			for(unsigned int i=0; i<nfeaturesamples; ++i)
-				featuresamples[i] = i;
-			if(featuresamplingrate<1.0f) {
-				//need to make a sub-sampling
-				unsigned int reduced_nfeaturesamples = (unsigned int)ceil(featuresamplingrate*nfeaturesamples);
-				while(nfeaturesamples>reduced_nfeaturesamples && nfeaturesamples>1) {
-					unsigned int featuretoremove = rand()%nfeaturesamples;
-					featuresamples[featuretoremove] = featuresamples[--nfeaturesamples];
-				}
-			}
 			//histarray and nodearray store histograms and treenodes used in the entire procedure (i.e. the entire tree)
 			rtnode **nodearray = new rtnode*[POWTWO(treedepth+1)](); //initialized NULL
 			//init tree root
@@ -40,7 +29,7 @@ class ot : public rt {
 			//allocate a matrix for each (feature,threshold)
 			double **sumvar = new double*[nfeaturesamples];
 			for(unsigned int i=0; i<nfeaturesamples; ++i)
-				sumvar[i] = new double[hist->thresholds_size[featuresamples[i]]];
+				sumvar[i] = new double[hist->thresholds_size[i]];
 			//tree computation
 			for(unsigned int depth=0; depth<treedepth; ++depth) {
 				const unsigned int lbegin = POWTWO(depth)-1; //index of first histogram belonging to the current level
@@ -48,12 +37,12 @@ class ot : public rt {
 				//init matrix to zero
 				#pragma omp parallel for
 				for(unsigned int i=0; i<nfeaturesamples; ++i) {
-					const unsigned int thresholds_size = hist->thresholds_size[featuresamples[i]];
+					const unsigned int thresholds_size = hist->thresholds_size[i];
 					for(unsigned int j=0; j<thresholds_size; ++j) sumvar[i][j] = 0.0;
 				}
 				//for each histogram on the current depth (i.e. fringe) add variance of each (feature,threshold) in sumvar matrix
 				for(unsigned int i=lbegin; i<lend; ++i)
-					fill(sumvar, featuresamples, nfeaturesamples, nodearray[i]->hist);
+					fill(sumvar, nfeaturesamples, nodearray[i]->hist);
 				//find best split in the matrix
 				const int nth = omp_get_num_procs();
 				double* thread_minvar = new double [nth]; // double thread_minvar[nth];
@@ -64,9 +53,8 @@ class ot : public rt {
 					thread_best_featureidx[i] = uint_max,
 					thread_best_thresholdid[i] = uint_max;
 				#pragma omp parallel for
-				for(unsigned int i=0; i<nfeaturesamples; ++i) {
+				for(unsigned int f=0; f<nfeaturesamples; ++f) {
 					const int ith = omp_get_thread_num();
-					const unsigned int f = featuresamples[i];
 					const unsigned int threshold_size = hist->thresholds_size[f];
 					for(unsigned int t=0; t<threshold_size; ++t)
 						if(sumvar[f][t]!=invalid && sumvar[f][t]<thread_minvar[ith])
@@ -150,13 +138,11 @@ class ot : public rt {
 			delete [] sumvar,
 			//delete temp data
 			delete [] nodearray;
-			delete [] featuresamples;
 		}
 	private:
-		void fill(double **sumvar, unsigned int const *featuresamples, const unsigned int nfeaturesamples, histogram const *hist) {
+		void fill(double **sumvar, const unsigned int nfeaturesamples, histogram const *hist) {
 			#pragma omp parallel for
-			for(unsigned int i=0; i<nfeaturesamples; ++i) {
-				const unsigned int f = featuresamples[i];
+			for(unsigned int f=0; f<nfeaturesamples; ++f) {
 				//define pointer shortcuts
 				double *sumlabels = hist->sumlbl[f];
 				double *sqsumlabels = hist->sqsumlbl[f];

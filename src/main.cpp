@@ -6,7 +6,7 @@
 
 // TODO: (by cla) Add some logging facility and remove any printf.
 // TODO: (by cla) Give names to error codes.
-
+// TODO: (by cla) It seems this log file is now useless ?!?
 #ifdef LOGFILE
 FILE *flog = NULL;
 #endif
@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
 	int argi = 1;
 	//read ranker type and its parameters
 	ranker *r = NULL;
-	if(argi+6<argc && strcmp(argv[argi],"lm")==0) {
+	if(argi+6<argc && cisrtcmp(argv[argi],"lm")==0) {
 		unsigned int ntrees = atoi(argv[++argi]);
 		float shrinkage = atof(argv[++argi]);
 		unsigned int nthresholds = atoi(argv[++argi]);
@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
 		unsigned int minleafsupport = atoi(argv[++argi]);
 		unsigned int esr = atoi(argv[++argi]);
 		r = new lmart(ntrees, shrinkage, nthresholds, ntreeleaves, minleafsupport, esr), ++argi;
-	} else if(argi+6<argc && strcmp(argv[argi],"mn")==0) {
+	} else if(argi+6<argc && cisrtcmp(argv[argi],"mn")==0) {
 		unsigned int ntrees = atoi(argv[++argi]);
 		float shrinkage = atof(argv[++argi]);
 		unsigned int nthresholds = atoi(argv[++argi]);
@@ -46,10 +46,10 @@ int main(int argc, char *argv[]) {
 
 	//read metric scorer for the training phase and its parameters
 	metricscorer *training_scorer = NULL;
-	if(argi+1<argc && strcmp(argv[argi],"ndcg")==0) {
+	if(argi+1<argc && cisrtcmp(argv[argi],"ndcg")==0) {
 		unsigned int k = atoi(argv[++argi]);
 		training_scorer = new ndcgscorer(k), ++argi;
-	} else if(argi+1<argc && strcmp(argv[argi],"map")==0) {
+	} else if(argi+1<argc && cisrtcmp(argv[argi],"map")==0) {
 		unsigned int k = atoi(argv[++argi]);
 		training_scorer = new mapscorer(k), ++argi;
 	} else exit(12);
@@ -59,10 +59,10 @@ int main(int argc, char *argv[]) {
 
 	//read metric scorer for the test phase and its parameters
 	metricscorer *test_scorer = NULL;
-	if(argi+1<argc && strcmp(argv[argi],"ndcg")==0) {
+	if(argi+1<argc && cisrtcmp(argv[argi],"ndcg")==0) {
 		unsigned int k = atoi(argv[++argi]);
 		test_scorer = new ndcgscorer(k), ++argi;
-	} else if(argi+1<argc && strcmp(argv[argi],"map")==0) {
+	} else if(argi+1<argc && cisrtcmp(argv[argi],"map")==0) {
 		unsigned int k = atoi(argv[++argi]);
 		test_scorer = new mapscorer(k), ++argi;
 	} else if(argi<argc && strcmp(argv[argi],"-")==0) {
@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
 	//instantiate a new evaluator with read arguments
 	evaluator ev(r, training_scorer, test_scorer);
 
-	//set partial save
+	//set ranker partial save
 	if(argi<argc) {
 		unsigned int npartialsave = atoi(argv[argi++]);
 		if(npartialsave>0)
@@ -92,22 +92,25 @@ int main(int argc, char *argv[]) {
 	if(argi+4<argc) {
 		printf("Filenames:\n");
 		training_filename = strcmp(argv[argi],"-") ? argv[argi] : NULL;
-		printf("\ttraining file = '%s'\n", training_filename), ++argi;
+		printf("\ttraining file = %s\n", training_filename), ++argi;
 		validation_filename = strcmp(argv[argi],"-") ? argv[argi] : NULL;
-		printf("\tvalidation file = '%s'\n", validation_filename), ++argi;
+		printf("\tvalidation file = %s\n", validation_filename), ++argi;
 		test_filename = strcmp(argv[argi],"-") ? argv[argi] : NULL;
-		printf("\ttest file = '%s'\n", test_filename), ++argi;
+		printf("\ttest file = %s\n", test_filename), ++argi;
 		features_filename = strcmp(argv[argi],"-") ? argv[argi] : NULL;
-		printf("\tfeatures file = '%s'\n", features_filename), ++argi;
+		printf("\tfeatures file = %s\n", features_filename), ++argi;
 		output_basename = strcmp(argv[argi],"-") ? argv[argi] : NULL;
-		printf("\toutput basename = '%s'\n", output_basename), ++argi;
-		ev.evaluate(training_filename, validation_filename, test_filename, features_filename, output_basename);
-		if(output_basename)
-			ev.write();
+		printf("\toutput basename = %s\n", output_basename), ++argi;
 	} else exit(15);
 
 	//warnings for unexpected arguments
 	if(argi!=argc)
 		printf("warning: unexpected arguments\n");
+
+	//start evaluation process
+	ev.evaluate(training_filename, validation_filename, test_filename, features_filename, output_basename);
+	if(output_basename)
+		ev.write();
+
 	return 0;
 }

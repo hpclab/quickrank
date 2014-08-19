@@ -1,0 +1,160 @@
+New ranker:
+	ranker type = LAMBDA MART
+	no. of trees = 100
+	shrinkage = 0.100
+	no. of thresholds = unlimited
+	min leaf support = 1
+	no. of tree leaves = 8
+New training scorer:
+	scorer type = NDCG@10
+New test scorer:
+	scorer type = NDCG@10
+Filenames:
+	training file = data/msn1.fold1.train.5k.txt
+	validation file = data/msn1.fold1.vali.5k.txt
+	test file = data/msn1.fold1.test.5k.txt
+	features file = (null)
+	output basename = msn.fold1.quickrank.lmart.xml
+Reading Training dataset:
+	file = data/msn1.fold1.train.5k.txt
+	no. of datapoints = 5000
+	no. of training queries = 43
+	max no. of datapoints in a training query = 308
+	no. of features = 136
+	[1melapsed reading time = 0.181 seconds (30MB/s, 2 threads)
+	elapsed post-processing time = 0.006 seconds[0m
+Reading validation dataset:
+	file = data/msn1.fold1.vali.5k.txt
+	no. of datapoints = 5000
+	no. of training queries = 49
+	max no. of datapoints in a training query = 319
+	no. of features = 136
+	[1melapsed reading time = 0.172 seconds (33MB/s, 2 threads)
+	elapsed post-processing time = 0.007 seconds[0m
+Reading test dataset:
+	file = data/msn1.fold1.test.5k.txt
+	no. of datapoints = 5000
+	no. of training queries = 43
+	max no. of datapoints in a training query = 229
+	no. of features = 136
+	[1melapsed reading time = 0.206 seconds (26MB/s, 2 threads)
+	elapsed post-processing time = 0.007 seconds[0m
+Initialization:
+	[1melapsed time = 0.025 seconds[0m
+	done
+Training:
+	-----------------------------
+	iteration training validation
+	-----------------------------
+	#1          0.2065    0.1699*
+	#2          0.2108    0.1710*
+	#3          0.2112    0.1671
+	#4          0.2334    0.2197*
+	#5          0.2399    0.2196
+	#6          0.2435    0.2183
+	#7          0.2450    0.2179
+	#8          0.2481    0.2179
+	#9          0.2482    0.2198*
+	#10         0.2481    0.2206*
+	#11         0.2475    0.2201
+	#12         0.2477    0.2201
+	#13         0.2481    0.2205
+	#14         0.2488    0.2205
+	#15         0.2483    0.2194
+	#16         0.2487    0.2198
+	#17         0.2500    0.2198
+	#18         0.2496    0.2194
+	#19         0.2570    0.2255*
+	#20         0.2599    0.2321*
+	#21         0.2636    0.2282
+	#22         0.2788    0.2281
+	#23         0.3016    0.2313
+	#24         0.3040    0.2277
+	#25         0.3050    0.2288
+	#26         0.3059    0.2288
+	#27         0.3070    0.2372*
+	#28         0.3085    0.2372*
+	#29         0.3131    0.2423*
+	#30         0.3116    0.2451*
+	#31         0.3118    0.2446
+	#32         0.3729    0.3057*
+	#33         0.3790    0.3093*
+	#34         0.4032    0.3195*
+	#35         0.4088    0.3092
+	#36         0.4181    0.3251*
+	#37         0.4234    0.3315*
+	#38         0.4244    0.3376*
+	#39         0.4296    0.3429*
+	#40         0.4387    0.3566*
+	#41         0.4456    0.3552
+	#42         0.4507    0.3578*
+	#43         0.4502    0.3583*
+	#44         0.4537    0.3586*
+	#45         0.4558    0.3583
+	#46         0.4586    0.3546
+	#47         0.4622    0.3535
+	#48         0.4705    0.3598*
+	#49         0.4755    0.3577
+	#50         0.4807    0.3650*
+	#51         0.4871    0.3618
+	#52         0.4900    0.3602
+	#53         0.4876    0.3622
+	#54         0.4925    0.3623
+	#55         0.4920    0.3658*
+	#56         0.4974    0.3661*
+	#57         0.5012    0.3674*
+	#58         0.5015    0.3671
+	#59         0.5040    0.3692*
+	#60         0.5041    0.3725*
+	#61         0.5050    0.3725
+	#62         0.5064    0.3767*
+	#63         0.5090    0.3755
+	#64         0.5141    0.3761
+	#65         0.5160    0.3787*
+	#66         0.5250    0.3829*
+	#67         0.5282    0.3819
+	#68         0.5298    0.3853*
+	#69         0.5304    0.3764
+	#70         0.5352    0.3753
+	#71         0.5386    0.3759
+	#72         0.5480    0.3773
+	#73         0.5478    0.3776
+	#74         0.5508    0.3768
+	#75         0.5509    0.3809
+	#76         0.5512    0.3805
+	#77         0.5488    0.3848
+	#78         0.5497    0.3854*
+	#79         0.5529    0.3893*
+	#80         0.5535    0.3866
+	#81         0.5564    0.3932*
+	#82         0.5577    0.3954*
+	#83         0.5595    0.3939
+	#84         0.5635    0.3910
+	#85         0.5688    0.3884
+	#86         0.5699    0.3862
+	#87         0.5759    0.3882
+	#88         0.5777    0.3914
+	#89         0.5786    0.3944
+	#90         0.5829    0.3919
+	#91         0.5877    0.3938
+	#92         0.5890    0.3945
+	#93         0.5910    0.3955*
+	#94         0.5916    0.3943
+	#95         0.5869    0.3914
+	#96         0.5845    0.3984*
+	#97         0.5877    0.3993*
+	#98         0.5895    0.4011*
+	#99         0.5901    0.4046*
+	#100        0.5910    0.4004
+	-----------------------------
+	NDCG@10 on training data = 0.5901
+	NDCG@10 on validation data = 0.4046
+	[1melapsed time = 6.648 seconds[0m
+	done
+Testing:
+	NDCG@10 on test data = 0.3109
+	[1melapsed time = 0.018 seconds[0m
+	done
+Writing output:
+	model filename = msn.fold1.quickrank.lmart.xml.best.xml
+	done

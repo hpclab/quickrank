@@ -49,13 +49,13 @@ class lmart : public ranker {
 			return "LAMBDA MART";
 		}
 		void showme() {
-			printf("\tranker type = '%s'\n", whoami());
+			printf("\tranker type = %s\n", whoami());
 			printf("\tno. of trees = %u\n", ntrees);
-			printf("\tshrinkage = %f\n", shrinkage);
+			printf("\tshrinkage = %.3f\n", shrinkage);
 			if(nthresholds) printf("\tno. of thresholds = %u\n", nthresholds); else printf("\tno. of thresholds = unlimited\n");
-			printf("\tno. of tree leaves = %u\n", ntreeleaves);
-			printf("\tmin leaf support = %u\n", minleafsupport);
 			if(esr) printf("\tno. of no gain rounds before early stop = %u\n", esr);
+			printf("\tmin leaf support = %u\n", minleafsupport);
+			printf("\tno. of tree leaves = %u\n", ntreeleaves);
 		}
 		void init()  {
 			printf("Initialization:\n");
@@ -112,7 +112,7 @@ class lmart : public ranker {
 			}
 			hist = new roothistogram(training_set, pseudoresponses, sortedsid, sortedsize, thresholds, thresholds_size);
 			#ifdef SHOWTIMER
-			printf("\t\e[0;33m%.3f seconds\e[0m\n", omp_get_wtime()-timer);
+			printf("\t\033[1melapsed time = %.3f seconds\033[0m\n", omp_get_wtime()-timer);
 			#endif
 			printf("\tdone\n");
 		}
@@ -176,7 +176,7 @@ class lmart : public ranker {
 				printf("\t%s@%u on validation data = %.4f\n", scorer->whoami(), scorer->get_k(), validation_bestscore);
 			}
 			#ifdef SHOWTIMER
-			printf("\t\e[0;33m%.3f seconds\e[0m\n", timer);
+			printf("\t\033[1melapsed time = %.3f seconds\033[0m\n", timer);
 			#endif
 			printf("\tdone\n");
 		}
@@ -186,9 +186,9 @@ class lmart : public ranker {
 		void write_outputtofile() {
 			if(output_basename) {
 				char filename[256];
-				sprintf(filename, "%s.%u.xml", output_basename, ens.get_size());
+				sprintf(filename, "%s.best.xml", output_basename);
 				write_outputtofile(filename);
-				printf("\tmodel filename = '%s'\n", filename);
+				printf("\tmodel filename = %s\n", filename);
 			}
 		}
 	protected:

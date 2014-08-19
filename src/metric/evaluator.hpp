@@ -60,7 +60,7 @@ class evaluator {
 				#endif
 				printf("\t%s@%u on test data = %.4f\n", test_scorer->whoami(), test_scorer->get_k(), score);
 				#ifdef SHOWTIMER
-				printf("\t\e[0;33m%.3f seconds\e[0m\n", timer);
+				printf("\t\033[1melapsed time = %.3f seconds\033[0m\n", timer);
 				#endif
 				printf("\tdone\n");
 				delete testset;
