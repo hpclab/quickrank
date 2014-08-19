@@ -1,6 +1,7 @@
 all: 
 	make msn.fold1.ranklib.lmart.log
 	make msn.fold1.quickrank.lmart.log
+	make msn.fold1.quickrank.matrixnet.log
 
 
 msn.fold1.ranklib.lmart.log:
@@ -24,3 +25,16 @@ msn.fold1.quickrank.lmart.log:
 	> msn.fold1.quickrank.lmart.log
 	rm msn.fold1.quickrank.lmart.xml*
 	cat msn.fold1.quickrank.lmart.log
+
+msn.fold1.quickrank.matrixnet.log:
+	../bin/qr mn 100 0.1 0 3 1 0 \
+	ndcg 10 ndcg 10 0 \
+	data/msn1.fold1.train.5k.txt \
+	data/msn1.fold1.vali.5k.txt \
+	data/msn1.fold1.test.5k.txt \
+	- \
+	msn.fold1.quickrank.matrixnet.xml \
+	> msn.fold1.quickrank.matrixnet.log
+	rm msn.fold1.quickrank.matrixnet.xml*
+	cat msn.fold1.quickrank.matrixnet.log
+	

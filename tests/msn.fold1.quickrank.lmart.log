@@ -21,7 +21,7 @@ Reading Training dataset:
 	no. of training queries = 43
 	max no. of datapoints in a training query = 308
 	no. of features = 136
-	[1melapsed reading time = 0.181 seconds (30MB/s, 2 threads)
+	[1melapsed reading time = 0.237 seconds (23MB/s, 2 threads)
 	elapsed post-processing time = 0.006 seconds[0m
 Reading validation dataset:
 	file = data/msn1.fold1.vali.5k.txt
@@ -29,7 +29,7 @@ Reading validation dataset:
 	no. of training queries = 49
 	max no. of datapoints in a training query = 319
 	no. of features = 136
-	[1melapsed reading time = 0.172 seconds (33MB/s, 2 threads)
+	[1melapsed reading time = 0.163 seconds (35MB/s, 2 threads)
 	elapsed post-processing time = 0.007 seconds[0m
 Reading test dataset:
 	file = data/msn1.fold1.test.5k.txt
@@ -37,7 +37,7 @@ Reading test dataset:
 	no. of training queries = 43
 	max no. of datapoints in a training query = 229
 	no. of features = 136
-	[1melapsed reading time = 0.206 seconds (26MB/s, 2 threads)
+	[1melapsed reading time = 0.153 seconds (35MB/s, 2 threads)
 	elapsed post-processing time = 0.007 seconds[0m
 Initialization:
 	[1melapsed time = 0.025 seconds[0m
@@ -149,11 +149,11 @@ Training:
 	-----------------------------
 	NDCG@10 on training data = 0.5901
 	NDCG@10 on validation data = 0.4046
-	[1melapsed time = 6.648 seconds[0m
+	[1melapsed time = 6.883 seconds[0m
 	done
 Testing:
 	NDCG@10 on test data = 0.3109
-	[1melapsed time = 0.018 seconds[0m
+	[1melapsed time = 0.019 seconds[0m
 	done
 Writing output:
 	model filename = msn.fold1.quickrank.lmart.xml.best.xml
