@@ -1,0 +1,161 @@
+New ranker:
+	ranker type = MATRIX NET
+	no. of trees = 100
+	shrinkage = 0.100
+	no. of thresholds = unlimited
+	min leaf support = 1
+	no. of tree leaves = 8
+	tree depth = 3
+New training scorer:
+	scorer type = NDCG@10
+New test scorer:
+	scorer type = NDCG@10
+Filenames:
+	training file = data/msn1.fold1.train.5k.txt
+	validation file = data/msn1.fold1.vali.5k.txt
+	test file = data/msn1.fold1.test.5k.txt
+	features file = (null)
+	output basename = msn.fold1.quickrank.matrixnet.xml
+Reading Training dataset:
+	file = data/msn1.fold1.train.5k.txt
+	no. of datapoints = 5000
+	no. of training queries = 43
+	max no. of datapoints in a training query = 308
+	no. of features = 136
+	[1melapsed reading time = 0.180 seconds (31MB/s, 2 threads)
+	elapsed post-processing time = 0.007 seconds[0m
+Reading validation dataset:
+	file = data/msn1.fold1.vali.5k.txt
+	no. of datapoints = 5000
+	no. of training queries = 49
+	max no. of datapoints in a training query = 319
+	no. of features = 136
+	[1melapsed reading time = 0.174 seconds (32MB/s, 2 threads)
+	elapsed post-processing time = 0.007 seconds[0m
+Reading test dataset:
+	file = data/msn1.fold1.test.5k.txt
+	no. of datapoints = 5000
+	no. of training queries = 43
+	max no. of datapoints in a training query = 229
+	no. of features = 136
+	[1melapsed reading time = 0.165 seconds (32MB/s, 2 threads)
+	elapsed post-processing time = 0.007 seconds[0m
+Initialization:
+	[1melapsed time = 0.026 seconds[0m
+	done
+Training:
+	-----------------------------
+	iteration training validation
+	-----------------------------
+	#1          0.2706    0.2369*
+	#2          0.3423    0.2803*
+	#3          0.3561    0.3127*
+	#4          0.3525    0.3083
+	#5          0.3499    0.2883
+	#6          0.3499    0.2883
+	#7          0.3735    0.3089
+	#8          0.4065    0.3433*
+	#9          0.4276    0.3603*
+	#10         0.4281    0.3599
+	#11         0.4268    0.3496
+	#12         0.4143    0.3332
+	#13         0.4089    0.3309
+	#14         0.4088    0.3260
+	#15         0.4283    0.3281
+	#16         0.4295    0.3314
+	#17         0.4432    0.3317
+	#18         0.4517    0.3272
+	#19         0.4587    0.3404
+	#20         0.4504    0.3377
+	#21         0.4520    0.3390
+	#22         0.4539    0.3394
+	#23         0.4548    0.3433
+	#24         0.4550    0.3453
+	#25         0.4604    0.3392
+	#26         0.4588    0.3414
+	#27         0.4610    0.3438
+	#28         0.4618    0.3445
+	#29         0.4640    0.3426
+	#30         0.4649    0.3438
+	#31         0.4620    0.3400
+	#32         0.4575    0.3454
+	#33         0.4622    0.3470
+	#34         0.4601    0.3523
+	#35         0.4642    0.3573
+	#36         0.4691    0.3581
+	#37         0.4623    0.3545
+	#38         0.4643    0.3538
+	#39         0.4611    0.3550
+	#40         0.4707    0.3586
+	#41         0.4726    0.3592
+	#42         0.4747    0.3619*
+	#43         0.4747    0.3656*
+	#44         0.4750    0.3642
+	#45         0.4720    0.3650
+	#46         0.4728    0.3660*
+	#47         0.4723    0.3698*
+	#48         0.4751    0.3683
+	#49         0.4742    0.3656
+	#50         0.4747    0.3649
+	#51         0.4765    0.3653
+	#52         0.4767    0.3665
+	#53         0.4771    0.3651
+	#54         0.4781    0.3615
+	#55         0.4788    0.3634
+	#56         0.4821    0.3657
+	#57         0.4833    0.3668
+	#58         0.4825    0.3686
+	#59         0.4841    0.3692
+	#60         0.4860    0.3749*
+	#61         0.4866    0.3778*
+	#62         0.4900    0.3748
+	#63         0.4913    0.3735
+	#64         0.4913    0.3735
+	#65         0.4924    0.3706
+	#66         0.4922    0.3710
+	#67         0.4925    0.3731
+	#68         0.4924    0.3732
+	#69         0.4924    0.3787*
+	#70         0.4934    0.3776
+	#71         0.4946    0.3770
+	#72         0.4955    0.3773
+	#73         0.4971    0.3758
+	#74         0.5006    0.3744
+	#75         0.5008    0.3777
+	#76         0.5010    0.3734
+	#77         0.5010    0.3734
+	#78         0.5002    0.3743
+	#79         0.5011    0.3730
+	#80         0.5020    0.3714
+	#81         0.5019    0.3742
+	#82         0.5013    0.3758
+	#83         0.5014    0.3756
+	#84         0.5014    0.3756
+	#85         0.5024    0.3752
+	#86         0.5028    0.3766
+	#87         0.5035    0.3781
+	#88         0.5036    0.3781
+	#89         0.5039    0.3777
+	#90         0.5039    0.3756
+	#91         0.5042    0.3735
+	#92         0.5042    0.3735
+	#93         0.5056    0.3786
+	#94         0.5039    0.3815*
+	#95         0.5065    0.3793
+	#96         0.5110    0.3789
+	#97         0.5151    0.3806
+	#98         0.5155    0.3787
+	#99         0.5212    0.3837*
+	#100        0.5234    0.3851*
+	-----------------------------
+	NDCG@10 on training data = 0.5234
+	NDCG@10 on validation data = 0.3851
+	[1melapsed time = 4.756 seconds[0m
+	done
+Testing:
+	NDCG@10 on test data = 0.3338
+	[1melapsed time = 0.014 seconds[0m
+	done
+Writing output:
+	model filename = msn.fold1.quickrank.matrixnet.xml.best.xml
+	done
