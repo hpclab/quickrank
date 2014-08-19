@@ -36,6 +36,13 @@ clean:
 run:
 	@../bin/qr || echo "ERROR EXIT CODE $$?"
 
+valgrind:
+	$(cc) -std=c++11 -O0 -fopenmp -g -I "." -o ../bin/qr main.cpp
+	valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all ../bin/qr lm 10 0.1 0 4 1 0 ndcg 10 ndcg 10 0 ../tests/data/msn1.fold1.train.5k.txt - - - test.out
+#	$(shell export GLIBCXX_FORCE_NEW;
+
+
+
 edit:
 	@geany $$(cpptree ./main.cpp) --new-instance > /dev/null 2>&1 &
 
