@@ -36,15 +36,24 @@ clean:
 run:
 	@../bin/qr || echo "ERROR EXIT CODE $$?"
 
-valgrind:
+# Valgrind debugging commands
+valgrind-lm:
 	@mkdir -p ../bin
 	$(cc) -std=c++11 -O0 -g -I "." -o ../bin/qr main.cpp
 	valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all \
-	../bin/qr lm 10 0.1 0 4 1 0 ndcg 10 ndcg 10 0 \
+	../bin/qr lm 10 0.1 0 8 1 0 ndcg 10 ndcg 10 0 \
 	../tests/data/msn1.fold1.train.5k.txt ../tests/data/msn1.fold1.vali.5k.txt ../tests/data/msn1.fold1.test.5k.txt - test.out
 #	$(shell export GLIBCXX_FORCE_NEW; # this should avoid stl memory pooling
 
+valgrind-mn:
+	@mkdir -p ../bin
+	$(cc) -std=c++11 -O0 -g -I "." -o ../bin/qr main.cpp
+	valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all \
+	../bin/qr mn 10 0.1 0 4 1 0 ndcg 10 ndcg 10 0 \
+	../tests/data/msn1.fold1.train.5k.txt ../tests/data/msn1.fold1.vali.5k.txt ../tests/data/msn1.fold1.test.5k.txt - test.out
 
+
+# old stuff not checked.
 
 edit:
 	@geany $$(cpptree ./main.cpp) --new-instance > /dev/null 2>&1 &
