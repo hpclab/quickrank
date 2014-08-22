@@ -4,7 +4,13 @@
 #include <cfloat>
 #include <cmath>
 #include <cstring>
+
+#ifdef _OPENMP
 #include <omp.h>
+#else
+#include "utils/omp-stubs.h"
+#endif
+
 
 #include "utils/maxheap.hpp"
 #include "learning/dpset.hpp"

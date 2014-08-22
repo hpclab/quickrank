@@ -5,7 +5,12 @@
 #include <cfloat>
 #include <limits>
 #include <cmath> // NAN, isnan()
-#include <omp.h> // omp_get_thread_num()
+
+#ifdef _OPENMP
+#include <omp.h>
+#else
+#include "utils/omp-stubs.h"
+#endif
 
 #include "learning/dpset.hpp"
 

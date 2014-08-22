@@ -5,7 +5,11 @@
 #include <cstring>
 #include <cstdlib>
 #include <cstdint>
+#ifdef _OPENMP
 #include <omp.h>
+#else
+#include "utils/omp-stubs.h"
+#endif
 
 #ifdef SHOWTIMER
 #include <sys/stat.h>
