@@ -4,6 +4,8 @@ pwd=$(shell echo $(PWD))
 
 # added for brew compatibility
 cc=
+cc_extra=
+
 ifndef cc
 ifneq ($(shell whereis g++-4.8),)
 cc=g++-4.8
@@ -17,18 +19,17 @@ endif
 endif
 
 ifndef cc
-#ifneq ($(shell brew ls --versions gcc49),)
 ifneq ($(shell /usr/local/Cellar/gcc49/4.9.0/bin/g++-4.9 --version),)
 cc=/usr/local/Cellar/gcc49/4.9.0/bin/g++-4.9
+cc_extra=-Wa,-q
 endif
 endif
-
 
 all: compile # added for eclipse compatibility
 
 compile:
 	@mkdir -p ../bin
-	$(cc) -std=c++11 -Wall -pedantic -march=native -Ofast -fopenmp -flto -I "." -o ../bin/qr main.cpp
+	$(cc) -std=c++11 -Wall -pedantic -march=native -Ofast -fopenmp -I "." $(cc_extra) -o ../bin/qr main.cpp
 
 clean:
 	@rm -f *~ ../bin/*
