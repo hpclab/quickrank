@@ -4,7 +4,7 @@
 #include "learning/dpset.hpp"
 #include "utils/symmatrix.hpp" // symetric matrix
 
-typedef symmatrix<float> fsymmatrix;
+typedef symmatrix<double> fsymmatrix;
 
 class metricscorer {
 	protected:

@@ -23,8 +23,8 @@ class lmart : public ranker {
 		float *trainingmodelscores = NULL; //[0..nentries-1]
 		float *validationmodelscores = NULL; //[0..nentries-1]
 		unsigned int validation_bestmodel = 0;
-		float *pseudoresponses = NULL;  //[0..nentries-1]
-		float *cachedweights = NULL; //corresponds to datapoint.cache
+		double *pseudoresponses = NULL;  //[0..nentries-1]
+		double *cachedweights = NULL; //corresponds to datapoint.cache
 		unsigned int **sortedsid = NULL;
 		unsigned int sortedsize = 0;
 		roothistogram *hist = NULL;
@@ -64,8 +64,8 @@ class lmart : public ranker {
 			#endif
 			const unsigned int nentries = training_set->get_ndatapoints();
 			trainingmodelscores = new float[nentries]();  //0.0f initialized
-			pseudoresponses = new float[nentries](); //0.0f initialized
-			cachedweights = new float[nentries](); //0.0f initialized
+			pseudoresponses = new double[nentries](); //0.0f initialized
+			cachedweights = new double[nentries](); //0.0f initialized
 			const unsigned int nfeatures = training_set->get_nfeatures();
 			sortedsid = new unsigned int*[nfeatures],
 			sortedsize = training_set->get_ndatapoints();
@@ -131,6 +131,10 @@ class lmart : public ranker {
 			//start iterations
 			for(unsigned int m=0; m<ntrees && (esr==0 || m<=validation_bestmodel+esr); ++m) {
 				compute_pseudoresponses();
+
+//				for (int ii=0; ii<20; ii++)
+//					printf("## pesudo %d: %.15f\n", ii, pseudoresponses[ii]);
+
 				//update the histogram with these training_seting labels (the feature histogram will be used to find the best tree rtnode)
 				hist->update(pseudoresponses, training_set->get_ndatapoints());
 				//Fit a regression tree
@@ -138,10 +142,15 @@ class lmart : public ranker {
 				tree.fit(hist);
 				//update the outputs of the tree (with gamma computed using the Newton-Raphson method)
 				float maxlabel = tree.update_output(pseudoresponses, cachedweights);
+
 				//add this tree to the ensemble (our model)
 				ens.push(tree.get_proot(), shrinkage, maxlabel);
 				//Update the model's outputs on all training samples
 				training_score = compute_modelscores(training_set, trainingmodelscores, tree);
+
+				for (int ii=0; ii<20; ii++)
+					printf("## %d \t %.16f \t %.16f\n", ii, pseudoresponses[ii], trainingmodelscores[ii]);
+
 				//show results
 				printf("\t#%-8u %8.4f", m+1, training_score);
 				//Evaluate the current model on the validation data (if available)
@@ -213,32 +222,43 @@ class lmart : public ranker {
 			}
 			return score;
 		}
-		void compute_pseudoresponses() {
+		void compute_pseudoresponses_orig() {
 			const unsigned int nrankedlists = training_set->get_nrankedlists();
 			const unsigned int *rloffsets = training_set->get_rloffsets();
-			#pragma omp parallel for
+			//#pragma omp parallel for
 			for(unsigned int i=0; i<nrankedlists; ++i) {
 				const unsigned int offset = rloffsets[i];
 				qlist ql = training_set->get_qlist(i);
 				fsymmatrix *changes = compute_mchange(ql, offset);
-				float *lambdas = pseudoresponses+offset;
-				float *weights = cachedweights+offset;
+				double *lambdas = pseudoresponses+offset;
+				double *weights = cachedweights+offset;
 				for(unsigned int j=0; j<ql.size; ++j)
-					lambdas[j] = 0.0f,
-					weights[j] = 0.0f;
+					lambdas[j] = 0.0,
+					weights[j] = 0.0;
 				for(unsigned int j=0; j<ql.size; ++j) {
 					float jthlabel = ql.labels[j];
 					for(unsigned int k=0; k<ql.size; ++k) if(k!=j) {
 						float kthlabel = ql.labels[k];
-						float deltandcg = fabs(changes->at(j,k));
+						double deltandcg = fabs(changes->at(j,k));
 						if(jthlabel>kthlabel) {
-							float rho = 1.0/(1.0+exp(trainingmodelscores[offset+j]-trainingmodelscores[offset+k]));
-							float lambda = rho*deltandcg;
-							float delta = rho*(1.0-rho)*deltandcg;
+							double rho = 1.0/(1.0+exp(trainingmodelscores[offset+j]-trainingmodelscores[offset+k]));
+							double lambda = rho*deltandcg;
+							double delta = rho*(1.0-rho)*deltandcg;
 							lambdas[j] += lambda,
 							lambdas[k] -= lambda,
 							weights[j] += delta,
 							weights[k] += delta;
+
+							if (i==0 && (j==10 || k==10)) {
+								printf("## lambda[0]------------------\n");
+								printf("## %d\t%d\n", j,k);
+								printf("## %.15f\t%.15f\n", trainingmodelscores[offset+j], trainingmodelscores[offset+k]);
+								printf("## %.15f\n", exp(trainingmodelscores[offset+j]-trainingmodelscores[offset+k]));
+								printf("## rho   = %.15f\n", rho);
+								printf("## lambda= %.15f\n", lambda);
+								printf("## dbdcg = %.15f\n", deltandcg);
+								printf("## delta = %.15f\n", delta);
+							}
 						}
 					}
 				}
@@ -266,6 +286,82 @@ class lmart : public ranker {
 			delete [] sortedlabels;
 			return reschanges;
 		}
+
+		// Changes by Cla:
+		// - added processing of ranked list in ranked order
+		// - added cut-off in measure changes matrix
+		void compute_pseudoresponses() {
+			const unsigned int cutoff = scorer->get_k();
+
+			const unsigned int nrankedlists = training_set->get_nrankedlists();
+			const unsigned int *rloffsets = training_set->get_rloffsets();
+			#pragma omp parallel for
+			for(unsigned int i=0; i<nrankedlists; ++i) {
+				const unsigned int offset = rloffsets[i];
+				qlist ql = training_set->get_qlist(i);
+
+				unsigned int *idx = idxfloat_qsort(trainingmodelscores+offset, ql.size);
+				float* sortedlabels = new float [ql.size];
+				for(unsigned int i=0; i<ql.size; ++i)
+					sortedlabels[i] = ql.labels[idx[i]];
+				qlist ranked_list(ql.size, sortedlabels, ql.qid);
+				//compute temp swap changes on ql
+				fsymmatrix *changes = scorer->swap_change(ranked_list);
+
+				double *lambdas = pseudoresponses+offset;
+				double *weights = cachedweights+offset;
+				for(unsigned int j=0; j<ranked_list.size; ++j)
+					lambdas[j] = 0.0,
+					weights[j] = 0.0;
+				for(unsigned int j=0; j<ranked_list.size; ++j) {
+					float jthlabel = ranked_list.labels[j];
+					for(unsigned int k=0; k<ranked_list.size; ++k) if(k!=j) {
+						// skip if we are beyond the top-K results
+						if (j>=cutoff && k>=cutoff) break;
+
+						float kthlabel = ranked_list.labels[k];
+						if(jthlabel>kthlabel) {
+							int i_max = j>=k ? j : k;
+							int i_min = j>=k ? k : j;
+							double deltandcg = fabs(changes->at(i_min,i_max));
+
+							double rho = 1.0/(1.0+exp(trainingmodelscores[offset+idx[j]]-trainingmodelscores[offset+idx[k]]));
+							double lambda = rho*deltandcg;
+							double delta = rho*(1.0-rho)*deltandcg;
+							lambdas[ idx[j] ] += lambda,
+							lambdas[ idx[k] ] -= lambda,
+							weights[ idx[j] ] += delta,
+							weights[ idx[k] ] += delta;
+
+//							if (i==0 && (idx[j]==0 || idx[k]==0)) {
+//								printf("## lambda[0]------------------\n");
+//								printf("## %d\t%d\n", j,k);
+//								printf("## %.15f\t%.15f\n", trainingmodelscores[offset+idx[j]], trainingmodelscores[offset+idx[k]]);
+//								printf("## %.15f\n", exp(trainingmodelscores[offset+idx[j]]-trainingmodelscores[offset+idx[k]]));
+//								printf("## rho   = %.15f\n", rho);
+//								printf("## lambda= %.15f\n", lambda);
+//								printf("## dbdcg = %.15f\n", deltandcg);
+//								printf("## delta = %.15f\n", delta);
+//								printf("## pseudoresp = %.15f\n", pseudoresponses[0]);
+//							}
+						}
+					}
+				}
+
+				if (i==0) {
+					printf("## lambda[0]------------------\n");
+					printf("## cur scoce  = %.15f\n", trainingmodelscores[0]);
+					printf("## pseudoresp = %.15f\n", pseudoresponses[0]);
+					printf("## weights    = %.15f\n", cachedweights[0]);
+				}
+
+				delete [] idx;
+				delete [] sortedlabels;
+				delete changes;
+			}
+		}
+
+
 		void write_outputtofile(char *filename) {
 			FILE *f = fopen(filename, "w");
 			if(f) {

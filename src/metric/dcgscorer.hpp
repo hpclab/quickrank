@@ -25,7 +25,7 @@ class dcgscorer : public metricscorer {
 			unsigned int size = ql.size<k ? ql.size : k;
 			#pragma omp parallel for
 			for(unsigned int i=0; i<size; ++i) {
-				float *vchanges = changes->vectat(i,i+1);
+				double *vchanges = changes->vectat(i,i+1);
 				for(unsigned int j=i+1; j<ql.size; ++j)
 					*vchanges++ = (1.0f/log2(i+2.0f)-1.0f/log2(j+2.0f))*(POWEROFTWO(ql.labels[i])-POWEROFTWO(ql.labels[j]));
 			}

@@ -24,7 +24,7 @@ class histogram {
 				count[i] = new unsigned int[threshold_size]();
 			}
 		}
-		histogram(histogram const* parent, unsigned int const* sampleids, const unsigned int nsampleids, float const* labels) : histogram(parent->thresholds, parent->thresholds_size, parent->nfeatures) {
+		histogram(histogram const* parent, unsigned int const* sampleids, const unsigned int nsampleids, double const* labels) : histogram(parent->thresholds, parent->thresholds_size, parent->nfeatures) {
 			stmap = parent->stmap;
 			#pragma omp parallel for
 			for(unsigned int i=0; i<nfeatures; ++i) {
@@ -61,7 +61,7 @@ class histogram {
 			delete [] sqsumlbl,
 			delete [] count;
 		}
-		void update(float *labels, const unsigned int nlabels) {
+		void update(double *labels, const unsigned int nlabels) {
 			#pragma omp parallel for
 			for(unsigned int i=0; i<nfeatures; ++i)
 				for(unsigned int t=0; t<thresholds_size[i]; ++t)
@@ -91,11 +91,17 @@ class histogram {
 					count[i][t] -= left->count[i][t];
 			}
 		}
+		void quick_dump(int f, int num_t) {
+			printf("### Hist fx %d :", f);
+			for(unsigned int t=0; t<num_t && t<thresholds_size[f]; t++)
+				printf(" %f", sumlbl[f][t]);
+			printf("\n");
+		}
 };
 
 class roothistogram : public histogram {
 	public:
-		roothistogram(dpset *dps, float *labels, unsigned int **sortedidx, unsigned int sortedidxsize, float **thresholds, unsigned int const *thresholds_size) : histogram(thresholds, thresholds_size, dps->get_nfeatures()) {
+		roothistogram(dpset *dps, double *labels, unsigned int **sortedidx, unsigned int sortedidxsize, float **thresholds, unsigned int const *thresholds_size) : histogram(thresholds, thresholds_size, dps->get_nfeatures()) {
 			stmap = new unsigned int*[nfeatures];
 			#pragma omp parallel for
 			for(unsigned int i=0; i<nfeatures; ++i) {

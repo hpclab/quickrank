@@ -12,7 +12,7 @@ class ot : public rt {
 	protected:
 		const unsigned int treedepth = 0;
 	public:
-		ot(unsigned int nodes, dpset *dps, float *labels, unsigned int minls, unsigned int treedepth) : rt(nodes, dps, labels, minls), treedepth(treedepth) {}
+		ot(unsigned int nodes, dpset *dps, double *labels, unsigned int minls, unsigned int treedepth) : rt(nodes, dps, labels, minls), treedepth(treedepth) {}
 		void fit(histogram *hist) {
 			//by default get all sampleids in the training set
 			unsigned int nsampleids = training_set->get_ndatapoints();

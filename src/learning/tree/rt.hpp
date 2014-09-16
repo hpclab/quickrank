@@ -42,12 +42,12 @@ class rt {
 		const unsigned int nrequiredleaves; //0 for unlimited number of nodes (the size of the tree will then be controlled only by minls)
 		const unsigned int minls; //minls>0
 		dpset *training_set = NULL;
-		float *training_labels = NULL;
+		double *training_labels = NULL;
 		rtnode **leaves = NULL;
 		unsigned int nleaves = 0;
 		rtnode *root = NULL;
 	public:
-		rt(unsigned int nrequiredleaves, dpset *dps, float *labels, unsigned int minls) : nrequiredleaves(nrequiredleaves), minls(minls), training_set(dps), training_labels(labels) {}
+		rt(unsigned int nrequiredleaves, dpset *dps, double *labels, unsigned int minls) : nrequiredleaves(nrequiredleaves), minls(minls), training_set(dps), training_labels(labels) {}
 		~rt() {
 			if(root) {
 				delete [] root->sampleids;
@@ -93,20 +93,25 @@ class rt {
 			// TODO: (by cla) is memory of "unpopped" de-allocated?
 		}
 
-		double update_output(float const *pseudoresponses, float const *cachedweights) {
+		double update_output(double const *pseudoresponses, double const *cachedweights) {
 			double maxlabel = -DBL_MAX;
-			#pragma omp parallel for reduction(max:maxlabel)
+			// CLA REMOVE THIS COMMENT BELOW
+			//#pragma omp parallel for reduction(max:maxlabel)
 			for(unsigned int i=0; i<nleaves; ++i) {
-				double s1 = 0.0f;
-				double s2 = 0.0f;
+				double s1 = 0.0;
+				double s2 = 0.0;
 				const unsigned int nsampleids = leaves[i]->nsampleids;
 				const unsigned int *sampleids = leaves[i]->sampleids;
+				printf("## Leaf %d with size: %d\n", i, nsampleids);
 				for(unsigned int j=0; j<nsampleids; ++j) {
 					unsigned int k = sampleids[j];
-					s1 += pseudoresponses[k],
+					s1 += pseudoresponses[k];
 					s2 += cachedweights[k];
+//					printf("## %d: %.15f \t %.15f \n", k, pseudoresponses[k], cachedweights[k]);
 				}
+//				printf("## Leaf with size: %d  ##  s1/s2: %.12f / %.12f\n", nsampleids, s1, s2);
 				leaves[i]->avglabel = s2>=DBL_EPSILON ? s1/s2 : 0.0;
+
 				if(leaves[i]->avglabel>maxlabel)
 					maxlabel = leaves[i]->avglabel;
 			}
@@ -121,8 +126,13 @@ class rt {
 	private:
 		//if require_devianceltparent is true the node is split if minvar is lt the current node deviance (require_devianceltparent=false in RankLib)
 		bool split(rtnode *node, const float featuresamplingrate, const bool require_devianceltparent) {
+			if (node==root)
+				printf("Trying to split the root\n");
+			else
+				printf("Trying to split some other node\n");
 			if(node->deviance>0.0f) {
-				const double initvar = require_devianceltparent ? node->deviance : DBL_MAX;
+				// const double initvar = require_devianceltparent ? node->deviance : -1; //DBL_MAX;
+				const double initvar = -1;
 				//get current nod hidtogram pointer
 				histogram *h = node->hist;
 				//featureidxs to be used for tree splitnodeting
@@ -153,7 +163,8 @@ class rt {
 					thread_best_rvar[i] = 0.0,
 					thread_best_featureidx[i] = uint_max,
 					thread_best_thresholdid[i] = uint_max;
-				#pragma omp parallel for
+				// REMOVE THE FOLLOWING COMMENT
+				//#pragma omp parallel for
 				for(unsigned int i=0; i<nfeaturesamples; ++i) {
 					//get feature idx
 					const unsigned int f = featuresamples ? featuresamples[i] : i;
@@ -168,25 +179,40 @@ class rt {
 					double s = sumlabels[threshold_size-1];
 					double sq = sqsumlabels[threshold_size-1];
 					unsigned int c = samplecount[threshold_size-1];
+
+					if (f==25)
+						printf("### threshold size: %d\n", threshold_size);
+
+
 					//looking for the feature that minimizes sumvar
 					for(unsigned int t=0; t<threshold_size; ++t) {
 						unsigned int lcount = samplecount[t];
 						unsigned int rcount = c-lcount;
 						if(lcount>=minls && rcount>=minls)  {
+							// Old Version
+//							double lsum = sumlabels[t];
+//							double lsqsum = sqsumlabels[t];
+//							double lvar = fabs(lsqsum-lsum*lsum/lcount);
+//							double rsum = s-lsum;
+//							double rsqsum = sq-lsqsum;
+//							double rvar = fabs(rsqsum-rsum*rsum/rcount);
+//							double sumvar = lvar+rvar;
+							// Ranklib Version
 							double lsum = sumlabels[t];
-							double lsqsum = sqsumlabels[t];
-							double lvar = fabs(lsqsum-lsum*lsum/lcount);
 							double rsum = s-lsum;
-							double rsqsum = sq-lsqsum;
-							double rvar = fabs(rsqsum-rsum*rsum/rcount);
+							double lvar = lsum*lsum/(float)lcount;
+							double rvar = rsum*rsum/(float)rcount;
 							double sumvar = lvar+rvar;
-							if(sumvar<thread_minvar[ith])
+
+							if (f==25)
+								printf("### fx:%d(%d) \t t:%d \t sum:%f \t S:%f\n", f, training_set->get_featureid(f),t, sumlabels[t], sumvar);
+							if(sumvar>thread_minvar[ith])
 								thread_minvar[ith] = sumvar,
 								thread_best_lvar[ith] = lvar,
 								thread_best_rvar[ith] = rvar,
 								thread_best_featureidx[ith] = f,
 								thread_best_thresholdid[ith] = t;
-						}
+						} else { if (f==25) printf("### stop because of too few elements\n");}
 					}
 				}
 				//free feature samples
@@ -197,8 +223,9 @@ class rt {
 				double best_rvar = thread_best_rvar[0];
 				unsigned int best_featureidx = thread_best_featureidx[0];
 				unsigned int best_thresholdid = thread_best_thresholdid[0];
+				printf("### Best Feature fx:%d \t t:%d \t s:%f\n", best_featureidx, best_thresholdid, minvar);
 				for(int i=1; i<nth; ++i)
-					if(thread_minvar[i]<minvar)
+					if(thread_minvar[i]>minvar)
 						minvar = thread_minvar[i],
 						best_lvar = thread_best_lvar[i],
 						best_rvar = thread_best_rvar[i],
@@ -214,13 +241,15 @@ class rt {
 				//if minvar is the same of initvalue then the node is unsplitable
 				if(minvar==initvar)
 					return false;
+				printf("### Best Feature fx:%d \t t:%d \t s:%f\n", best_featureidx, best_thresholdid, minvar);
 				//set some result values related to minvar
 				const unsigned int last_thresholdidx = h->thresholds_size[best_featureidx]-1;
 				const float best_threshold = h->thresholds[best_featureidx][best_thresholdid];
-				const float lsum = h->sumlbl[best_featureidx][best_thresholdid];
-				const float rsum = h->sumlbl[best_featureidx][last_thresholdidx]-lsum;
+				const double lsum = h->sumlbl[best_featureidx][best_thresholdid];
+				const double rsum = h->sumlbl[best_featureidx][last_thresholdidx]-lsum;
 				const unsigned int lcount = h->count[best_featureidx][best_thresholdid];
 				const unsigned int rcount = h->count[best_featureidx][last_thresholdidx]-lcount;
+
 				//split samples between left and right child
 				unsigned int *lsamples = new unsigned int[lcount], lsize = 0;
 				unsigned int *rsamples = new unsigned int[rcount], rsize = 0;
@@ -228,6 +257,9 @@ class rt {
 				for(unsigned int i=0, nsampleids=node->nsampleids; i<nsampleids; ++i) {
 					unsigned int k = node->sampleids[i];
 					if(features[k]<=best_threshold) lsamples[lsize++] = k; else rsamples[rsize++] = k;
+					if (k<=20)
+						if(features[k]<=best_threshold) printf("### %d goes left\n", k);
+						else printf("### %d goes right\n", k);
 				}
 				//create histograms for children
 				histogram *lhist = new histogram(node->hist, lsamples, lsize, training_labels);
@@ -240,6 +272,18 @@ class rt {
 					rhist = node->hist;
 					node->hist = NULL;
 				}
+
+				printf("### nodes in right subtree %d\n", rsize);
+				printf("### nodes in left  subtree %d\n", lsize);
+
+				rhist->quick_dump(25,10);
+				lhist->quick_dump(25,10);
+
+				// double var = h-> sqSumResponse - sumResponse * sumResponse / idx.length;
+				// double varLeft = lh.sqSumResponse - lh.sumResponse * lh.sumResponse / left.length;
+				// double varRight = rh.sqSumResponse - rh.sumResponse * rh.sumResponse / right.length;
+
+
 				//update current node
 				node->set_feature(best_featureidx, training_set->get_featureid(best_featureidx)),
 				node->threshold = best_threshold,
@@ -247,6 +291,9 @@ class rt {
 				//create children
 				node->left = new rtnode(lsamples, lsize, best_lvar, lsum, lhist),
 				node->right = new rtnode(rsamples, rsize, best_rvar, rsum, rhist);
+
+				printf("### Best Feature fx:%d \t t:%d \t s:%f\n", node->get_feature_id(), best_thresholdid, node->deviance);
+
 				return true;
 			}
 			return false;

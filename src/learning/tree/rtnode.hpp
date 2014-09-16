@@ -18,7 +18,7 @@ class rtnode {
 		histogram *hist = NULL;
 	private:
 		unsigned int featureidx = uint_max; //refer the index in the feature matrix
-		unsigned int featureid = uint_max; //refer to the id occuring in the dataset file
+		unsigned int featureid = uint_max; //refer to the id occurring in the dataset file
 	public:
 		rtnode(unsigned int *sampleids, unsigned int nsampleids, double deviance, double sumlabel, histogram* hist) :
 			sampleids(sampleids), nsampleids(nsampleids), deviance(deviance), hist(hist) {
@@ -33,6 +33,13 @@ class rtnode {
 			featureidx = fidx,
 			featureid = fid;
 		}
+		unsigned int get_feature_id() {
+			return featureid;
+		}
+		unsigned int get_feature_idx() {
+			return featureidx;
+		}
+
 		void save_leaves(rtnode **&leaves, unsigned int &nleaves, unsigned int &capacity) {
 			if(featureidx==uint_max) {
 				if(nleaves==capacity) {
@@ -56,7 +63,7 @@ class rtnode {
 			for(int i=0; i<indentsize; indent[i++]='\t');
 			indent[indentsize] = '\0';
 			if(featureid==uint_max)
-				fprintf(f, "%s\t<output> %.8f </output>\n", indent, avglabel);
+				fprintf(f, "%s\t<output> %.15f </output>\n", indent, avglabel);
 			else {
 				fprintf(f, "%s\t<feature> %u </feature>\n", indent, featureid);
 				fprintf(f, "%s\t<threshold> %.8f </threshold>\n", indent, threshold);
