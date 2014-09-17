@@ -65,6 +65,35 @@ class rt {
 				}
 			free(leaves);
 		}
+		void fit_old(histogram *hist) {
+			deviance_maxheap heap(nrequiredleaves);
+			unsigned int taken = 0;
+			unsigned int nsampleids = training_set->get_ndatapoints();
+			unsigned int *sampleids = new unsigned int[nsampleids];
+			#pragma omp parallel for
+			for(unsigned int i=0; i<nsampleids; ++i)
+				sampleids[i] = i;
+			root = new rtnode(sampleids, nsampleids, DBL_MAX, 0.0, hist);
+			if(split(root, 1.0f, false))
+				heap.push_chidrenof(root);
+			while(heap.is_notempty() && (nrequiredleaves==0 or taken+heap.get_size()<nrequiredleaves)) {
+				//get node with highest deviance from heap
+				rtnode *node = heap.top();
+				// TODO: Cla missing check non leaf size or avoid putting them into the heap
+				//try split current node
+				if(split(node, 1.0f, false)) heap.push_chidrenof(node); else ++taken; //unsplitable (i.e. null variance, or after split variance is higher than before, or #samples<minlsd)
+				//remove node from heap
+				heap.pop();
+			}
+			//visit tree and save leaves in a leaves[] array
+			unsigned int capacity = nrequiredleaves;
+			leaves = capacity ? (rtnode**)malloc(sizeof(rtnode*)*capacity) : NULL,
+			nleaves = 0;
+			root->save_leaves(leaves, nleaves, capacity);
+
+			// TODO: (by cla) is memory of "unpopped" de-allocated?
+		}
+
 		void fit(histogram *hist) {
 			deviance_maxheap heap(nrequiredleaves);
 			unsigned int taken = 0;
@@ -79,6 +108,7 @@ class rt {
 			while(heap.is_notempty() && (nrequiredleaves==0 or taken+heap.get_size()<nrequiredleaves)) {
 				//get node with highest deviance from heap
 				rtnode *node = heap.top();
+				// TODO: Cla missing check non leaf size or avoid putting them into the heap
 				//try split current node
 				if(split(node, 1.0f, false)) heap.push_chidrenof(node); else ++taken; //unsplitable (i.e. null variance, or after split variance is higher than before, or #samples<minlsd)
 				//remove node from heap
@@ -92,6 +122,7 @@ class rt {
 
 			// TODO: (by cla) is memory of "unpopped" de-allocated?
 		}
+
 
 		double update_output(double const *pseudoresponses, double const *cachedweights) {
 			double maxlabel = -DBL_MAX;
@@ -109,15 +140,16 @@ class rt {
 					s2 += cachedweights[k];
 //					printf("## %d: %.15f \t %.15f \n", k, pseudoresponses[k], cachedweights[k]);
 				}
-//				printf("## Leaf with size: %d  ##  s1/s2: %.12f / %.12f\n", nsampleids, s1, s2);
 				leaves[i]->avglabel = s2>=DBL_EPSILON ? s1/s2 : 0.0;
+
+				printf("## Leaf with size: %d  ##  s1/s2: %.15f / %.15f = %.15f\n", nsampleids, s1, s2, leaves[i]->avglabel);
 
 				if(leaves[i]->avglabel>maxlabel)
 					maxlabel = leaves[i]->avglabel;
 			}
 			return maxlabel;
 		}
-		float eval(float const* const* featurematrix, const unsigned int idx) const {
+		double eval(float const* const* featurematrix, const unsigned int idx) const {
 			return root->eval(featurematrix, idx);
 		}
 		rtnode *get_proot() const {
@@ -126,6 +158,7 @@ class rt {
 	private:
 		//if require_devianceltparent is true the node is split if minvar is lt the current node deviance (require_devianceltparent=false in RankLib)
 		bool split(rtnode *node, const float featuresamplingrate, const bool require_devianceltparent) {
+			printf("### Splitting a node of size: %d and deviance: %f\n", node->nsampleids, node->deviance);
 //			if (node==root)
 //				printf("Trying to split the root\n");
 //			else
@@ -272,6 +305,7 @@ class rt {
 
 				printf("### nodes in right subtree %d\n", rsize);
 				printf("### nodes in left  subtree %d\n", lsize);
+				printf("### sum: %.15f sqsum: %.15f\n", sum, sqsum);
 
 				// rhist->quick_dump(128,10);
 				// lhist->quick_dump(25,10);

@@ -31,9 +31,9 @@ double filesize(const char *filename) {
 #define INIT_NOFEATURES 50 //>0
 
 struct qlist {
-	qlist(unsigned int size, float *labels, int qid) : size(size), labels(labels), qid(qid) {}
+	qlist(unsigned int size, double *labels, int qid) : size(size), labels(labels), qid(qid) {}
 	unsigned int const size;
-	float const *labels;
+	double const *labels;
 	unsigned int const qid;
 };
 
@@ -256,7 +256,7 @@ class dpset {
 				#endif
 				rloffsets = (unsigned int*)malloc(sizeof(unsigned int)*(nrankedlists+1)),
 				rlids = (int*)malloc(sizeof(int)*nrankedlists),
-				labels = (float*)malloc(sizeof(float)*ndps);
+				labels = (double*)malloc(sizeof(double)*ndps);
 				//compute 'rloffsets' values (i.e. prefixsum dplist sizes) and populate rlids
 				for(unsigned int i=0, sum=0, rlsize=0; i<nrankedlists; ++i) {
 					rlsize = dplists[i]->get_size(),
@@ -347,7 +347,7 @@ class dpset {
 			sortedsize = ndps;
 			sorted = idxfloat_radixsort(features[i], sortedsize);
 		}
-		float get_label(unsigned int i) const {
+		double get_label(unsigned int i) const {
 			return labels[i];
 		}
 		unsigned int get_featureid(unsigned int fidx) const {
@@ -359,7 +359,7 @@ class dpset {
 	private:
 		unsigned int nrankedlists = 0, ndps = 0, nfeatures = 0, maxrlsize = 0;
 		unsigned int *rloffsets = NULL; //[0..nrankedlists] i-th rankedlist begins at rloffsets[i] and ends at rloffsets[i+1]-1
-		float *labels = NULL; //[0..ndps-1]
+		double *labels = NULL; //[0..ndps-1]
 		float **features = NULL; //[0..maxfid][0..ndps-1]
 		int *rlids = NULL; //[0..nrankedlists-1]
 		unsigned int *usedfid = NULL; //

@@ -11,7 +11,7 @@ class dcgscorer : public metricscorer {
 	public:
 		dcgscorer(const unsigned int kval) { k = kval; }
 		const char *whoami() const { return "DCG"; }
-		float compute_score(const qlist &ql) {
+		double compute_score(const qlist &ql) {
 			if(ql.size<=0)
 				return -1.0;
 			const unsigned int size = (k>ql.size or k<=0) ? ql.size : k;

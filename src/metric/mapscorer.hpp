@@ -17,7 +17,7 @@ class mapscorer : public metricscorer {
 		const char *whoami() const {
 			return "MAP";
 		}
-		float compute_score(const qlist &ql) {
+		double compute_score(const qlist &ql) {
 			float ap = 0.0f;
 			unsigned int count = 0;
 			//compute score for relevant labels

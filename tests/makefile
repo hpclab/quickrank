@@ -41,7 +41,7 @@ msn.fold1.quickrank.matrixnet.log:
 # correctness check: synching with ranklib
 correct:
 	make -C ../src
-	../bin/qr lm 1 0.1 0 8 1 0 \
+	../bin/qr lm 3 0.1 0 8 1 0 \
 	ndcg 10 ndcg 10 0 \
 	data/msn1.fold1.train.5k.txt \
 	- \
@@ -55,7 +55,7 @@ correctranklib:
 	cd /Users/claudio/Documents/docs/LAVORO/coding/ltr/ranklib++; ant
 	java -jar /Users/claudio/Documents/docs/LAVORO/coding/ltr/ranklib++/bin/RankLib.jar -ranker 6 \
 	-train data/msn1.fold1.train.5k.txt \
-	-tree 1 -leaf 8 -shrinkage 0.10 -tc -1 \
+	-tree 3 -leaf 8 -shrinkage 0.10 -tc -1 \
 	-metric2t NDCG@10 -metric2T NDCG@10 \
 	-save ranklib.lmart.xml \
 	> ranklib.lmart.log

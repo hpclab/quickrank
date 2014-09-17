@@ -24,9 +24,9 @@
  * @param k maximum number of entities that can be recommended.
  * @return DCG@ \a k for computed on \a labels.
 */
-float compute_dcg(float const* labels, const unsigned int nlabels, const unsigned int k) {
+double compute_dcg(double const* labels, const unsigned int nlabels, const unsigned int k) {
 	unsigned int size = (k==0 or k>nlabels) ? nlabels : k;
-	float dcg = 0.0f;
+	double dcg = 0.0;
 	#pragma omp parallel for reduction(+:dcg)
 	for(unsigned int i=0; i<size; ++i)
 		dcg += (POWEROFTWO(labels[i])-1.0f)/log2(i+2.0f);
@@ -39,14 +39,14 @@ float compute_dcg(float const* labels, const unsigned int nlabels, const unsigne
  * @param k maximum number of entities that can be recommended.
  * @return iDCG@ \a k for computed on \a labels.
 */
-float compute_idcg(float const* labels, const unsigned int nlabels, const unsigned int k) {
+double compute_idcg(double const* labels, const unsigned int nlabels, const unsigned int k) {
 	//make a copy of lables
-	float *copyoflabels = new float[nlabels];
-	memcpy(copyoflabels, labels, sizeof(float)*nlabels);
+	double *copyoflabels = new double[nlabels];
+	memcpy(copyoflabels, labels, sizeof(double)*nlabels);
 	//sort the copy
-	float_qsort(copyoflabels, nlabels);
+	double_qsort(copyoflabels, nlabels);
 	//compute dcg
-	float dcg = compute_dcg(copyoflabels, nlabels, k);
+	double dcg = compute_dcg(copyoflabels, nlabels, k);
 	//free mem
 	delete[] copyoflabels;
 	//return dcg
@@ -70,11 +70,11 @@ class ndcgscorer : public metricscorer {
 		}
 		/* Compute score
 		 */
-		float compute_score(const qlist &ql) {
-			if(ql.size==0) return -1.0f;
+		double compute_score(const qlist &ql) {
+			if(ql.size==0) return -1.0;
 			const unsigned int size = k<ql.size ? k : ql.size;
-			const float idcg = compute_idcg(ql.labels, ql.size, size);
-			return idcg>0.0f ? compute_dcg(ql.labels, ql.size, size)/idcg : 0.0f;
+			const double idcg = compute_idcg(ql.labels, ql.size, size);
+			return idcg>0.0f ? compute_dcg(ql.labels, ql.size, size)/idcg : 0.0;
 		}
 		/* Compute score
 		 */
@@ -89,7 +89,8 @@ class ndcgscorer : public metricscorer {
 					//get the pointer to the i-th line of matrix
 					double *vchanges = changes->vectat(i, i+1);
 					for(unsigned int j=i+1; j<ql.size; ++j) {
-						*vchanges++ = (1.0f/log2(i+2.0f)-1.0f/log2(j+2.0f))*(POWEROFTWO(ql.labels[i])-POWEROFTWO(ql.labels[j]))/idcg;
+						*vchanges++ = ( 1.0f/log2((double)(i+2))-1.0f/log2((double)(j+2)) ) *
+								 	 ( pow(2.0,(double)ql.labels[i])-pow(2.0,(double)ql.labels[j]) ) / idcg;
 //						if (i==0 && j==1) {
 //							printf("### idcg:%.15f \t  %f %f \t %.16f\n", idcg, ql.labels[i], ql.labels[j], (1.0f/log2(i+2.0f)-1.0f/log2(j+2.0f))*(POWEROFTWO(ql.labels[i])-POWEROFTWO(ql.labels[j])));
 //						}

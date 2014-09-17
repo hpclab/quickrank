@@ -12,7 +12,7 @@
 class lmart : public ranker {
 	public:
 		const unsigned int ntrees; //>0
-		const float shrinkage; //>0.0f
+		const double shrinkage; //>0.0f
 		const unsigned int nthresholds; //if nthresholds==0 then no. of thresholds is not limited
 		const unsigned int ntreeleaves; //>0
 		const unsigned int minleafsupport; //>0
@@ -20,8 +20,8 @@ class lmart : public ranker {
 	protected:
 		float **thresholds = NULL;
 		unsigned int *thresholds_size = NULL;
-		float *trainingmodelscores = NULL; //[0..nentries-1]
-		float *validationmodelscores = NULL; //[0..nentries-1]
+		double *trainingmodelscores = NULL; //[0..nentries-1]
+		double *validationmodelscores = NULL; //[0..nentries-1]
 		unsigned int validation_bestmodel = 0;
 		double *pseudoresponses = NULL;  //[0..nentries-1]
 		double *cachedweights = NULL; //corresponds to datapoint.cache
@@ -63,7 +63,7 @@ class lmart : public ranker {
 			double timer = omp_get_wtime();
 			#endif
 			const unsigned int nentries = training_set->get_ndatapoints();
-			trainingmodelscores = new float[nentries]();  //0.0f initialized
+			trainingmodelscores = new double[nentries]();  //0.0f initialized
 			pseudoresponses = new double[nentries](); //0.0f initialized
 			cachedweights = new double[nentries](); //0.0f initialized
 			const unsigned int nfeatures = training_set->get_nfeatures();
@@ -108,7 +108,7 @@ class lmart : public ranker {
 			}
 			if(validation_set) {
 				unsigned int ndatapoints = validation_set->get_ndatapoints();
-				validationmodelscores = new float[ndatapoints]();
+				validationmodelscores = new double[ndatapoints]();
 			}
 			hist = new roothistogram(training_set, pseudoresponses, sortedsid, sortedsize, thresholds, thresholds_size);
 			#ifdef SHOWTIMER
@@ -132,8 +132,8 @@ class lmart : public ranker {
 			for(unsigned int m=0; m<ntrees && (esr==0 || m<=validation_bestmodel+esr); ++m) {
 				compute_pseudoresponses();
 
-//				for (int ii=0; ii<20; ii++)
-//					printf("## pesudo %d: %.15f\n", ii, pseudoresponses[ii]);
+				for (int ii=0; ii<20; ii++)
+					printf("## %d \t %.16f\n", ii, pseudoresponses[ii]);
 
 				//update the histogram with these training_seting labels (the feature histogram will be used to find the best tree rtnode)
 				hist->update(pseudoresponses, training_set->get_ndatapoints());
@@ -149,7 +149,7 @@ class lmart : public ranker {
 				training_score = compute_modelscores(training_set, trainingmodelscores, tree);
 
 				for (int ii=0; ii<20; ii++)
-					printf("## %d \t %.16f \t %.16f\n", ii, pseudoresponses[ii], trainingmodelscores[ii]);
+					printf("## %d \t %.16f\n", ii, trainingmodelscores[ii]);
 
 				//show results
 				printf("\t#%-8u %8.4f", m+1, training_score);
@@ -201,7 +201,7 @@ class lmart : public ranker {
 			}
 		}
 	protected:
-		float compute_modelscores(dpset const *samples, float *mscores, rt const &tree) {
+		float compute_modelscores(dpset const *samples, double *mscores, rt const &tree) {
 			const unsigned int ndatapoints = samples->get_ndatapoints();
 			float **featurematrix = samples->get_fmatrix();
 			#pragma omp parallel for
@@ -214,7 +214,7 @@ class lmart : public ranker {
 				#pragma omp parallel for reduction(+:score)
 				for(unsigned int i=0; i<nrankedlists; ++i) {
 					qlist orig = samples->get_qlist(i);
-					float *sortedlabels = copyextfloat_qsort(orig.labels, mscores+offsets[i], orig.size);
+					double *sortedlabels = copyextfloat_qsort(orig.labels, mscores+offsets[i], orig.size);
 					score += scorer->compute_score(qlist(orig.size, sortedlabels, orig.qid));
 					delete[] sortedlabels;
 				}
@@ -268,8 +268,8 @@ class lmart : public ranker {
 
 		fsymmatrix *compute_mchange(const qlist &orig, const unsigned int offset) {
 			//build a ql made up of label values picked up from orig order by indexes of trainingmodelscores reversely sorted
-			unsigned int *idx = idxfloat_qsort(trainingmodelscores+offset, orig.size);
-			float* sortedlabels = new float [orig.size]; // float sortedlabels[orig.size];
+			unsigned int *idx = idxdouble_qsort(trainingmodelscores+offset, orig.size);
+			double* sortedlabels = new double [orig.size]; // float sortedlabels[orig.size];
 			for(unsigned int i=0; i<orig.size; ++i)
 				sortedlabels[i] = orig.labels[idx[i]];
 			qlist tmprl(orig.size, sortedlabels, orig.qid);
@@ -300,8 +300,8 @@ class lmart : public ranker {
 				const unsigned int offset = rloffsets[i];
 				qlist ql = training_set->get_qlist(i);
 
-				unsigned int *idx = idxfloat_qsort(trainingmodelscores+offset, ql.size);
-				float* sortedlabels = new float [ql.size];
+				unsigned int *idx = idxdouble_qsort(trainingmodelscores+offset, ql.size);
+				double* sortedlabels = new double [ql.size];
 				for(unsigned int i=0; i<ql.size; ++i)
 					sortedlabels[i] = ql.labels[idx[i]];
 				qlist ranked_list(ql.size, sortedlabels, ql.qid);

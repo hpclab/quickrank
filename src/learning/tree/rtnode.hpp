@@ -55,7 +55,7 @@ class rtnode {
 		bool is_leaf() const {
 			return featureidx==uint_max;
 		}
-		float eval(float const* const* featurematrix, const unsigned int idx) const {
+		double eval(float const* const* featurematrix, const unsigned int idx) const {
 			return featureidx==uint_max ? avglabel : (featurematrix[featureidx][idx]<=threshold ? left->eval(featurematrix, idx) : right->eval(featurematrix, idx));
 		}
 		void write_outputtofile(FILE *f, const int indentsize) {
