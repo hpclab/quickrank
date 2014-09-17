@@ -91,7 +91,7 @@ class histogram {
 					count[i][t] -= left->count[i][t];
 			}
 		}
-		void quick_dump(int f, int num_t) {
+		void quick_dump(unsigned int f, unsigned int num_t) {
 			printf("### Hist fx %d :", f);
 			for(unsigned int t=0; t<num_t && t<thresholds_size[f]; t++)
 				printf(" %f", sumlbl[f][t]);
