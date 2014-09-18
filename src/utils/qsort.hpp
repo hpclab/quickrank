@@ -163,7 +163,7 @@ unsigned int *idxdouble_qsort(double const* arr, const unsigned int size) {
  *  @param nvalues length of \a fvalues
  *  @return a sorted copy of \a extvalues wrt \a fvalues
  */
-double *copyextfloat_qsort(double const* extarr, double const* arr, const unsigned int size) {
+double *copyextdouble_qsort(double const* extarr, double const* arr, const unsigned int size) {
 	double *copyof_arr = new double[size];
 	memcpy(copyof_arr, arr, sizeof(double)*size);
 	double *copyof_extarr = new double[size];
@@ -205,11 +205,11 @@ double *copyextfloat_qsort(double const* extarr, double const* arr, const unsign
  *  @param nvalues length of \a fvalues
  *  @return a sorted copy of \a extvalues wrt \a fvalues
  */
-double *copyextdouble_qsort(double const* extarr, double const* arr, const unsigned int size) {
-	double *copyof_arr = new double[size];
-	memcpy(copyof_arr, arr, sizeof(double)*size);
-	double *copyof_extarr = new double[size];
-	memcpy(copyof_extarr, extarr, sizeof(double)*size);
+float *copyextfloat_qsort(float const* extarr, float const* arr, const unsigned int size) {
+	float *copyof_arr = new float[size];
+	memcpy(copyof_arr, arr, sizeof(float)*size);
+	float *copyof_extarr = new float[size];
+	memcpy(copyof_extarr, extarr, sizeof(float)*size);
 	int* stack = new int [size]; // int stack[size];
 	int top = 1;
 	stack[0] = 0,
@@ -217,7 +217,7 @@ double *copyextdouble_qsort(double const* extarr, double const* arr, const unsig
 	while(top>=0) {
 		int h = stack[top--];
 		int l = stack[top--];
-		double p = copyof_arr[h];
+		float p = copyof_arr[h];
 		int i = l-1;
 		for(int j=l; j<h; ++j)
 			if(p<copyof_arr[j]) {

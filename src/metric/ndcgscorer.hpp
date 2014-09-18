@@ -91,8 +91,10 @@ class ndcgscorer : public metricscorer {
 					for(unsigned int j=i+1; j<ql.size; ++j) {
 						*vchanges++ = ( 1.0f/log2((double)(i+2))-1.0f/log2((double)(j+2)) ) *
 								 	 ( pow(2.0,(double)ql.labels[i])-pow(2.0,(double)ql.labels[j]) ) / idcg;
-//						if (i==0 && j==1) {
-//							printf("### idcg:%.15f \t  %f %f \t %.16f\n", idcg, ql.labels[i], ql.labels[j], (1.0f/log2(i+2.0f)-1.0f/log2(j+2.0f))*(POWEROFTWO(ql.labels[i])-POWEROFTWO(ql.labels[j])));
+//						if (i==0 && j==75) {
+//							printf("#### idcg:%.15f \t %f %f \t %.16f\n", idcg, ql.labels[i], ql.labels[j],
+//									( 1.0f/log2((double)(i+2))-1.0f/log2((double)(j+2)) ) *
+//									( pow(2.0,(double)ql.labels[i])-pow(2.0,(double)ql.labels[j]) ) );
 //						}
 					}
 				}

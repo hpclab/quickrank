@@ -65,35 +65,6 @@ class rt {
 				}
 			free(leaves);
 		}
-		void fit_old(histogram *hist) {
-			deviance_maxheap heap(nrequiredleaves);
-			unsigned int taken = 0;
-			unsigned int nsampleids = training_set->get_ndatapoints();
-			unsigned int *sampleids = new unsigned int[nsampleids];
-			#pragma omp parallel for
-			for(unsigned int i=0; i<nsampleids; ++i)
-				sampleids[i] = i;
-			root = new rtnode(sampleids, nsampleids, DBL_MAX, 0.0, hist);
-			if(split(root, 1.0f, false))
-				heap.push_chidrenof(root);
-			while(heap.is_notempty() && (nrequiredleaves==0 or taken+heap.get_size()<nrequiredleaves)) {
-				//get node with highest deviance from heap
-				rtnode *node = heap.top();
-				// TODO: Cla missing check non leaf size or avoid putting them into the heap
-				//try split current node
-				if(split(node, 1.0f, false)) heap.push_chidrenof(node); else ++taken; //unsplitable (i.e. null variance, or after split variance is higher than before, or #samples<minlsd)
-				//remove node from heap
-				heap.pop();
-			}
-			//visit tree and save leaves in a leaves[] array
-			unsigned int capacity = nrequiredleaves;
-			leaves = capacity ? (rtnode**)malloc(sizeof(rtnode*)*capacity) : NULL,
-			nleaves = 0;
-			root->save_leaves(leaves, nleaves, capacity);
-
-			// TODO: (by cla) is memory of "unpopped" de-allocated?
-		}
-
 		void fit(histogram *hist) {
 			deviance_maxheap heap(nrequiredleaves);
 			unsigned int taken = 0;
@@ -123,17 +94,14 @@ class rt {
 			// TODO: (by cla) is memory of "unpopped" de-allocated?
 		}
 
-
 		double update_output(double const *pseudoresponses, double const *cachedweights) {
 			double maxlabel = -DBL_MAX;
-			// CLA REMOVE THIS COMMENT BELOW
-			//#pragma omp parallel for reduction(max:maxlabel)
+			#pragma omp parallel for reduction(max:maxlabel)
 			for(unsigned int i=0; i<nleaves; ++i) {
 				double s1 = 0.0;
 				double s2 = 0.0;
 				const unsigned int nsampleids = leaves[i]->nsampleids;
 				const unsigned int *sampleids = leaves[i]->sampleids;
-				printf("## Leaf %d with size: %d\n", i, nsampleids);
 				for(unsigned int j=0; j<nsampleids; ++j) {
 					unsigned int k = sampleids[j];
 					s1 += pseudoresponses[k];
@@ -142,7 +110,7 @@ class rt {
 				}
 				leaves[i]->avglabel = s2>=DBL_EPSILON ? s1/s2 : 0.0;
 
-				printf("## Leaf with size: %d  ##  s1/s2: %.15f / %.15f = %.15f\n", nsampleids, s1, s2, leaves[i]->avglabel);
+//				printf("## Leaf with size: %d  ##  s1/s2: %.15f / %.15f = %.15f\n", nsampleids, s1, s2, leaves[i]->avglabel);
 
 				if(leaves[i]->avglabel>maxlabel)
 					maxlabel = leaves[i]->avglabel;
@@ -158,11 +126,8 @@ class rt {
 	private:
 		//if require_devianceltparent is true the node is split if minvar is lt the current node deviance (require_devianceltparent=false in RankLib)
 		bool split(rtnode *node, const float featuresamplingrate, const bool require_devianceltparent) {
-			printf("### Splitting a node of size: %d and deviance: %f\n", node->nsampleids, node->deviance);
-//			if (node==root)
-//				printf("Trying to split the root\n");
-//			else
-//				printf("Trying to split some other node\n");
+//			printf("### Splitting a node of size: %d and deviance: %f\n", node->nsampleids, node->deviance);
+
 			if(node->deviance>0.0f) {
 				// const double initvar = require_devianceltparent ? node->deviance : -1; //DBL_MAX;
 				const double initvar = -1; // minimum split score
@@ -192,8 +157,7 @@ class rt {
 					thread_best_score[i] = initvar,
 					thread_best_featureidx[i] = uint_max,
 					thread_best_thresholdid[i] = uint_max;
-				// REMOVE THE FOLLOWING COMMENT
-				//#pragma omp parallel for
+				#pragma omp parallel for
 				for(unsigned int i=0; i<nfeaturesamples; ++i) {
 					//get feature idx
 					const unsigned int f = featuresamples ? featuresamples[i] : i;
@@ -220,8 +184,9 @@ class rt {
 							double rsum = s-lsum;
 							double score = lsum*lsum/(double)lcount + rsum*rsum/(double)rcount;
 
-//							if (f==25)
-//								printf("### fx:%d(%d) \t t:%d \t sum:%f \t S:%f\n", f, training_set->get_featureid(f),t, sumlabels[t], score);
+//							if (c==4992 && ( training_set->get_featureid(f)==51 || training_set->get_featureid(f)==128) )
+//								printf("### fx:%d \t t:%d  \t lc:%d \t rc:%d \t sum:%f \t S:%f\n",
+//										training_set->get_featureid(f), t, lcount, rcount, sumlabels[t], score);
 							if(score>thread_best_score[ith])
 								thread_best_score[ith] = score,
 								thread_best_featureidx[ith] = f,
@@ -301,16 +266,14 @@ class rt {
 				node->left = new rtnode(lsamples, lsize, ldeviance, lsum, lhist),
 				node->right = new rtnode(rsamples, rsize, rdeviance, rsum, rhist);
 
-				printf("### Best Feature fx:%d \t t:%d \t s:%f\n", node->get_feature_id(), best_thresholdid, best_score);
-
-				printf("### nodes in right subtree %d\n", rsize);
-				printf("### nodes in left  subtree %d\n", lsize);
-				printf("### sum: %.15f sqsum: %.15f\n", sum, sqsum);
+//				printf("### Best Feature fx:%d \t t:%d \t s:%f\n", node->get_feature_id(), best_thresholdid, best_score);
+//
+//				printf("### Current node sum: %.15f sqsum: %.15f\n", sum, sqsum);
+//				printf("### Right subtree size:%d\tdev:%.6f\tsum:%.6f\tsqsum:%.6f\n", rsize, rdeviance, rsum, rsqsum);
+//				printf("### Left  subtree size:%d\tdev:%.6f\tsum:%.6f\tsqsum_%.6f\n", lsize, ldeviance, lsum, lsqsum);
 
 				// rhist->quick_dump(128,10);
 				// lhist->quick_dump(25,10);
-
-				printf("### deviances %f\t%f\t%f\n", deviance, ldeviance, rdeviance);
 
 
 				return true;
