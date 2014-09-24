@@ -19,6 +19,12 @@ endif
 endif
 
 ifndef cc
+ifneq ($(shell which g++-4.9),)
+cc=$(shell which g++-4.9)
+endif
+endif
+
+ifndef cc
 ifneq ($(shell /usr/local/Cellar/gcc49/4.9.0/bin/g++-4.9 --version),)
 cc=/usr/local/Cellar/gcc49/4.9.0/bin/g++-4.9
 cc_extra=-Wa,-q
