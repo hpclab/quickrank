@@ -19,18 +19,14 @@ endif
 endif
 
 ifndef cc
-ifneq ($(shell /usr/local/Cellar/gcc49/4.9.1/bin/g++-4.9 --version),)
-cc=/usr/local/Cellar/gcc49/4.9.1/bin/g++-4.9
+ifneq ($(shell /usr/local/bin/g++-4.9 --version),)
+cc=/usr/local/bin/g++-4.9
 cc_extra=-Wa,-q
 endif
 endif
 
-ifndef cc
-ifneq ($(shell which g++-4.9),)
-cc=$(shell which g++-4.9)
-endif
-endif
-all: compile # added for eclipse compatibility
+ # added for eclipse compatibility
+all: compile
 
 compile:
 	@mkdir -p ../bin
