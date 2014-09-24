@@ -55,8 +55,8 @@ valgrind-mn:
 	../tests/data/msn1.fold1.train.5k.txt ../tests/data/msn1.fold1.vali.5k.txt ../tests/data/msn1.fold1.test.5k.txt - test.out
 
 
-# old stuff not checked.
 
+# old stuff not checked.
 edit:
 	@geany $$(cpptree ./main.cpp) --new-instance > /dev/null 2>&1 &
 
