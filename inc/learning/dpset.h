@@ -24,6 +24,7 @@ double filesize(const char *filename) {
 #include "utils/strutils.h" // split string
 #include "utils/bitarray.h" // bit array implementation
 #include "utils/radix.h" // sorters
+
 #include "utils/listqsort.h" // sorter for linked lists
 
 #define SKIP_DPDESCRIPTION //comment to store dp descriptions
