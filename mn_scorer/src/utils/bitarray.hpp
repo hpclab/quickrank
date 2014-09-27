@@ -36,12 +36,12 @@ inline int32_t bitcounter(int32_t n) {
 /*! \class bitarray
  *  \brief bit array implementation (1 bit per element)
  */
-class bitarray {
+class BitArray {
 	public:
 		/** \brief default constructor
 		 */
-		bitarray() : data(NULL), datasize(0) {}
-		~bitarray() {
+		BitArray() : data(NULL), datasize(0) {}
+		~BitArray() {
 			free(data);
 		}
 		/** \brief set the \a i-th bit (the data structure is reallocated to store the \a i-th bit if needed)
@@ -78,7 +78,7 @@ class bitarray {
 		}
 		/** \brief compute bitwse OR of two bit arrays and store the result in the left operand
 		 */
-		bitarray& operator|= (const bitarray& other) {
+		BitArray& operator|= (const BitArray& other) {
 			if(datasize<other.datasize) {
 				data = (int32_t*)realloc(data, sizeof(int32_t)*other.datasize);
 				for(unsigned int i=0; i<datasize; ++i)

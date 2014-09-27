@@ -1,41 +1,59 @@
-QUICKRANK=qr
-SRCDIR=src
-BINDIR=bin
-INCDIR=src
+QUICKRANK:=qr
+SRCDIR:=src
+BINDIR:=bin
+INCDIRS:=-Iinc
+# -Isrc
+
+SRCS:=$(wildcard $(SRCDIR)/*.cc) $(wildcard $(SRCDIR)/*/*.cc) $(wildcard $(SRCDIR)/*/*/*.cc)
+DEPS:=$(SRCS:.cc=.d)
+OBJS:=$(SRCS:.cc=.o)
 
 CC=
-CCFLAGS=-std=c++11 -Wall -pedantic -march=native -Ofast -fopenmp -I $(INCDIR) 
-# added for brew compatibility
-CCEXTRA=
+CCFLAGS:=-std=c++11 -Wall -pedantic -march=native -Ofast -fopenmp
 
-ifndef CC
+# find the compiler
 ifneq ($(shell whereis g++-4.8),)
-CC=g++-4.8
-endif
-endif
-
-ifndef CC
-ifneq ($(shell whereis g++-4.9),)
-CC=g++-4.9
-endif
-endif
-
-ifndef CC
-ifneq ($(shell /usr/local/bin/g++-4.9 --version),)
-CC=/usr/local/bin/g++-4.9
-CCEXTRA=-Wa,-q
-endif
+	CC=g++-4.8
+else 
+	ifneq ($(shell whereis g++-4.9),)
+  	CC=g++-4.9
+  else
+    ifneq ($(shell /usr/local/bin/g++-4.9 --version),)
+      CC=/usr/local/bin/g++-4.9
+      CCFLAGS+=-Wa,-q
+    endif
+	endif
 endif
 
-all: compile
+all: quickrank
 
-compile:
+quickrank: $(BINDIR)/$(QUICKRANK)
+
+$(BINDIR)/$(QUICKRANK): $(OBJS)
 	@mkdir -p $(BINDIR)
-	$(CC) $(CCFLAGS) $(CCEXTRA) $(SRCDIR)/main.cpp -o $(BINDIR)/$(QUICKRANK)
-
+	$(CC) $(CCFLAGS) $(OBJS) -o $(BINDIR)/$(QUICKRANK)
+#	strip $@
+	
+        
 clean:
-	@rm -f *~ $(BINDIR)/*
+	rm -rf $(OBJS) $(DEPS)
 
+dist-clean: clean
+	@rm -rf $(BINDIR)
+
+%.d: %.cc
+	@$(CC) $(INCDIRS) $(CCFLAGS) -MM -MT $(@:.d=.o) $< > $@ 
+
+%.o: %.cc
+	$(CC) $(CCFLAGS) $(INCDIRS) -c -o $@ $<
+
+-include $(DEPS)
+
+# we should put .o files in a different directory
+# we should put .d files in a different directory
+
+ 
+	
 ## valgrind do not support instruction produced by option "-march=native"
 # # TODO (cla): be moved in the test folder
 # # Valgrind debugging commands

@@ -21,7 +21,7 @@ double filesize(const char *filename) {
 
 //#define SKIP_DPDESCRIPTION //comment to store dp descriptions
 
-class dp { //each dp is related to a line read from file
+class DataPoint { //each dp is related to a line read from file
 	public:
 		dp(const float label, const unsigned int qid, const unsigned int nline, const unsigned int initsize=1) :
 			qid(qid),
@@ -35,7 +35,7 @@ class dp { //each dp is related to a line read from file
 			features = (float*)malloc(sizeof(float)*maxsize);
 			features[0] = 0.0f;
 		}
-		~dp() {
+		~DataPoint() {
 			#ifndef SKIP_DPDESCRIPTION
 			if(description) free(description);
 			#endif
@@ -77,8 +77,8 @@ class dp { //each dp is related to a line read from file
 		float label, *features;
 };
 
-void dpswap(dp *&a, dp *&b) {
-	dp *tmp = a;
+void dpswap(DataPoint *&a, DataPoint *&b) {
+	DataPoint *tmp = a;
 	a = b;
 	b = tmp;
 }
@@ -91,10 +91,10 @@ class dparray {
 				delete arr[i];
 			free(arr);
 		}
-		void insert(dp* datapoint) {
+		void insert(DataPoint* datapoint) {
 			if(size==capacity) {
 				unsigned int newcapacity = 2*capacity+1;
-				arr = (dp**)realloc(arr, sizeof(dp*)*newcapacity);
+				arr = (DataPoint**)realloc(arr, sizeof(DataPoint*)*newcapacity);
 				while(capacity<newcapacity) arr[capacity++] = NULL;
 			}
 			arr[size++] = datapoint;
@@ -113,7 +113,7 @@ class dparray {
 			while(top>=0) {
 				int h = stack[top--];
 				int l = stack[top--];
-				dp *p = arr[h];
+				DataPoint *p = arr[h];
 				int i = l-1;
 				for(int j=l; j<h; ++j)
 					if(p->nline > arr[j]->nline)
@@ -134,19 +134,19 @@ class dparray {
 			return arr[i]->nline;
 		}
 	private:
-		dp **arr;
+		DataPoint **arr;
 		unsigned int size, capacity;
 };
 
-class dpset {
+class DataPointDataset {
 	public:
-		dpset(const char *filename) {
+		DataPointDataset(const char *filename) {
 			FILE *f = fopen(filename, "r");
 			if(f) {
 				const int nth = omp_get_num_procs();
 				unsigned int maxfid = 1;
 				unsigned int linecounter = 0;
-				bitarray th_usedfid[nth];
+				BitArray th_usedfid[nth];
 				#pragma omp parallel num_threads(nth) shared(maxfid,linecounter)
 				while(not feof(f)) {
 					ssize_t nread;
@@ -170,7 +170,7 @@ class dpset {
 					//read qid (qid is a mandatory field)
 					unsigned int qid = atou(read_token(pch), "qid:");
 					//create a new dp for storing the max number of features seen till now
-					dp *datapoint = new dp(atof(token), qid, nline, maxfid+1);
+					DataPoint *datapoint = new DataPoint(atof(token), qid, nline, maxfid+1);
 					//read a sequence of features, namely (fid,fval) pairs, then the ending description
 					while(!ISEMPTY(token=read_token(pch,'#')))
 						if(*token=='#') {
@@ -218,7 +218,7 @@ class dpset {
 				delete[] usedfids;
 			} else exit(5);
 		}
-		~dpset() {
+		~DataPointDataset() {
 			free(features);
 		}
 		unsigned int get_nfeatures() const {

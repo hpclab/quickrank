@@ -1,5 +1,5 @@
-#ifndef __SYMMATRIX_HPP__
-#define __SYMMATRIX_HPP__
+#ifndef QUICKRANK_UTILS_SYMMATRIX_H_
+#define QUICKRANK_UTILS_SYMMATRIX_H_
 
 /*! \file symmatrix.hpp
  * \brief implement a symetric matrix of order n by using n(n+1)/2 elements

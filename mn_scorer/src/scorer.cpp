@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 	//read datapoints
-	dpset dps(argv[1]);
+	DataPointDataset dps(argv[1]);
 	//create score array
 	const unsigned int ndps = dps.get_ndatapoints();
 	float *scores = new float[ndps];
