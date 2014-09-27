@@ -2,7 +2,6 @@ QUICKRANK:=qr
 SRCDIR:=src
 BINDIR:=bin
 INCDIRS:=-Iinc
-# -Isrc
 
 SRCS:=$(wildcard $(SRCDIR)/*.cc) $(wildcard $(SRCDIR)/*/*.cc) $(wildcard $(SRCDIR)/*/*/*.cc)
 DEPS:=$(SRCS:.cc=.d)
