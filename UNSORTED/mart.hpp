@@ -1,4 +1,5 @@
-	void compute_pseudoresponses() {
+/*
+void compute_pseudoresponses() {
 			//NOTE this method is from MART definition, LambdaMART one is not invoked
 			const unsigned int nentries = training_set->get_nentries();
 			for(unsigned int i=0; i<nentries; ++i)
@@ -32,3 +33,4 @@
 			getchar();
 			#endif
 		}
+*/
