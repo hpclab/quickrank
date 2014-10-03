@@ -11,11 +11,11 @@ class evaluator {
   public:
     bool normalize = false;
   protected:
-    Ranker *r = NULL;
-    MetricScorer *training_scorer = NULL;
-    MetricScorer *test_scorer = NULL;
+    LTR_Algorithm *r = NULL;
+    Metric *training_scorer = NULL;
+    Metric *test_scorer = NULL;
   public:
-    evaluator(Ranker *r, MetricScorer *training_scorer, MetricScorer *test_scorer) :
+    evaluator(LTR_Algorithm *r, Metric *training_scorer, Metric *test_scorer) :
       r(r), training_scorer(training_scorer), test_scorer(test_scorer) {}
     ~evaluator();
 

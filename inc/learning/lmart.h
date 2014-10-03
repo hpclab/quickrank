@@ -5,7 +5,7 @@
 #include "learning/tree/rt.h"
 #include "learning/tree/ensemble.h"
 
-class LambdaMart : public Ranker {
+class LambdaMart : public LTR_Algorithm {
  public:
   const unsigned int ntrees; //>0
   const double shrinkage; //>0.0f

@@ -7,7 +7,7 @@
 #endif
 
 // NOTE this replaces a "lot" of methods used in lmart, ranker, evaluator
-float Ranker::compute_score(DataPointDataset *samples, MetricScorer *scorer) {
+float LTR_Algorithm::compute_score(DataPointDataset *samples, Metric *scorer) {
   const unsigned int nrankedlists = samples->get_nrankedlists();
   unsigned int * const rloffsets = samples->get_rloffsets();
   float * const * const featurematrix = samples->get_fmatrix();

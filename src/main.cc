@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
 	//index of current argv[]
 	int argi = 1;
 	//read ranker type and its parameters
-	Ranker *r = NULL;
+	LTR_Algorithm *r = NULL;
 	if(argi+6<argc && strcasecmp(argv[argi],"lm")==0) {
 		unsigned int ntrees = atoi(argv[++argi]);
 		float shrinkage = atof(argv[++argi]);
@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
 	r->showme();
 
 	//read metric scorer for the training phase and its parameters
-	MetricScorer *training_scorer = NULL;
+	Metric *training_scorer = NULL;
 	if(argi+1<argc && strcasecmp(argv[argi],"ndcg")==0) {
 		unsigned int k = atoi(argv[++argi]);
 		training_scorer = new ndcgscorer(k), ++argi;
@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
 	training_scorer->showme();
 
 	//read metric scorer for the test phase and its parameters
-	MetricScorer *test_scorer = NULL;
+	Metric *test_scorer = NULL;
 	if(argi+1<argc && strcasecmp(argv[argi],"ndcg")==0) {
 		unsigned int k = atoi(argv[++argi]);
 		test_scorer = new ndcgscorer(k), ++argi;

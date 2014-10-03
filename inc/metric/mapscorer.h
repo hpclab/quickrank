@@ -6,7 +6,7 @@
 #include "metric/metricscorer.h"
 #include "utils/strutils.h" // rtnode string
 
-class MAPScorer : public MetricScorer {
+class MAPScorer : public Metric {
 	private:
 		unsigned int *relevantdocs, nrelevantdocs;
 	public:
