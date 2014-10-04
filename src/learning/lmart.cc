@@ -1,5 +1,7 @@
 #include "learning/lmart.h"
 
+#include <iostream>
+#include <iomanip>
 #include <cfloat>
 #include <cmath>
 
@@ -68,6 +70,10 @@ void LambdaMart::init()  {
 }
 
 void LambdaMart::learn() {
+  // TODO: move this somewhere else?
+  // fix output format for ndcg scores
+  std::cout << std::fixed << std::setprecision(4);
+
   training_score = 0.0f,
       validation_bestscore = 0.0f;
   printf("Training:\n");
@@ -130,10 +136,12 @@ void LambdaMart::learn() {
   //Finishing up
   training_score = compute_score(training_set, scorer);
   printf("\t-----------------------------\n");
-  printf("\t%s@%u on training data = %.4f\n", scorer->whoami(), scorer->get_k(), training_score);
+  std::cout << "\t" << *scorer
+            << " on training data = " << training_score << std::endl;
   if(validation_set) {
     validation_bestscore = compute_score(validation_set, scorer);
-    printf("\t%s@%u on validation data = %.4f\n", scorer->whoami(), scorer->get_k(), validation_bestscore);
+    std::cout << "\t" << *scorer
+              << " on validation data = " << validation_bestscore << std::endl;
   }
 #ifdef SHOWTIMER
   printf("\t\033[1melapsed time = %.3f seconds\033[0m\n", timer);
@@ -156,7 +164,7 @@ float LambdaMart::compute_modelscores(DataPointDataset const *samples, double *m
       qlist orig = samples->get_qlist(i);
       // double *sortedlabels = copyextdouble_qsort(orig.labels, mscores+offsets[i], orig.size);
       double *sortedlabels = copyextdouble_mergesort(orig.labels, mscores+offsets[i], orig.size);
-      score += scorer->compute_score(qlist(orig.size, sortedlabels, orig.qid));
+      score += scorer->evaluate_result_list(qlist(orig.size, sortedlabels, orig.qid));
       delete[] sortedlabels;
     }
     score /= nrankedlists;
@@ -164,17 +172,18 @@ float LambdaMart::compute_modelscores(DataPointDataset const *samples, double *m
   return score;
 }
 
-fsymmatrix * LambdaMart::compute_mchange(const qlist &orig, const unsigned int offset) {
+qr::Jacobian* LambdaMart::compute_mchange(const qlist &orig, const unsigned int offset) {
   //build a ql made up of label values picked up from orig order by indexes of trainingmodelscores reversely sorted
-  unsigned int *idx = idxdouble_qsort(trainingmodelscores+offset, orig.size);
+  unsigned int *idx = idxdouble_mergesort(trainingmodelscores+offset, orig.size);
+  //unsigned int *idx = idxdouble_qsort(trainingmodelscores+offset, orig.size);
   double* sortedlabels = new double [orig.size]; // float sortedlabels[orig.size];
   for(unsigned int i=0; i<orig.size; ++i)
     sortedlabels[i] = orig.labels[idx[i]];
   qlist tmprl(orig.size, sortedlabels, orig.qid);
   //alloc mem
-  fsymmatrix *reschanges = new fsymmatrix(orig.size);
+  qr::Jacobian *reschanges = new qr::Jacobian(orig.size);
   //compute temp swap changes on ql
-  fsymmatrix *tmpchanges = scorer->swap_change(tmprl);
+  qr::Jacobian *tmpchanges = scorer->get_jacobian(tmprl);
 #pragma omp parallel for
   for(unsigned int i=0; i<orig.size; ++i)
     for(unsigned int j=i; j<orig.size; ++j)
@@ -189,7 +198,7 @@ fsymmatrix * LambdaMart::compute_mchange(const qlist &orig, const unsigned int o
 // - added processing of ranked list in ranked order
 // - added cut-off in measure changes matrix
 void LambdaMart::compute_pseudoresponses() {
-  const unsigned int cutoff = scorer->get_k();
+  const unsigned int cutoff = scorer->cutoff();
 
   const unsigned int nrankedlists = training_set->get_nrankedlists();
   const unsigned int *rloffsets = training_set->get_rloffsets();
@@ -207,7 +216,7 @@ void LambdaMart::compute_pseudoresponses() {
       sortedlabels[i] = ql.labels[idx[i]];
     qlist ranked_list(ql.size, sortedlabels, ql.qid);
     //compute temp swap changes on ql
-    fsymmatrix *changes = scorer->swap_change(ranked_list);
+    qr::Jacobian *changes = scorer->get_jacobian(ranked_list);
 
     double *lambdas = pseudoresponses+offset;
     double *weights = cachedweights+offset;

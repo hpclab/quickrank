@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <time.h>
-
+#include <iostream>
 
 // TODO: (by cla) Add some logging facility and remove any printf.
 // TODO: (by cla) Give names to error codes.
@@ -15,6 +15,8 @@ FILE *flog = NULL;
 
 #include "metric/evaluator.h"
 #include "learning/ranker.h"
+#include "metric/ir/metric.h"
+#include "metric/ir/ndcg.h"
 
 int main(int argc, char *argv[]) {
 	//set seed for rand()
@@ -45,33 +47,35 @@ int main(int argc, char *argv[]) {
 	r->showme();
 
 	//read metric scorer for the training phase and its parameters
-	Metric *training_scorer = NULL;
+	qr::metric::ir::Metric* training_scorer = NULL;
 	if(argi+1<argc && strcasecmp(argv[argi],"ndcg")==0) {
 		unsigned int k = atoi(argv[++argi]);
-		training_scorer = new ndcgscorer(k), ++argi;
-	} else if(argi+1<argc && strcasecmp(argv[argi],"map")==0) {
+		training_scorer = new qr::metric::ir::Ndcg(k), ++argi;
+	} /* TODO: implement map scorer
+	 else if(argi+1<argc && strcasecmp(argv[argi],"map")==0) {
 		unsigned int k = atoi(argv[++argi]);
 		training_scorer = new MAPScorer(k), ++argi;
-	} else exit(12);
+	} */ else exit(12);
 	//show metric scorer parameters
-	printf("New training scorer:\n");
-	training_scorer->showme();
+	std::cout << "New training scorer: " << *training_scorer << std::endl;
 
 	//read metric scorer for the test phase and its parameters
-	Metric *test_scorer = NULL;
+	qr::metric::ir::Metric* test_scorer = NULL;
 	if(argi+1<argc && strcasecmp(argv[argi],"ndcg")==0) {
 		unsigned int k = atoi(argv[++argi]);
-		test_scorer = new ndcgscorer(k), ++argi;
-	} else if(argi+1<argc && strcasecmp(argv[argi],"map")==0) {
+		test_scorer = new qr::metric::ir::Ndcg(k), ++argi;
+	} /* TODO: implement map scorer
+	else if(argi+1<argc && strcasecmp(argv[argi],"map")==0) {
 		unsigned int k = atoi(argv[++argi]);
 		test_scorer = new MAPScorer(k), ++argi;
-	} else if(argi<argc && strcmp(argv[argi],"-")==0) {
+	}*/ else if(argi<argc && strcmp(argv[argi],"-")==0) {
 		++argi;
 	} else exit(13);
 	//show test scorer parameters
-	printf("New test scorer:\n");
-	if(test_scorer) test_scorer->showme();
-	else printf("\t(null)\n");
+	if(test_scorer)
+	  std::cout << "New test scorer: " << *test_scorer << std::endl;
+	else
+	  std::cout << "New test scorer: (null)" << std::endl;
 
 	//instantiate a new evaluator with read arguments
 	evaluator ev(r, training_scorer, test_scorer);

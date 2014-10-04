@@ -3,7 +3,7 @@
 
 #include "metric/metricscorer.h"
 
-class DCGScorer : public Metric {
+class DCGScorer : public DeprecatedMetric {
 	public:
 		DCGScorer(const unsigned int kval) { k = kval; }
 		const char *whoami() const { return "DCG"; }

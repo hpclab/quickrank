@@ -33,7 +33,7 @@ double filesize(const char *filename) {
 
 struct qlist {
 	qlist(unsigned int size, double *labels, int qid) : size(size), labels(labels), qid(qid) {}
-	unsigned int const size;
+	const unsigned int size;
 	double const *labels;
 	unsigned int const qid;
 };

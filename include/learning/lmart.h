@@ -1,6 +1,7 @@
 #ifndef QUICKRANK_LEARNING_LMART_H_
 #define QUICKRANK_LEARNING_LMART_H_
 
+#include "types.h"
 #include "learning/ranker.h"
 #include "learning/tree/rt.h"
 #include "learning/tree/ensemble.h"
@@ -77,7 +78,7 @@ class LambdaMart : public LTR_Algorithm {
  protected:
   float compute_modelscores(DataPointDataset const *samples, double *mscores, RegressionTree const &tree);
 
-  fsymmatrix *compute_mchange(const qlist &orig, const unsigned int offset);
+  qr::Jacobian *compute_mchange(const qlist &orig, const unsigned int offset);
 
   // Changes by Cla:
   // - added processing of ranked list in ranked order

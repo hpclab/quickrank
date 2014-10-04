@@ -16,7 +16,7 @@
 
 /*! \class Cache Normalized Discounted Cumulative Gain (nDCG) values.
 */
-class ndcgscorer : public Metric {
+class ndcgscorer : public DeprecatedMetric {
 	public:
 		/** Constructor.
 		 * @param k maximum number of entities that can be recommended.

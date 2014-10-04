@@ -10,12 +10,12 @@
 
 typedef SymMatrix<double> fsymmatrix;
 
-class Metric {
+class DeprecatedMetric {
  protected:
   unsigned int k;
 
  public:
-  virtual ~Metric() {}
+  virtual ~DeprecatedMetric() {}
   void set_k(const unsigned int _k) { k = _k; }
   unsigned int get_k() const { return k; }
 
@@ -31,37 +31,5 @@ class Metric {
 
 };
 
-/*
-namespace qr {
-namespace metric {
-namespace ir {
-
-class Metric
-{
- public:
-  static const unsigned int DEFAULT_CUTOFF = 10;
-
-  explicit Metric(int k = DEFAULT_CUTOFF) { cutoff_ = (k > 0 ? k : DEFAULT_CUTOFF); }
-
-  virtual ~Metric() {};
-
-  unsigned int cutoff() const { return cutoff_; }
-  void set_cutoff(unsigned int k) { cutoff_ = (k > 0 ? k : cutoff_); }
-
-  MetricScore compute_score(const qlist&) const = 0;
-
- private:
-  Metric(const Metric&);
-  Metric& operator=(const Metric&);
-
-  unsigned int cutoff_;
-
-  friend std::ostream& operator<<(std::ostream&, const Metric&);
-};
-
-} // namespace ir
-} // namespace metric
-} // namespace qr
-*/
 
 #endif

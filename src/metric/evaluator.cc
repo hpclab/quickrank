@@ -42,7 +42,9 @@ void evaluator::evaluate(const char *trainingfilename, const char *validationfil
 #ifdef SHOWTIMER
     timer = omp_get_wtime()-timer;
 #endif
-    printf("\t%s@%u on test data = %.4f\n", test_scorer->whoami(), test_scorer->get_k(), score);
+//    printf("\t%s@%u on test data = %.4f\n", test_scorer->whoami(), test_scorer->get_k(), score);
+    std::cout << "\t" << *test_scorer
+              << " on test data = " << score << std::endl;
 #ifdef SHOWTIMER
     printf("\t\033[1melapsed time = %.3f seconds\033[0m\n", timer);
 #endif

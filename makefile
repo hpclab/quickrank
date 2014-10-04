@@ -35,7 +35,8 @@ $(BINDIR)/$(QUICKRANK): $(OBJS)
 	
         
 clean:
-	rm -rf $(OBJS) $(DEPS)
+	rm -f */*.o */*/*.o */*/*/*.o
+	rm -f */*.d */*/*.d */*/*/*.d
 
 dist-clean: clean
 	@rm -rf $(BINDIR)

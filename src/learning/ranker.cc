@@ -7,7 +7,7 @@
 #endif
 
 // NOTE this replaces a "lot" of methods used in lmart, ranker, evaluator
-float LTR_Algorithm::compute_score(DataPointDataset *samples, Metric *scorer) {
+float LTR_Algorithm::compute_score(DataPointDataset *samples, qr::metric::ir::Metric* scorer) {
   const unsigned int nrankedlists = samples->get_nrankedlists();
   unsigned int * const rloffsets = samples->get_rloffsets();
   float * const * const featurematrix = samples->get_fmatrix();
@@ -19,7 +19,7 @@ float LTR_Algorithm::compute_score(DataPointDataset *samples, Metric *scorer) {
     for (unsigned int j = 0, offset = rloffsets[i]; j < ql.size;)
       scores[j++] = eval_dp(featurematrix, offset++);
     double *sortedlabels = copyextdouble_qsort(ql.labels, scores, ql.size);
-    score += scorer->compute_score(qlist(ql.size, sortedlabels, ql.qid));
+    score += scorer->evaluate_result_list(qlist(ql.size, sortedlabels, ql.qid));
     delete[] sortedlabels;
     delete[] scores;
   }

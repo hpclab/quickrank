@@ -4,7 +4,7 @@ all:
 	make msn.fold1.quickrank.matrixnet.log
 
 
-msn.fold1.ranklib.lmart.log:
+msn.fold1.ranklib.lmart.log: ./other/RankLib.jar
 	java -jar ./other/RankLib.jar -ranker 6 \
 	-train data/msn1.fold1.train.5k.txt \
 	-validate data/msn1.fold1.vali.5k.txt \
@@ -14,7 +14,7 @@ msn.fold1.ranklib.lmart.log:
 	> msn.fold1.ranklib.lmart.log
 	cat msn.fold1.ranklib.lmart.log
 	
-msn.fold1.quickrank.lmart.log:
+msn.fold1.quickrank.lmart.log: ../bin/qr
 	../bin/qr lm 100 0.1 0 8 1 0 \
 	ndcg 10 ndcg 10 0 \
 	data/msn1.fold1.train.5k.txt \
@@ -26,7 +26,7 @@ msn.fold1.quickrank.lmart.log:
 	rm msn.fold1.quickrank.lmart.xml*
 	cat msn.fold1.quickrank.lmart.log
 
-msn.fold1.quickrank.matrixnet.log:
+msn.fold1.quickrank.matrixnet.log: ../bin/qr
 	../bin/qr mn 100 0.1 0 3 1 0 \
 	ndcg 10 ndcg 10 0 \
 	data/msn1.fold1.train.5k.txt \
@@ -40,7 +40,7 @@ msn.fold1.quickrank.matrixnet.log:
 
 # correctness check: synching with ranklib
 correct:
-	make -C ../src
+	make -C ..
 	../bin/qr lm 2 0.1 0 8 1 0 \
 	ndcg 10 ndcg 10 0 \
 	data/msn1.fold1.train.5k.txt \
@@ -52,13 +52,11 @@ correct:
 	cat quickrank.lmart.log
 
 correctranklib:
-	cd /Users/claudio/Documents/docs/LAVORO/coding/ltr/ranklib++; ant
-	java -jar /Users/claudio/Documents/docs/LAVORO/coding/ltr/ranklib++/bin/RankLib.jar -ranker 6 \
+	cd ~/docs/LAVORO/coding/ltr/ranklib++; ant
+	java -jar ~/docs/LAVORO/coding/ltr/ranklib++/bin/RankLib.jar -ranker 6 \
 	-train data/msn1.fold1.train.5k.txt \
 	-tree 2 -leaf 8 -shrinkage 0.10 -tc -1 \
 	-metric2t NDCG@10 -metric2T NDCG@10 \
 	-save ranklib.lmart.xml \
 	> ranklib.lmart.log
 	cat ranklib.lmart.log
-	
-	

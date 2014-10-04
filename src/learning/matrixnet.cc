@@ -1,7 +1,10 @@
 #include "learning/matrixnet.h"
 
+#include <iostream>
+#include <iomanip>
 #include <cfloat>
 #include <cmath>
+
 
 #include "learning/ranker.h"
 #include "learning/tree/ot.h"
@@ -9,6 +12,8 @@
 #include "utils/qsort.h"
 
 void MatrixNet::learn() {
+  std::cout << std::fixed << std::setprecision(4);
+
   training_score = 0.0f,
       validation_bestscore = 0.0f;
   printf("Training:\n");
@@ -65,10 +70,12 @@ void MatrixNet::learn() {
   //Finishing up
   training_score = compute_score(training_set, scorer);
   printf("\t-----------------------------\n");
-  printf("\t%s@%u on training data = %.4f\n", scorer->whoami(), scorer->get_k(), training_score);
+  std::cout << "\t" << *scorer
+            << " on training data = " << training_score << std::endl;
   if(validation_set) {
     validation_bestscore = compute_score(validation_set, scorer);
-    printf("\t%s@%u on validation data = %.4f\n", scorer->whoami(), scorer->get_k(), validation_bestscore);
+    std::cout << "\t" << *scorer
+              << " on validation data = " << validation_bestscore << std::endl;
   }
 #ifdef SHOWTIMER
   printf("\t\033[1melapsed time = %.3f seconds\033[0m\n", timer);
