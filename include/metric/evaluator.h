@@ -2,8 +2,6 @@
 #define QUICKRANK_METRIC_EVALUATOR_H_
 
 #include "metric/mapscorer.h"
-#include "metric/ndcgscorer.h"
-#include "metric/dcgscorer.h"
 #include "learning/lmart.h"
 #include "learning/matrixnet.h"
 

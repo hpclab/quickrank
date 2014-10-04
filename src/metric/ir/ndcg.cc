@@ -15,21 +15,6 @@ namespace qr {
 namespace metric {
 namespace ir {
 
-/*! Compute Discounted Cumulative Gain (DCG) for a list of labels.
- * @param labels input values.
- * @param nlabels number of input values.
- * @param k maximum number of entities that can be recommended.
- * @return DCG@ \a k for computed on \a labels.
- */
-double Ndcg::compute_dcg(double const* labels, const unsigned int nlabels, const unsigned int k) const {
-  unsigned int size = std::min(k,nlabels);
-  double dcg = 0.0;
-#pragma omp parallel for reduction(+:dcg)
-  for(unsigned int i=0; i<size; ++i)
-    dcg += (pow(2.0,labels[i])-1.0f)/log2(i+2.0f);
-  return dcg;
-}
-
 /*! Compute the ideal Discounted Cumulative Gain (iDCG) for a list of labels.
  * @param labels input values.
  * @param nlabels number of input values.
