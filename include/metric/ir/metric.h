@@ -1,5 +1,5 @@
-#ifndef QUICKRANK_METRIC_IR_METRICSCORER_H_
-#define QUICKRANK_METRIC_IR_METRICSCORER_H_
+#ifndef QUICKRANK_METRIC_IR_METRIC_H_
+#define QUICKRANK_METRIC_IR_METRIC_H_
 
 #include <iostream>
 #include <climits>
@@ -18,7 +18,7 @@ class Metric
  public:
   static const unsigned int NO_CUTOFF = UINT_MAX-1;
 
-  // TODO: Fix for k=0
+  // TODO: Fix k=0, no cutoff
   explicit Metric(unsigned int k = NO_CUTOFF) { set_cutoff(k); }
 
   virtual ~Metric() {};
@@ -26,11 +26,11 @@ class Metric
   unsigned int cutoff() const { return cutoff_; }
   void set_cutoff(unsigned int k) { cutoff_ = k >= NO_CUTOFF ? NO_CUTOFF : k; }
 
-  virtual MetricScore evaluate_result_list(const qlist&) const = 0;
+  virtual MetricScore evaluate_result_list(const ResultList&) const = 0;
 
   // TODO: provide def implementation
   // TODO: Put a smart pointer here
-  virtual Jacobian* get_jacobian(const qlist &ql) const { return NULL; }
+  virtual Jacobian* get_jacobian(const ResultList &ql) const { return NULL; }
 
  private:
   Metric(const Metric&);

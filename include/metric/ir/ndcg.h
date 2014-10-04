@@ -5,8 +5,8 @@
  *      Author: claudio
  */
 
-#ifndef QUICKRANK_NDCG_H_
-#define QUICKRANK_NDCG_H_
+#ifndef QUICKRANK_METRIC_IR_NDCG_H_
+#define QUICKRANK_METRIC_IR_NDCG_H_
 
 #include "types.h"
 #include "dcg.h"
@@ -20,9 +20,9 @@ class Ndcg : public Dcg {
   explicit Ndcg(int k = NO_CUTOFF) : Dcg(k) {}
   virtual ~Ndcg() {};
 
-  virtual MetricScore evaluate_result_list(const qlist&) const;
+  virtual MetricScore evaluate_result_list(const ResultList&) const;
 
-  virtual Jacobian* get_jacobian(const qlist &ql) const;
+  virtual Jacobian* get_jacobian(const ResultList &ql) const;
 
  protected:
   double compute_idcg(double const*, const unsigned int, const unsigned int) const;

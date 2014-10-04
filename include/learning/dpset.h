@@ -31,8 +31,8 @@ double filesize(const char *filename) {
 #define PRESERVE_DPFILEORDER //uncomment to store datapoints in the same order as in the input file. NOTE dplist.push() is not yet efficient, i.e. O(|dplist|), but dplist are usually short
 #define INIT_NOFEATURES 50 //>0
 
-struct qlist {
-	qlist(unsigned int size, double *labels, int qid) : size(size), labels(labels), qid(qid) {}
+struct ResultList {
+	ResultList(unsigned int size, double *labels, int qid) : size(size), labels(labels), qid(qid) {}
 	const unsigned int size;
 	double const *labels;
 	unsigned int const qid;
@@ -154,8 +154,8 @@ class DataPointDataset {
 		unsigned int get_nrankedlists() const {
 			return nrankedlists;
 		}
-		qlist get_qlist(unsigned int i) const {
-			return qlist(rloffsets[i+1]-rloffsets[i], labels+rloffsets[i], rlids[i]);
+		ResultList get_qlist(unsigned int i) const {
+			return ResultList(rloffsets[i+1]-rloffsets[i], labels+rloffsets[i], rlids[i]);
 		}
 		float *get_fvector(unsigned int i) const {
 			return features[i];

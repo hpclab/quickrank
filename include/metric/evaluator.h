@@ -1,11 +1,8 @@
 #ifndef QUICKRANK_METRIC_EVALUATOR_H_
 #define QUICKRANK_METRIC_EVALUATOR_H_
 
-#include "metric/mapscorer.h"
-#include "learning/lmart.h"
-#include "learning/matrixnet.h"
-
 #include "metric/ir/metric.h"
+#include "learning/ranker.h"
 
 class evaluator {
   public:

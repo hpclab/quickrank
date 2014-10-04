@@ -14,9 +14,10 @@ FILE *flog = NULL;
 #define SHOWTIMER
 
 #include "metric/evaluator.h"
-#include "learning/ranker.h"
-#include "metric/ir/metric.h"
+#include "learning/lmart.h"
+#include "learning/matrixnet.h"
 #include "metric/ir/ndcg.h"
+#include "metric/ir/map.h"
 
 int main(int argc, char *argv[]) {
 	//set seed for rand()
@@ -51,11 +52,10 @@ int main(int argc, char *argv[]) {
 	if(argi+1<argc && strcasecmp(argv[argi],"ndcg")==0) {
 		unsigned int k = atoi(argv[++argi]);
 		training_scorer = new qr::metric::ir::Ndcg(k), ++argi;
-	} /* TODO: implement map scorer
-	 else if(argi+1<argc && strcasecmp(argv[argi],"map")==0) {
+	} else if(argi+1<argc && strcasecmp(argv[argi],"map")==0) {
 		unsigned int k = atoi(argv[++argi]);
-		training_scorer = new MAPScorer(k), ++argi;
-	} */ else exit(12);
+		training_scorer = new qr::metric::ir::Map(k), ++argi;
+	} else exit(12);
 	//show metric scorer parameters
 	std::cout << "New training scorer: " << *training_scorer << std::endl;
 
@@ -64,11 +64,10 @@ int main(int argc, char *argv[]) {
 	if(argi+1<argc && strcasecmp(argv[argi],"ndcg")==0) {
 		unsigned int k = atoi(argv[++argi]);
 		test_scorer = new qr::metric::ir::Ndcg(k), ++argi;
-	} /* TODO: implement map scorer
-	else if(argi+1<argc && strcasecmp(argv[argi],"map")==0) {
+	} else if(argi+1<argc && strcasecmp(argv[argi],"map")==0) {
 		unsigned int k = atoi(argv[++argi]);
-		test_scorer = new MAPScorer(k), ++argi;
-	}*/ else if(argi<argc && strcmp(argv[argi],"-")==0) {
+		test_scorer = new qr::metric::ir::Map(k), ++argi;
+	} else if(argi<argc && strcmp(argv[argi],"-")==0) {
 		++argi;
 	} else exit(13);
 	//show test scorer parameters

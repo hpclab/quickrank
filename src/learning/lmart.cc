@@ -161,10 +161,10 @@ float LambdaMart::compute_modelscores(DataPointDataset const *samples, double *m
   if(nrankedlists) {
 #pragma omp parallel for reduction(+:score)
     for(unsigned int i=0; i<nrankedlists; ++i) {
-      qlist orig = samples->get_qlist(i);
+      ResultList orig = samples->get_qlist(i);
       // double *sortedlabels = copyextdouble_qsort(orig.labels, mscores+offsets[i], orig.size);
       double *sortedlabels = copyextdouble_mergesort(orig.labels, mscores+offsets[i], orig.size);
-      score += scorer->evaluate_result_list(qlist(orig.size, sortedlabels, orig.qid));
+      score += scorer->evaluate_result_list(ResultList(orig.size, sortedlabels, orig.qid));
       delete[] sortedlabels;
     }
     score /= nrankedlists;
@@ -172,14 +172,14 @@ float LambdaMart::compute_modelscores(DataPointDataset const *samples, double *m
   return score;
 }
 
-qr::Jacobian* LambdaMart::compute_mchange(const qlist &orig, const unsigned int offset) {
+qr::Jacobian* LambdaMart::compute_mchange(const ResultList &orig, const unsigned int offset) {
   //build a ql made up of label values picked up from orig order by indexes of trainingmodelscores reversely sorted
   unsigned int *idx = idxdouble_mergesort(trainingmodelscores+offset, orig.size);
   //unsigned int *idx = idxdouble_qsort(trainingmodelscores+offset, orig.size);
   double* sortedlabels = new double [orig.size]; // float sortedlabels[orig.size];
   for(unsigned int i=0; i<orig.size; ++i)
     sortedlabels[i] = orig.labels[idx[i]];
-  qlist tmprl(orig.size, sortedlabels, orig.qid);
+  ResultList tmprl(orig.size, sortedlabels, orig.qid);
   //alloc mem
   qr::Jacobian *reschanges = new qr::Jacobian(orig.size);
   //compute temp swap changes on ql
@@ -205,7 +205,7 @@ void LambdaMart::compute_pseudoresponses() {
 #pragma omp parallel for
   for(unsigned int i=0; i<nrankedlists; ++i) {
     const unsigned int offset = rloffsets[i];
-    qlist ql = training_set->get_qlist(i);
+    ResultList ql = training_set->get_qlist(i);
 
     // CLA: line below uses the old sort and not mergesort as in ranklib
     // unsigned int *idx = idxdouble_qsort(trainingmodelscores+offset, ql.size);
@@ -214,7 +214,7 @@ void LambdaMart::compute_pseudoresponses() {
     double* sortedlabels = new double [ql.size];
     for(unsigned int i=0; i<ql.size; ++i)
       sortedlabels[i] = ql.labels[idx[i]];
-    qlist ranked_list(ql.size, sortedlabels, ql.qid);
+    ResultList ranked_list(ql.size, sortedlabels, ql.qid);
     //compute temp swap changes on ql
     qr::Jacobian *changes = scorer->get_jacobian(ranked_list);
 

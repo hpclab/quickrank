@@ -37,7 +37,7 @@ double Ndcg::compute_idcg(double const* labels, const unsigned int nlabels, cons
 
 
 // TODO: Yahoo! LTR returns 0.5 instead of 0.0
-MetricScore Ndcg::evaluate_result_list(const qlist& ql) const {
+MetricScore Ndcg::evaluate_result_list(const ResultList& ql) const {
   if(ql.size==0) return -1.0; //0.0;
   const unsigned int size = std::min(cutoff(),ql.size);
   const double idcg = Ndcg::compute_idcg(ql.labels, ql.size, size);
@@ -45,7 +45,7 @@ MetricScore Ndcg::evaluate_result_list(const qlist& ql) const {
       (MetricScore) compute_dcg(ql.labels, ql.size, size)/idcg : (MetricScore)0.0;
 }
 
-Jacobian* Ndcg::get_jacobian(const qlist &ql) const {
+Jacobian* Ndcg::get_jacobian(const ResultList &ql) const {
   const unsigned int size = std::min(cutoff(),ql.size);
   const double idcg = compute_idcg(ql.labels, ql.size, size);
   Jacobian* changes = new Jacobian(ql.size);

@@ -2,7 +2,6 @@
 #define QUICKRANK_LEARNING_RANKER_H_
 
 #include "learning/dpset.h"
-#include "metric/metricscorer.h"
 #include "utils/qsort.h"
 
 #include "metric/ir/metric.h"

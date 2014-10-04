@@ -30,13 +30,13 @@ double Dcg::compute_dcg(double const* labels, const unsigned int nlabels, const 
   return dcg;
 }
 
-MetricScore Dcg::evaluate_result_list(const qlist& ql) const {
+MetricScore Dcg::evaluate_result_list(const ResultList& ql) const {
   if(ql.size==0) return -1.0; //0.0;
   const unsigned int size = std::min(cutoff(),ql.size);
   return (MetricScore) Dcg::compute_dcg(ql.labels, ql.size, size);
 }
 
-Jacobian* Dcg::get_jacobian(const qlist &ql) const {
+Jacobian* Dcg::get_jacobian(const ResultList &ql) const {
   const unsigned int size = std::min(cutoff(),ql.size);
   Jacobian* changes = new Jacobian(ql.size);
 #pragma omp parallel for

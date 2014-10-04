@@ -14,12 +14,12 @@ float LTR_Algorithm::compute_score(DataPointDataset *samples, qr::metric::ir::Me
   float score = 0.0f;
 #pragma omp parallel for reduction(+:score)
   for (unsigned int i = 0; i < nrankedlists; ++i) {
-    qlist ql = samples->get_qlist(i);
+    ResultList ql = samples->get_qlist(i);
     double* scores = new double[ql.size];  // float scores[ql.size];
     for (unsigned int j = 0, offset = rloffsets[i]; j < ql.size;)
       scores[j++] = eval_dp(featurematrix, offset++);
     double *sortedlabels = copyextdouble_qsort(ql.labels, scores, ql.size);
-    score += scorer->evaluate_result_list(qlist(ql.size, sortedlabels, ql.qid));
+    score += scorer->evaluate_result_list(ResultList(ql.size, sortedlabels, ql.qid));
     delete[] sortedlabels;
     delete[] scores;
   }
