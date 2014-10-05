@@ -24,7 +24,7 @@ MetricScore Map::evaluate_result_list(const ResultList& ql) const {
   return count>0 ? ap/count : 0.0;
 }
 
-Jacobian* Map::get_jacobian(const ResultList &ql) const {
+std::unique_ptr<Jacobian> Map::get_jacobian(const ResultList &ql) const {
   int* labels = new int [ql.size]; // int labels[ql.size];
   int* relcount = new int [ql.size]; // int relcount[ql.size];
   MetricScore count = 0;
@@ -37,7 +37,8 @@ Jacobian* Map::get_jacobian(const ResultList &ql) const {
     relcount[i] = count;
   }
   // count = (ql.qid<nrelevantdocs && relevantdocs[ql.qid]>count) ? relevantdocs[ql.qid] : count;
-  Jacobian *changes = new Jacobian(ql.size);
+  std::unique_ptr<Jacobian> changes =
+      std::unique_ptr<Jacobian>( new Jacobian(ql.size) );
   if (count!=0) {
 #pragma omp parallel for
     for(unsigned int i=0; i<ql.size-1; ++i)

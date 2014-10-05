@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <climits>
+#include <memory>
 
 #include "learning/dpset.h"
 
@@ -29,8 +30,7 @@ class Metric
   virtual MetricScore evaluate_result_list(const ResultList&) const = 0;
 
   // TODO: provide def implementation
-  // TODO: Put a smart pointer here
-  virtual Jacobian* get_jacobian(const ResultList &ql) const { return NULL; }
+  virtual std::unique_ptr<Jacobian> get_jacobian(const ResultList &ql) const { return std::unique_ptr<Jacobian>(); }
 
  private:
   Metric(const Metric&);

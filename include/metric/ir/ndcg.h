@@ -22,7 +22,7 @@ class Ndcg : public Dcg {
 
   virtual MetricScore evaluate_result_list(const ResultList&) const;
 
-  virtual Jacobian* get_jacobian(const ResultList &ql) const;
+  virtual std::unique_ptr<Jacobian> get_jacobian(const ResultList &ql) const;
 
  protected:
   double compute_idcg(double const*, const unsigned int, const unsigned int) const;

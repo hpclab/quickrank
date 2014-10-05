@@ -172,7 +172,7 @@ float LambdaMart::compute_modelscores(DataPointDataset const *samples, double *m
   return score;
 }
 
-qr::Jacobian* LambdaMart::compute_mchange(const ResultList &orig, const unsigned int offset) {
+std::unique_ptr<qr::Jacobian> LambdaMart::compute_mchange(const ResultList &orig, const unsigned int offset) {
   //build a ql made up of label values picked up from orig order by indexes of trainingmodelscores reversely sorted
   unsigned int *idx = idxdouble_mergesort(trainingmodelscores+offset, orig.size);
   //unsigned int *idx = idxdouble_qsort(trainingmodelscores+offset, orig.size);
@@ -181,14 +181,16 @@ qr::Jacobian* LambdaMart::compute_mchange(const ResultList &orig, const unsigned
     sortedlabels[i] = orig.labels[idx[i]];
   ResultList tmprl(orig.size, sortedlabels, orig.qid);
   //alloc mem
-  qr::Jacobian *reschanges = new qr::Jacobian(orig.size);
+  std::unique_ptr<qr::Jacobian> reschanges =
+      std::unique_ptr<qr::Jacobian>(new qr::Jacobian(orig.size));
   //compute temp swap changes on ql
-  qr::Jacobian *tmpchanges = scorer->get_jacobian(tmprl);
+  std::unique_ptr<qr::Jacobian> tmpchanges =
+      std::unique_ptr<qr::Jacobian>( scorer->get_jacobian(tmprl) );
 #pragma omp parallel for
   for(unsigned int i=0; i<orig.size; ++i)
     for(unsigned int j=i; j<orig.size; ++j)
       reschanges->at(idx[i],idx[j]) = tmpchanges->at(i,j);
-  delete tmpchanges,
+  // delete tmpchanges,
   delete [] idx;
   delete [] sortedlabels;
   return reschanges;
@@ -216,7 +218,7 @@ void LambdaMart::compute_pseudoresponses() {
       sortedlabels[i] = ql.labels[idx[i]];
     ResultList ranked_list(ql.size, sortedlabels, ql.qid);
     //compute temp swap changes on ql
-    qr::Jacobian *changes = scorer->get_jacobian(ranked_list);
+    std::unique_ptr<qr::Jacobian> changes = scorer->get_jacobian(ranked_list);
 
     double *lambdas = pseudoresponses+offset;
     double *weights = cachedweights+offset;
@@ -275,7 +277,6 @@ void LambdaMart::compute_pseudoresponses() {
 
     delete [] idx;
     delete [] sortedlabels;
-    delete changes;
   }
 }
 

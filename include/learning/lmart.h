@@ -78,7 +78,7 @@ class LambdaMart : public LTR_Algorithm {
  protected:
   float compute_modelscores(DataPointDataset const *samples, double *mscores, RegressionTree const &tree);
 
-  qr::Jacobian *compute_mchange(const ResultList &orig, const unsigned int offset);
+  std::unique_ptr<qr::Jacobian> compute_mchange(const ResultList &orig, const unsigned int offset);
 
   // Changes by Cla:
   // - added processing of ranked list in ranked order

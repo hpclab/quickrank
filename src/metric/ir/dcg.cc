@@ -36,9 +36,9 @@ MetricScore Dcg::evaluate_result_list(const ResultList& ql) const {
   return (MetricScore) Dcg::compute_dcg(ql.labels, ql.size, size);
 }
 
-Jacobian* Dcg::get_jacobian(const ResultList &ql) const {
+std::unique_ptr<Jacobian> Dcg::get_jacobian(const ResultList &ql) const {
   const unsigned int size = std::min(cutoff(),ql.size);
-  Jacobian* changes = new Jacobian(ql.size);
+  std::unique_ptr<Jacobian> changes = std::unique_ptr<Jacobian>( new Jacobian(ql.size) );
 #pragma omp parallel for
   for(unsigned int i=0; i<size; ++i) {
     //get the pointer to the i-th line of matrix

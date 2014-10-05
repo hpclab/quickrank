@@ -23,7 +23,7 @@ class Map : public Metric {
 
   virtual MetricScore evaluate_result_list(const ResultList&) const;
 
-  virtual Jacobian* get_jacobian(const ResultList &ql) const;
+  virtual std::unique_ptr<Jacobian> get_jacobian(const ResultList &ql) const;
 
  protected:
 
