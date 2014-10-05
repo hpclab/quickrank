@@ -183,13 +183,14 @@ std::unique_ptr<qr::Jacobian> LambdaMart::compute_mchange(const ResultList &orig
   //alloc mem
   std::unique_ptr<qr::Jacobian> reschanges =
       std::unique_ptr<qr::Jacobian>(new qr::Jacobian(orig.size));
+  qr::Jacobian* reschanges_p = reschanges.get();
   //compute temp swap changes on ql
-  std::unique_ptr<qr::Jacobian> tmpchanges =
-      std::unique_ptr<qr::Jacobian>( scorer->get_jacobian(tmprl) );
+  std::unique_ptr<qr::Jacobian> tmpchanges = scorer->get_jacobian(tmprl);
+  qr::Jacobian* tmpchanges_p = tmpchanges.get();
 #pragma omp parallel for
   for(unsigned int i=0; i<orig.size; ++i)
     for(unsigned int j=i; j<orig.size; ++j)
-      reschanges->at(idx[i],idx[j]) = tmpchanges->at(i,j);
+      reschanges_p->at(idx[i],idx[j]) = tmpchanges_p->at(i,j);
   // delete tmpchanges,
   delete [] idx;
   delete [] sortedlabels;
@@ -219,6 +220,7 @@ void LambdaMart::compute_pseudoresponses() {
     ResultList ranked_list(ql.size, sortedlabels, ql.qid);
     //compute temp swap changes on ql
     std::unique_ptr<qr::Jacobian> changes = scorer->get_jacobian(ranked_list);
+    qr::Jacobian* changes_p = changes.get();
 
     double *lambdas = pseudoresponses+offset;
     double *weights = cachedweights+offset;
@@ -235,7 +237,7 @@ void LambdaMart::compute_pseudoresponses() {
         if(jthlabel>kthlabel) {
           int i_max = j>=k ? j : k;
           int i_min = j>=k ? k : j;
-          double deltandcg = fabs(changes->at(i_min,i_max));
+          double deltandcg = fabs(changes_p->at(i_min,i_max));
 
           double rho = 1.0/(1.0+exp(trainingmodelscores[offset+idx[j]]-trainingmodelscores[offset+idx[k]]));
           double lambda = rho*deltandcg;
@@ -244,36 +246,9 @@ void LambdaMart::compute_pseudoresponses() {
               lambdas[ idx[k] ] -= lambda,
               weights[ idx[j] ] += delta,
               weights[ idx[k] ] += delta;
-
-          //							if (i==0 && (idx[j]==0 || idx[k]==0)) {
-          //								// printf("## lambda[0]------------------\n");
-          //								printf("## %d\t%d", idx[j],idx[k]);
-          //								printf("\t%d\t%d", j,k);
-          //								printf("\t%.6f\t%.6f", trainingmodelscores[offset+idx[j]], trainingmodelscores[offset+idx[k]]);
-          //								printf("\t%.6f", rho);
-          //								printf("\t%.6f", deltandcg);
-          //								printf("\t%.6f\n", pseudoresponses[0]);
-          //							}
-        } /* else {
-							if (i==0 && (idx[j]==0 || idx[k]==0)) {
-								// printf("## lambda[0]------------------\n");
-								printf("** %d\t%d", idx[j],idx[k]);
-								printf("\t%d\t%d", j,k);
-								printf("\t%.6f\t%.6f", trainingmodelscores[offset+idx[j]], trainingmodelscores[offset+idx[k]]);
-								printf("\t%.6f", jthlabel);
-								printf("\t%.6f", kthlabel);
-								printf("\t%.6f\n", pseudoresponses[0]);
-							}
-						}*/
+        }
       }
     }
-
-    //				if (i==0) {
-    //					printf("## lambda[0]------------------\n");
-    //					printf("## cur scoce  = %.15f\n", trainingmodelscores[0]);
-    //					printf("## pseudoresp = %.15f\n", pseudoresponses[0]);
-    //					printf("## weights    = %.15f\n", cachedweights[0]);
-    //				}
 
     delete [] idx;
     delete [] sortedlabels;
