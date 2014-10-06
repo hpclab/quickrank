@@ -2,10 +2,12 @@ QUICKRANK:=qr
 SRCDIR:=src
 BINDIR:=bin
 INCDIRS:=-Iinclude
+OBJSDIR:=_build
+DEPSDIR:=_deps
 
 SRCS:=$(wildcard $(SRCDIR)/*.cc) $(wildcard $(SRCDIR)/*/*.cc) $(wildcard $(SRCDIR)/*/*/*.cc)
-DEPS:=$(SRCS:.cc=.d)
-OBJS:=$(SRCS:.cc=.o)
+DEPS:=$(subst $(SRCDIR),$(DEPSDIR)/$(SRCDIR),$(SRCS:.cc=.d))
+OBJS:=$(subst $(SRCDIR),$(OBJSDIR)/$(SRCDIR),$(SRCS:.cc=.o))
 
 CC=
 CCFLAGS:=-std=c++11 -Wall -pedantic -march=native -Ofast -fopenmp
@@ -25,7 +27,7 @@ else
 endif
 
 all: quickrank
-
+	
 quickrank: $(BINDIR)/$(QUICKRANK)
 
 $(BINDIR)/$(QUICKRANK): $(OBJS)
@@ -35,23 +37,21 @@ $(BINDIR)/$(QUICKRANK): $(OBJS)
 	
         
 clean:
-	rm -f */*.o */*/*.o */*/*/*.o
-	rm -f */*.d */*/*.d */*/*/*.d
+	rm -rf $(OBJSDIR)
+	rm -rf $(DEPSDIR)
 
 dist-clean: clean
 	@rm -rf $(BINDIR)
 
-%.d: %.cc
-	@$(CC) $(INCDIRS) $(CCFLAGS) -MM -MT $(@:.d=.o) $< > $@ 
+$(DEPSDIR)/%.d: %.cc
+	@mkdir -p $(dir $@)
+	@$(CC) $(INCDIRS) $(CCFLAGS) -MM -MT $(OBJSDIR)/$(<:.cc=.o) $< > $@ 
 
-%.o: %.cc
+$(OBJSDIR)/%.o: %.cc
+	@mkdir -p $(dir $@)
 	$(CC) $(CCFLAGS) $(INCDIRS) -c -o $@ $<
 
 -include $(DEPS)
-
-# we should put .o files in a different directory
-# we should put .d files in a different directory
-
  
 	
 ## valgrind do not support instruction produced by option "-march=native"
