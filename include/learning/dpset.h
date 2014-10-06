@@ -170,15 +170,17 @@ class DataPointDataset {
 			sortedsize = ndps;
 			sorted = idxfloat_radixsort(features[i], sortedsize);
 		}
+		/* CLA: this is not used
 		double get_label(unsigned int i) const {
 			return labels[i];
-		}
+		}*/
 		unsigned int get_featureid(unsigned int fidx) const {
 			return usedfid[fidx];
 		}
+		/* CLA: this is not used
 		unsigned int get_maxrlsize() const {
 			return maxrlsize;
-		}
+		}*/
 	private:
 		unsigned int nrankedlists = 0, ndps = 0, nfeatures = 0, maxrlsize = 0;
 		unsigned int *rloffsets = NULL; //[0..nrankedlists] i-th rankedlist begins at rloffsets[i] and ends at rloffsets[i+1]-1
