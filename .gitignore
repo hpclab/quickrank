@@ -4,7 +4,10 @@ _build
 .cproject
 .project
 .settings
+documentation/html
 *~
+*.d
+*.o
 
 
 # OS generated files #

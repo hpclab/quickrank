@@ -1,9 +1,10 @@
-QUICKRANK:=qr
+QUICKRANK:=quickrank
 SRCDIR:=src
 BINDIR:=bin
 INCDIRS:=-Iinclude
 OBJSDIR:=_build
 DEPSDIR:=_deps
+DOCDIR:=documentation
 
 SRCS:=$(wildcard $(SRCDIR)/*.cc) $(wildcard $(SRCDIR)/*/*.cc) $(wildcard $(SRCDIR)/*/*/*.cc)
 DEPS:=$(subst $(SRCDIR),$(DEPSDIR)/$(SRCDIR),$(SRCS:.cc=.d))
@@ -34,7 +35,9 @@ $(BINDIR)/$(QUICKRANK): $(OBJS)
 	@mkdir -p $(BINDIR)
 	$(CC) $(CCFLAGS) $(OBJS) -o $(BINDIR)/$(QUICKRANK)
 #	strip $@
-	
+
+doc:
+	cd $(DOCDIR); doxygen quickrank.doxygen
         
 clean:
 	rm -rf $(OBJSDIR)

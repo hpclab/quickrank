@@ -15,12 +15,6 @@ namespace qr {
 namespace metric {
 namespace ir {
 
-/*! Compute the ideal Discounted Cumulative Gain (iDCG) for a list of labels.
- * @param labels input values.
- * @param nlabels number of input values.
- * @param k maximum number of entities that can be recommended.
- * @return iDCG@ \a k for computed on \a labels.
- */
 double Ndcg::compute_idcg(double const* labels, const unsigned int nlabels, const unsigned int k) const {
   //make a copy of lables
   double *copyoflabels = new double[nlabels];
@@ -36,9 +30,8 @@ double Ndcg::compute_idcg(double const* labels, const unsigned int nlabels, cons
 }
 
 
-// TODO: Yahoo! LTR returns 0.5 instead of 0.0
 MetricScore Ndcg::evaluate_result_list(const ResultList& ql) const {
-  if(ql.size==0) return -1.0; //0.0;
+  if(ql.size==0) return 0.0;
   const unsigned int size = std::min(cutoff(),ql.size);
   const double idcg = Ndcg::compute_idcg(ql.labels, ql.size, size);
   return idcg > (MetricScore)0.0 ?

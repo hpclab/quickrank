@@ -15,12 +15,6 @@ namespace qr {
 namespace metric {
 namespace ir {
 
-/*! Compute Discounted Cumulative Gain (DCG) for a list of labels.
- * @param labels input values.
- * @param nlabels number of input values.
- * @param k maximum number of entities that can be recommended.
- * @return DCG@ \a k for computed on \a labels.
- */
 double Dcg::compute_dcg(double const* labels, const unsigned int nlabels, const unsigned int k) const {
   unsigned int size = std::min(k,nlabels);
   double dcg = 0.0;
@@ -31,7 +25,7 @@ double Dcg::compute_dcg(double const* labels, const unsigned int nlabels, const 
 }
 
 MetricScore Dcg::evaluate_result_list(const ResultList& ql) const {
-  if(ql.size==0) return -1.0; //0.0;
+  if(ql.size==0) return 0.0;
   const unsigned int size = std::min(cutoff(),ql.size);
   return (MetricScore) Dcg::compute_dcg(ql.labels, ql.size, size);
 }
