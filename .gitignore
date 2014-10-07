@@ -4,6 +4,7 @@ _build
 .cproject
 .project
 .settings
+documentation/html
 *~
 
 
