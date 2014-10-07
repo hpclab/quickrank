@@ -1,3 +1,23 @@
+/**
+ * \mainpage QuickRank: Efficient Learning-to-Rank Toolkit
+ *
+ * QuickRank is ...
+ *
+ * \section Usage
+ *
+ * bla bla
+ *
+ * \section ChangeLog
+ *
+ * bla bla
+ *
+ */
+
+
+
+
+
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>

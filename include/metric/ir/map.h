@@ -15,7 +15,11 @@ namespace qr {
 namespace metric {
 namespace ir {
 
-// TODO: test correctness
+/**
+ * This class implements the average precision AP\@k measure.
+ *
+ * \todo TODO: test correctness
+ */
 class Map : public Metric {
  public:
   explicit Map(int k = NO_CUTOFF) : Metric(k) {}
@@ -42,4 +46,4 @@ class Map : public Metric {
 } // namespace metric
 } // namespace qr
 
-#endif // QUICKRANK_NDCG_H_
+#endif // QUICKRANK_MAP_H_
