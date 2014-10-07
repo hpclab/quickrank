@@ -28,11 +28,10 @@ class Ndcg : public Dcg {
   double compute_idcg(double const*, const unsigned int, const unsigned int) const;
 
  private:
-  Ndcg(const Ndcg&);
-  Ndcg& operator=(const Ndcg&);
-
   friend std::ostream& operator<<(std::ostream& os, const Ndcg& ndcg) {
-    ndcg.print(os); return os; }
+    ndcg.print(os); return os;
+  }
+
   virtual void print(std::ostream& os) const;
 
 };

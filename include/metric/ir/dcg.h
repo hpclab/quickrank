@@ -28,12 +28,9 @@ class Dcg : public Metric {
   double compute_dcg(double const*, const unsigned int, const unsigned int) const;
 
  private:
-  Dcg(const Dcg&);
-  Dcg& operator=(const Dcg&);
-
-
   friend std::ostream& operator<<(std::ostream& os, const Dcg& ndcg) {
-    ndcg.print(os); return os; }
+    ndcg.print(os); return os;
+  }
   virtual void print(std::ostream& os) const;
 
 };

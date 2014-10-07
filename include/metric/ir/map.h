@@ -28,12 +28,10 @@ class Map : public Metric {
  protected:
 
  private:
-  Map(const Map&);
-  Map& operator=(const Map&);
-
-
   friend std::ostream& operator<<(std::ostream& os, const Map& map) {
-    map.print(os); return os; }
+    map.print(os); return os;
+  }
+
   virtual void print(std::ostream& os) const;
 
 };

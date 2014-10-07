@@ -4,6 +4,7 @@
 #include <iostream>
 #include <climits>
 #include <memory>
+#include <boost/noncopyable.hpp>
 
 #include "learning/dpset.h"
 
@@ -14,12 +15,12 @@ namespace qr {
 namespace metric {
 namespace ir {
 
-class Metric
+class Metric : private boost::noncopyable
 {
  public:
-  static const unsigned int NO_CUTOFF = UINT_MAX-1;
+  static const unsigned int NO_CUTOFF = UINT_MAX - 1;
 
-  // TODO: Fix k=0, no cutoff
+  // TODO: Fix k = 0, no cutoff
   explicit Metric(unsigned int k = NO_CUTOFF) { set_cutoff(k); }
 
   virtual ~Metric() {};
@@ -33,14 +34,13 @@ class Metric
   virtual std::unique_ptr<Jacobian> get_jacobian(const ResultList &ql) const { return std::unique_ptr<Jacobian>(); }
 
  private:
-  Metric(const Metric&);
-  Metric& operator=(const Metric&);
-
   unsigned int cutoff_;
 
   // TODO: check this together
   friend std::ostream& operator<<(std::ostream& os, const Metric& m) {
-    m.print(os); return os; }
+    m.print(os); return os;
+  }
+
   virtual void print(std::ostream& os) const {os << "Empty";}
 
 };
