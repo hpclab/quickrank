@@ -5,8 +5,8 @@ _build
 .project
 .settings
 *~
-.d
-.o
+*.d
+*.o
 
 
 # OS generated files #
