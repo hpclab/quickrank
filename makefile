@@ -1,4 +1,4 @@
-QUICKRANK:=qr
+QUICKRANK:=quickrank
 SRCDIR:=src
 BINDIR:=bin
 INCDIRS:=-Iinclude
