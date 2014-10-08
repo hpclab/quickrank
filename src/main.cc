@@ -39,7 +39,9 @@ FILE *flog = NULL;
 #include "metric/ir/ndcg.h"
 #include "metric/ir/map.h"
 
+
 int main(int argc, char *argv[]) {
+
 	//set seed for rand()
 	srand(time(NULL));
 	//index of current argv[]
@@ -97,7 +99,7 @@ int main(int argc, char *argv[]) {
 	  std::cout << "New test scorer: (null)" << std::endl;
 
 	//instantiate a new evaluator with read arguments
-	evaluator ev(r, training_scorer, test_scorer);
+	qr::metric::evaluator ev(r, training_scorer, test_scorer);
 
 	//set ranker partial save
 	if(argi<argc) {

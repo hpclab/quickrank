@@ -1,5 +1,8 @@
 #include "metric/evaluator.h"
 
+namespace qr {
+namespace metric {
+
 evaluator::~evaluator() {
   // TODO: (by cla) Do not delete objected you didn't create. Move.
   delete r;
@@ -57,3 +60,6 @@ void evaluator::write() {
   r->write_outputtofile();
   printf("\tdone\n");
 }
+
+} // namespace metric
+} // namespace qr

@@ -4,6 +4,7 @@
 #include <iostream>
 #include <climits>
 #include <memory>
+#include <boost/noncopyable.hpp>
 
 #include "learning/dpset.h"
 
@@ -17,12 +18,13 @@ namespace ir {
 /**
  * This class implements the basic functionalities of an IR evaluation metric.
  */
-class Metric
+class Metric : private boost::noncopyable
 {
  public:
   /// This should be used when no cut-off on the results list is required.
   static const unsigned int NO_CUTOFF = UINT_MAX;
 
+  // TODO: Fix k = 0, no cutoff
   /// Creates a new metric with the specified cut-off threshold.
   ///
   /// \param k The cut-off threshold.
@@ -49,16 +51,15 @@ class Metric
   virtual std::unique_ptr<Jacobian> get_jacobian(const ResultList &rl) const { return std::unique_ptr<Jacobian>(); }
 
  private:
-  Metric(const Metric&);
-  Metric& operator=(const Metric&);
 
-  /// The Matric cutoff.
+  /// The metric cutoff.
   unsigned int cutoff_;
 
   /// The output stream operator.
   // TODO: check this together
   friend std::ostream& operator<<(std::ostream& os, const Metric& m) {
-    m.print(os); return os; }
+    m.print(os); return os;
+  }
   /// Prints the shortname of the Metric, e.g., "NDCG@K"
   virtual void print(std::ostream& os) const {os << "Empty";}
 
