@@ -6,7 +6,12 @@
 
 #include "metric/ir/metric.h"
 
+namespace quickrank {
+namespace learning {
+
 class LTR_Algorithm {
+
+
 
  protected:
   qr::metric::ir::Metric* scorer = NULL;
@@ -19,10 +24,10 @@ class LTR_Algorithm {
 
 
  public:
-  LTR_Algorithm() {}
+  LTR_Algorithm() {
+  }
   virtual ~LTR_Algorithm() {
-    delete validation_set,
-    delete training_set;
+    delete validation_set, delete training_set;
     free(output_basename);
   }
 
@@ -41,18 +46,34 @@ class LTR_Algorithm {
   // string get_name()
   //
 
-  virtual float eval_dp(float *const *const features, unsigned int idx) const = 0; //prediction value to store in a file
+  virtual float eval_dp(float * const * const features,
+                        unsigned int idx) const = 0;  //prediction value to store in a file
   virtual const char *whoami() const = 0;
   virtual void showme() = 0;
   virtual void init() = 0;
   virtual void learn() = 0;
   virtual void write_outputtofile() = 0;
-  void set_scorer(qr::metric::ir::Metric* ms) { scorer = ms; }
-  void set_trainingset(DataPointDataset *trainingset) { training_set = trainingset; }
-  void set_validationset(DataPointDataset *validationset) { validation_set = validationset; }
-  void set_partialsave(unsigned int niterations) { partialsave_niterations = niterations; }
-  void set_outputfilename(const char *filename) { output_basename = strdup(filename); }
-  float compute_score(DataPointDataset *samples, qr::metric::ir::Metric* scorer);
+
+  void set_scorer(qr::metric::ir::Metric* ms) {
+    scorer = ms;
+  }
+  void set_trainingset(DataPointDataset *trainingset) {
+    training_set = trainingset;
+  }
+  void set_validationset(DataPointDataset *validationset) {
+    validation_set = validationset;
+  }
+  void set_partialsave(unsigned int niterations) {
+    partialsave_niterations = niterations;
+  }
+  void set_outputfilename(const char *filename) {
+    output_basename = strdup(filename);
+  }
+  float compute_score(DataPointDataset *samples,
+                      qr::metric::ir::Metric* scorer);
 };
+
+} // namespace learning
+} // namespace quickrank
 
 #endif

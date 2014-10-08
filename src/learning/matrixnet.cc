@@ -6,10 +6,14 @@
 #include <cmath>
 
 
-#include "learning/ranker.h"
+#include "learning/ltr_algorithm.h"
 #include "learning/tree/ot.h"
 #include "learning/tree/ensemble.h"
 #include "utils/qsort.h"
+
+namespace quickrank {
+namespace learning {
+namespace forests {
 
 void MatrixNet::learn() {
   std::cout << std::fixed << std::setprecision(4);
@@ -91,3 +95,7 @@ void MatrixNet::write_outputtofile(const char *filename) {
     fclose(f);
   }
 }
+
+} // namespace forests
+} // namespace learning
+} // namespace quickrank

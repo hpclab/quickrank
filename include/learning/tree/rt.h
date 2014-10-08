@@ -15,7 +15,7 @@
 #include "utils/maxheap.h"
 #include "learning/dpset.h"
 #include "learning/tree/rtnode.h"
-#include "learning/tree/histogram.h"
+#include "learning/tree/rtnode_histogram.h"
 
 typedef MaxHeap<RTNode*> rt_maxheap;
 

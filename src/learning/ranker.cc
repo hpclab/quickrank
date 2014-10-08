@@ -1,10 +1,13 @@
-#include "learning/ranker.h"
+#include "learning/ltr_algorithm.h"
 
 #ifdef _OPENMP
 #include <omp.h>
 #else
 #include "utils/omp-stubs.h"
 #endif
+
+namespace quickrank {
+namespace learning {
 
 // NOTE this replaces a "lot" of methods used in lmart, ranker, evaluator
 float LTR_Algorithm::compute_score(DataPointDataset *samples, qr::metric::ir::Metric* scorer) {
@@ -25,3 +28,6 @@ float LTR_Algorithm::compute_score(DataPointDataset *samples, qr::metric::ir::Me
   }
   return nrankedlists ? score / nrankedlists : 0.0f;
 }
+
+} // namespace learning
+} // namespace quickrank

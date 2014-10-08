@@ -2,7 +2,7 @@
 #define QUICKRANK_LEARNING_TREE_RTNODE_H_
 
 #include "learning/dpset.h"
-#include "learning/tree/histogram.h"
+#include "learning/tree/rtnode_histogram.h"
 
 static const unsigned int uint_max = (unsigned int) -1;
 

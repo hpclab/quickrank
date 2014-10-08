@@ -1,4 +1,4 @@
-#include "learning/tree/histogram.h"
+#include "learning/tree/rtnode_histogram.h"
 
 RTNodeHistogram::RTNodeHistogram(float **thresholds, unsigned int const *thresholds_size, unsigned int nfeatures) : thresholds(thresholds), thresholds_size(thresholds_size), nfeatures(nfeatures) {
   sumlbl = new double*[nfeatures],

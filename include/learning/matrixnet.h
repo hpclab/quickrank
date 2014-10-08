@@ -3,6 +3,10 @@
 
 #include "learning/lmart.h"
 
+namespace quickrank {
+namespace learning {
+namespace forests {
+
 class MatrixNet : public LambdaMart {
 	public:
 		const unsigned int treedepth; //>0
@@ -26,5 +30,9 @@ class MatrixNet : public LambdaMart {
 	protected:
 		void write_outputtofile(const char *filename);
 };
+
+} // namespace forests
+} // namespace learning
+} // namespace quickrank
 
 #endif

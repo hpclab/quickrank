@@ -8,6 +8,9 @@
 #include "utils/qsort.h"
 #include "utils/mergesorter.h"
 
+namespace quickrank {
+namespace learning {
+namespace forests {
 
 void LambdaMart::init()  {
   printf("Initialization:\n");
@@ -254,5 +257,9 @@ void LambdaMart::compute_pseudoresponses() {
     delete [] sortedlabels;
   }
 }
+
+} // namespace forests
+} // namespace learning
+} // namespace quickrank
 
 

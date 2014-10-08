@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
 	//index of current argv[]
 	int argi = 1;
 	//read ranker type and its parameters
-	LTR_Algorithm *r = NULL;
+	quickrank::learning::LTR_Algorithm *r = NULL;
 	if(argi+6<argc && strcasecmp(argv[argi],"lm")==0) {
 		unsigned int ntrees = atoi(argv[++argi]);
 		float shrinkage = atof(argv[++argi]);
@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
 		unsigned int ntreeleaves = atoi(argv[++argi]);
 		unsigned int minleafsupport = atoi(argv[++argi]);
 		unsigned int esr = atoi(argv[++argi]);
-		r = new LambdaMart(ntrees, shrinkage, nthresholds, ntreeleaves, minleafsupport, esr), ++argi;
+		r = new quickrank::learning::forests::LambdaMart(ntrees, shrinkage, nthresholds, ntreeleaves, minleafsupport, esr), ++argi;
 	} else if(argi+6<argc && strcasecmp(argv[argi],"mn")==0) {
 		unsigned int ntrees = atoi(argv[++argi]);
 		float shrinkage = atof(argv[++argi]);
@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
 		unsigned int treedepth = atoi(argv[++argi]);
 		unsigned int minleafsupport = atoi(argv[++argi]);
 		unsigned int esr = atoi(argv[++argi]);
-		r = new MatrixNet(ntrees, shrinkage, nthresholds, treedepth, minleafsupport, esr), ++argi;
+		r = new quickrank::learning::forests::MatrixNet(ntrees, shrinkage, nthresholds, treedepth, minleafsupport, esr), ++argi;
 	} else exit(11);
 	//show ranker parameters
 	printf("New ranker:\n");

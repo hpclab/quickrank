@@ -2,11 +2,15 @@
 #define QUICKRANK_LEARNING_LMART_H_
 
 #include "types.h"
-#include "learning/ranker.h"
+#include "learning/ltr_algorithm.h"
 #include "learning/tree/rt.h"
 #include "learning/tree/ensemble.h"
 
-class LambdaMart : public LTR_Algorithm {
+namespace quickrank {
+namespace learning {
+namespace forests {
+
+class LambdaMart : public quickrank::learning::LTR_Algorithm {
  public:
   const unsigned int ntrees; //>0
   const double shrinkage; //>0.0f
@@ -95,5 +99,10 @@ class LambdaMart : public LTR_Algorithm {
   }
 
 };
+
+} // namespace forests
+} // namespace learning
+} // namespace quickrank
+
 
 #endif
