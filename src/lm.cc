@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
 	unsigned int minleafsupport = check_and_set<unsigned int>  (vm, "min-leaf-support", "Number of minimum leaf support was not set.");
 	unsigned int esr 		    = check_and_set<unsigned int>  (vm, "esr", "Num. rounds with no boost in validation before ending was not set.");
 
-	LTR_Algorithm *r = new LambdaMart(ntrees, shrinkage, nthresholds, ntreeleaves, minleafsupport, esr);
+	quickrank::learning::LTR_Algorithm *r = new quickrank::learning::forests::LambdaMart(ntrees, shrinkage, nthresholds, ntreeleaves, minleafsupport, esr);
 	//show ranker parameters
 	printf("New ranker:\n");
 	r->showme();

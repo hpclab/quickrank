@@ -11,7 +11,7 @@ DEPS:=$(subst $(SRCDIR),$(DEPSDIR)/$(SRCDIR),$(SRCS:.cc=.d))
 OBJS:=$(subst $(SRCDIR),$(OBJSDIR)/$(SRCDIR),$(SRCS:.cc=.o))
 
 CC=
-CCFLAGS:=-std=c++11 -Wall -pedantic -march=native -Ofast -fopenmp
+CCFLAGS:=-std=c++11 -Wall -pedantic -march=native -Ofast -fopenmp -lboost_system-mt -lboost_thread-mt
 
 # find the compiler
 ifneq ($(shell whereis g++-4.8),)
