@@ -7,11 +7,18 @@ DEPSDIR:=_deps
 DOCDIR:=documentation
 
 SRCS:=$(wildcard $(SRCDIR)/*.cc) $(wildcard $(SRCDIR)/*/*.cc) $(wildcard $(SRCDIR)/*/*/*.cc)
+SRCS:=$(filter-out $(SRCDIR)/main.cc, $(SRCS))
 DEPS:=$(subst $(SRCDIR),$(DEPSDIR)/$(SRCDIR),$(SRCS:.cc=.d))
 OBJS:=$(subst $(SRCDIR),$(OBJSDIR)/$(SRCDIR),$(SRCS:.cc=.o))
 
+
+
 CC=
-CCFLAGS:=-std=c++11 -Wall -pedantic -march=native -Ofast -fopenmp -lboost_system-mt -lboost_thread-mt
+CCFLAGS:=-std=c++11 -Wall -pedantic -march=native -Ofast -fopenmp \
+		-I /usr/local/boost_1_56_0 -L/usr/local/boost_1_56_0/stage/lib \
+		-lboost_program_options
+		#boost.cc -L/usr/local/boost_1_56_0/stage/lib -lboost_regex
+
 
 # find the compiler
 ifneq ($(shell whereis g++-4.8),)
