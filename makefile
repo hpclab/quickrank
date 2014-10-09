@@ -15,10 +15,9 @@ OBJS:=$(subst $(SRCDIR),$(OBJSDIR)/$(SRCDIR),$(SRCS:.cc=.o))
 
 CC=
 CCFLAGS:=-std=c++11 -Wall -pedantic -march=native -Ofast -fopenmp \
-		-I/usr/local/boost_1_56_0 -L/usr/local/boost_1_56_0/stage/lib \
 		-lboost_program_options
-		#boost.cc -L/usr/local/boost_1_56_0/stage/lib -lboost_regex
 
+#		-I/usr/local/boost_1_56_0 -L/usr/local/boost_1_56_0/stage/lib \
 
 # find the compiler
 ifneq ($(shell whereis g++-4.8),)
