@@ -50,13 +50,24 @@ $(BINDIR)/$(QUICKRANK): $(OBJS)
 	$(CXX) $(LDLIBS) $(OBJS) -o $(BINDIR)/$(QUICKRANK)
 #	strip $@
 
+# creates the documentation
+doc:
+	cd $(DOCDIR); doxygen quickrank.doxygen
+
 # runs all the unit tests
 unit-tests: $(BINDIR)/unit-tests
 	$(BINDIR)/unit-tests --log_level=test_suite
 
-# creates the documentation
-doc:
-	cd $(DOCDIR); doxygen quickrank.doxygen
+# runs a single unit test
+# example is: make test.unit-tests.metric.ir.test-dcg.cc
+test.%.cc: $(OBJS) $(OBJSDIR)/unit-tests/test-main.o
+	@make $(OBJSDIR)/$(subst .,/,$*).o
+	@$(CXX) $(LDLIBS) -lboost_unit_test_framework \
+	$(filter-out $(OBJSDIR)/$(SRCDIR)/lm.o,$(OBJS)) \
+	$(OBJSDIR)/unit-tests/test-main.o \
+	$(OBJSDIR)/$(subst .,/,$*).o \
+	-o $(BINDIR)/single-test
+	$(BINDIR)/single-test --log_level=test_suite
 
 # removes intermediate files
 clean:
@@ -81,7 +92,8 @@ $(OBJSDIR)/%.o: %.cc
 # linking
 $(BINDIR)/unit-tests: $(OBJS) $(UTESTSOBJS)
 	$(CXX) $(LDLIBS) -lboost_unit_test_framework \
-	$(filter-out $(OBJSDIR)/$(SRCDIR)/lm.o,$(OBJS)) $(UTESTSOBJS) \
+	$(filter-out $(OBJSDIR)/$(SRCDIR)/lm.o,$(OBJS)) \
+	$(UTESTSOBJS) \
 	-o $(BINDIR)/unit-tests
 	
 #include dependency files
