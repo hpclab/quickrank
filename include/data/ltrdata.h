@@ -12,6 +12,25 @@ class LTR_VerticalDataset {
 
     virtual ~LTR_VerticalDataset();
 
+    // -------------------------
+    // CLAUDIO DESIDERATA
+    // -------------------------
+    // - get a query with its results list for evaluation
+    //    (this is an horizontal access)
+    //    (this is also needed for other methods, e.g., neural nets, coord. asc., etc.
+    // - get direct access to the values of a given feature
+    //    to speed up histogram computations, sorting, etc.
+    //    (this is a vertical access)
+    //    (check to what extent do we really need this)
+    // - support normalization
+    // - support discretisation
+    // - support horiz. and vert. sampling
+
+
+    // -------------------------
+    // OLD METHODS
+    // -------------------------
+
     unsigned int get_nfeatures() const { return nfeatures; }
     void set_nfeatures(const unsigned int n) { nfeatures=n; }
 
