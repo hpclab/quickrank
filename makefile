@@ -1,5 +1,6 @@
 QUICKRANK:=quickrank
 SRCDIR:=src
+UTESTSDIR:=unit-tests
 BINDIR:=bin
 INCDIRS:=-Iinclude
 OBJSDIR:=_build
@@ -11,55 +12,79 @@ SRCS:=$(filter-out $(SRCDIR)/main.cc, $(SRCS))
 DEPS:=$(subst $(SRCDIR),$(DEPSDIR)/$(SRCDIR),$(SRCS:.cc=.d))
 OBJS:=$(subst $(SRCDIR),$(OBJSDIR)/$(SRCDIR),$(SRCS:.cc=.o))
 
+UTESTS:=$(wildcard $(UTESTSDIR)/*.cc) $(wildcard $(UTESTSDIR)/*/*.cc) $(wildcard $(UTESTSDIR)/*/*/*.cc)
+UTESTSOBJS:=$(subst $(UTESTSDIR),$(OBJSDIR)/$(UTESTSDIR),$(UTESTS:.cc=.o))
+
+# TODO: Fix what is the file with main.cc
 
 
-CC=
-CCFLAGS:=-std=c++11 -Wall -pedantic -march=native -Ofast -fopenmp \
-		-lboost_program_options
+CXX=
+CXXFLAGS:=-std=c++11 -Wall -pedantic -march=native -Ofast -fopenmp
+LDLIBS:=-lboost_program_options -fopenmp
 
 #		-I/usr/local/boost_1_56_0 -L/usr/local/boost_1_56_0/stage/lib \
 
 # find the compiler
 ifneq ($(shell whereis g++-4.8),)
-	CC=g++-4.8
+	CXX=g++-4.8
 else 
 	ifneq ($(shell whereis g++-4.9),)
-  	CC=g++-4.9
+  	CXX=g++-4.9
   else
     ifneq ($(shell /usr/local/bin/g++-4.9 --version),)
-      CC=/usr/local/bin/g++-4.9
-      CCFLAGS+=-Wa,-q
+      CXX=/usr/local/bin/g++-4.9
+      CXXFLAGS+=-Wa,-q
     endif
 	endif
 endif
 
+# builds QuickRank
 all: quickrank
 	
+# builds QuickRank
 quickrank: $(BINDIR)/$(QUICKRANK)
 
+# builds QuickRank
 $(BINDIR)/$(QUICKRANK): $(OBJS)
 	@mkdir -p $(BINDIR)
-	$(CC) $(CCFLAGS) $(OBJS) -o $(BINDIR)/$(QUICKRANK)
+	$(CXX) $(LDLIBS) $(OBJS) -o $(BINDIR)/$(QUICKRANK)
 #	strip $@
 
+# runs all the unit tests
+unit-tests: $(BINDIR)/unit-tests
+	$(BINDIR)/unit-tests --log_level=test_suite
+
+# creates the documentation
 doc:
 	cd $(DOCDIR); doxygen quickrank.doxygen
-        
+
+# removes intermediate files
 clean:
 	rm -rf $(OBJSDIR)
 	rm -rf $(DEPSDIR)
 
+# removes everything but the source
 dist-clean: clean
 	@rm -rf $(BINDIR)
+	@rm -rf $(DOCDIR)
 
+# build dependency files
 $(DEPSDIR)/%.d: %.cc
 	@mkdir -p $(dir $@)
-	@$(CC) $(INCDIRS) $(CCFLAGS) -MM -MT $(OBJSDIR)/$(<:.cc=.o) $< > $@ 
+	@$(CXX) $(INCDIRS) $(CXXFLAGS) -MM -MT $(OBJSDIR)/$(<:.cc=.o) $< > $@ 
 
+# compilation
 $(OBJSDIR)/%.o: %.cc
 	@mkdir -p $(dir $@)
-	$(CC) $(CCFLAGS) $(INCDIRS) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) $(INCDIRS) -c -o $@ $<
 
+# linking
+$(BINDIR)/unit-tests: $(OBJS) $(UTESTSOBJS)
+	$(CXX) $(LDLIBS) -lboost_unit_test_framework \
+	$(filter-out $(OBJSDIR)/$(SRCDIR)/lm.o,$(OBJS)) $(UTESTSOBJS) \
+	-o $(BINDIR)/unit-tests
+	
+#include dependency files
 -include $(DEPS)
  
 	
