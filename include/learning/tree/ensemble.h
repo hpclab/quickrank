@@ -1,7 +1,6 @@
 #ifndef QUICKRANK_LEARNING_TREE_ENSEMBLE_H_
 #define QUICKRANK_LEARNING_TREE_ENSEMBLE_H_
 
-#include "learning/dpset.h"
 #include "learning/tree/rt.h"
 
 class Ensemble {

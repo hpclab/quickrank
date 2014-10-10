@@ -139,58 +139,5 @@ class DataPointCollection {
 		unsigned int arrsize, nlists;
 };
 
-class DataPointDataset {
-	public:
-		DataPointDataset(const char *filename);
-
-		~DataPointDataset();
-
-		unsigned int get_nfeatures() const {
-			return nfeatures;
-		}
-		unsigned int get_ndatapoints() const {
-			return ndps;
-		}
-		unsigned int get_nrankedlists() const {
-			return nrankedlists;
-		}
-		ResultList get_qlist(unsigned int i) const {
-			return ResultList(rloffsets[i+1]-rloffsets[i], labels+rloffsets[i], rlids[i]);
-		}
-		float *get_fvector(unsigned int i) const {
-			return features[i];
-		}
-		float **get_fmatrix() const {
-			return features;
-		}
-		unsigned int *get_rloffsets() const {
-			return rloffsets;
-		}
-		void sort_dpbyfeature(unsigned int i, unsigned int *&sorted, unsigned int &sortedsize) {
-			sortedsize = ndps;
-			sorted = idxfloat_radixsort(features[i], sortedsize);
-		}
-		/* CLA: this is not used
-		double get_label(unsigned int i) const {
-			return labels[i];
-		}*/
-		unsigned int get_featureid(unsigned int fidx) const {
-			return usedfid[fidx];
-		}
-		/* CLA: this is not used
-		unsigned int get_maxrlsize() const {
-			return maxrlsize;
-		}*/
-	private:
-		unsigned int nrankedlists = 0, ndps = 0, nfeatures = 0, maxrlsize = 0;
-		unsigned int *rloffsets = NULL; //[0..nrankedlists] i-th rankedlist begins at rloffsets[i] and ends at rloffsets[i+1]-1
-		double *labels = NULL; //[0..ndps-1]
-		float **features = NULL; //[0..maxfid][0..ndps-1]
-		int *rlids = NULL; //[0..nrankedlists-1]
-		unsigned int *usedfid = NULL; //
-		#ifndef SKIP_DPDESCRIPTION
-		char **descriptions = NULL; //[0..ndps-1]
-		#endif
-};
 
 #endif

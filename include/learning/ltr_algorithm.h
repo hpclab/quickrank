@@ -1,7 +1,7 @@
 #ifndef QUICKRANK_LEARNING_RANKER_H_
 #define QUICKRANK_LEARNING_RANKER_H_
 
-#include "learning/dpset.h"
+#include "data/ltrdata.h"
 #include "utils/qsort.h"
 
 #include "metric/ir/metric.h"
@@ -15,8 +15,8 @@ class LTR_Algorithm {
 
  protected:
   qr::metric::ir::Metric* scorer = NULL;
-  DataPointDataset *training_set = NULL;
-  DataPointDataset *validation_set = NULL;
+  LTR_VerticalDataset *training_set = NULL;
+  LTR_VerticalDataset *validation_set = NULL;
   float training_score = 0.0f;
   float validation_bestscore = 0.0f;
   unsigned int partialsave_niterations = 0;
@@ -57,10 +57,10 @@ class LTR_Algorithm {
   void set_scorer(qr::metric::ir::Metric* ms) {
     scorer = ms;
   }
-  void set_trainingset(DataPointDataset *trainingset) {
+  void set_trainingset(LTR_VerticalDataset *trainingset) {
     training_set = trainingset;
   }
-  void set_validationset(DataPointDataset *validationset) {
+  void set_validationset(LTR_VerticalDataset *validationset) {
     validation_set = validationset;
   }
   void set_partialsave(unsigned int niterations) {
@@ -69,7 +69,7 @@ class LTR_Algorithm {
   void set_outputfilename(const char *filename) {
     output_basename = strdup(filename);
   }
-  float compute_score(DataPointDataset *samples,
+  float compute_score(LTR_VerticalDataset *samples,
                       qr::metric::ir::Metric* scorer);
 };
 

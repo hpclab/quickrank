@@ -80,7 +80,7 @@ class LambdaMart : public quickrank::learning::LTR_Algorithm {
   }
 
  protected:
-  float compute_modelscores(DataPointDataset const *samples, double *mscores, RegressionTree const &tree);
+  float compute_modelscores(LTR_VerticalDataset const *samples, double *mscores, RegressionTree const &tree);
 
   std::unique_ptr<qr::Jacobian> compute_mchange(const ResultList &orig, const unsigned int offset);
 

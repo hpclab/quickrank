@@ -9,6 +9,7 @@ DOCDIR:=documentation
 
 SRCS:=$(wildcard $(SRCDIR)/*.cc) $(wildcard $(SRCDIR)/*/*.cc) $(wildcard $(SRCDIR)/*/*/*.cc)
 SRCS:=$(filter-out $(SRCDIR)/main.cc, $(SRCS))
+#SRCS:=$(filter-out $(SRCDIR)/lm.cc, $(SRCS))
 DEPS:=$(subst $(SRCDIR),$(DEPSDIR)/$(SRCDIR),$(SRCS:.cc=.d))
 OBJS:=$(subst $(SRCDIR),$(OBJSDIR)/$(SRCDIR),$(SRCS:.cc=.o))
 

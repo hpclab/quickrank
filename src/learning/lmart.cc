@@ -152,21 +152,21 @@ void LambdaMart::learn() {
   printf("\tdone\n");
 }
 
-float LambdaMart::compute_modelscores(DataPointDataset const *samples, double *mscores, RegressionTree const &tree) {
+float LambdaMart::compute_modelscores(LTR_VerticalDataset const *samples, double *mscores, RegressionTree const &tree) {
   const unsigned int ndatapoints = samples->get_ndatapoints();
   float **featurematrix = samples->get_fmatrix();
 #pragma omp parallel for
   for(unsigned int i=0; i<ndatapoints; ++i)
     mscores[i] += shrinkage*tree.eval(featurematrix, i);
   const unsigned int nrankedlists = samples->get_nrankedlists();
-  const unsigned int *offsets = samples->get_rloffsets();
+//  const unsigned int *offsets = samples->get_rloffsets()();
   float score = 0.0f;
   if(nrankedlists) {
 #pragma omp parallel for reduction(+:score)
     for(unsigned int i=0; i<nrankedlists; ++i) {
       ResultList orig = samples->get_qlist(i);
       // double *sortedlabels = copyextdouble_qsort(orig.labels, mscores+offsets[i], orig.size);
-      double *sortedlabels = copyextdouble_mergesort(orig.labels, mscores+offsets[i], orig.size);
+      double *sortedlabels = copyextdouble_mergesort(orig.labels, mscores+samples->get_rloffsets(i), orig.size);
       score += scorer->evaluate_result_list(ResultList(orig.size, sortedlabels, orig.qid));
       delete[] sortedlabels;
     }
@@ -207,10 +207,10 @@ void LambdaMart::compute_pseudoresponses() {
   const unsigned int cutoff = scorer->cutoff();
 
   const unsigned int nrankedlists = training_set->get_nrankedlists();
-  const unsigned int *rloffsets = training_set->get_rloffsets();
+  //const unsigned int *rloffsets = training_set->get_rloffsets();
 #pragma omp parallel for
   for(unsigned int i=0; i<nrankedlists; ++i) {
-    const unsigned int offset = rloffsets[i];
+    const unsigned int offset = training_set->get_rloffsets(i);
     ResultList ql = training_set->get_qlist(i);
 
     // CLA: line below uses the old sort and not mergesort as in ranklib

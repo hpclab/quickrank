@@ -14,8 +14,8 @@ msn.fold1.ranklib.lmart.log: ./other/RankLib.jar
 	> msn.fold1.ranklib.lmart.log
 	cat msn.fold1.ranklib.lmart.log
 	
-msn.fold1.quickrank.lmart.log: ../bin/qr
-	../bin/qr lm 100 0.1 0 8 1 0 \
+msn.fold1.quickrank.lmart.log: ../bin/quickrank
+	../bin/quickrank lm 100 0.1 0 8 1 0 \
 	ndcg 10 ndcg 10 0 \
 	data/msn1.fold1.train.5k.txt \
 	data/msn1.fold1.vali.5k.txt \
@@ -26,8 +26,8 @@ msn.fold1.quickrank.lmart.log: ../bin/qr
 	rm msn.fold1.quickrank.lmart.xml*
 	cat msn.fold1.quickrank.lmart.log
 
-msn.fold1.quickrank.matrixnet.log: ../bin/qr
-	../bin/qr mn 100 0.1 0 3 1 0 \
+msn.fold1.quickrank.matrixnet.log: ../bin/quickrank
+	../bin/quickrank mn 100 0.1 0 3 1 0 \
 	ndcg 10 ndcg 10 0 \
 	data/msn1.fold1.train.5k.txt \
 	data/msn1.fold1.vali.5k.txt \

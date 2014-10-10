@@ -13,7 +13,7 @@
 
 
 #include "utils/maxheap.h"
-#include "learning/dpset.h"
+#include "data/ltrdata.h"
 #include "learning/tree/rtnode.h"
 #include "learning/tree/rtnode_histogram.h"
 
@@ -30,13 +30,13 @@ class RegressionTree {
  protected:
   const unsigned int nrequiredleaves; //0 for unlimited number of nodes (the size of the tree will then be controlled only by minls)
   const unsigned int minls; //minls>0
-  DataPointDataset *training_set = NULL;
+  LTR_VerticalDataset *training_set = NULL;
   double *training_labels = NULL;
   RTNode **leaves = NULL;
   unsigned int nleaves = 0;
   RTNode *root = NULL;
  public:
-  RegressionTree(unsigned int nrequiredleaves, DataPointDataset *dps,
+  RegressionTree(unsigned int nrequiredleaves, LTR_VerticalDataset *dps,
                  double *labels, unsigned int minls) :
                    nrequiredleaves(nrequiredleaves), minls(minls),
                    training_set(dps), training_labels(labels) {}

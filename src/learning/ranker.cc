@@ -10,16 +10,16 @@ namespace quickrank {
 namespace learning {
 
 // NOTE this replaces a "lot" of methods used in lmart, ranker, evaluator
-float LTR_Algorithm::compute_score(DataPointDataset *samples, qr::metric::ir::Metric* scorer) {
+float LTR_Algorithm::compute_score(LTR_VerticalDataset *samples, qr::metric::ir::Metric* scorer) {
   const unsigned int nrankedlists = samples->get_nrankedlists();
-  unsigned int * const rloffsets = samples->get_rloffsets();
+  //unsigned int * const rloffsets = samples->get_rloffsets();
   float * const * const featurematrix = samples->get_fmatrix();
   float score = 0.0f;
 #pragma omp parallel for reduction(+:score)
   for (unsigned int i = 0; i < nrankedlists; ++i) {
     ResultList ql = samples->get_qlist(i);
     double* scores = new double[ql.size];  // float scores[ql.size];
-    for (unsigned int j = 0, offset = rloffsets[i]; j < ql.size;)
+    for (unsigned int j = 0, offset = samples->get_rloffsets(i); j < ql.size;)
       scores[j++] = eval_dp(featurematrix, offset++);
     double *sortedlabels = copyextdouble_qsort(ql.labels, scores, ql.size);
     score += scorer->evaluate_result_list(ResultList(ql.size, sortedlabels, ql.qid));

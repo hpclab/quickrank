@@ -138,9 +138,9 @@ class dparray {
 		unsigned int size, capacity;
 };
 
-class DataPointDataset {
+class LTR_VerticalDataset {
 	public:
-		DataPointDataset(const char *filename) {
+		LTR_VerticalDataset(const char *filename) {
 			FILE *f = fopen(filename, "r");
 			if(f) {
 				const int nth = omp_get_num_procs();
@@ -218,7 +218,7 @@ class DataPointDataset {
 				delete[] usedfids;
 			} else exit(5);
 		}
-		~DataPointDataset() {
+		~LTR_VerticalDataset() {
 			free(features);
 		}
 		unsigned int get_nfeatures() const {

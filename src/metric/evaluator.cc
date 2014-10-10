@@ -1,5 +1,5 @@
 #include "metric/evaluator.h"
-
+#include "io/svml.h"
 namespace qr {
 namespace metric {
 
@@ -10,20 +10,21 @@ evaluator::~evaluator() {
   delete test_scorer;
 }
 void evaluator::evaluate(const char *trainingfilename, const char *validationfilename, const char *testfilename, const char *featurefilename, const char *outputfilename) {
+  qr::io::Svml reader;
   if(not is_empty(trainingfilename)) {
     printf("Reading Training dataset:\n");
     // TODO: (by cla) Where is the delete of this dpset?
-    r->set_trainingset(new DataPointDataset(trainingfilename));
+    r->set_trainingset( reader.read_vertical(trainingfilename) );
   } else exit(6);
   if(not is_empty(validationfilename)) {
     // TODO: (by cla) Where is the delete of this dpset?
     printf("Reading validation dataset:\n");
-    r->set_validationset(new DataPointDataset(validationfilename));
+    r->set_validationset( reader.read_vertical(validationfilename));
   }
-  DataPointDataset *testset = NULL;
+  LTR_VerticalDataset *testset = NULL;
   if(test_scorer and not is_empty(testfilename)) {
     printf("Reading test dataset:\n");
-    testset = new DataPointDataset(testfilename);
+    testset = reader.read_vertical(testfilename);
   }
   if(not is_empty(featurefilename)) {
     // init featureidxs from file

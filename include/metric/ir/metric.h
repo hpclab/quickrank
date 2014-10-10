@@ -6,8 +6,7 @@
 #include <memory>
 #include <boost/noncopyable.hpp>
 
-#include "learning/dpset.h"
-
+#include "data/ltrdata.h"
 #include "types.h"
 
 
