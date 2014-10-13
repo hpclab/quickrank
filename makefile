@@ -3,6 +3,7 @@ SRCDIR:=src
 UTESTSDIR:=unit-tests
 BINDIR:=bin
 INCDIRS:=-Iinclude -I/usr/local/Cellar/boost/1.56.0/include
+#INCDIRS:=-Iinclude
 OBJSDIR:=_build
 DEPSDIR:=_deps
 DOCDIR:=documentation
@@ -21,8 +22,8 @@ UTESTSOBJS:=$(subst $(UTESTSDIR),$(OBJSDIR)/$(UTESTSDIR),$(UTESTS:.cc=.o))
 
 CXX=
 CXXFLAGS:=-std=c++11 -Wall -pedantic -march=native -Ofast -fopenmp
-LDLIBS:=-L/usr/local/lib -lboost_program_options -fopenmp 
-
+LDLIBS:=-L/usr/local/lib -lboost_program_options -fopenmp -v
+#LDLIBS:=-lboost_program_options -fopenmp -v
 #		-I/usr/local/boost_1_56_0 -L/usr/local/boost_1_56_0/stage/lib \
 
 # find the compiler

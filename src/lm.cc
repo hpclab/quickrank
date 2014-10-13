@@ -113,6 +113,7 @@ int main(int argc, char *argv[]) {
 
 	po::options_description all_desc("Allowed options");
 	all_desc.add(model_desc).add(metric_desc).add(file_desc);
+	all_desc.add_options()("help", "produce help message");
 
 	po::variables_map vm;
 	po::store(po::parse_command_line(argc, argv, all_desc), vm);
