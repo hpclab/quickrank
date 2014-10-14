@@ -24,17 +24,27 @@ FILE *flog = NULL;
 namespace po = boost::program_options;
 
 // Structure used to validate allowed metric
-struct metric {
-	metric(std::string const& val): value(val) { }
+struct metric_string {
+	metric_string(std::string const& val): value(val) { }
 	std::string value;
 };
 
-std::ostream& operator<<(std::ostream &os, const metric &m) { return os << m.value; }
+// Operator<< for metric_string (required to compile correctly)
+std::ostream& operator<<(std::ostream &os, const metric_string &m) { return os << m.value; }
+
+// Structure used to validate allowed model
+struct model_string {
+	model_string(std::string const& val): value(val) { }
+	std::string value;
+};
+
+// Operator<< for model_string (required to compile correctly)
+std::ostream& operator<<(std::ostream &os, const model_string &m) { return os << m.value; }
 
 // Global function to validate allowed metrics
 void validate(boost::any& v,
               std::vector<std::string> const& values,
-			  metric* /* target_type */,
+			  metric_string* /* target_type */,
               int)
 {
 	using namespace boost::program_options;
@@ -47,7 +57,29 @@ void validate(boost::any& v,
 	std::string const& s = validators::get_single_string(values);
 
 	if (s == "ndcg" || s == "map") {
-		v = boost::any(metric(s));
+		v = boost::any(metric_string(s));
+	} else {
+		throw validation_error(validation_error::invalid_option_value);
+	}
+}
+
+// Global function to validate allowed metrics
+void validate(boost::any& v,
+              std::vector<std::string> const& values,
+			  model_string* /* target_type */,
+              int)
+{
+	using namespace boost::program_options;
+
+	// Make sure no previous assignment to 'v' was made.
+	validators::check_first_occurrence(v);
+
+	// Extract the first string from 'values'. If there is more than
+	// one string, it's an error, and exception will be thrown.
+	std::string const& s = validators::get_single_string(values);
+
+	if (s == "lm" || s == "mn") {
+		v = boost::any(metric_string(s));
 	} else {
 		throw validation_error(validation_error::invalid_option_value);
 	}
@@ -71,7 +103,7 @@ qr::metric::ir::Metric* check_and_set_metric(const po::variables_map &vm, const 
 {
 	int k = check_and_set<unsigned int>(vm, type + "-cutoff", type + " Metric cutoff was not set.");
 	if (vm.count(type + "-metric")) {
-			if (vm[type + "-metric"].as<metric>().value == "ndcg")
+			if (vm[type + "-metric"].as<metric_string>().value == "ndcg")
 				return new qr::metric::ir::Ndcg(k);
 			else
 				return new qr::metric::ir::Map(k);
@@ -86,19 +118,29 @@ int main(int argc, char *argv[]) {
 	// Declare the supported options.
 	po::options_description model_desc("Model options");
 	model_desc.add_options()
-		("num-trees,n", po::value<unsigned int>()->default_value(1000), "set number of trees")
-		("shrinkage,s", po::value<float>()->default_value(0.1), "set shrinkage")
-		("num-thresholds,t", po::value<unsigned int>()->default_value(0), "set number of thresholds")
-		("num-leaves,l", po::value<unsigned int>()->default_value(10), "set number of leaves")
-		("min-leaf-support,u", po::value<unsigned int>()->default_value(1), "set minimum number of leaf support")
-		("end-after-rounds,e", po::value<unsigned int>()->default_value(100), "set num. rounds with no boost in validation before ending (if 0 disabled")
+		("model", po::value<model_string>()->required(), "set train metric (allowed values are ndcg and map")
+		("num-trees", po::value<unsigned int>()->default_value(1000), "set number of trees")
+		("shrinkage", po::value<float>()->default_value(0.1), "set shrinkage")
+		("num-thresholds", po::value<unsigned int>()->default_value(0), "set number of thresholds")
+		("min-leaf-support", po::value<unsigned int>()->default_value(1), "set minimum number of leaf support")
+		("end-after-rounds", po::value<unsigned int>()->default_value(100), "set num. rounds with no boost in validation before ending (if 0 disabled")
+	;
+
+	po::options_description lm_model_desc("Lambdamart options");
+	lm_model_desc.add_options()
+		("num-leaves", po::value<unsigned int>()->default_value(10), "set number of leaves")
+	;
+
+	po::options_description mn_model_desc("Matrixnet options");
+	mn_model_desc.add_options()
+		("tree-depth", po::value<unsigned int>()->default_value(10), "set tree depth") // TODO: Check the default value
 	;
 
 	po::options_description metric_desc("Metric options");
 	metric_desc.add_options()
-		("train-metric", po::value<metric>()->default_value(metric(std::string("ndcg"))), "set train metric (allowed values are ndcg and map")
+		("train-metric", po::value<metric_string>()->default_value(metric_string(std::string("ndcg"))), "set train metric (allowed values are ndcg and map")
 		("train-cutoff", po::value<unsigned int>()->default_value(10), "set train metric cutoff")
-		("test-metric", po::value<metric>()->default_value(metric(std::string("ndcg"))), "set test metric (allowed values are ndcg and map")
+		("test-metric", po::value<metric_string>()->default_value(metric_string(std::string("ndcg"))), "set test metric (allowed values are ndcg and map")
 		("test-cutoff", po::value<unsigned int>()->default_value(10), "set test metric cutoff")
 	;
 
@@ -113,7 +155,7 @@ int main(int argc, char *argv[]) {
 	;
 
 	po::options_description all_desc("Allowed options");
-	all_desc.add(model_desc).add(metric_desc).add(file_desc);
+	all_desc.add(model_desc).add(metric_desc).add(file_desc).add(lm_model_desc).add(mn_model_desc);
 	all_desc.add_options()("help", "produce help message");
 
 	po::variables_map vm;
@@ -129,11 +171,22 @@ int main(int argc, char *argv[]) {
 	unsigned int ntrees         = check_and_set<unsigned int>  (vm, "num-trees", "Number of trees was not set.");
 	float        shrinkage      = check_and_set<float>(vm, "shrinkage", "Shrinkage was not set.");
 	unsigned int nthresholds    = check_and_set<unsigned int>  (vm, "num-thresholds", "Number of thresholds was not set.");
-	unsigned int ntreeleaves    = check_and_set<unsigned int>  (vm, "num-leaves", "Number of leaves was not set.");
 	unsigned int minleafsupport = check_and_set<unsigned int>  (vm, "min-leaf-support", "Number of minimum leaf support was not set.");
 	unsigned int esr 		    = check_and_set<unsigned int>  (vm, "end-after-rounds", "Num. rounds with no boost in validation before ending was not set.");
 
-	quickrank::learning::LTR_Algorithm *r = new quickrank::learning::forests::LambdaMart(ntrees, shrinkage, nthresholds, ntreeleaves, minleafsupport, esr);
+	// Lambdamart specific options
+	unsigned int ntreeleaves    = check_and_set<unsigned int>  (vm, "num-leaves", "Number of leaves was not set.");
+	// Matrixnet specific options
+	unsigned int treedepth    = check_and_set<unsigned int>  (vm, "tree-depth", "Tree depth was not set.");
+
+	// Create model
+	quickrank::learning::LTR_Algorithm *r = NULL;
+	if (vm["model"].as<model_string>().value == "lm")
+		r = new quickrank::learning::forests::LambdaMart(ntrees, shrinkage, nthresholds, ntreeleaves, minleafsupport, esr);
+	else if (vm["model"].as<model_string>().value == "mn")
+		r = new quickrank::learning::forests::MatrixNet( ntrees, shrinkage, nthresholds, treedepth,   minleafsupport, esr);
+
+
 	//show ranker parameters
 	printf("New ranker:\n");
 	r->showme();
