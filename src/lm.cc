@@ -186,7 +186,6 @@ int main(int argc, char *argv[]) {
 	else if (vm["model"].as<model_string>().value == "mn")
 		r = new quickrank::learning::forests::MatrixNet( ntrees, shrinkage, nthresholds, treedepth,   minleafsupport, esr);
 
-
 	//show ranker parameters
 	printf("New ranker:\n");
 	r->showme();
