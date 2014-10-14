@@ -27,9 +27,9 @@ namespace po = boost::program_options;
 struct metric {
 	metric(std::string const& val): value(val) { }
 	std::string value;
-
-	std::ostream& operator<<(std::ostream &os, const metric &m) { return os << m.value; }
 };
+
+std::ostream& operator<<(std::ostream &os, const metric &m) { return os << m.value; }
 
 // Global function to validate allowed metrics
 void validate(boost::any& v,
