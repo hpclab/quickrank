@@ -27,6 +27,8 @@ namespace po = boost::program_options;
 struct metric {
 	metric(std::string const& val): value(val) { }
 	std::string value;
+
+	std::ostream& operator<<(std::ostream &os, const metric &m) { return os << m.value; }
 };
 
 // Global function to validate allowed metrics
@@ -63,12 +65,11 @@ T check_and_set(const po::variables_map &vm, const std::string &name, const std:
 	}
 }
 
-
 // Auxiliary function to check and set/exit metric
 // TODO: smart pointer to be added
 qr::metric::ir::Metric* check_and_set_metric(const po::variables_map &vm, const std::string &type)
 {
-	int k = check_and_set<int>(vm, type + "-cutoff", type + " Metric cutoff was not set.");
+	int k = check_and_set<unsigned int>(vm, type + "-cutoff", type + " Metric cutoff was not set.");
 	if (vm.count(type + "-metric")) {
 			if (vm[type + "-metric"].as<metric>().value == "ndcg")
 				return new qr::metric::ir::Ndcg(k);
@@ -85,30 +86,30 @@ int main(int argc, char *argv[]) {
 	// Declare the supported options.
 	po::options_description model_desc("Model options");
 	model_desc.add_options()
-		("num-trees,n", po::value<int>(), "set number of trees")
-		("shrinkage,s", po::value<float>(), "set shrinkage")
-		("num-thresholds,t", po::value<int>(), "set number of thresholds")
-		("num-leaves,l", po::value<int>(), "set number of leaves")
-		("min-leaf-support,u", po::value<int>(), "set minimum number of leaf support")
-		("end-after-rounds,e", po::value<int>(), "set num. rounds with no boost in validation before ending (if 0 disabled")
+		("num-trees,n", po::value<unsigned int>()->default_value(1000), "set number of trees")
+		("shrinkage,s", po::value<float>()->default_value(0.1), "set shrinkage")
+		("num-thresholds,t", po::value<unsigned int>()->default_value(0), "set number of thresholds")
+		("num-leaves,l", po::value<unsigned int>()->default_value(10), "set number of leaves")
+		("min-leaf-support,u", po::value<unsigned int>()->default_value(1), "set minimum number of leaf support")
+		("end-after-rounds,e", po::value<unsigned int>()->default_value(100), "set num. rounds with no boost in validation before ending (if 0 disabled")
 	;
 
 	po::options_description metric_desc("Metric options");
 	metric_desc.add_options()
-		("train-metric", po::value<metric>(), "set train metric (allowed values are ndcg and map")
-		("train-cutoff", po::value<int>(), "set train metric cutoff")
-		("test-metric", po::value<metric>(), "set test metric (allowed values are ndcg and map")
-		("test-cutoff", po::value<int>(), "set test metric cutoff")
+		("train-metric", po::value<metric>()->default_value(metric(std::string("ndcg"))), "set train metric (allowed values are ndcg and map")
+		("train-cutoff", po::value<unsigned int>()->default_value(10), "set train metric cutoff")
+		("test-metric", po::value<metric>()->default_value(metric(std::string("ndcg"))), "set test metric (allowed values are ndcg and map")
+		("test-cutoff", po::value<unsigned int>()->default_value(10), "set test metric cutoff")
 	;
 
 	po::options_description file_desc("File options");
 	file_desc.add_options()
-		("partial", po::value<int>(), "set partial file save frequency")
+		("partial", po::value<unsigned int>()->default_value(100), "set partial file save frequency")
 		("train", po::value<std::string>(), "set training file")
-		("valid", po::value<std::string>(), "set validation file")
-		("test", po::value<std::string>(), "set testing file")
-		("features", po::value<std::string>(), "set features file")
-		("output", po::value<std::string>(), "set output file")
+		("valid", po::value<std::string>()->default_value(""), "set validation file")
+		("test", po::value<std::string>()->default_value(""), "set testing file")
+		("features", po::value<std::string>()->default_value(""), "set features file")
+		("model", po::value<std::string>(), "set output model file")
 	;
 
 	po::options_description all_desc("Allowed options");
@@ -130,7 +131,7 @@ int main(int argc, char *argv[]) {
 	unsigned int nthresholds    = check_and_set<unsigned int>  (vm, "num-thresholds", "Number of thresholds was not set.");
 	unsigned int ntreeleaves    = check_and_set<unsigned int>  (vm, "num-leaves", "Number of leaves was not set.");
 	unsigned int minleafsupport = check_and_set<unsigned int>  (vm, "min-leaf-support", "Number of minimum leaf support was not set.");
-	unsigned int esr 		    = check_and_set<unsigned int>  (vm, "esr", "Num. rounds with no boost in validation before ending was not set.");
+	unsigned int esr 		    = check_and_set<unsigned int>  (vm, "end-after-rounds", "Num. rounds with no boost in validation before ending was not set.");
 
 	quickrank::learning::LTR_Algorithm *r = new quickrank::learning::forests::LambdaMart(ntrees, shrinkage, nthresholds, ntreeleaves, minleafsupport, esr);
 	//show ranker parameters
@@ -155,13 +156,13 @@ int main(int argc, char *argv[]) {
 	std::string validation_filename = check_and_set<std::string>  (vm, "valid", "Validatin filename was not set.");
 	std::string test_filename = check_and_set<std::string>  (vm, "test", "Test filename was not set.");
 	std::string features_filename = check_and_set<std::string>  (vm, "features", "Features filename was not set.");
-	std::string output_basename = check_and_set<std::string>  (vm, "output", "Output filename was not set.");
+	std::string model_basename = check_and_set<std::string>  (vm, "model", "Model output filename was not set.");
 	printf("Filenames:\n");
 	printf("\ttraining file = %s\n",   training_filename.c_str());
 	printf("\tvalidation file = %s\n", validation_filename.c_str());
 	printf("\ttest file = %s\n", 	   test_filename.c_str());
 	printf("\tfeatures file = %s\n",   features_filename.c_str());
-	printf("\toutput basename = %s\n", output_basename.c_str());
+	printf("\tmodel output basename = %s\n", model_basename.c_str());
 
 	//set seed for rand()
 	srand(time(NULL));
@@ -170,7 +171,7 @@ int main(int argc, char *argv[]) {
 	qr::metric::evaluator ev(r, training_scorer, testing_scorer);
 
 	//start evaluation process
-	ev.evaluate(training_filename, validation_filename, test_filename, features_filename, output_basename);
+	ev.evaluate(training_filename, validation_filename, test_filename, features_filename, model_basename);
 
 	/*
 	if (output_basename)

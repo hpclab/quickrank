@@ -22,14 +22,14 @@ UTESTSOBJS:=$(subst $(UTESTSDIR),$(OBJSDIR)/$(UTESTSDIR),$(UTESTS:.cc=.o))
 
 CXX=
 CXXFLAGS:=-std=c++11 -Wall -pedantic -march=native -Ofast -fopenmp
-LDLIBS:=-lboost_program_options -fopenmp
+LDLIBS:=-lboost_program_options -fopenmp 
 
 # find the compiler
 ifneq ($(shell whereis g++-4.8),)
 	CXX=g++-4.8
 else 
 	ifneq ($(shell whereis g++-4.9),)
-  	CXX=g++-4.9
+	CXX=g++-4.9
   else
     ifneq ($(shell /usr/local/bin/g++-4.9 --version),)
       CXX=/usr/local/bin/g++-4.9
@@ -40,7 +40,7 @@ endif
 
 # builds QuickRank
 all: quickrank
-	
+
 # builds QuickRank
 quickrank: $(BINDIR)/$(QUICKRANK)
 
@@ -95,11 +95,10 @@ $(BINDIR)/unit-tests: $(OBJS) $(UTESTSOBJS)
 	$(filter-out $(OBJSDIR)/$(SRCDIR)/lm.o,$(OBJS)) \
 	$(UTESTSOBJS) \
 	-o $(BINDIR)/unit-tests
-	
+
 #include dependency files
 -include $(DEPS)
- 
-	
+
 ## valgrind do not support instruction produced by option "-march=native"
 # # TODO (cla): be moved in the test folder
 # # Valgrind debugging commands

@@ -57,10 +57,10 @@ class Metric : private boost::noncopyable
   /// The output stream operator.
   // TODO: check this together
   friend std::ostream& operator<<(std::ostream& os, const Metric& m) {
-    m.print(os); return os;
+    return m.put(os);
   }
   /// Prints the shortname of the Metric, e.g., "NDCG@K"
-  virtual void print(std::ostream& os) const {os << "Empty";}
+  virtual std::ostream& put(std::ostream& os) const = 0;
 
 };
 

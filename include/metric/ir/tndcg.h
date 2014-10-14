@@ -30,11 +30,11 @@ class Tndcg : public Ndcg {
   virtual ~Tndcg() {};
 
  private:
-  friend std::ostream& operator<<(std::ostream& os, const Ndcg& ndcg) {
-    ndcg.print(os); return os;
+  friend std::ostream& operator<<(std::ostream& os, const Tndcg& tndcg) {
+    return tndcg.put(os);
   }
 
-  virtual void print(std::ostream& os) const;
+  virtual std::ostream& put(std::ostream& os) const;
 
 };
 

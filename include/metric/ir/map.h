@@ -33,10 +33,10 @@ class Map : public Metric {
 
  private:
   friend std::ostream& operator<<(std::ostream& os, const Map& map) {
-    map.print(os); return os;
+    return map.put(os);
   }
 
-  virtual void print(std::ostream& os) const;
+  virtual std::ostream& put(std::ostream& os) const;
 
 };
 

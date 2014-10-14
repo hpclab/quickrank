@@ -57,11 +57,11 @@ std::unique_ptr<Jacobian> Map::get_jacobian(const ResultList &ql) const {
   return changes;
 }
 
-void Map::print(std::ostream& os) const {
+std::ostream& Map::put(std::ostream& os) const {
   if (cutoff()!=Metric::NO_CUTOFF)
-    os << "MAP@" << cutoff();
+    return os << "MAP@" << cutoff();
   else
-    os << "MAP";
+    return os << "MAP";
 }
 
 } // namespace ir

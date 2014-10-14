@@ -43,10 +43,10 @@ class Ndcg : public Dcg {
 
  private:
   friend std::ostream& operator<<(std::ostream& os, const Ndcg& ndcg) {
-    ndcg.print(os); return os;
+    return ndcg.put(os);
   }
 
-  virtual void print(std::ostream& os) const;
+  virtual std::ostream& put(std::ostream& os) const;
 
 };
 

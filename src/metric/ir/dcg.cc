@@ -45,11 +45,11 @@ std::unique_ptr<Jacobian> Dcg::get_jacobian(const ResultList &ql) const {
   return changes;
 }
 
-void Dcg::print(std::ostream& os) const {
+std::ostream& Dcg::put(std::ostream& os) const {
   if (cutoff()!=Metric::NO_CUTOFF)
-    os << "DCG@" << cutoff();
+    return os << "DCG@" << cutoff();
   else
-    os << "DCG";
+    return os << "DCG";
 }
 
 } // namespace ir

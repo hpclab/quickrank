@@ -57,11 +57,11 @@ std::unique_ptr<Jacobian> Ndcg::get_jacobian(const ResultList &ql) const {
   return changes;
 }
 
-void Ndcg::print(std::ostream& os) const {
+std::ostream& Ndcg::put(std::ostream& os) const {
   if (cutoff()!=Metric::NO_CUTOFF)
-    os << "NDCG@" << cutoff();
+    return os << "NDCG@" << cutoff();
   else
-    os << "NDCG";
+    return os << "NDCG";
 }
 
 } // namespace ir

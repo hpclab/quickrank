@@ -40,9 +40,9 @@ class Dcg : public Metric {
 
  private:
   friend std::ostream& operator<<(std::ostream& os, const Dcg& ndcg) {
-    ndcg.print(os); return os;
+    return ndcg.put(os);
   }
-  virtual void print(std::ostream& os) const;
+  virtual std::ostream& put(std::ostream& os) const;
 
 };
 

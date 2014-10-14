@@ -22,9 +22,13 @@ class LTR_VerticalDataset {
     //    to speed up histogram computations, sorting, etc.
     //    (this is a vertical access)
     //    (check to what extent do we really need this)
+    //    N.B.: It seems to me we do not really need this vertical format.
     // - support normalization
-    // - support discretisation
+    // - support discretisation, or simply provide discr.ed thresholds
     // - support horiz. and vert. sampling
+
+    // getResultsList(int i);
+    // ResultsList()
 
 
     // -------------------------
@@ -44,6 +48,8 @@ class LTR_VerticalDataset {
       return ResultList(rloffsets[i+1]-rloffsets[i], labels+rloffsets[i], rlids[i]);
     }
 
+    // used to find uniq values, i.e., thresholds in lmart (why not in tree).
+    // used in roothistogram.
     float* get_fvector(const unsigned int i) const { return features[i]; }
     void set_fvector(const unsigned int i, float* v) { features[i] = v; }
 
@@ -54,7 +60,7 @@ class LTR_VerticalDataset {
     void set_rloffsets_vector( unsigned int* o) { rloffsets=o; }
     void set_rloffsets(const unsigned int i, const unsigned int o) { rloffsets[i]=o; }
 
-
+    // used to find uniq values, i.e., thresholds in lmart (why not in tree)
     void sort_dpbyfeature(unsigned int i, unsigned int *&sorted, unsigned int &sortedsize) {
       sortedsize = ndps;
       sorted = idxfloat_radixsort(features[i], sortedsize);
