@@ -118,12 +118,12 @@ int main(int argc, char *argv[]) {
 	// Declare the supported options.
 	po::options_description model_desc("Model options");
 	model_desc.add_options()
-		("model", po::value<model_string>(), "set train metric (allowed values are ndcg and map")
+		("algo", po::value<model_string>(), "[mandatory] set ltr algorithm to use (allowed values are lm and mn)")
 		("num-trees", po::value<unsigned int>()->default_value(1000), "set number of trees")
 		("shrinkage", po::value<float>()->default_value(0.1), "set shrinkage")
 		("num-thresholds", po::value<unsigned int>()->default_value(0), "set number of thresholds")
 		("min-leaf-support", po::value<unsigned int>()->default_value(1), "set minimum number of leaf support")
-		("end-after-rounds", po::value<unsigned int>()->default_value(100), "set num. rounds with no boost in validation before ending (if 0 disabled")
+		("end-after-rounds", po::value<unsigned int>()->default_value(100), "set num. rounds with no boost in validation before ending (if 0 disabled)")
 	;
 
 	po::options_description lm_model_desc("Lambdamart options");
@@ -133,14 +133,14 @@ int main(int argc, char *argv[]) {
 
 	po::options_description mn_model_desc("Matrixnet options");
 	mn_model_desc.add_options()
-		("tree-depth", po::value<unsigned int>()->default_value(10), "set tree depth") // TODO: Check the default value
+		("tree-depth", po::value<unsigned int>()->default_value(3), "set tree depth") // TODO: Check the default value
 	;
 
 	po::options_description metric_desc("Metric options");
 	metric_desc.add_options()
-		("train-metric", po::value<metric_string>()->default_value(metric_string(std::string("ndcg"))), "set train metric (allowed values are ndcg and map")
+		("train-metric", po::value<metric_string>()->default_value(metric_string(std::string("ndcg"))), "set train metric (allowed values are ndcg and map)")
 		("train-cutoff", po::value<unsigned int>()->default_value(10), "set train metric cutoff")
-		("test-metric", po::value<metric_string>()->default_value(metric_string(std::string("ndcg"))), "set test metric (allowed values are ndcg and map")
+		("test-metric", po::value<metric_string>()->default_value(metric_string(std::string("ndcg"))), "set test metric (allowed values are ndcg and map)")
 		("test-cutoff", po::value<unsigned int>()->default_value(10), "set test metric cutoff")
 	;
 
@@ -167,6 +167,12 @@ int main(int argc, char *argv[]) {
 	    return 1;
 	}
 
+	if (!vm.count("algo")) {
+	    std::cout << "Missing algorithm, mandatory parmeter." << std::endl;
+	    std::cout << all_desc << "\n";
+	    return 1;
+	}
+
 	// MODEL STUFF
 	unsigned int ntrees         = check_and_set<unsigned int>  (vm, "num-trees", "Number of trees was not set.");
 	float        shrinkage      = check_and_set<float>(vm, "shrinkage", "Shrinkage was not set.");
@@ -181,9 +187,9 @@ int main(int argc, char *argv[]) {
 
 	// Create model
 	quickrank::learning::LTR_Algorithm *r = NULL;
-	if (vm["model"].as<model_string>().value == "lm")
+	if (vm["algo"].as<model_string>().value == "lm")
 		r = new quickrank::learning::forests::LambdaMart(ntrees, shrinkage, nthresholds, ntreeleaves, minleafsupport, esr);
-	else if (vm["model"].as<model_string>().value == "mn")
+	else if (vm["algo"].as<model_string>().value == "mn")
 		r = new quickrank::learning::forests::MatrixNet( ntrees, shrinkage, nthresholds, treedepth,   minleafsupport, esr);
 
 	//show ranker parameters
