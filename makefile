@@ -9,15 +9,11 @@ DEPSDIR:=_deps
 DOCDIR:=documentation
 
 SRCS:=$(wildcard $(SRCDIR)/*.cc) $(wildcard $(SRCDIR)/*/*.cc) $(wildcard $(SRCDIR)/*/*/*.cc)
-SRCS:=$(filter-out $(SRCDIR)/main.cc, $(SRCS))
-#SRCS:=$(filter-out $(SRCDIR)/lm.cc, $(SRCS))
 DEPS:=$(subst $(SRCDIR),$(DEPSDIR)/$(SRCDIR),$(SRCS:.cc=.d))
 OBJS:=$(subst $(SRCDIR),$(OBJSDIR)/$(SRCDIR),$(SRCS:.cc=.o))
 
 UTESTS:=$(wildcard $(UTESTSDIR)/*.cc) $(wildcard $(UTESTSDIR)/*/*.cc) $(wildcard $(UTESTSDIR)/*/*/*.cc)
 UTESTSOBJS:=$(subst $(UTESTSDIR),$(OBJSDIR)/$(UTESTSDIR),$(UTESTS:.cc=.o))
-
-# TODO: Fix what is the file with main.cc
 
 
 CXX=
@@ -63,7 +59,7 @@ unit-tests: $(BINDIR)/unit-tests
 test.%.cc: $(OBJS) $(OBJSDIR)/unit-tests/test-main.o
 	@make $(OBJSDIR)/$(subst .,/,$*).o
 	@$(CXX) $(LDLIBS) -lboost_unit_test_framework \
-	$(filter-out $(OBJSDIR)/$(SRCDIR)/lm.o,$(OBJS)) \
+	$(filter-out $(OBJSDIR)/$(SRCDIR)/quickrank.o,$(OBJS)) \
 	$(OBJSDIR)/unit-tests/test-main.o \
 	$(OBJSDIR)/$(subst .,/,$*).o \
 	-o $(BINDIR)/single-test
@@ -92,7 +88,7 @@ $(OBJSDIR)/%.o: %.cc
 # linking
 $(BINDIR)/unit-tests: $(OBJS) $(UTESTSOBJS)
 	$(CXX) $(LDLIBS) -lboost_unit_test_framework \
-	$(filter-out $(OBJSDIR)/$(SRCDIR)/lm.o,$(OBJS)) \
+	$(filter-out $(OBJSDIR)/$(SRCDIR)/quickrank.o,$(OBJS)) \
 	$(UTESTSOBJS) \
 	-o $(BINDIR)/unit-tests
 

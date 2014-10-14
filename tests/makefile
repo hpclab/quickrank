@@ -15,7 +15,9 @@ msn.fold1.ranklib.lmart.log: ./other/RankLib.jar
 	cat msn.fold1.ranklib.lmart.log
 
 msn.fold1.quickrank.lmart.log: ../bin/quickrank
-	../bin/quickrank --num-trees 100 \
+	../bin/quickrank \
+	--algo lm \
+	--num-trees 100 \
 	--shrinkage 0.1 \
 	--num-thresholds 0 \
 	--num-leaves 8 \

@@ -1,3 +1,18 @@
+/**
+ * \mainpage QuickRank: Efficient Learning-to-Rank Toolkit
+ *
+ * QuickRank is ...
+ *
+ * \section Usage
+ *
+ * bla bla
+ *
+ * \section ChangeLog
+ *
+ * bla bla
+ *
+ */
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -63,7 +78,7 @@ void validate(boost::any& v,
 	}
 }
 
-// Global function to validate allowed metrics
+// Global function to validate allowed algorithms
 void validate(boost::any& v,
               std::vector<std::string> const& values,
 			  model_string* /* target_type */,
@@ -79,7 +94,7 @@ void validate(boost::any& v,
 	std::string const& s = validators::get_single_string(values);
 
 	if (s == "lm" || s == "mn") {
-		v = boost::any(metric_string(s));
+		v = boost::any(model_string(s));
 	} else {
 		throw validation_error(validation_error::invalid_option_value);
 	}
@@ -133,7 +148,7 @@ int main(int argc, char *argv[]) {
 
 	po::options_description mn_model_desc("Matrixnet options");
 	mn_model_desc.add_options()
-		("tree-depth", po::value<unsigned int>()->default_value(3), "set tree depth") // TODO: Check the default value
+		("tree-depth", po::value<unsigned int>()->default_value(3), "set tree depth")
 	;
 
 	po::options_description metric_desc("Metric options");
@@ -185,6 +200,7 @@ int main(int argc, char *argv[]) {
 	// Matrixnet specific options
 	unsigned int treedepth    = check_and_set<unsigned int>  (vm, "tree-depth", "Tree depth was not set.");
 
+	std::cout <<"1" << std::endl;
 	// Create model
 	quickrank::learning::LTR_Algorithm *r = NULL;
 	if (vm["algo"].as<model_string>().value == "lm")
@@ -231,10 +247,9 @@ int main(int argc, char *argv[]) {
 	//start evaluation process
 	ev.evaluate(training_filename, validation_filename, test_filename, features_filename, model_basename);
 
-	/*
-	if (output_basename)
+
+	if (model_basename.length() > 0)
 		ev.write();
-	*/
 
 	return 0;
 }
