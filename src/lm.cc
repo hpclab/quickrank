@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
 	// Declare the supported options.
 	po::options_description model_desc("Model options");
 	model_desc.add_options()
-		("model", po::value<model_string>()->required(), "set train metric (allowed values are ndcg and map")
+		("model", po::value<model_string>(), "set train metric (allowed values are ndcg and map")
 		("num-trees", po::value<unsigned int>()->default_value(1000), "set number of trees")
 		("shrinkage", po::value<float>()->default_value(0.1), "set shrinkage")
 		("num-thresholds", po::value<unsigned int>()->default_value(0), "set number of thresholds")
