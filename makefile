@@ -18,7 +18,7 @@ UTESTSOBJS:=$(subst $(UTESTSDIR),$(OBJSDIR)/$(UTESTSDIR),$(UTESTS:.cc=.o))
 
 CXX=
 CXXFLAGS:=-std=c++11 -Wall -pedantic -march=native -Ofast -fopenmp
-LDLIBS:=-lboost_program_options -fopenmp 
+LDLIBS:=-lboost_program_options -fopenmp
 
 # find the compiler
 ifneq ($(shell whereis g++-4.8),)
@@ -43,7 +43,7 @@ quickrank: $(BINDIR)/$(QUICKRANK)
 # builds QuickRank
 $(BINDIR)/$(QUICKRANK): $(OBJS)
 	@mkdir -p $(BINDIR)
-	$(CXX) $(LDLIBS) $(OBJS) -o $(BINDIR)/$(QUICKRANK)
+	$(CXX) $(OBJS) $(LDLIBS) -o $(BINDIR)/$(QUICKRANK)
 #	strip $@
 
 # creates the documentation
@@ -58,10 +58,11 @@ unit-tests: $(BINDIR)/unit-tests
 # example is: make test.unit-tests.metric.ir.test-dcg.cc
 test.%.cc: $(OBJS) $(OBJSDIR)/unit-tests/test-main.o
 	@make $(OBJSDIR)/$(subst .,/,$*).o
-	@$(CXX) $(LDLIBS) -lboost_unit_test_framework \
+	@$(CXX) \
 	$(filter-out $(OBJSDIR)/$(SRCDIR)/quickrank.o,$(OBJS)) \
 	$(OBJSDIR)/unit-tests/test-main.o \
 	$(OBJSDIR)/$(subst .,/,$*).o \
+	$(LDLIBS) -lboost_unit_test_framework \
 	-o $(BINDIR)/single-test
 	$(BINDIR)/single-test --log_level=test_suite
 
@@ -87,9 +88,10 @@ $(OBJSDIR)/%.o: %.cc
 
 # linking
 $(BINDIR)/unit-tests: $(OBJS) $(UTESTSOBJS)
-	$(CXX) $(LDLIBS) -lboost_unit_test_framework \
+	$(CXX) \
 	$(filter-out $(OBJSDIR)/$(SRCDIR)/quickrank.o,$(OBJS)) \
 	$(UTESTSOBJS) \
+	$(LDLIBS) -lboost_unit_test_framework \
 	-o $(BINDIR)/unit-tests
 
 #include dependency files
