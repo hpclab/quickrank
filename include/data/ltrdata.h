@@ -15,20 +15,26 @@ class LTR_VerticalDataset {
     // -------------------------
     // CLAUDIO DESIDERATA
     // -------------------------
-    // - get a query with its results list for evaluation
-    //    (this is an horizontal access)
-    //    (this is also needed for other methods, e.g., neural nets, coord. asc., etc.
-    // - get direct access to the values of a given feature
-    //    to speed up histogram computations, sorting, etc.
-    //    (this is a vertical access)
-    //    (check to what extent do we really need this)
-    //    N.B.: It seems to me we do not really need this vertical format.
+    // Result_Lists_Iterator* begin();
+    // Result_Lists_Iterator* end();
+
+    // auto q = dataset-begin();
+    // q->begin();
+
+    // ResultsList {
+      //    qid;
+      //    float** features;   // int
+      //    float* labels;      // int
+      //    num_docs;
+      // }
+
+
+
     // - support normalization
     // - support discretisation, or simply provide discr.ed thresholds
     // - support horiz. and vert. sampling
 
-    // getResultsList(int i);
-    // ResultsList()
+
 
 
     // -------------------------

@@ -10,7 +10,7 @@ evaluator::~evaluator() {
   delete test_scorer;
 }
 void evaluator::evaluate(const char *trainingfilename, const char *validationfilename, const char *testfilename, const char *featurefilename, const char *outputfilename) {
-  qr::io::Svml reader;
+  quickrank::io::Svml reader;
   if(not is_empty(trainingfilename)) {
     printf("Reading Training dataset:\n");
     // TODO: (by cla) Where is the delete of this dpset?

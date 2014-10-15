@@ -4,9 +4,9 @@
 #include <boost/noncopyable.hpp>
 
 #include "data/ltrdata.h"
+#include "data/dataset.h"
 
-
-namespace qr {
+namespace quickrank {
 namespace io {
 
 /**
@@ -27,6 +27,12 @@ class Svml : private boost::noncopyable
   /// \todo TODO: add smart pointer here
   virtual LTR_VerticalDataset* read_vertical(const char *filename) const;
 
+
+  /// Reads the input dataset and returns in horizontal format.
+  /// \param filename the input filename.
+  /// \return The svml dataset in horizontal format.
+  /// \todo TODO: add smart pointer here
+  virtual data::Dataset* read_horizontal(const char *filename) const;
 };
 
 } // namespace data
