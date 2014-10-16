@@ -9,6 +9,7 @@ namespace qr {
 typedef float Label; // data type for instance truth label
 typedef float Score; // data type for instance predicted label
 typedef float Feature; // data type for instance feature
+typedef unsigned int QueryID; // data type for QueryID in L-t-R datasets
 typedef double MetricScore; // data type for evaluation metric final outcome
 
 typedef std::vector<Feature> FeatureVector; // data type for vector of instance features

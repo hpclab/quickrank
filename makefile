@@ -18,7 +18,7 @@ UTESTSOBJS:=$(subst $(UTESTSDIR),$(OBJSDIR)/$(UTESTSDIR),$(UTESTS:.cc=.o))
 
 CXX=
 CXXFLAGS:=-std=c++11 -Wall -pedantic -march=native -Ofast -fopenmp
-LDLIBS:=-lboost_program_options -fopenmp
+LDLIBS:=-lboost_program_options -lboost_system -lboost_timer -lboost_filesystem -fopenmp
 
 # find the compiler
 ifneq ($(shell whereis g++-4.8),)

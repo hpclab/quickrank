@@ -11,6 +11,16 @@ namespace io {
 
 /**
  * This class implements IO on Svml files.
+ *
+ * SVML format is as follows:
+ * \verbatim
+   <line> .=. <target> qid:<qid> <feature>:<value> <feature>:<value> ... <feature>:<value> # <info>
+   <target> .=. <float>
+   <qid> .=. <positive integer>
+   <feature> .=. <positive integer>
+   <value> .=. <float>
+   <info> .=. <string>
+   \endverbatim
  */
 class Svml : private boost::noncopyable
 {
