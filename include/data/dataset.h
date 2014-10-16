@@ -1,6 +1,7 @@
 #ifndef QUICKRANK_DATA_DATASET_H_
 #define QUICKRANK_DATA_DATASET_H_
 
+#include <boost/noncopyable.hpp>
 #include <boost/container/vector.hpp>
 
 // TODO: rename to ltrdata.h
@@ -11,7 +12,7 @@
 namespace quickrank {
 namespace data {
 
-class Dataset {
+class Dataset : private boost::noncopyable {
  public:
 
   /// Allocates an empty Dataset of given size.
@@ -22,14 +23,14 @@ class Dataset {
   virtual ~Dataset();
 
 
-  // TODO: begin, end
-  QueryResults getQueryResults(unsigned int i);
+  // TODO: add an iterator
+  std::unique_ptr<QueryResults> getQueryResults(unsigned int i) const;
 
   void addInstance(qr::QueryID q_id, qr::Label i_label, boost::container::vector<qr::Feature> i_features);
 
-  unsigned int num_features()  {return num_features_;}
-  unsigned int num_queries()   {return num_queries_;}
-  unsigned int num_instances() {return num_instances_;}
+  unsigned int num_features() const   {return num_features_;}
+  unsigned int num_queries() const    {return num_queries_;}
+  unsigned int num_instances() const  {return num_instances_;}
 
   // - support normalization
   // - support discretisation, or simply provide discr.ed thresholds

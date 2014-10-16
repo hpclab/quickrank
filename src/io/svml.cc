@@ -167,10 +167,14 @@ LTR_VerticalDataset* Svml::read_vertical(const char *filename) const {
 }
 
 // TODO: save info file or use mmap
-data::Dataset* Svml::read_horizontal(const char *filename) const {
+// TODO: re-introduce multithreading
+std::unique_ptr<data::Dataset> Svml::read_horizontal(const char *filename) const {
 
   FILE *f = fopen(filename, "r");
-  if(!f) { return NULL; }
+  if(!f) {
+    std::cerr << "!!! Error while opening file "<<filename<<"."<< std::endl;
+    exit(EXIT_FAILURE);
+  }
 
   boost::timer::cpu_timer reading_timer;
 
@@ -197,16 +201,16 @@ data::Dataset* Svml::read_horizontal(const char *filename) const {
 
     //read label (label is a mandatory field)
     if(ISEMPTY(token=read_token(pch))) exit(2);
-    //create a new dp for storing the max number of features seen till now
-    qr::Label relevance = atof(token);
 
-    //read qid (qid is a mandatory field)
+    // read label and qid
+    qr::Label relevance = atof(token);
     unsigned int qid = atou(read_token(pch), "qid:");
 
+    // allocate feature vector and read instance
     boost::container::vector<qr::Feature> curr_instance(maxfid);
 
     //read a sequence of features, namely (fid,fval) pairs, then the ending description
-    while(!ISEMPTY(token=read_token(pch,'#')))
+    while(!ISEMPTY(token=read_token(pch,'#'))) {
       if(*token=='#') {
 #ifndef SKIP_DPDESCRIPTION
         datapoint->set_description(strdup(++token));
@@ -224,10 +228,12 @@ data::Dataset* Svml::read_horizontal(const char *filename) const {
         }
         curr_instance[fid-1] = fval;
       }
+    }
 
+    // store partial data
     data_qids.push_back(qid);
     data_labels.push_back(relevance);
-    data_instances.push_back( boost::move(curr_instance) );
+    data_instances.push_back( boost::move(curr_instance) ); // move should avoid copies
 
     //free mem
     free(line);
@@ -236,14 +242,13 @@ data::Dataset* Svml::read_horizontal(const char *filename) const {
   fclose(f);
 
   reading_timer.stop();
+
+  // put partial data in final data structure
   boost::timer::cpu_timer processing_timer;
-
   data::Dataset* dataset = new data::Dataset(data_qids.size(), maxfid);
-
   auto i_q = data_qids.begin();
   auto i_l = data_labels.begin();
   auto i_x = data_instances.begin();
-
   while(i_q!=data_qids.end()) {
     dataset->addInstance( *i_q, *i_l, boost::move(*i_x) );
     i_q++;
@@ -254,11 +259,11 @@ data::Dataset* Svml::read_horizontal(const char *filename) const {
   processing_timer.stop();
 
   // num threads is not reported here.
-  std::cout << "\telapsed reading time = " << reading_timer.elapsed().wall/1000000000.0 << " sec.s ( "
-            << boost::filesystem::file_size(filename)/1024/1024/(reading_timer.elapsed().wall/1000000000.0) << " MB/s) " << std::endl
-            << "\t elapsed post-processing time = " << processing_timer.elapsed().wall/1000000000.0 << " sec.s." << std::endl;
+  std::cout << "\t elapsed reading time = " << reading_timer.elapsed().wall/1000000000.0 << " sec.s ( "
+      << boost::filesystem::file_size(filename)/1024/1024/(reading_timer.elapsed().wall/1000000000.0) << " MB/s) " << std::endl
+      << "\t elapsed post-processing time = " << processing_timer.elapsed().wall/1000000000.0 << " sec.s." << std::endl;
 
-  return dataset;
+  return std::unique_ptr<data::Dataset>(dataset);
 }
 
 

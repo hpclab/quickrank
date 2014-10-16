@@ -6,40 +6,10 @@
 
 class LTR_VerticalDataset {
   public:
-    //LTR_VerticalDataset(const char *filename);
 
     LTR_VerticalDataset(){};
 
     virtual ~LTR_VerticalDataset();
-
-    // -------------------------
-    // CLAUDIO DESIDERATA
-    // -------------------------
-    // Result_Lists_Iterator* begin();
-    // Result_Lists_Iterator* end();
-
-    // auto q = dataset-begin();
-    // q->begin();
-
-    // ResultsList {
-      //    qid;
-      //    float** features;   // int
-      //    float* labels;      // int
-      //    num_docs;
-      // }
-
-
-
-    // - support normalization
-    // - support discretisation, or simply provide discr.ed thresholds
-    // - support horiz. and vert. sampling
-
-
-
-
-    // -------------------------
-    // OLD METHODS
-    // -------------------------
 
     unsigned int get_nfeatures() const { return nfeatures; }
     void set_nfeatures(const unsigned int n) { nfeatures=n; }

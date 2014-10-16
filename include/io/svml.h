@@ -41,8 +41,7 @@ class Svml : private boost::noncopyable
   /// Reads the input dataset and returns in horizontal format.
   /// \param filename the input filename.
   /// \return The svml dataset in horizontal format.
-  /// \todo TODO: add smart pointer here
-  virtual data::Dataset* read_horizontal(const char *filename) const;
+  virtual std::unique_ptr<data::Dataset> read_horizontal(const char *filename) const;
 };
 
 } // namespace data
