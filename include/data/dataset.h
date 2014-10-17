@@ -15,6 +15,8 @@ namespace data {
 class Dataset : private boost::noncopyable {
  public:
 
+//  enum Format {HORIZ, VERT};
+
   /// Allocates an empty Dataset of given size.
   ///
   /// \param n_instances The number of training instances (lines) in the dataset.
@@ -32,14 +34,21 @@ class Dataset : private boost::noncopyable {
   unsigned int num_queries() const    {return num_queries_;}
   unsigned int num_instances() const  {return num_instances_;}
 
+//  Format format() const {return format_;}
+
+//  void transpose();
+
   // - support normalization
   // - support discretisation, or simply provide discr.ed thresholds
   // - support horiz. and vert. sampling
 
  private:
+
   unsigned int num_features_;
   unsigned int num_queries_;
   unsigned int num_instances_;
+
+  // Format format_;
 
   qr::Feature* data_;
   qr::Label* labels_;
