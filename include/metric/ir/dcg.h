@@ -28,6 +28,8 @@ class Dcg : public Metric {
 
   virtual MetricScore evaluate_result_list(const ResultList&) const;
 
+  virtual MetricScore evaluate_result_list(const quickrank::data::QueryResults* rl, const Score* scores) const;
+
   virtual std::unique_ptr<Jacobian> get_jacobian(const ResultList &ql) const;
 
  protected:
@@ -37,6 +39,7 @@ class Dcg : public Metric {
   /// \param k cut-off.
   /// \return DCG\@K for computed on the given labels.
   double compute_dcg(double const* labels, const unsigned int nlabels, const unsigned int k) const;
+  MetricScore compute_dcg(Label const* labels, const unsigned int nlabels, const unsigned int k) const;
 
  private:
   friend std::ostream& operator<<(std::ostream& os, const Dcg& ndcg) {

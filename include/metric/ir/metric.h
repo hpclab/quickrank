@@ -6,8 +6,10 @@
 #include <memory>
 #include <boost/noncopyable.hpp>
 
+#include "data/queryresults.h"
 #include "data/ltrdata.h"
 #include "types.h"
+
 
 
 namespace qr {
@@ -40,6 +42,13 @@ class Metric : private boost::noncopyable
   /// \param rl A results list.
   /// \return The quality score of the result list.
   virtual MetricScore evaluate_result_list(const ResultList& rl) const = 0;
+
+  /// Measures the quality of the given results list according to the Metric.
+  ///
+  /// \param rl A results list.
+  /// \param scores a list of scores
+  /// \return The quality score of the result list.
+  virtual MetricScore evaluate_result_list(const quickrank::data::QueryResults* rl, const Score* scores) const = 0;
 
   /// Computes the Jacobian matrix.
   /// This is a symmetric matrix storing the metric change when two documents scores

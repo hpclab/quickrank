@@ -8,7 +8,7 @@
 #include <algorithm>
 
 #include "metric/ir/map.h"
-
+#include "utils/qsort.h"
 
 namespace qr {
 namespace metric {
@@ -23,6 +23,22 @@ MetricScore Map::evaluate_result_list(const ResultList& ql) const {
       ap += (++count)/(i+1.0f);
   return count>0 ? ap/count : 0.0;
 }
+
+MetricScore Map::evaluate_result_list(const quickrank::data::QueryResults* rl, const Score* scores) const {
+  unsigned int size = std::min(cutoff(),rl->num_results());
+  if (size==0) return 0.0;
+
+  // sort candidadate labels
+  std::unique_ptr<Label[]> sorted_labels = qsort_ext<Label, Score>(rl->labels(), scores, rl->num_results());
+
+  MetricScore ap = 0.0f;
+  MetricScore count = 0.0f;
+  for(unsigned int i=0; i<size; ++i)
+    if(rl->labels()[i]>0.0f)
+      ap += (++count)/(i+1.0f);
+  return count>0 ? ap/count : 0.0;
+}
+
 
 std::unique_ptr<Jacobian> Map::get_jacobian(const ResultList &ql) const {
   int* labels = new int [ql.size]; // int labels[ql.size];

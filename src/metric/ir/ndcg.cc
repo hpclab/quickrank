@@ -28,6 +28,20 @@ double Ndcg::compute_idcg(double const* labels, const unsigned int nlabels, cons
   //return dcg
   return dcg;
 }
+MetricScore Ndcg::compute_idcg(const quickrank::data::QueryResults* rl, const Score* scores) const {
+  //make a copy of lables
+  Label* copyoflabels = new Label[rl->num_results()];
+  memcpy(copyoflabels, rl->labels(), sizeof(Label)*rl->num_results());
+  //sort the copy
+  std::sort(copyoflabels, copyoflabels+rl->num_results(), std::greater<int>());
+  //compute dcg
+  MetricScore dcg = compute_dcg(copyoflabels, rl->num_results(), cutoff());
+  //free mem
+  delete[] copyoflabels;
+  //return dcg
+  return dcg;
+}
+
 
 
 MetricScore Ndcg::evaluate_result_list(const ResultList& ql) const {
@@ -37,6 +51,16 @@ MetricScore Ndcg::evaluate_result_list(const ResultList& ql) const {
   return idcg > (MetricScore)0.0 ?
       (MetricScore) compute_dcg(ql.labels, ql.size, size)/idcg : (MetricScore)0.0;
 }
+
+MetricScore Ndcg::evaluate_result_list(const quickrank::data::QueryResults* rl, const Score* scores) const {
+  if (rl->num_results()==0) return 0.0;
+  const double idcg = Ndcg::compute_idcg(rl, scores);
+  if (idcg>0)
+    return Dcg::evaluate_result_list(rl,scores)/idcg;
+  else
+    return 0;
+}
+
 
 std::unique_ptr<Jacobian> Ndcg::get_jacobian(const ResultList &ql) const {
   const unsigned int size = std::min(cutoff(),ql.size);

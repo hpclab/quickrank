@@ -30,6 +30,11 @@ class Ndcg : public Dcg {
   /// \todo TODO: for only zero result slist Yahoo! LTR returns 0.5 instead of 0.0.
   ///             Make this choice available.
   virtual MetricScore evaluate_result_list(const ResultList&) const;
+  /// \param rl A results list.
+  /// \param scores a list of scores
+  /// \return The quality score of the result list.
+  virtual MetricScore evaluate_result_list(const quickrank::data::QueryResults* rl, const Score* scores) const;
+
 
   virtual std::unique_ptr<Jacobian> get_jacobian(const ResultList &ql) const;
 
@@ -40,6 +45,7 @@ class Ndcg : public Dcg {
   /// \param k cut-off.
   /// \return IDCG\@K for computed on the given labels.
   double compute_idcg(double const*, const unsigned int, const unsigned int) const;
+  MetricScore compute_idcg(const quickrank::data::QueryResults* rl, const Score* scores) const;
 
  private:
   friend std::ostream& operator<<(std::ostream& os, const Ndcg& ndcg) {

@@ -26,6 +26,7 @@ class Map : public Metric {
   virtual ~Map() {};
 
   virtual MetricScore evaluate_result_list(const ResultList&) const;
+  virtual MetricScore evaluate_result_list(const quickrank::data::QueryResults* rl, const Score* scores) const;
 
   virtual std::unique_ptr<Jacobian> get_jacobian(const ResultList &ql) const;
 
