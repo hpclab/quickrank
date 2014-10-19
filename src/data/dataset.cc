@@ -10,7 +10,7 @@ Dataset::Dataset(unsigned int n_instances, unsigned int n_features){
   num_queries_ = 0;
   last_instance_id_ = 0;
 
-  // format_ = HORIZ;
+  format_ = HORIZ;
   data_ = new qr::Feature [max_instances_*num_features_] ();  // 0 initialization
   labels_ = new qr::Label [max_instances_];               // no initialization
 
@@ -55,6 +55,31 @@ std::unique_ptr<QueryResults> Dataset::getQueryResults(unsigned int i) const {
   QueryResults* qr = new QueryResults(num_results, start_label, start_data);
 
   return std::unique_ptr<QueryResults>(qr);
+}
+
+// TODO: in-place transpose?
+void Dataset::transpose() {
+  qr::Feature* transposed = new qr::Feature [max_instances_*num_features_];
+
+  for (unsigned int q=0; q<num_queries_; q++) {
+    qr::Feature* src_data = data_ + (offsets_[q]*num_features_);
+    qr::Feature* dest_data = transposed + (offsets_[q]*num_features_);
+    unsigned int num_results = offsets_[q+1]-offsets_[q];
+    for (unsigned int d=0; d<num_results; d++) {
+      for (unsigned int f=0; f<num_features_; f++) {
+        if (format_==HORIZ)
+          dest_data[f*num_results + d] = src_data[f + d*num_features_];
+        else
+          dest_data[f + d*num_features_] = src_data[f*num_results + d];
+      }
+    }
+  }
+
+  if (format_==HORIZ) format_=VERT;
+  else format_=HORIZ;
+
+  delete [] data_;
+  data_ = transposed;
 }
 
 } // namespace data

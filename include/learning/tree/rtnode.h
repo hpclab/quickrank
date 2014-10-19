@@ -3,6 +3,8 @@
 
 #include "data/ltrdata.h"
 #include "learning/tree/rtnode_histogram.h"
+#include "types.h"
+
 
 static const unsigned int uint_max = (unsigned int) -1;
 
@@ -48,6 +50,12 @@ class RTNode {
 		double eval(float const* const* featurematrix, const unsigned int idx) const {
 			return featureidx==uint_max ? avglabel : (featurematrix[featureidx][idx]<=threshold ? left->eval(featurematrix, idx) : right->eval(featurematrix, idx));
 		}
+
+		qr::Score score_instance(const qr::Feature* d, const unsigned int offset) const {
+      return featureidx==uint_max ? avglabel :
+          (d[featureidx*offset]<=threshold ? left->score_instance(d, offset) : right->score_instance(d, offset));
+		}
+
 
 		void write_outputtofile(FILE *f, const int indentsize);
 };

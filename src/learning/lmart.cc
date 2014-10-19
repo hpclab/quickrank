@@ -64,6 +64,10 @@ void LambdaMart::init()  {
   if(validation_set) {
     unsigned int ndatapoints = validation_set->get_ndatapoints();
     validationmodelscores = new double[ndatapoints]();
+
+    if (validation_dataset->format()!=quickrank::data::Dataset::VERT)
+      validation_dataset->transpose();
+    scores_on_validation = new qr::Score[validation_dataset->num_instances()] ();
   }
   hist = new RTRootHistogram(training_set, pseudoresponses, sortedsid, sortedsize, thresholds, thresholds_size);
 #ifdef SHOWTIMER
@@ -117,10 +121,35 @@ void LambdaMart::learn() {
     if(validation_set) {
       const float validation_score = compute_modelscores(validation_set, validationmodelscores, tree);
       printf(" %9.4f", validation_score);
+
+      // update validation scores
+      qr::Score* score_i = scores_on_validation;
+      for (unsigned int q=0; q<validation_dataset->num_queries(); q++) {
+        std::shared_ptr<quickrank::data::QueryResults> results = validation_dataset->getQueryResults(q);
+        const unsigned int offset = results->num_results();
+        const qr::Feature* d = results->features();
+        for (unsigned int i=0; i<results->num_results(); i++) {
+          score_i[i] += shrinkage*tree.get_proot()->score_instance(d,offset);
+          d++;
+        }
+        score_i += results->num_results();
+      }
+
+      // run metric
+      qr::MetricScore metric_on_validation = scorer->evaluate_dataset(*validation_dataset, scores_on_validation);
+      printf(" %9.4f", metric_on_validation);
+
       if(validation_score>validation_bestscore || validation_bestscore==0.0f)
         validation_bestscore = validation_score,
         validation_bestmodel = ens.get_size()-1,
         printf("*");
+
+      /*
+      for (unsigned int i=0; i<validation_dataset->num_instances(); i++)
+        if ( validationmodelscores[i] != scores_on_validation[i] ) {
+          printf("\t %d : %.16f : %.16f", i, validationmodelscores[i], scores_on_validation[i]);
+          break;
+        }*/
     }
     printf("\n");
     if(partialsave_niterations!=0 and output_basename and (m+1)%partialsave_niterations==0) {
@@ -165,10 +194,9 @@ float LambdaMart::compute_modelscores(LTR_VerticalDataset const *samples, double
 #pragma omp parallel for reduction(+:score)
     for(unsigned int i=0; i<nrankedlists; ++i) {
       ResultList orig = samples->get_qlist(i);
-      // double *sortedlabels = copyextdouble_qsort(orig.labels, mscores+offsets[i], orig.size);
-      double *sortedlabels = copyextdouble_mergesort(orig.labels, mscores+samples->get_rloffsets(i), orig.size);
-      score += scorer->evaluate_result_list(ResultList(orig.size, sortedlabels, orig.qid));
-      delete[] sortedlabels;
+      //double *sortedlabels = copyextdouble_qsort(orig.labels, mscores+samples->get_rloffsets(i), orig.size);
+      std::unique_ptr<double[]> sortedlabels = copyextdouble_mergesort<double,double>(orig.labels, mscores+samples->get_rloffsets(i), orig.size);
+      score += scorer->evaluate_result_list(ResultList(orig.size, sortedlabels.get(), orig.qid));
     }
     score /= nrankedlists;
   }

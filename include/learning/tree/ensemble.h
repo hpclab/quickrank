@@ -2,6 +2,7 @@
 #define QUICKRANK_LEARNING_TREE_ENSEMBLE_H_
 
 #include "learning/tree/rt.h"
+#include "types.h"
 
 class Ensemble {
 	private:
@@ -27,6 +28,9 @@ class Ensemble {
 		}
 
 		float eval(float *const *const features, unsigned int idx) const;
+
+		// assumes vertical dataset
+	  virtual qr::Score score_instance(const qr::Feature* d, const unsigned int offset=1) const;
 
 		void write_outputtofile(FILE *f);
 };

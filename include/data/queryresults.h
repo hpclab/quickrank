@@ -21,7 +21,9 @@ class QueryResults : private boost::noncopyable {
   QueryResults(unsigned int n_results, qr::Label* new_labels, qr::Feature* new_features);
   virtual ~QueryResults();
 
-
+  // get i,j?
+  // get doc-vector
+  // get fx-vector
 
   qr::Feature* features() const {return features_;}
   qr::Label* labels() const {return labels_;}

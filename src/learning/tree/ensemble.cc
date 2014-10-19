@@ -32,6 +32,15 @@ float Ensemble::eval(float *const *const features, unsigned int idx) const {
   return sum;
 }
 
+// assumes vertical dataset
+qr::Score Ensemble::score_instance(const qr::Feature* d, const unsigned int offset) const {
+  double sum = 0.0f;
+#pragma omp parallel for reduction(+:sum)
+  for(unsigned int i=0; i<size; ++i)
+    sum += arr[i].root->score_instance(d,offset)*arr[i].weight;
+  return sum;
+}
+
 void Ensemble::write_outputtofile(FILE *f) {
   fprintf(f, "\n<ensemble>\n");
   for(unsigned int i=0; i<size; ++i) {

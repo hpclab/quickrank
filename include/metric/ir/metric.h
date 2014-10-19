@@ -8,6 +8,7 @@
 
 #include "data/queryresults.h"
 #include "data/ltrdata.h"
+#include "data/dataset.h"
 #include "types.h"
 
 
@@ -49,6 +50,18 @@ class Metric : private boost::noncopyable
   /// \param scores a list of scores
   /// \return The quality score of the result list.
   virtual MetricScore evaluate_result_list(const quickrank::data::QueryResults* rl, const Score* scores) const = 0;
+  virtual MetricScore evaluate_dataset(const quickrank::data::Dataset &dataset, const Score* scores) const {
+    if (dataset.num_queries()==0)
+      return 0.0;
+    MetricScore avg_score = 0.0;
+    for (unsigned int q=0; q<dataset.num_queries(); q++) {
+      std::shared_ptr<quickrank::data::QueryResults> r = dataset.getQueryResults(q);
+      avg_score += evaluate_result_list(r.get(), scores);
+      scores += r->num_results();
+    }
+    avg_score /= (MetricScore) dataset.num_queries();
+    return avg_score;
+  }
 
   /// Computes the Jacobian matrix.
   /// This is a symmetric matrix storing the metric change when two documents scores

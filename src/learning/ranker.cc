@@ -1,4 +1,5 @@
 #include "learning/ltr_algorithm.h"
+#include "utils/mergesorter.h"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -21,9 +22,10 @@ float LTR_Algorithm::compute_score(LTR_VerticalDataset *samples, qr::metric::ir:
     double* scores = new double[ql.size];  // float scores[ql.size];
     for (unsigned int j = 0, offset = samples->get_rloffsets(i); j < ql.size;)
       scores[j++] = eval_dp(featurematrix, offset++);
-    double *sortedlabels = copyextdouble_qsort(ql.labels, scores, ql.size);
-    score += scorer->evaluate_result_list(ResultList(ql.size, sortedlabels, ql.qid));
-    delete[] sortedlabels;
+    //double *sortedlabels = copyextdouble_qsort(ql.labels, scores, ql.size);
+    std::unique_ptr<double[]> sortedlabels = copyextdouble_mergesort<double,double>(ql.labels, scores, ql.size);
+    score += scorer->evaluate_result_list(ResultList(ql.size, sortedlabels.get(), ql.qid));
+    // delete[] sortedlabels;
     delete[] scores;
   }
   return nrankedlists ? score / nrankedlists : 0.0f;

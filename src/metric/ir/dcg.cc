@@ -10,6 +10,7 @@
 #include "metric/ir/dcg.h"
 
 #include "utils/qsort.h" // quick sort (for small input)
+#include "utils/mergesorter.h" // quick sort (for small input)
 
 namespace qr {
 namespace metric {
@@ -44,7 +45,8 @@ MetricScore Dcg::compute_dcg(Label const* labels, const unsigned int nlabels, co
 MetricScore Dcg::evaluate_result_list(const quickrank::data::QueryResults* rl, const Score* scores) const {
   if (rl->num_results()==0) return 0.0;
   // sort candidadate labels
-  std::unique_ptr<Label[]> sorted_labels = qsort_ext<Label, Score>(rl->labels(), scores, rl->num_results());
+  //std::unique_ptr<Label[]> sorted_labels = qsort_ext<Label, Score>(rl->labels(), scores, rl->num_results());
+  std::unique_ptr<Label[]> sorted_labels = copyextdouble_mergesort<Label, Score>(rl->labels(), scores, rl->num_results());
 
   return compute_dcg(sorted_labels.get(), rl->num_results(), cutoff());
 }

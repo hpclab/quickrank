@@ -2,6 +2,7 @@
 #define QUICKRANK_LEARNING_RANKER_H_
 
 #include "data/ltrdata.h"
+#include "data/dataset.h"
 #include "utils/qsort.h"
 
 #include "metric/ir/metric.h"
@@ -21,6 +22,8 @@ class LTR_Algorithm {
   float validation_bestscore = 0.0f;
   unsigned int partialsave_niterations = 0;
   char *output_basename = NULL;
+
+  std::shared_ptr<quickrank::data::Dataset> validation_dataset;
 
 
  public:
@@ -46,6 +49,30 @@ class LTR_Algorithm {
   // string get_name()
   //
 
+  // TODO: to be moved ...
+  virtual void score_dataset(quickrank::data::Dataset &dataset, qr::Score* scores) const {
+    if (dataset.format()!=quickrank::data::Dataset::VERT)
+      dataset.transpose();
+    for (unsigned int q=0; q<dataset.num_queries(); q++) {
+      std::shared_ptr<quickrank::data::QueryResults> r = dataset.getQueryResults(q);
+      score_query_results(r, scores);
+      scores += r->num_results();
+    }
+  }
+  // assumes vertical dataset
+  virtual void score_query_results(std::shared_ptr<quickrank::data::QueryResults> results, qr::Score* scores) const {
+    const unsigned int offset = results->num_results();
+    const qr::Feature* d = results->features();
+    for (unsigned int i=0; i<results->num_results(); i++) {
+      scores[i] = score_document(d,offset);
+      d++;
+    }
+  }
+  // assumes vertical dataset
+  virtual qr::Score score_document(const qr::Feature* d, const unsigned int offset=1) const {
+    return 0.0;
+  }
+
   virtual float eval_dp(float * const * const features,
                         unsigned int idx) const = 0;  //prediction value to store in a file
   virtual const char *whoami() const = 0;
@@ -62,6 +89,9 @@ class LTR_Algorithm {
   }
   void set_validationset(LTR_VerticalDataset *validationset) {
     validation_set = validationset;
+  }
+  void set_validation_dataset(std::shared_ptr<quickrank::data::Dataset> d) {
+    validation_dataset = d;
   }
   void set_partialsave(unsigned int niterations) {
     partialsave_niterations = niterations;

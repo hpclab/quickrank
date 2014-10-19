@@ -15,7 +15,7 @@ namespace data {
 class Dataset : private boost::noncopyable {
  public:
 
-//  enum Format {HORIZ, VERT};
+  enum Format {HORIZ, VERT};
 
   /// Allocates an empty Dataset of given size.
   ///
@@ -34,9 +34,9 @@ class Dataset : private boost::noncopyable {
   unsigned int num_queries() const    {return num_queries_;}
   unsigned int num_instances() const  {return num_instances_;}
 
-//  Format format() const {return format_;}
+  Format format() const {return format_;}
 
-//  void transpose();
+  void transpose();
 
   // - support normalization
   // - support discretisation, or simply provide discr.ed thresholds
@@ -48,7 +48,7 @@ class Dataset : private boost::noncopyable {
   unsigned int num_queries_;
   unsigned int num_instances_;
 
-  // Format format_;
+  Format format_;
 
   qr::Feature* data_;
   qr::Label* labels_;

@@ -20,6 +20,9 @@ void evaluator::evaluate(const char *trainingfilename, const char *validationfil
     // TODO: (by cla) Where is the delete of this dpset?
     printf("Reading validation dataset:\n");
     r->set_validationset( reader.read_vertical(validationfilename));
+
+    std::shared_ptr<quickrank::data::Dataset> dataset = reader.read_horizontal(validationfilename);
+    r->set_validation_dataset(dataset);
   }
   LTR_VerticalDataset *testset = NULL;
   if(test_scorer and not is_empty(testfilename)) {
@@ -46,7 +49,6 @@ void evaluator::evaluate(const char *trainingfilename, const char *validationfil
 #ifdef SHOWTIMER
     timer = omp_get_wtime()-timer;
 #endif
-//    printf("\t%s@%u on test data = %.4f\n", test_scorer->whoami(), test_scorer->get_k(), score);
     std::cout << "\t" << *test_scorer
               << " on test data = " << score << std::endl;
 #ifdef SHOWTIMER
@@ -54,6 +56,12 @@ void evaluator::evaluate(const char *trainingfilename, const char *validationfil
 #endif
     printf("\tdone\n");
     delete testset;
+    // check on horiz dataset
+    std::unique_ptr<quickrank::data::Dataset> dataset = reader.read_horizontal(testfilename);
+    qr::Score* test_scores = new qr::Score[dataset->num_instances()];
+    r->score_dataset(*dataset, test_scores);
+    std::cout << "check: " << test_scorer->evaluate_dataset(*dataset, test_scores) << std::endl;
+    delete [] test_scores;
   }
 }
 void evaluator::write() {

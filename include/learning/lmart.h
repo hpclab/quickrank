@@ -30,6 +30,9 @@ class LambdaMart : public quickrank::learning::LTR_Algorithm {
   unsigned int sortedsize = 0;
   RTRootHistogram *hist = NULL;
   Ensemble ens;
+
+  qr::Score* scores_on_validation = NULL; //[0..nentries-1]
+
  public:
   LambdaMart(unsigned int ntrees, float shrinkage, unsigned int nthresholds,
         unsigned int ntreeleaves, unsigned int minleafsupport, unsigned int esr) :
@@ -48,6 +51,8 @@ class LambdaMart : public quickrank::learning::LTR_Algorithm {
     delete [] sortedsid,
     delete [] cachedweights;
     delete hist;
+
+    delete [] scores_on_validation;
   }
 
   const char *whoami() const { return "LAMBDA MART"; }
@@ -68,6 +73,11 @@ class LambdaMart : public quickrank::learning::LTR_Algorithm {
 
   float eval_dp(float *const *const features, unsigned int idx) const {
     return ens.eval(features, idx);
+  }
+
+  // assumes vertical dataset
+  virtual qr::Score score_document(const qr::Feature* d, const unsigned int offset=1) const {
+    return ens.score_instance(d,offset);
   }
 
   void write_outputtofile() {
