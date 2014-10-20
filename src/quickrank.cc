@@ -36,7 +36,7 @@ FILE *flog = NULL;
 
 #include "metric/evaluator.h"
 #include "learning/lmart.h"
-#include "learning/matrixnet.h"
+//#include "learning/matrixnet.h"
 #include "metric/ir/ndcg.h"
 #include "metric/ir/map.h"
 
@@ -210,7 +210,7 @@ int main(int argc, char *argv[]) {
 	if (vm["algo"].as<model_string>().value == "lm")
 		r = new quickrank::learning::forests::LambdaMart(ntrees, shrinkage, nthresholds, ntreeleaves, minleafsupport, esr);
 	else if (vm["algo"].as<model_string>().value == "mn")
-		r = new quickrank::learning::forests::MatrixNet( ntrees, shrinkage, nthresholds, treedepth,   minleafsupport, esr);
+		r = NULL; //new quickrank::learning::forests::MatrixNet( ntrees, shrinkage, nthresholds, treedepth,   minleafsupport, esr);
 
 	//show ranker parameters
 	printf("New ranker:\n");

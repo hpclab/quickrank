@@ -2,6 +2,7 @@
 #define QUICKRANK_LEARNING_TREE_HISTOGRAM_H_
 
 #include "data/ltrdata.h"
+#include "data/dataset.h"
 
 
 class RTNodeHistogram {
@@ -32,7 +33,7 @@ class RTNodeHistogram {
 
 class RTRootHistogram : public RTNodeHistogram {
 	public:
-		RTRootHistogram(LTR_VerticalDataset *dps, double *labels, unsigned int **sortedidx,
+		RTRootHistogram(quickrank::data::Dataset *dps, double *labels, unsigned int **sortedidx,
 		              unsigned int sortedidxsize, float **thresholds,
 		              unsigned int const *thresholds_size);
 

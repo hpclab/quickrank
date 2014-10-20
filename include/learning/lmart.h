@@ -39,10 +39,11 @@ class LambdaMart : public quickrank::learning::LTR_Algorithm {
           ntrees(ntrees), shrinkage(shrinkage), nthresholds(nthresholds),
           ntreeleaves(ntreeleaves), minleafsupport(minleafsupport), esr(esr) {}
   ~LambdaMart() {
-    const unsigned int nfeatures = training_set ? training_set->get_nfeatures() : 0;
-    for(unsigned int i=0; i<nfeatures; ++i)
-      delete [] sortedsid[i],
-      free(thresholds[i]);
+    //const unsigned int nfeatures = training_dataset ? training_set->get_nfeatures() : 0;
+    if (sortedsid)
+      for(unsigned int i=0; i<training_dataset->num_features(); ++i)
+        delete [] sortedsid[i],
+        free(thresholds[i]);
     delete [] thresholds,
     delete [] thresholds_size,
     delete [] trainingmodelscores,
@@ -91,6 +92,7 @@ class LambdaMart : public quickrank::learning::LTR_Algorithm {
 
  protected:
   float compute_modelscores(LTR_VerticalDataset const *samples, double *mscores, RegressionTree const &tree);
+  void update_modelscores(quickrank::data::Dataset* dataset, qr::Score *scores, RegressionTree* tree);
 
   std::unique_ptr<qr::Jacobian> compute_mchange(const ResultList &orig, const unsigned int offset);
 

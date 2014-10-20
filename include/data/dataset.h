@@ -25,6 +25,12 @@ class Dataset : private boost::noncopyable {
   virtual ~Dataset();
 
 
+  qr::Feature* at(unsigned int document_id, unsigned int feature_id) {
+    return (format_==HORIZ) ? (data_ + document_id*num_features_ + feature_id)
+        : (data_ + document_id + feature_id*num_instances_); }
+
+  unsigned int offset(unsigned int i) const {return offsets_[i];}
+
   // TODO: add an iterator
   std::unique_ptr<QueryResults> getQueryResults(unsigned int i) const;
 

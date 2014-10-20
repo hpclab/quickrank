@@ -14,6 +14,7 @@
 
 #include "utils/maxheap.h"
 #include "data/ltrdata.h"
+#include "data/dataset.h"
 #include "learning/tree/rtnode.h"
 #include "learning/tree/rtnode_histogram.h"
 
@@ -30,16 +31,17 @@ class RegressionTree {
  protected:
   const unsigned int nrequiredleaves; //0 for unlimited number of nodes (the size of the tree will then be controlled only by minls)
   const unsigned int minls; //minls>0
-  LTR_VerticalDataset *training_set = NULL;
+  // LTR_VerticalDataset *training_set = NULL;
+  quickrank::data::Dataset* training_dataset = NULL;
   double *training_labels = NULL;
   RTNode **leaves = NULL;
   unsigned int nleaves = 0;
   RTNode *root = NULL;
  public:
-  RegressionTree(unsigned int nrequiredleaves, LTR_VerticalDataset *dps,
+  RegressionTree(unsigned int nrequiredleaves, quickrank::data::Dataset *dps,
                  double *labels, unsigned int minls) :
                    nrequiredleaves(nrequiredleaves), minls(minls),
-                   training_set(dps), training_labels(labels) {}
+                   training_dataset(dps), training_labels(labels) {}
   ~RegressionTree();
 
   void fit(RTNodeHistogram *hist);

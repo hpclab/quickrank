@@ -35,7 +35,7 @@ RegressionTree::~RegressionTree() {
 void RegressionTree::fit(RTNodeHistogram *hist) {
   DevianceMaxHeap heap(nrequiredleaves);
   unsigned int taken = 0;
-  unsigned int nsampleids = training_set->get_ndatapoints();
+  unsigned int nsampleids = training_dataset->num_instances(); //set->get_ndatapoints();
   unsigned int *sampleids = new unsigned int[nsampleids];
 #pragma omp parallel for
   for(unsigned int i=0; i<nsampleids; ++i)
@@ -94,7 +94,7 @@ bool RegressionTree::split(RTNode *node, const float featuresamplingrate, const 
     //get current nod hidtogram pointer
     RTNodeHistogram *h = node->hist;
     //featureidxs to be used for tree splitnodeting
-    unsigned int nfeaturesamples = training_set->get_nfeatures();
+    unsigned int nfeaturesamples = training_dataset->num_features(); //training_set->get_nfeatures();
     unsigned int *featuresamples = NULL;
     //need to make a sub-sampling
     if(featuresamplingrate<1.0f) {
@@ -193,7 +193,7 @@ bool RegressionTree::split(RTNode *node, const float featuresamplingrate, const 
     //split samples between left and right child
     unsigned int *lsamples = new unsigned int[lcount], lsize = 0;
     unsigned int *rsamples = new unsigned int[rcount], rsize = 0;
-    float const* features = training_set->get_fvector(best_featureidx);
+    float const* features = training_dataset->at(0,best_featureidx); //training_set->get_fvector(best_featureidx);
     for(unsigned int i=0, nsampleids=node->nsampleids; i<nsampleids; ++i) {
       unsigned int k = node->sampleids[i];
       if(features[k]<=best_threshold) lsamples[lsize++] = k; else rsamples[rsize++] = k;
@@ -219,7 +219,7 @@ bool RegressionTree::split(RTNode *node, const float featuresamplingrate, const 
     double rdeviance = rsqsum - rsum*rsum/(double)rcount;
 
     //update current node
-    node->set_feature(best_featureidx, training_set->get_featureid(best_featureidx)),
+    node->set_feature(best_featureidx, best_featureidx+1/*training_set->get_featureid(best_featureidx)*/),
         node->threshold = best_threshold,
         node->deviance = deviance,
         //create children

@@ -21,6 +21,8 @@ namespace io {
    <value> .=. <float>
    <info> .=. <string>
    \endverbatim
+
+   \todo TODO: handle feature filtering
  */
 class Svml : private boost::noncopyable
 {

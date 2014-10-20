@@ -14,7 +14,9 @@ void evaluator::evaluate(const char *trainingfilename, const char *validationfil
   if(not is_empty(trainingfilename)) {
     printf("Reading Training dataset:\n");
     // TODO: (by cla) Where is the delete of this dpset?
-    r->set_trainingset( reader.read_vertical(trainingfilename) );
+    // r->set_trainingset( reader.read_vertical(trainingfilename) );
+    std::shared_ptr<quickrank::data::Dataset> dataset = reader.read_horizontal(trainingfilename);
+    r->set_training_dataset(dataset);
   } else exit(6);
   if(not is_empty(validationfilename)) {
     // TODO: (by cla) Where is the delete of this dpset?

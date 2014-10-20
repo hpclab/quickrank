@@ -35,7 +35,7 @@ class Ndcg : public Dcg {
   /// \return The quality score of the result list.
   virtual MetricScore evaluate_result_list(const quickrank::data::QueryResults* rl, const Score* scores) const;
 
-
+  /// \todo TODO: replace this results list with QueryResults
   virtual std::unique_ptr<Jacobian> get_jacobian(const ResultList &ql) const;
 
  protected:

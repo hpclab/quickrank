@@ -5,6 +5,7 @@
 #include <cfloat>
 #include <cmath>
 
+#include "utils/radix.h"
 #include "utils/qsort.h"
 #include "utils/mergesorter.h"
 
@@ -17,23 +18,30 @@ void LambdaMart::init()  {
 #ifdef SHOWTIMER
   double timer = omp_get_wtime();
 #endif
-  const unsigned int nentries = training_set->get_ndatapoints();
+
+  // make sure dataset is vertical
+  if(training_dataset->format()!=quickrank::data::Dataset::VERT)
+    training_dataset->transpose();
+
+  const unsigned int nentries = training_dataset->num_instances();
   trainingmodelscores = new double[nentries]();  //0.0f initialized
   pseudoresponses = new double[nentries](); //0.0f initialized
   cachedweights = new double[nentries](); //0.0f initialized
-  const unsigned int nfeatures = training_set->get_nfeatures();
-  sortedsid = new unsigned int*[nfeatures],
-      sortedsize = training_set->get_ndatapoints();
+  const unsigned int nfeatures = training_dataset->num_features();
+  sortedsid = new unsigned int*[nfeatures];
+  sortedsize = nentries;
 #pragma omp parallel for
   for(unsigned int i=0; i<nfeatures; ++i)
-    training_set->sort_dpbyfeature(i, sortedsid[i], sortedsize);
+    sortedsid[i] = idx_radixsort(training_dataset->at(0,i),training_dataset->num_instances()).release();
+  // for(unsigned int i=0; i<nfeatures; ++i)
+  //    training_set->sort_dpbyfeature(i, sortedsid[i], sortedsize);
   //for each featureid, init threshold array by keeping track of the list of "unique values" and their max, min
-  thresholds = new float*[nfeatures],
-      thresholds_size = new unsigned int[nfeatures];
+  thresholds = new float*[nfeatures];
+  thresholds_size = new unsigned int[nfeatures];
 #pragma omp parallel for
   for(unsigned int i=0; i<nfeatures; ++i) {
     //select feature array realted to the current feature index
-    float const* features = training_set->get_fvector(i);
+    float const* features = training_dataset->at(0,i);// ->get_fvector(i);
     //init with values with the 1st sample
     unsigned int *idx = sortedsid[i];
     //get_ sample indexes sorted by the fid-th feature
@@ -69,7 +77,7 @@ void LambdaMart::init()  {
       validation_dataset->transpose();
     scores_on_validation = new qr::Score[validation_dataset->num_instances()] ();
   }
-  hist = new RTRootHistogram(training_set, pseudoresponses, sortedsid, sortedsize, thresholds, thresholds_size);
+  hist = new RTRootHistogram(training_dataset.get(), pseudoresponses, sortedsid, sortedsize, thresholds, thresholds_size);
 #ifdef SHOWTIMER
   printf("\t\033[1melapsed time = %.3f seconds\033[0m\n", omp_get_wtime()-timer);
 #endif
@@ -81,8 +89,8 @@ void LambdaMart::learn() {
   // fix output format for ndcg scores
   std::cout << std::fixed << std::setprecision(4);
 
-  training_score = 0.0f,
-      validation_bestscore = 0.0f;
+  training_score = 0.0f;
+  validation_bestscore = 0.0f;
   printf("Training:\n");
   printf("\t-----------------------------\n");
   printf("\titeration training validation\n");
@@ -96,44 +104,40 @@ void LambdaMart::learn() {
   for(unsigned int m=0; m<ntrees && (esr==0 || m<=validation_bestmodel+esr); ++m) {
     compute_pseudoresponses();
 
-    //				for (int ii=0; ii<20; ii++)
-    //					printf("## %d \t %.16f\n", ii, pseudoresponses[ii]);
+    //for (int ii=0; ii<20; ii++)
+    //  printf("## %d \t %.16f\n", ii, pseudoresponses[ii]);
 
     //update the histogram with these training_seting labels (the feature histogram will be used to find the best tree rtnode)
-    hist->update(pseudoresponses, training_set->get_ndatapoints());
+    hist->update(pseudoresponses, training_dataset->num_instances());
     //Fit a regression tree
-    RegressionTree tree(ntreeleaves, training_set, pseudoresponses, minleafsupport);
+    RegressionTree tree(ntreeleaves, training_dataset.get(), pseudoresponses, minleafsupport);
     tree.fit(hist);
     //update the outputs of the tree (with gamma computed using the Newton-Raphson method)
     float maxlabel = tree.update_output(pseudoresponses, cachedweights);
 
     //add this tree to the ensemble (our model)
     ens.push(tree.get_proot(), shrinkage, maxlabel);
+
+    // training_score = compute_modelscores(training_set, trainingmodelscores, tree);
+
     //Update the model's outputs on all training samples
-    training_score = compute_modelscores(training_set, trainingmodelscores, tree);
+    update_modelscores(training_dataset.get(), trainingmodelscores, &tree);
+
+    // run metric
+    qr::MetricScore metric_on_training = scorer->evaluate_dataset(*training_dataset, trainingmodelscores);
 
     //				for (int ii=0; ii<20; ii++)
     //					printf("## %d \t %.16f\n", ii, trainingmodelscores[ii]);
 
     //show results
-    printf("\t#%-8u %8.4f", m+1, training_score);
+    printf("\t#%-8u %8.4f", m+1, metric_on_training);
     //Evaluate the current model on the validation data (if available)
     if(validation_set) {
       const float validation_score = compute_modelscores(validation_set, validationmodelscores, tree);
       printf(" %9.4f", validation_score);
 
       // update validation scores
-      qr::Score* score_i = scores_on_validation;
-      for (unsigned int q=0; q<validation_dataset->num_queries(); q++) {
-        std::shared_ptr<quickrank::data::QueryResults> results = validation_dataset->getQueryResults(q);
-        const unsigned int offset = validation_dataset->num_instances();
-        const qr::Feature* d = results->features();
-        for (unsigned int i=0; i<results->num_results(); i++) {
-          score_i[i] += shrinkage*tree.get_proot()->score_instance(d,offset);
-          d++;
-        }
-        score_i += results->num_results();
-      }
+      update_modelscores(validation_dataset.get(), scores_on_validation, &tree);
 
       // run metric
       qr::MetricScore metric_on_validation = scorer->evaluate_dataset(*validation_dataset, scores_on_validation);
@@ -166,10 +170,13 @@ void LambdaMart::learn() {
     while(ens.is_notempty() && ens.get_size()>validation_bestmodel+1)
       ens.pop();
   //Finishing up
-  training_score = compute_score(training_set, scorer);
+  //training_score = compute_score(training_set, scorer);
+  score_dataset(*training_dataset, trainingmodelscores);
+  qr::MetricScore metric_on_training = scorer->evaluate_dataset(*training_dataset, trainingmodelscores);
+
   printf("\t-----------------------------\n");
   std::cout << "\t" << *scorer
-            << " on training data = " << training_score << std::endl;
+            << " on training data = " << metric_on_training << std::endl;
   if(validation_set) {
     validation_bestscore = compute_score(validation_set, scorer);
     std::cout << "\t" << *scorer
@@ -203,6 +210,22 @@ float LambdaMart::compute_modelscores(LTR_VerticalDataset const *samples, double
   return score;
 }
 
+void LambdaMart::update_modelscores(quickrank::data::Dataset* dataset, qr::Score *scores, RegressionTree* tree) {
+  qr::Score* score_i = scores;
+  for (unsigned int q=0; q<dataset->num_queries(); q++) {
+    std::shared_ptr<quickrank::data::QueryResults> results = dataset->getQueryResults(q);
+    const unsigned int offset = dataset->num_instances();
+    const qr::Feature* d = results->features();
+    for (unsigned int i=0; i<results->num_results(); i++) {
+      score_i[i] += shrinkage*tree->get_proot()->score_instance(d,offset);
+      d++;
+    }
+    score_i += results->num_results();
+  }
+
+}
+
+
 std::unique_ptr<qr::Jacobian> LambdaMart::compute_mchange(const ResultList &orig, const unsigned int offset) {
   //build a ql made up of label values picked up from orig order by indexes of trainingmodelscores reversely sorted
   unsigned int *idx = idxdouble_mergesort(trainingmodelscores+offset, orig.size);
@@ -234,21 +257,23 @@ std::unique_ptr<qr::Jacobian> LambdaMart::compute_mchange(const ResultList &orig
 void LambdaMart::compute_pseudoresponses() {
   const unsigned int cutoff = scorer->cutoff();
 
-  const unsigned int nrankedlists = training_set->get_nrankedlists();
+  const unsigned int nrankedlists = training_dataset->num_queries();
   //const unsigned int *rloffsets = training_set->get_rloffsets();
 #pragma omp parallel for
   for(unsigned int i=0; i<nrankedlists; ++i) {
-    const unsigned int offset = training_set->get_rloffsets(i);
-    ResultList ql = training_set->get_qlist(i);
+    const unsigned int offset = training_dataset->offset(i);
+    // ResultList ql = training_set->get_qlist(i);
+    std::unique_ptr<quickrank::data::QueryResults> qr = training_dataset->getQueryResults(i);
 
     // CLA: line below uses the old sort and not mergesort as in ranklib
     // unsigned int *idx = idxdouble_qsort(trainingmodelscores+offset, ql.size);
-    unsigned int *idx = idxdouble_mergesort(trainingmodelscores+offset, ql.size);
+    unsigned int *idx = idxdouble_mergesort<qr::Score>(trainingmodelscores+offset, qr->num_results());
 
-    double* sortedlabels = new double [ql.size];
-    for(unsigned int i=0; i<ql.size; ++i)
-      sortedlabels[i] = ql.labels[idx[i]];
-    ResultList ranked_list(ql.size, sortedlabels, ql.qid);
+    double* sortedlabels = new double [qr->num_results()];
+    for(unsigned int i=0; i<qr->num_results(); ++i)
+      sortedlabels[i] = qr->labels()[idx[i]];
+
+    ResultList ranked_list(qr->num_results(), sortedlabels, 0);
     //compute temp swap changes on ql
     std::unique_ptr<qr::Jacobian> changes = scorer->get_jacobian(ranked_list);
     qr::Jacobian* changes_p = changes.get();

@@ -85,13 +85,17 @@ void RTNodeHistogram::quick_dump(unsigned int f, unsigned int num_t) {
   printf("\n");
 }
 
-RTRootHistogram::RTRootHistogram(LTR_VerticalDataset *dps, double *labels, unsigned int **sortedidx, unsigned int sortedidxsize, float **thresholds, unsigned int const *thresholds_size) : RTNodeHistogram(thresholds, thresholds_size, dps->get_nfeatures()) {
+RTRootHistogram::RTRootHistogram(quickrank::data::Dataset *dps,
+                                 double *labels,
+                                 unsigned int **sortedidx, unsigned int sortedidxsize,
+                                 float **thresholds, unsigned int const *thresholds_size) :
+                                     RTNodeHistogram(thresholds, thresholds_size, dps->num_features()) {
   stmap = new unsigned int*[nfeatures];
 #pragma omp parallel for
   for(unsigned int i=0; i<nfeatures; ++i) {
     stmap[i] = new unsigned int[sortedidxsize];
     unsigned int threshold_size = thresholds_size[i];
-    float *features = dps->get_fvector(i);
+    float *features = dps->at(0,i);
     float *threshold = thresholds[i];
     double sum = 0.0;
     double sqsum = 0.0;

@@ -16,7 +16,7 @@ class LTR_Algorithm {
 
  protected:
   qr::metric::ir::Metric* scorer = NULL;
-  LTR_VerticalDataset *training_set = NULL;
+  //LTR_VerticalDataset *training_set = NULL;
   LTR_VerticalDataset *validation_set = NULL;
   float training_score = 0.0f;
   float validation_bestscore = 0.0f;
@@ -24,13 +24,13 @@ class LTR_Algorithm {
   char *output_basename = NULL;
 
   std::shared_ptr<quickrank::data::Dataset> validation_dataset;
-
+  std::shared_ptr<quickrank::data::Dataset> training_dataset;
 
  public:
   LTR_Algorithm() {
   }
   virtual ~LTR_Algorithm() {
-    delete validation_set, delete training_set;
+    delete validation_set; //, delete training_set;
     free(output_basename);
   }
 
@@ -86,11 +86,15 @@ class LTR_Algorithm {
   void set_scorer(qr::metric::ir::Metric* ms) {
     scorer = ms;
   }
+  /*
   void set_trainingset(LTR_VerticalDataset *trainingset) {
     training_set = trainingset;
-  }
+  }*/
   void set_validationset(LTR_VerticalDataset *validationset) {
     validation_set = validationset;
+  }
+  void set_training_dataset(std::shared_ptr<quickrank::data::Dataset> d) {
+    training_dataset = d;
   }
   void set_validation_dataset(std::shared_ptr<quickrank::data::Dataset> d) {
     validation_dataset = d;
