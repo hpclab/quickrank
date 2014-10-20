@@ -49,7 +49,9 @@ void Dataset::addInstance(qr::QueryID q_id, qr::Label i_label,
 
 std::unique_ptr<QueryResults> Dataset::getQueryResults(unsigned int i) const {
   unsigned int num_results = offsets_[i+1]-offsets_[i];
-  qr::Feature* start_data = data_ + (offsets_[i]*num_features_);
+  qr::Feature* start_data = data_ +
+      ( (format_==HORIZ) ? (offsets_[i]*num_features_)
+          : (offsets_[i]) );
   qr::Label* start_label  = labels_ + offsets_[i];
 
   QueryResults* qr = new QueryResults(num_results, start_label, start_data);
@@ -57,21 +59,16 @@ std::unique_ptr<QueryResults> Dataset::getQueryResults(unsigned int i) const {
   return std::unique_ptr<QueryResults>(qr);
 }
 
-// TODO: in-place transpose?
+// TODO: in-place block-based transpose?
 void Dataset::transpose() {
   qr::Feature* transposed = new qr::Feature [max_instances_*num_features_];
 
-  for (unsigned int q=0; q<num_queries_; q++) {
-    qr::Feature* src_data = data_ + (offsets_[q]*num_features_);
-    qr::Feature* dest_data = transposed + (offsets_[q]*num_features_);
-    unsigned int num_results = offsets_[q+1]-offsets_[q];
-    for (unsigned int d=0; d<num_results; d++) {
-      for (unsigned int f=0; f<num_features_; f++) {
-        if (format_==HORIZ)
-          dest_data[f*num_results + d] = src_data[f + d*num_features_];
-        else
-          dest_data[f + d*num_features_] = src_data[f*num_results + d];
-      }
+  for (unsigned int i=0; i<num_instances_; i++) {
+    for (unsigned int f=0; f<num_features_; f++) {
+      if (format_==HORIZ)
+        transposed[f*num_instances_ + i] = data_[i*num_features_ + f];
+      else
+        transposed[i*num_features_ + f] = data_[f*num_instances_ + i];
     }
   }
 

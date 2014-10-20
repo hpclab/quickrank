@@ -26,8 +26,8 @@ Reading validation dataset:
 	no. of training queries = 49
 	max no. of datapoints in a training query = 319
 	no. of features = 136
-	 elapsed reading time = 0.307123 sec.s ( 16.2801 MB/s) 
-	 elapsed post-processing time = 0.00546133 sec.s.
+	 elapsed reading time = 0.323083 sec.s ( 15.4759 MB/s) 
+	 elapsed post-processing time = 0.00529815 sec.s.
 Reading test dataset:
 	file = data/msn1.fold1.test.5k.txt
 	no. of datapoints = 5000
@@ -147,7 +147,7 @@ Training:
 Testing:
 	NDCG@10 on test data = 0.3485
 	done
-	 elapsed reading time = 0.2990 sec.s ( 16.7222 MB/s) 
+	 elapsed reading time = 0.3031 sec.s ( 16.4977 MB/s) 
 	 elapsed post-processing time = 0.0038 sec.s.
 check: 0.3485
 Writing output:

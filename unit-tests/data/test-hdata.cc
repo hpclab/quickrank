@@ -69,8 +69,8 @@ BOOST_AUTO_TEST_CASE( Horizontal_Dataset_Test ) {
   qr = dataset->getQueryResults(0);
   BOOST_CHECK_EQUAL(qr->num_results(), 86);
   BOOST_CHECK_EQUAL(qr->features()[0], 3);
-  BOOST_CHECK_EQUAL(qr->features()[qr->num_results()+1], 0);
-  BOOST_CHECK_EQUAL(qr->features()[2*qr->num_results()+2], 2);
+  BOOST_CHECK_EQUAL(qr->features()[dataset->num_instances()+1], 0);
+  BOOST_CHECK_EQUAL(qr->features()[2*dataset->num_instances()+2], 2);
 
   // check horizontal dataset
   dataset->transpose();

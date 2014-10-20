@@ -55,13 +55,15 @@ class LTR_Algorithm {
       dataset.transpose();
     for (unsigned int q=0; q<dataset.num_queries(); q++) {
       std::shared_ptr<quickrank::data::QueryResults> r = dataset.getQueryResults(q);
-      score_query_results(r, scores);
+      score_query_results(r, scores, dataset.num_instances());
       scores += r->num_results();
     }
   }
   // assumes vertical dataset
-  virtual void score_query_results(std::shared_ptr<quickrank::data::QueryResults> results, qr::Score* scores) const {
-    const unsigned int offset = results->num_results();
+  // offset to next feature of the same instance
+  virtual void score_query_results(std::shared_ptr<quickrank::data::QueryResults> results,
+                                   qr::Score* scores,
+                                   unsigned int offset) const {
     const qr::Feature* d = results->features();
     for (unsigned int i=0; i<results->num_results(); i++) {
       scores[i] = score_document(d,offset);

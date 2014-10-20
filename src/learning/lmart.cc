@@ -126,7 +126,7 @@ void LambdaMart::learn() {
       qr::Score* score_i = scores_on_validation;
       for (unsigned int q=0; q<validation_dataset->num_queries(); q++) {
         std::shared_ptr<quickrank::data::QueryResults> results = validation_dataset->getQueryResults(q);
-        const unsigned int offset = results->num_results();
+        const unsigned int offset = validation_dataset->num_instances();
         const qr::Feature* d = results->features();
         for (unsigned int i=0; i<results->num_results(); i++) {
           score_i[i] += shrinkage*tree.get_proot()->score_instance(d,offset);
