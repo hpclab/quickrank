@@ -18,20 +18,20 @@ class QueryResults : private boost::noncopyable {
   /// related to a specific query.
   /// \param n_instances The number of training instances (lines) in the dataset.
   /// \param n_features The number of features.
-  QueryResults(unsigned int n_results, qr::Label* new_labels, qr::Feature* new_features);
+  QueryResults(unsigned int n_results, quickrank::Label* new_labels, quickrank::Feature* new_features);
   virtual ~QueryResults();
 
   // get i,j?
   // get doc-vector
   // get fx-vector
 
-  qr::Feature* features() const {return features_;}
-  qr::Label* labels() const {return labels_;}
+  quickrank::Feature* features() const {return features_;}
+  quickrank::Label* labels() const {return labels_;}
   unsigned int num_results() const {return num_results_;}
 
  private:
-  qr::Label* labels_;
-  qr::Feature* features_;
+  quickrank::Label* labels_;
+  quickrank::Feature* features_;
   unsigned int num_results_;
 };
 

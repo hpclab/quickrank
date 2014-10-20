@@ -34,7 +34,7 @@ FILE *flog = NULL;
 #define SHOWTIMER
 
 #include "metric/evaluator.h"
-#include "learning/lmart.h"
+#include "learning/lambdamart.h"
 #include "learning/matrixnet.h"
 #include "metric/ir/ndcg.h"
 #include "metric/ir/map.h"
@@ -70,25 +70,25 @@ int main(int argc, char *argv[]) {
 	r->showme();
 
 	//read metric scorer for the training phase and its parameters
-	qr::metric::ir::Metric* training_scorer = NULL;
+	quickrank::metric::ir::Metric* training_scorer = NULL;
 	if(argi+1<argc && strcasecmp(argv[argi],"ndcg")==0) {
 		unsigned int k = atoi(argv[++argi]);
-		training_scorer = new qr::metric::ir::Ndcg(k), ++argi;
+		training_scorer = new quickrank::metric::ir::Ndcg(k), ++argi;
 	} else if(argi+1<argc && strcasecmp(argv[argi],"map")==0) {
 		unsigned int k = atoi(argv[++argi]);
-		training_scorer = new qr::metric::ir::Map(k), ++argi;
+		training_scorer = new quickrank::metric::ir::Map(k), ++argi;
 	} else exit(12);
 	//show metric scorer parameters
 	std::cout << "New training scorer: " << *training_scorer << std::endl;
 
 	//read metric scorer for the test phase and its parameters
-	qr::metric::ir::Metric* test_scorer = NULL;
+	quickrank::metric::ir::Metric* test_scorer = NULL;
 	if(argi+1<argc && strcasecmp(argv[argi],"ndcg")==0) {
 		unsigned int k = atoi(argv[++argi]);
-		test_scorer = new qr::metric::ir::Ndcg(k), ++argi;
+		test_scorer = new quickrank::metric::ir::Ndcg(k), ++argi;
 	} else if(argi+1<argc && strcasecmp(argv[argi],"map")==0) {
 		unsigned int k = atoi(argv[++argi]);
-		test_scorer = new qr::metric::ir::Map(k), ++argi;
+		test_scorer = new quickrank::metric::ir::Map(k), ++argi;
 	} else if(argi<argc && strcmp(argv[argi],"-")==0) {
 		++argi;
 	} else exit(13);
@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
 	  std::cout << "New test scorer: (null)" << std::endl;
 
 	//instantiate a new evaluator with read arguments
-	qr::metric::evaluator ev(r, training_scorer, test_scorer);
+	quickrank::metric::evaluator ev(r, training_scorer, test_scorer);
 
 	//set ranker partial save
 	if(argi<argc) {

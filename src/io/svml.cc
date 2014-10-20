@@ -168,9 +168,9 @@ LTR_VerticalDataset* Svml::read_vertical(const char *filename) const {
 
 // TODO: save info file or use mmap
 // TODO: re-introduce multithreading
-std::unique_ptr<data::Dataset> Svml::read_horizontal(const char *filename) const {
+std::unique_ptr<data::Dataset> Svml::read_horizontal(const std::string &filename) const {
 
-  FILE *f = fopen(filename, "r");
+  FILE *f = fopen(filename.c_str(), "r");
   if(!f) {
     std::cerr << "!!! Error while opening file "<<filename<<"."<< std::endl;
     exit(EXIT_FAILURE);
@@ -182,8 +182,8 @@ std::unique_ptr<data::Dataset> Svml::read_horizontal(const char *filename) const
 
   // temporary copy of data
   boost::container::list< unsigned int > data_qids;
-  boost::container::list< qr::Label > data_labels;
-  boost::container::list< boost::container::vector<qr::Feature> > data_instances;
+  boost::container::list< quickrank::Label > data_labels;
+  boost::container::list< boost::container::vector<quickrank::Feature> > data_instances;
 
   while(not feof(f)) {
     ssize_t nread;
@@ -203,11 +203,11 @@ std::unique_ptr<data::Dataset> Svml::read_horizontal(const char *filename) const
     if(ISEMPTY(token=read_token(pch))) exit(2);
 
     // read label and qid
-    qr::Label relevance = atof(token);
+    quickrank::Label relevance = atof(token);
     unsigned int qid = atou(read_token(pch), "qid:");
 
     // allocate feature vector and read instance
-    boost::container::vector<qr::Feature> curr_instance(maxfid);
+    boost::container::vector<quickrank::Feature> curr_instance(maxfid);
 
     //read a sequence of features, namely (fid,fval) pairs, then the ending description
     while(!ISEMPTY(token=read_token(pch,'#'))) {
@@ -268,4 +268,4 @@ std::unique_ptr<data::Dataset> Svml::read_horizontal(const char *filename) const
 
 
 } // namespace data
-} // namespace qr
+} // namespace quickrank

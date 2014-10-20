@@ -11,7 +11,7 @@
 #include "types.h"
 #include "metric.h"
 
-namespace qr {
+namespace quickrank {
 namespace metric {
 namespace ir {
 
@@ -51,6 +51,6 @@ class Dcg : public Metric {
 
 } // namespace ir
 } // namespace metric
-} // namespace qr
+} // namespace quickrank
 
 #endif // QUICKRANK_DCG_H_

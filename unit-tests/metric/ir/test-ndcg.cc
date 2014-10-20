@@ -9,8 +9,8 @@ BOOST_AUTO_TEST_CASE( ndcg_test )
   double labels [] = {3,2,1,0,0};
   ResultList results (5, &labels[0], 666);
 
-  qr::metric::ir::Ndcg ndcg_metric(5);
-  qr::MetricScore idcg;
+  quickrank::metric::ir::Ndcg ndcg_metric(5);
+  quickrank::MetricScore idcg;
 
   // NDCG@k computation with K > num results
   idcg = (pow(2,labels[0])-1) + (pow(2,labels[1])-1)/log2(3) + (pow(2,labels[2])-1)/2;

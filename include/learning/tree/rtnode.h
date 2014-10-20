@@ -51,7 +51,7 @@ class RTNode {
 			return featureidx==uint_max ? avglabel : (featurematrix[featureidx][idx]<=threshold ? left->eval(featurematrix, idx) : right->eval(featurematrix, idx));
 		}
 
-		qr::Score score_instance(const qr::Feature* d, const unsigned int offset) const {
+		quickrank::Score score_instance(const quickrank::Feature* d, const unsigned int offset) const {
       return featureidx==uint_max ? avglabel :
           (d[featureidx*offset]<=threshold ? left->score_instance(d, offset) : right->score_instance(d, offset));
 		}

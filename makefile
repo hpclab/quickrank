@@ -74,7 +74,7 @@ clean:
 # removes everything but the source
 dist-clean: clean
 	@rm -rf $(BINDIR)
-	@rm -rf $(DOCDIR)
+	@rm -rf $(DOCDIR)/html
 
 # build dependency files
 $(DEPSDIR)/%.d: %.cc

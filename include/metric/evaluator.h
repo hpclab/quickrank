@@ -4,46 +4,44 @@
 #include "metric/ir/metric.h"
 #include "learning/ltr_algorithm.h"
 
-namespace qr {
+namespace quickrank {
 namespace metric {
 
-class evaluator : private boost::noncopyable {
+/**
+ * This class implements some utility functions to train and test L-t-R models.
+ */
+class Evaluator : private boost::noncopyable {
   public:
-    bool normalize = false;
-  protected:
-    quickrank::learning::LTR_Algorithm *r = NULL;
-    qr::metric::ir::Metric* training_scorer = NULL;
-    qr::metric::ir::Metric* test_scorer = NULL;
-  public:
-    evaluator(quickrank::learning::LTR_Algorithm *r,
-              qr::metric::ir::Metric* training_scorer,
-              qr::metric::ir::Metric* test_scorer) :
+    Evaluator();
+    virtual ~Evaluator();
 
-      r(r), training_scorer(training_scorer), test_scorer(test_scorer) {}
-    ~evaluator();
+    /// Runs train/validation of \a algo by optimizing \a train_metric
+    /// and then measures \a test_metric on the test data.
+    ///
+    /// \param algo The L-T-R algorithm to be tested.
+    /// \param train_metric The metric optimized during training.
+    /// \param test_metric The metric measured on the test data.
+    /// \param training_filename The training dataset.
+    /// \param validation_filename The validation dataset.
+    /// If empty, validation is not used.
+    /// \param test_filename The test dataset.
+    /// If empty, no performance is measured on the test set.
+    /// \param output_filename Model output file.
+    /// If empty, no output file is written.
+    static void evaluate(learning::LTR_Algorithm* algo,
+                         ir::Metric* train_metric,
+                         ir::Metric* test_metric,
+                         const std::string training_filename,
+                         const std::string validation_filename,
+                         const std::string test_filename,
+                         const std::string feature_filename,
+                         const std::string output_filename);
 
-    // TODO: Remove to support just std::string version
-    void evaluate(const char *trainingfilename, const char *validationfilename,
-                  const char *testfilename, const char *featurefilename, const char *outputfilename);
 
-    void evaluate(const std::string &trainingfilename,
-    		      const std::string &validationfilename,
-                  const std::string &testfilename,
-				  const std::string &featurefilename,
-				  const std::string &outputfilename)
-    {
-    	evaluate(trainingfilename.c_str(),
-    			 validationfilename.c_str(),
-				 testfilename.c_str(),
-				 featurefilename.c_str(),
-				 outputfilename.c_str());
-    }
-
-    void write();
 };
 
 } // namespace metric
-} // namespace qr
+} // namespace quickrank
 
 #endif
 

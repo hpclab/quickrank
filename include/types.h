@@ -4,7 +4,7 @@
 #include <vector>
 #include "utils/symmatrix.h"
 
-namespace qr {
+namespace quickrank {
 
 typedef float Label; // data type for instance truth label
 typedef double Score; // data type for instance predicted label
@@ -16,7 +16,7 @@ typedef std::vector<Feature> FeatureVector; // data type for vector of instance 
 
 typedef SymMatrix<double> Jacobian;  // data type for a Metric's Jacobian Matrix
 
-}
+} // namespace quickrank
 
 
 #endif

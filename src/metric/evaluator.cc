@@ -1,76 +1,77 @@
 #include "metric/evaluator.h"
 #include "io/svml.h"
-namespace qr {
+
+
+namespace quickrank {
 namespace metric {
 
-evaluator::~evaluator() {
-  // TODO: (by cla) Do not delete objected you didn't create. Move.
-  delete r;
-  delete training_scorer;
-  delete test_scorer;
+Evaluator::Evaluator() {
 }
-void evaluator::evaluate(const char *trainingfilename, const char *validationfilename, const char *testfilename, const char *featurefilename, const char *outputfilename) {
-  quickrank::io::Svml reader;
-  if(not is_empty(trainingfilename)) {
-    printf("Reading Training dataset:\n");
-    // TODO: (by cla) Where is the delete of this dpset?
-    // r->set_trainingset( reader.read_vertical(trainingfilename) );
-    std::shared_ptr<quickrank::data::Dataset> dataset = reader.read_horizontal(trainingfilename);
-    r->set_training_dataset(dataset);
-  } else exit(6);
-  if(not is_empty(validationfilename)) {
-    // TODO: (by cla) Where is the delete of this dpset?
-    printf("Reading validation dataset:\n");
-    r->set_validationset( reader.read_vertical(validationfilename));
 
-    std::shared_ptr<quickrank::data::Dataset> dataset = reader.read_horizontal(validationfilename);
-    r->set_validation_dataset(dataset);
+Evaluator::~Evaluator() {
+}
+
+void Evaluator::evaluate( learning::LTR_Algorithm* algo,
+                          ir::Metric* train_metric,
+                          ir::Metric* test_metric,
+                          const std::string trainingfilename,
+                          const std::string validationfilename,
+                          const std::string testfilename,
+                          const std::string featurefilename,
+                          const std::string outputfilename) {
+  // create reader: assum svml as ltr format
+  quickrank::io::Svml reader;
+
+  std::shared_ptr<quickrank::data::Dataset> training_dataset;
+  std::shared_ptr<quickrank::data::Dataset> validation_dataset;
+
+  if(!trainingfilename.empty()) {
+    std::cout << "# Reading training dataset" << std::endl;
+    training_dataset = reader.read_horizontal(trainingfilename);
+    algo->set_training_dataset(training_dataset);
+  } else {
+    std::cerr << "!!! Error while loading training dataset" << std::endl;
+    exit(EXIT_FAILURE);
   }
-  LTR_VerticalDataset *testset = NULL;
-  if(test_scorer and not is_empty(testfilename)) {
-    printf("Reading test dataset:\n");
-    testset = reader.read_vertical(testfilename);
+
+  if(!validationfilename.empty()) {
+    std::cout << "# Reading validation dataset" << std::endl;
+    validation_dataset = reader.read_horizontal(validationfilename);
+    algo->set_validation_dataset(validation_dataset);
   }
-  if(not is_empty(featurefilename)) {
-    // init featureidxs from file
+
+  if(!featurefilename.empty()) {
+    /// \todo TODO: filter features while loading dataset
   }
-  if(not is_empty(outputfilename))
-    r->set_outputfilename(outputfilename);
-  if(normalize) {
-    //normalization
-  }
-  r->set_scorer(training_scorer);
-  r->init();
-  r->learn();
-  if(testset) {
-    printf("Testing:\n");
-#ifdef SHOWTIMER
-    double timer = omp_get_wtime();
-#endif
-    float score = r->compute_score(testset, test_scorer);
-#ifdef SHOWTIMER
-    timer = omp_get_wtime()-timer;
-#endif
-    std::cout << "\t" << *test_scorer
-              << " on test data = " << score << std::endl;
-#ifdef SHOWTIMER
-    printf("\t\033[1melapsed time = %.3f seconds\033[0m\n", timer);
-#endif
-    printf("\tdone\n");
-    delete testset;
-    // check on horiz dataset
-    std::unique_ptr<quickrank::data::Dataset> dataset = reader.read_horizontal(testfilename);
-    qr::Score* test_scores = new qr::Score[dataset->num_instances()];
-    r->score_dataset(*dataset, test_scores);
-    std::cout << "check: " << test_scorer->evaluate_dataset(*dataset, test_scores) << std::endl;
+
+  if(!outputfilename.empty())
+    algo->set_outputfilename(outputfilename);
+
+
+  algo->set_scorer(train_metric);
+
+  // run the learning process
+  algo->init();
+  algo->learn();
+
+  if(test_metric and !testfilename.empty()) {
+    // pre-clean
+    training_dataset.reset();
+    validation_dataset.reset();
+
+    std::shared_ptr<quickrank::data::Dataset> test_dataset = reader.read_horizontal(testfilename);
+    quickrank::Score* test_scores = new quickrank::Score[test_dataset->num_instances()];
+    algo->score_dataset(*test_dataset, test_scores);
+    quickrank::MetricScore test_score = test_metric->evaluate_dataset(*test_dataset, test_scores);
+    std::cout << "# " << *test_metric
+        << " on test data = " << test_score << std::endl;
     delete [] test_scores;
   }
-}
-void evaluator::write() {
-  printf("Writing output:\n");
-  r->write_outputtofile();
-  printf("\tdone\n");
+
+  if (!outputfilename.empty()) {
+    algo->write_outputtofile();
+  }
 }
 
 } // namespace metric
-} // namespace qr
+} // namespace quickrank

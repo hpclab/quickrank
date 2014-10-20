@@ -10,7 +10,29 @@ namespace quickrank {
 namespace learning {
 namespace forests {
 
-class LambdaMart : public quickrank::learning::LTR_Algorithm {
+class LambdaMart : public LTR_Algorithm {
+
+ public:
+
+ protected:
+
+
+ private:
+  /// The output stream operator.
+  friend std::ostream& operator<<(std::ostream& os, const LambdaMart& a) {
+    return a.put(os);
+  }
+  /// Prints the description of Algorithm, including its parameters
+  virtual std::ostream& put(std::ostream& os) const;
+
+
+
+
+
+
+
+
+
  public:
   const unsigned int ntrees; //>0
   const double shrinkage; //>0.0f
@@ -18,11 +40,11 @@ class LambdaMart : public quickrank::learning::LTR_Algorithm {
   const unsigned int ntreeleaves; //>0
   const unsigned int minleafsupport; //>0
   const unsigned int esr; //If no performance gain on validation data is observed in 'esr' rounds, stop the training process right away (if esr==0 feature is disabled).
+
  protected:
   float **thresholds = NULL;
   unsigned int *thresholds_size = NULL;
   double *trainingmodelscores = NULL; //[0..nentries-1]
-  double *validationmodelscores = NULL; //[0..nentries-1]
   unsigned int validation_bestmodel = 0;
   double *pseudoresponses = NULL;  //[0..nentries-1]
   double *cachedweights = NULL; //corresponds to datapoint.cache
@@ -31,7 +53,7 @@ class LambdaMart : public quickrank::learning::LTR_Algorithm {
   RTRootHistogram *hist = NULL;
   Ensemble ens;
 
-  qr::Score* scores_on_validation = NULL; //[0..nentries-1]
+  quickrank::Score* scores_on_validation = NULL; //[0..nentries-1]
 
  public:
   LambdaMart(unsigned int ntrees, float shrinkage, unsigned int nthresholds,
@@ -47,7 +69,6 @@ class LambdaMart : public quickrank::learning::LTR_Algorithm {
     delete [] thresholds,
     delete [] thresholds_size,
     delete [] trainingmodelscores,
-    delete [] validationmodelscores,
     delete [] pseudoresponses,
     delete [] sortedsid,
     delete [] cachedweights;
@@ -56,17 +77,6 @@ class LambdaMart : public quickrank::learning::LTR_Algorithm {
     delete [] scores_on_validation;
   }
 
-  const char *whoami() const { return "LAMBDA MART"; }
-
-  void showme() {
-    printf("\tranker type = %s\n", whoami());
-    printf("\tno. of trees = %u\n", ntrees);
-    printf("\tshrinkage = %.3f\n", shrinkage);
-    if(nthresholds) printf("\tno. of thresholds = %u\n", nthresholds); else printf("\tno. of thresholds = unlimited\n");
-    if(esr) printf("\tno. of no gain rounds before early stop = %u\n", esr);
-    printf("\tmin leaf support = %u\n", minleafsupport);
-    printf("\tno. of tree leaves = %u\n", ntreeleaves);
-  }
 
   void init();
 
@@ -77,14 +87,14 @@ class LambdaMart : public quickrank::learning::LTR_Algorithm {
   }
 
   // assumes vertical dataset
-  virtual qr::Score score_document(const qr::Feature* d, const unsigned int offset=1) const {
+  virtual quickrank::Score score_document(const Feature* d, const unsigned int offset=1) const {
     return ens.score_instance(d,offset);
   }
 
   void write_outputtofile() {
-    if(output_basename) {
+    if(!output_basename.empty()) {
       char filename[256];
-      sprintf(filename, "%s.best.xml", output_basename);
+      sprintf(filename, "%s.best.xml", output_basename.c_str());
       write_outputtofile(filename);
       printf("\tmodel filename = %s\n", filename);
     }
@@ -92,9 +102,9 @@ class LambdaMart : public quickrank::learning::LTR_Algorithm {
 
  protected:
   float compute_modelscores(LTR_VerticalDataset const *samples, double *mscores, RegressionTree const &tree);
-  void update_modelscores(quickrank::data::Dataset* dataset, qr::Score *scores, RegressionTree* tree);
+  void update_modelscores(quickrank::data::Dataset* dataset, quickrank::Score *scores, RegressionTree* tree);
 
-  std::unique_ptr<qr::Jacobian> compute_mchange(const ResultList &orig, const unsigned int offset);
+  std::unique_ptr<quickrank::Jacobian> compute_mchange(const ResultList &orig, const unsigned int offset);
 
   // Changes by Cla:
   // - added processing of ranked list in ranked order

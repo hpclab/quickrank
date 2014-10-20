@@ -11,7 +11,7 @@ namespace quickrank {
 namespace learning {
 
 // NOTE this replaces a "lot" of methods used in lmart, ranker, evaluator
-float LTR_Algorithm::compute_score(LTR_VerticalDataset *samples, qr::metric::ir::Metric* scorer) {
+float LTR_Algorithm::compute_score(LTR_VerticalDataset *samples, quickrank::metric::ir::Metric* scorer) {
   const unsigned int nrankedlists = samples->get_nrankedlists();
   //unsigned int * const rloffsets = samples->get_rloffsets();
   float * const * const featurematrix = samples->get_fmatrix();

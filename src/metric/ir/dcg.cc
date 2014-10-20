@@ -12,7 +12,7 @@
 #include "utils/qsort.h" // quick sort (for small input)
 #include "utils/mergesorter.h" // quick sort (for small input)
 
-namespace qr {
+namespace quickrank {
 namespace metric {
 namespace ir {
 
@@ -76,4 +76,4 @@ std::ostream& Dcg::put(std::ostream& os) const {
 
 } // namespace ir
 } // namespace metric
-} // namespace qr
+} // namespace quickrank

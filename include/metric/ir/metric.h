@@ -13,7 +13,7 @@
 
 
 
-namespace qr {
+namespace quickrank {
 namespace metric {
 namespace ir {
 
@@ -77,18 +77,17 @@ class Metric : private boost::noncopyable
   unsigned int cutoff_;
 
   /// The output stream operator.
-  // TODO: check this together
   friend std::ostream& operator<<(std::ostream& os, const Metric& m) {
     return m.put(os);
   }
-  /// Prints the shortname of the Metric, e.g., "NDCG@K"
+  /// Prints the short name of the Metric, e.g., "NDCG@K"
   virtual std::ostream& put(std::ostream& os) const = 0;
 
 };
 
 } // namespace ir
 } // namespace metric
-} // namespace qr
+} // namespace quickrank
 
 
 #endif

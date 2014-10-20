@@ -11,8 +11,8 @@ Dataset::Dataset(unsigned int n_instances, unsigned int n_features){
   last_instance_id_ = 0;
 
   format_ = HORIZ;
-  data_ = new qr::Feature [max_instances_*num_features_] ();  // 0 initialization
-  labels_ = new qr::Label [max_instances_];               // no initialization
+  data_ = new quickrank::Feature [max_instances_*num_features_] ();  // 0 initialization
+  labels_ = new quickrank::Label [max_instances_];               // no initialization
 
   offsets_.push_back(0);
 }
@@ -23,8 +23,8 @@ Dataset::~Dataset() {
 }
 
 
-void Dataset::addInstance(qr::QueryID q_id, qr::Label i_label,
-                          boost::container::vector<qr::Feature> i_features) {
+void Dataset::addInstance(QueryID q_id, Label i_label,
+                          boost::container::vector<Feature> i_features) {
 
   if (i_features.size()>num_features_ || num_instances_==max_instances_) {
     std::cerr << "!!! Impossible to add a new instance to the dataset." << std::endl;
@@ -33,7 +33,7 @@ void Dataset::addInstance(qr::QueryID q_id, qr::Label i_label,
 
   // update label and features
   labels_[num_instances_] = i_label;
-  qr::Feature* new_instance = data_ + (num_instances_*num_features_);
+  quickrank::Feature* new_instance = data_ + (num_instances_*num_features_);
   for (unsigned int i=0; i<i_features.size(); i++)
     new_instance[i] = i_features[i];
 
@@ -49,10 +49,10 @@ void Dataset::addInstance(qr::QueryID q_id, qr::Label i_label,
 
 std::unique_ptr<QueryResults> Dataset::getQueryResults(unsigned int i) const {
   unsigned int num_results = offsets_[i+1]-offsets_[i];
-  qr::Feature* start_data = data_ +
+  quickrank::Feature* start_data = data_ +
       ( (format_==HORIZ) ? (offsets_[i]*num_features_)
           : (offsets_[i]) );
-  qr::Label* start_label  = labels_ + offsets_[i];
+  quickrank::Label* start_label  = labels_ + offsets_[i];
 
   QueryResults* qr = new QueryResults(num_results, start_label, start_data);
 
@@ -61,7 +61,7 @@ std::unique_ptr<QueryResults> Dataset::getQueryResults(unsigned int i) const {
 
 // TODO: in-place block-based transpose?
 void Dataset::transpose() {
-  qr::Feature* transposed = new qr::Feature [max_instances_*num_features_];
+  quickrank::Feature* transposed = new quickrank::Feature [max_instances_*num_features_];
 
   for (unsigned int i=0; i<num_instances_; i++) {
     for (unsigned int f=0; f<num_features_; f++) {

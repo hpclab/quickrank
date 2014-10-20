@@ -1,7 +1,7 @@
 #ifndef QUICKRANK_LEARNING_MATRIXNET_H_
 #define QUICKRANK_LEARNING_MATRIXNET_H_
 
-#include "learning/lmart.h"
+#include "learning/lambdamart.h"
 
 namespace quickrank {
 namespace learning {

@@ -10,7 +10,7 @@
 #include "metric/ir/map.h"
 #include "utils/qsort.h"
 
-namespace qr {
+namespace quickrank {
 namespace metric {
 namespace ir {
 
@@ -82,4 +82,4 @@ std::ostream& Map::put(std::ostream& os) const {
 
 } // namespace ir
 } // namespace metric
-} // namespace qr
+} // namespace quickrank

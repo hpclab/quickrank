@@ -9,7 +9,7 @@ BOOST_AUTO_TEST_CASE( dcg_test )
   double labels [] = {3,2,1,0,0};
   ResultList results (5, &labels[0], 666);
 
-  qr::metric::ir::Dcg dcg_metric(5);
+  quickrank::metric::ir::Dcg dcg_metric(5);
 
   // DCG@k computation with K > num results
   BOOST_CHECK_EQUAL( dcg_metric.evaluate_result_list(results) ,

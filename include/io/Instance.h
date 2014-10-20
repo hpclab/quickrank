@@ -13,7 +13,7 @@
 
 #include "types.h"
 
-namespace qr {
+namespace quickrank {
 namespace io {
 
 class Instance {
@@ -53,6 +53,6 @@ class Instance {
 };
 
 } // namespace io
-} // namespace qr
+} // namespace quickrank
 
 #endif /* INSTANCE_H_ */

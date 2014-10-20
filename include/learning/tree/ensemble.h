@@ -15,7 +15,7 @@ class Ensemble {
 		unsigned int size = 0;
 		wt *arr = NULL;
 	public:
-		~Ensemble();
+		virtual ~Ensemble();
 		void set_capacity(const unsigned int n);
 		void push(RTNode *root, const float weight, const float maxlabel);
 		void pop();
@@ -30,7 +30,7 @@ class Ensemble {
 		float eval(float *const *const features, unsigned int idx) const;
 
 		// assumes vertical dataset
-	  virtual qr::Score score_instance(const qr::Feature* d, const unsigned int offset=1) const;
+	  virtual quickrank::Score score_instance(const quickrank::Feature* d, const unsigned int offset=1) const;
 
 		void write_outputtofile(FILE *f);
 };

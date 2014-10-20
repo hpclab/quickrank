@@ -11,7 +11,7 @@
 #include "types.h"
 #include "metric.h"
 
-namespace qr {
+namespace quickrank {
 namespace metric {
 namespace ir {
 
@@ -43,6 +43,6 @@ class Map : public Metric {
 
 } // namespace ir
 } // namespace metric
-} // namespace qr
+} // namespace quickrank
 
 #endif // QUICKRANK_MAP_H_

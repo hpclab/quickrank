@@ -12,27 +12,34 @@ namespace learning {
 
 class LTR_Algorithm {
 
+ public:
 
 
  protected:
-  qr::metric::ir::Metric* scorer = NULL;
-  //LTR_VerticalDataset *training_set = NULL;
-  LTR_VerticalDataset *validation_set = NULL;
-  float training_score = 0.0f;
-  float validation_bestscore = 0.0f;
+
+ private:
+  /// The output stream operator.
+  friend std::ostream& operator<<(std::ostream& os, const LTR_Algorithm& a) {
+    return a.put(os);
+  }
+  /// Prints the description of Algorithm, including its parameters
+  virtual std::ostream& put(std::ostream& os) const = 0;
+
+
+
+ protected:
+  quickrank::metric::ir::Metric* scorer = NULL;
+
   unsigned int partialsave_niterations = 0;
-  char *output_basename = NULL;
+  std::string output_basename;
 
   std::shared_ptr<quickrank::data::Dataset> validation_dataset;
   std::shared_ptr<quickrank::data::Dataset> training_dataset;
 
  public:
-  LTR_Algorithm() {
-  }
-  virtual ~LTR_Algorithm() {
-    delete validation_set; //, delete training_set;
-    free(output_basename);
-  }
+  LTR_Algorithm() {}
+
+  virtual ~LTR_Algorithm() {}
 
   //
   // TODO: Candidate class structure
@@ -46,11 +53,9 @@ class LTR_Algorithm {
   // save_model (filename)
   // load_model (filename)
   //
-  // string get_name()
   //
 
-  // TODO: to be moved ...
-  virtual void score_dataset(quickrank::data::Dataset &dataset, qr::Score* scores) const {
+  virtual void score_dataset(quickrank::data::Dataset &dataset, quickrank::Score* scores) const {
     if (dataset.format()!=quickrank::data::Dataset::VERT)
       dataset.transpose();
     for (unsigned int q=0; q<dataset.num_queries(); q++) {
@@ -62,36 +67,28 @@ class LTR_Algorithm {
   // assumes vertical dataset
   // offset to next feature of the same instance
   virtual void score_query_results(std::shared_ptr<quickrank::data::QueryResults> results,
-                                   qr::Score* scores,
+                                   quickrank::Score* scores,
                                    unsigned int offset) const {
-    const qr::Feature* d = results->features();
+    const quickrank::Feature* d = results->features();
     for (unsigned int i=0; i<results->num_results(); i++) {
       scores[i] = score_document(d,offset);
       d++;
     }
   }
   // assumes vertical dataset
-  virtual qr::Score score_document(const qr::Feature* d, const unsigned int offset=1) const {
+  virtual quickrank::Score score_document(const quickrank::Feature* d, const unsigned int offset=1) const {
     return 0.0;
   }
 
   virtual float eval_dp(float * const * const features,
                         unsigned int idx) const = 0;  //prediction value to store in a file
-  virtual const char *whoami() const = 0;
-  virtual void showme() = 0;
+
   virtual void init() = 0;
   virtual void learn() = 0;
   virtual void write_outputtofile() = 0;
 
-  void set_scorer(qr::metric::ir::Metric* ms) {
+  void set_scorer(quickrank::metric::ir::Metric* ms) {
     scorer = ms;
-  }
-  /*
-  void set_trainingset(LTR_VerticalDataset *trainingset) {
-    training_set = trainingset;
-  }*/
-  void set_validationset(LTR_VerticalDataset *validationset) {
-    validation_set = validationset;
   }
   void set_training_dataset(std::shared_ptr<quickrank::data::Dataset> d) {
     training_dataset = d;
@@ -102,11 +99,11 @@ class LTR_Algorithm {
   void set_partialsave(unsigned int niterations) {
     partialsave_niterations = niterations;
   }
-  void set_outputfilename(const char *filename) {
-    output_basename = strdup(filename);
+  void set_outputfilename(const std::string filename) {
+    output_basename = filename;
   }
   float compute_score(LTR_VerticalDataset *samples,
-                      qr::metric::ir::Metric* scorer);
+                      quickrank::metric::ir::Metric* scorer);
 };
 
 } // namespace learning

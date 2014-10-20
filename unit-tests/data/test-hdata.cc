@@ -42,19 +42,19 @@ BOOST_AUTO_TEST_CASE( Horizontal_Dataset_Test ) {
 
   // check some metrics on the given data
   qr = dataset->getQueryResults(0);
-  qr::metric::ir::Dcg dcg_metric(3);
+  quickrank::metric::ir::Dcg dcg_metric(3);
 
-  qr::Score scores [86] = {3,2,1};
+  quickrank::Score scores [86] = {3,2,1};
   BOOST_CHECK_EQUAL( dcg_metric.evaluate_result_list(qr.get(), scores ),
                      (pow(2,qr->labels()[0])-1) + (pow(2,qr->labels()[1])-1)/log2(3) + (pow(2,qr->labels()[2])-1)/2
   );
 
-  qr::Score scores2 [86] = {1,2,3};
+  quickrank::Score scores2 [86] = {1,2,3};
   BOOST_CHECK_EQUAL( dcg_metric.evaluate_result_list(qr.get(), scores2 ),
                      (pow(2,qr->labels()[2])-1) + (pow(2,qr->labels()[1])-1)/log2(3) + (pow(2,qr->labels()[0])-1)/2
   );
 
-  qr::metric::ir::Ndcg ndcg_metric(3); // ideal is 3,2,2
+  quickrank::metric::ir::Ndcg ndcg_metric(3); // ideal is 3,2,2
   BOOST_CHECK_EQUAL( ndcg_metric.evaluate_result_list(qr.get(), scores ),
                      ( (pow(2,qr->labels()[0])-1) + (pow(2,qr->labels()[1])-1)/log2(3) + (pow(2,qr->labels()[2])-1)/2 ) /
                      ( (pow(2,3)-1) + (pow(2,2)-1)/log2(3) + (pow(2,2)-1)/2 )
