@@ -1,6 +1,7 @@
 #ifndef QUICKRANK_DATA_DATASET_H_
 #define QUICKRANK_DATA_DATASET_H_
 
+#include <iostream>
 #include <boost/noncopyable.hpp>
 #include <boost/container/vector.hpp>
 
