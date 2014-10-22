@@ -12,11 +12,11 @@ namespace io {
 
 
 
-LTR_VerticalDataset* Svml::read_vertical(const char *filename) const {
+LTR_VerticalDataset* Svml::read_vertical(const std::string &filename) const {
 
   LTR_VerticalDataset* v_dataset = new LTR_VerticalDataset();
 
-  FILE *f = fopen(filename, "r");
+  FILE *f = fopen(filename.c_str(), "r");
   if(f) {
 #ifdef SHOWTIMER
     double readingtimer = omp_get_wtime();
@@ -153,10 +153,10 @@ LTR_VerticalDataset* Svml::read_vertical(const char *filename) const {
     v_dataset->set_fmatrix( (float**)realloc(v_dataset->get_fmatrix(), sizeof(float*)*nfeatureids) );
     //show statistics
     printf("\tfile = %s\n\tno. of datapoints = %u\n\tno. of training queries = %u\n\tmax no. of datapoints in a training query = %u\n\tno. of features = %u\n",
-           filename, v_dataset->get_ndatapoints(), v_dataset->get_nrankedlists(), maxrlsize, v_dataset->get_nfeatures());
+           filename.c_str(), v_dataset->get_ndatapoints(), v_dataset->get_nrankedlists(), maxrlsize, v_dataset->get_nfeatures());
 #ifdef SHOWTIMER
     processingtimer = omp_get_wtime()-processingtimer;
-    printf("\t\033[1melapsed reading time = %.3f seconds (%.0fMB/s, %d threads)\n\telapsed post-processing time = %.3f seconds\033[0m\n", readingtimer, filesize(filename)/readingtimer, nth, processingtimer);
+    printf("\t\033[1melapsed reading time = %.3f seconds (%.0fMB/s, %d threads)\n\telapsed post-processing time = %.3f seconds\033[0m\n", readingtimer, filesize(filename.c_str())/readingtimer, nth, processingtimer);
 #endif
     //free mem from temporary data structures
     // TODO: (by cla) is each dplist deleted ?

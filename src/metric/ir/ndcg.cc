@@ -28,6 +28,7 @@ double Ndcg::compute_idcg(double const* labels, const unsigned int nlabels, cons
   //return dcg
   return dcg;
 }
+
 MetricScore Ndcg::compute_idcg(const quickrank::data::QueryResults* rl, const Score* scores) const {
   //make a copy of lables
   Label* copyoflabels = new Label[rl->num_results()];

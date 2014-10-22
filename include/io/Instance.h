@@ -10,13 +10,14 @@
 
 #include <iostream>
 #include <string>
+#include <boost/noncopyable.hpp>
 
 #include "types.h"
 
 namespace quickrank {
 namespace io {
 
-class Instance {
+class Instance : private boost::noncopyable {
  public:
   explicit Instance() : label_(0) {}
   virtual ~Instance() {}
@@ -41,9 +42,6 @@ class Instance {
   }
 
  private:
-  Instance(const Instance&);
-  Instance& operator=(const Instance&);
-
   friend std::ostream& operator<<(std::ostream&, const Instance&);
   friend std::istream& operator>>(std::istream&, Instance&);
 
