@@ -19,11 +19,13 @@
 # model = msn.fold1.quickrank.lmart.xml
 #
 # Reading training dataset ...
-#	 elapsed reading time = 0.305544 sec.s ( 16.3643 MB/s) 
-#	 elapsed post-processing time = 0.005251 sec.s.
+#	 Reading time: 0.308 s. @ 16.2 MB/s  (post-proc.: 0.00525 s.)
+#	 Dataset size: 5000 x 136 (instances x features)
+#	 Num queries: 43 | Avg. len: 116
 # Reading validation dataset ...
-#	 elapsed reading time = 0.310385 sec.s ( 16.109 MB/s) 
-#	 elapsed post-processing time = 0.005672 sec.s.
+#	 Reading time: 0.315 s. @ 15.9 MB/s  (post-proc.: 0.00508 s.)
+#	 Dataset size: 5000 x 136 (instances x features)
+#	 Num queries: 49 | Avg. len: 102
 Initialization:
 	done
 Training:
@@ -135,7 +137,8 @@ Training:
 	NDCG@10 on validation data = 0.4357
 	done
 # Reading test dataset ...
-#	 elapsed reading time = 0.2881 sec.s ( 17.3536 MB/s) 
-#	 elapsed post-processing time = 0.0037 sec.s.
-# NDCG@10 on test data = 0.3485
+#	 Reading time: 0.311 s. @ 16.072 MB/s  (post-proc.: 0.004 s.)
+#	 Dataset size: 5000 x 136 (instances x features)
+#	 Num queries: 43 | Avg. len: 116.279
+# NDCG@10 on test data = 0.349
 	model filename = msn.fold1.quickrank.lmart.xml.best.xml

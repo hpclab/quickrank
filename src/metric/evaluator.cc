@@ -28,7 +28,7 @@ void Evaluator::evaluate( learning::LTR_Algorithm* algo,
   if(!trainingfilename.empty()) {
     std::cout << "# Reading training dataset ..." << std::endl;
     training_dataset = reader.read_horizontal(trainingfilename);
-    std::cout << reader;
+    std::cout << reader << *training_dataset;
     algo->set_training_dataset(training_dataset);
   } else {
     std::cerr << "!!! Error while loading training dataset" << std::endl;
@@ -38,7 +38,7 @@ void Evaluator::evaluate( learning::LTR_Algorithm* algo,
   if(!validationfilename.empty()) {
     std::cout << "# Reading validation dataset ..." << std::endl;
     validation_dataset = reader.read_horizontal(validationfilename);
-    std::cout << reader;
+    std::cout << reader << *validation_dataset;
     algo->set_validation_dataset(validation_dataset);
   }
 
@@ -63,7 +63,7 @@ void Evaluator::evaluate( learning::LTR_Algorithm* algo,
 
     std::cout << "# Reading test dataset ..." << std::endl;
     std::shared_ptr<quickrank::data::Dataset> test_dataset = reader.read_horizontal(testfilename);
-    std::cout << reader;
+    std::cout << reader << *test_dataset;
     quickrank::Score* test_scores = new quickrank::Score[test_dataset->num_instances()];
     algo->score_dataset(*test_dataset, test_scores);
     quickrank::MetricScore test_score = test_metric->evaluate_dataset(*test_dataset, test_scores);

@@ -1,5 +1,6 @@
 #include "data/dataset.h"
 
+#include <iomanip>
 
 namespace quickrank {
 namespace data {
@@ -79,6 +80,15 @@ void Dataset::transpose() {
   delete [] data_;
   data_ = transposed;
 }
+
+std::ostream& Dataset::put(std::ostream& os) const {
+  os  << "#\t Dataset size: " << num_instances_ << " x " << num_features_
+      << " (instances x features)" << std::endl
+      << "#\t Num queries: " << num_queries_
+      << " | Avg. len: " << std::setprecision(3) << num_instances_ / (float) num_queries_ << std::endl;
+  return os;
+}
+
 
 } // namespace data
 } // namespace quickrank

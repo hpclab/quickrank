@@ -63,6 +63,16 @@ class Dataset : private boost::noncopyable {
 
   unsigned int last_instance_id_;
   unsigned int max_instances_;
+
+  /// The output stream operator.
+  /// Prints the data reading time stats
+  friend std::ostream& operator<<(std::ostream& os, const Dataset& me) {
+    return me.put(os);
+  }
+
+  /// Prints the data reading time stats
+  virtual std::ostream& put(std::ostream& os) const;
+
 };
 
 } // namespace data

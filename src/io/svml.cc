@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <chrono>
 
 #include <boost/container/list.hpp>
@@ -190,14 +191,14 @@ std::unique_ptr<data::Dataset> Svml::read_horizontal(const std::string &filename
   boost::container::list< boost::container::vector<quickrank::Feature> > data_instances;
 
   while(not feof(f)) {
-//#pragma omp parallel for ordered reduction(max:maxfid) num_threads(4) schedule(static,1)
-//  for (int file_i=0; file_i<file_size_; file_i++) {
-//    if(feof(f)) {file_i = file_size_; continue; }
+    //#pragma omp parallel for ordered reduction(max:maxfid) num_threads(4) schedule(static,1)
+    //  for (int file_i=0; file_i<file_size_; file_i++) {
+    //    if(feof(f)) {file_i = file_size_; continue; }
     ssize_t nread;
     size_t linelength = 0;
     char *line = NULL;
     //lines are read one-at-a-time by threads
-//#pragma omp ordered
+    //#pragma omp ordered
     { nread = getline(&line, &linelength, f); }
     //if something is wrong with getline() or line is empty, skip to the next
     if(nread<=0) { free(line); continue; }
@@ -239,7 +240,7 @@ std::unique_ptr<data::Dataset> Svml::read_horizontal(const std::string &filename
     }
 
     // store partial data
-//#pragma omp ordered
+    //#pragma omp ordered
     {
       data_qids.push_back(qid);
       data_labels.push_back(relevance);
@@ -281,9 +282,10 @@ std::unique_ptr<data::Dataset> Svml::read_horizontal(const std::string &filename
 
 std::ostream& Svml::put(std::ostream& os) const {
   // num threads is not reported here.
-  os << "#\t elapsed reading time = " << reading_time_ << " sec.s ( "
-      << file_size_/1024/1024/reading_time_ << " MB/s) " << std::endl
-      << "#\t elapsed post-processing time = " << processing_time_ << " sec.s." << std::endl;
+  os  << std::setprecision(3)
+      << "#\t Reading time: " << reading_time_ << " s. @ "
+      << file_size_/1024/1024/reading_time_ << " MB/s "
+      << " (post-proc.: " << processing_time_ << " s.)" << std::endl;
   return os;
 }
 
