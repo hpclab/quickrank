@@ -1,7 +1,8 @@
 #include <iostream>
+#include <chrono>
+
 #include <boost/container/list.hpp>
 #include <boost/container/vector.hpp>
-#include <boost/timer/timer.hpp>
 
 #include <boost/filesystem.hpp>
 
@@ -168,7 +169,7 @@ LTR_VerticalDataset* Svml::read_vertical(const std::string &filename) const {
 
 // TODO: save info file or use mmap
 // TODO: re-introduce multithreading
-std::unique_ptr<data::Dataset> Svml::read_horizontal(const std::string &filename) const {
+std::unique_ptr<data::Dataset> Svml::read_horizontal(const std::string &filename) {
 
   FILE *f = fopen(filename.c_str(), "r");
   if(!f) {
@@ -176,7 +177,10 @@ std::unique_ptr<data::Dataset> Svml::read_horizontal(const std::string &filename
     exit(EXIT_FAILURE);
   }
 
-  boost::timer::cpu_timer reading_timer;
+  file_size_ = boost::filesystem::file_size(filename);
+
+  std::chrono::high_resolution_clock::time_point start_reading =
+      std::chrono::high_resolution_clock::now();
 
   unsigned int maxfid = 0;
 
@@ -186,11 +190,15 @@ std::unique_ptr<data::Dataset> Svml::read_horizontal(const std::string &filename
   boost::container::list< boost::container::vector<quickrank::Feature> > data_instances;
 
   while(not feof(f)) {
+//#pragma omp parallel for ordered reduction(max:maxfid) num_threads(4) schedule(static,1)
+//  for (int file_i=0; file_i<file_size_; file_i++) {
+//    if(feof(f)) {file_i = file_size_; continue; }
     ssize_t nread;
     size_t linelength = 0;
     char *line = NULL;
     //lines are read one-at-a-time by threads
-    nread = getline(&line, &linelength, f);
+//#pragma omp ordered
+    { nread = getline(&line, &linelength, f); }
     //if something is wrong with getline() or line is empty, skip to the next
     if(nread<=0) { free(line); continue; }
     char *token = NULL, *pch = line;
@@ -231,20 +239,22 @@ std::unique_ptr<data::Dataset> Svml::read_horizontal(const std::string &filename
     }
 
     // store partial data
-    data_qids.push_back(qid);
-    data_labels.push_back(relevance);
-    data_instances.push_back( boost::move(curr_instance) ); // move should avoid copies
-
+//#pragma omp ordered
+    {
+      data_qids.push_back(qid);
+      data_labels.push_back(relevance);
+      data_instances.push_back( boost::move(curr_instance) ); // move should avoid copies
+    }
     //free mem
     free(line);
   }
   //close input file
   fclose(f);
 
-  reading_timer.stop();
+  std::chrono::high_resolution_clock::time_point start_processing =
+      std::chrono::high_resolution_clock::now();
 
   // put partial data in final data structure
-  boost::timer::cpu_timer processing_timer;
   data::Dataset* dataset = new data::Dataset(data_qids.size(), maxfid);
   auto i_q = data_qids.begin();
   auto i_l = data_labels.begin();
@@ -256,14 +266,25 @@ std::unique_ptr<data::Dataset> Svml::read_horizontal(const std::string &filename
     i_x++;
   }
 
-  processing_timer.stop();
+  std::chrono::high_resolution_clock::time_point end_processing =
+      std::chrono::high_resolution_clock::now();
 
-  // num threads is not reported here.
-  std::cout << "\t elapsed reading time = " << reading_timer.elapsed().wall/1000000000.0 << " sec.s ( "
-      << boost::filesystem::file_size(filename)/1024/1024/(reading_timer.elapsed().wall/1000000000.0) << " MB/s) " << std::endl
-      << "\t elapsed post-processing time = " << processing_timer.elapsed().wall/1000000000.0 << " sec.s." << std::endl;
+
+  reading_time_ =
+      std::chrono::duration_cast<std::chrono::duration<double>>(start_processing - start_reading).count();
+
+  processing_time_ =
+      std::chrono::duration_cast<std::chrono::duration<double>>(end_processing - start_processing).count();
 
   return std::unique_ptr<data::Dataset>(dataset);
+}
+
+std::ostream& Svml::put(std::ostream& os) const {
+  // num threads is not reported here.
+  os << "#\t elapsed reading time = " << reading_time_ << " sec.s ( "
+      << file_size_/1024/1024/reading_time_ << " MB/s) " << std::endl
+      << "#\t elapsed post-processing time = " << processing_time_ << " sec.s." << std::endl;
+  return os;
 }
 
 

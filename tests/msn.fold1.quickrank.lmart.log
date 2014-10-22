@@ -18,12 +18,12 @@
 # features = 
 # model = msn.fold1.quickrank.lmart.xml
 #
-# Reading training dataset
-	 elapsed reading time = 0.342628 sec.s ( 14.5931 MB/s) 
-	 elapsed post-processing time = 0.00542487 sec.s.
-# Reading validation dataset
-	 elapsed reading time = 0.328893 sec.s ( 15.2025 MB/s) 
-	 elapsed post-processing time = 0.0062329 sec.s.
+# Reading training dataset ...
+#	 elapsed reading time = 0.305544 sec.s ( 16.3643 MB/s) 
+#	 elapsed post-processing time = 0.005251 sec.s.
+# Reading validation dataset ...
+#	 elapsed reading time = 0.310385 sec.s ( 16.109 MB/s) 
+#	 elapsed post-processing time = 0.005672 sec.s.
 Initialization:
 	done
 Training:
@@ -134,7 +134,8 @@ Training:
 	NDCG@10 on training data = 0.6164
 	NDCG@10 on validation data = 0.4357
 	done
-	 elapsed reading time = 0.3368 sec.s ( 14.8455 MB/s) 
-	 elapsed post-processing time = 0.0039 sec.s.
+# Reading test dataset ...
+#	 elapsed reading time = 0.2881 sec.s ( 17.3536 MB/s) 
+#	 elapsed post-processing time = 0.0037 sec.s.
 # NDCG@10 on test data = 0.3485
 	model filename = msn.fold1.quickrank.lmart.xml.best.xml

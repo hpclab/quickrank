@@ -34,17 +34,31 @@ class Svml : private boost::noncopyable
   explicit Svml() {}
   virtual ~Svml() {}
 
-  /// Reads the input dataset and returns in vertical format.
+  /// \deprecated Reads the input dataset and returns in vertical format.
   /// \param filename the input filename.
   /// \return The svml dataset in vertical format.
-  /// \todo TODO: add smart pointer here
   virtual LTR_VerticalDataset* read_vertical(const std::string &filename) const;
 
 
   /// Reads the input dataset and returns in horizontal format.
   /// \param filename the input filename.
   /// \return The svml dataset in horizontal format.
-  virtual std::unique_ptr<data::Dataset> read_horizontal(const std::string &file) const;
+  virtual std::unique_ptr<data::Dataset> read_horizontal(const std::string &file);
+
+ private:
+  double reading_time_ = 0.0;
+  double processing_time_ = 0.0;
+  long file_size_ = 0;
+
+  /// The output stream operator.
+  /// Prints the data reading time stats
+  friend std::ostream& operator<<(std::ostream& os, const Svml& me) {
+    return me.put(os);
+  }
+
+  /// Prints the data reading time stats
+  virtual std::ostream& put(std::ostream& os) const;
+
 };
 
 } // namespace data
