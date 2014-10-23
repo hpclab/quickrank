@@ -51,7 +51,7 @@ class Svml : private boost::noncopyable
   long file_size_ = 0;
 
   /// The output stream operator.
-  /// Prints the data reading time stats
+  /// Prints the data reading time stats.
   friend std::ostream& operator<<(std::ostream& os, const Svml& me) {
     return me.put(os);
   }

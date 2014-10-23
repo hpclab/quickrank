@@ -161,9 +161,12 @@ quickrank::metric::ir::Metric* check_and_set_metric(const po::variables_map &vm,
 
 int main(int argc, char *argv[]) {
   std::cout
-    << "# ##" << std::endl
-    << "# ##  QuickRank" << std::endl
-    << "# ##" << std::endl;
+      << "# ## ========================== ## #" << std::endl
+      << "# ##          QuickRank         ## #" << std::endl
+      << "# ## -------------------------- ## #" << std::endl
+      << "# ## developed by the HPC. Lab. ## #" << std::endl
+      << "# ##  http://hpc.isti.cnr.it/   ## #" << std::endl
+      << "# ## ========================== ## #" << std::endl;
 
   // Declare the supported options.
   po::options_description model_desc("Model options");
@@ -253,7 +256,8 @@ int main(int argc, char *argv[]) {
       std::unique_ptr<quickrank::metric::ir::Metric>( check_and_set_metric(vm, "test") );
   std::cout << "#" << std::endl
       << "# training scorer: " << *training_scorer << std::endl
-      << "# test scorer: " << *testing_scorer << std::endl;
+      << "# test scorer: " << *testing_scorer << std::endl
+      << "#" << std::endl;
 
   // FILE STUFF
   unsigned int npartialsave = check_and_set<unsigned int>  (vm, "partial", "Partial file save frequency was not set.");
@@ -267,16 +271,7 @@ int main(int argc, char *argv[]) {
   std::string features_filename = check_and_set<std::string>  (vm, "features", "Features filename was not set.");
   std::string model_basename = check_and_set<std::string>  (vm, "model", "Model output filename was not set.");
 
-  std::cout << "#" << std::endl
-      << "# training = " << training_filename << std::endl
-      << "# validation = "<< validation_filename << std::endl
-      << "# test = " << test_filename << std::endl
-      << "# features = " << features_filename << std::endl
-      << "# model = " << model_basename << std::endl;
 
-
-
-  std::cout << "#" << std::endl;
 
   //set seed for rand()
   srand(time(NULL));

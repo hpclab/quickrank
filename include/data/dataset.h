@@ -13,26 +13,50 @@
 namespace quickrank {
 namespace data {
 
+/**
+ * This class implements a Dataset to be used for a L-t-R task.
+ *
+ * The internal representation is quite simple: a row vector
+ * of size \a num_instances() x \a num_features().
+ * (A training instance is indeed a document.)
+ * We allow to directly
+ * access the internal representation throuhh the functinon \a at()
+ * to support fast access and custom high performance implementations.
+ * Both horizontal (instances x features) and vertical (features x instances)
+ * representations are supported.
+ */
 class Dataset : private boost::noncopyable {
  public:
 
   enum Format {HORIZ, VERT};
 
-  /// Allocates an empty Dataset of given size.
+  /// Allocates an empty Dataset of given sizein horizontal format.
   ///
   /// \param n_instances The number of training instances (lines) in the dataset.
   /// \param n_features The number of features.
   Dataset(unsigned int n_instances, unsigned int n_features);
   virtual ~Dataset();
 
-
+  /// Returns a pointer to a specific data item.
+  ///
+  /// \param document_id The document of interest.
+  /// \param feature_id The feature of interest.
+  /// \returns A reference to the requested feature value of the given document id.
   quickrank::Feature* at(unsigned int document_id, unsigned int feature_id) {
     return (format_==HORIZ) ? (data_ + document_id*num_features_ + feature_id)
         : (data_ + document_id + feature_id*num_instances_); }
 
+  /// Returns the offset in the internal data strcutures of the i-th query results list.
+  ///
+  /// \param i The i-th query results list of interest.
+  /// \returns The offset of the first document in the i-th query results list.
+  ///     This can be used to later invoke the \a at() function.
   unsigned int offset(unsigned int i) const {return offsets_[i];}
 
-  // TODO: add an iterator
+  /// Returns the i-th QueryResults in the dataset.
+  ///
+  /// \param i The i-th query results list of interest.
+  /// \returns The requested QueryResults.
   std::unique_ptr<QueryResults> getQueryResults(unsigned int i) const;
 
   void addInstance(QueryID q_id, Label i_label, boost::container::vector<Feature> i_features);
