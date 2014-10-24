@@ -105,7 +105,7 @@ void LambdaMart::init(std::shared_ptr<quickrank::data::Dataset> training_dataset
 
 void LambdaMart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
                        std::shared_ptr<quickrank::data::Dataset> validation_dataset,
-                       quickrank::metric::ir::Metric* scorer, unsigned int partial_save,
+                       std::shared_ptr<quickrank::metric::ir::Metric> scorer, unsigned int partial_save,
                        const std::string output_basename) {
 
   init(training_dataset, validation_dataset);
@@ -127,7 +127,7 @@ void LambdaMart::learn(std::shared_ptr<quickrank::data::Dataset> training_datase
   //start iterations
   for (unsigned int m = 0;
       m < ntrees && (esr == 0 || m <= validation_bestmodel + esr); ++m) {
-    compute_pseudoresponses(training_dataset, scorer);
+    compute_pseudoresponses(training_dataset, scorer.get());
 
     //for (int ii=0; ii<20; ii++)
     //  printf("## %d \t %.16f\n", ii, pseudoresponses[ii]);

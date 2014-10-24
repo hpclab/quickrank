@@ -28,8 +28,9 @@ class Evaluator : private boost::noncopyable {
   /// If empty, no performance is measured on the test set.
   /// \param output_filename Model output file.
   /// If empty, no output file is written.
-  static void evaluate(learning::LTR_Algorithm* algo, ir::Metric* train_metric,
-                       ir::Metric* test_metric,
+  static void evaluate(learning::LTR_Algorithm* algo,
+                       std::shared_ptr<ir::Metric> train_metric,
+                       std::shared_ptr<ir::Metric> test_metric,
                        const std::string training_filename,
                        const std::string validation_filename,
                        const std::string test_filename,

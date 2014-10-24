@@ -274,11 +274,11 @@ int main(int argc, char *argv[]) {
   std::cout << "#" << std::endl << *r;
 
   // METRIC STUFF
-  std::unique_ptr<quickrank::metric::ir::Metric> training_scorer =
-      std::unique_ptr<quickrank::metric::ir::Metric>(
+  std::shared_ptr<quickrank::metric::ir::Metric> training_scorer =
+      std::shared_ptr<quickrank::metric::ir::Metric>(
           check_and_set_metric(vm, "train"));
-  std::unique_ptr<quickrank::metric::ir::Metric> testing_scorer =
-      std::unique_ptr<quickrank::metric::ir::Metric>(
+  std::shared_ptr<quickrank::metric::ir::Metric> testing_scorer =
+      std::shared_ptr<quickrank::metric::ir::Metric>(
           check_and_set_metric(vm, "test"));
   std::cout << "#" << std::endl << "# training scorer: " << *training_scorer
             << std::endl << "# test scorer: " << *testing_scorer << std::endl
@@ -304,8 +304,9 @@ int main(int argc, char *argv[]) {
   srand(time(NULL));
 
   //instantiate a new evaluator with read arguments
-  quickrank::metric::Evaluator::evaluate(r.get(), training_scorer.get(),
-                                         testing_scorer.get(),
+  quickrank::metric::Evaluator::evaluate(r.get(),
+                                         training_scorer,
+                                         testing_scorer,
                                          training_filename, validation_filename,
                                          test_filename, features_filename,
                                          model_basename, npartialsave);

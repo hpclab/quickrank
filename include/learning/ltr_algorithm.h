@@ -27,7 +27,7 @@ class LTR_Algorithm : private boost::noncopyable {
   virtual void learn(
       std::shared_ptr<data::Dataset> training_dataset,
       std::shared_ptr<data::Dataset> validation_dataset,
-      metric::ir::Metric* metric,
+      std::shared_ptr<metric::ir::Metric> metric,
       unsigned int partial_save,
       const std::string model_filename) = 0;
 
@@ -38,8 +38,8 @@ class LTR_Algorithm : private boost::noncopyable {
   /// \param dataset The dataset to be scored.
   /// \param scores The vector where scores are stored.
   /// \note Before scoring it transposes the dataset in vertical format
-  virtual void score_dataset(std::shared_ptr<quickrank::data::Dataset> dataset,
-                             quickrank::Score* scores) const;
+  virtual void score_dataset(std::shared_ptr<data::Dataset> dataset,
+                             Score* scores) const;
 
   /// Computes \a scores for a given set of documents.
   ///
@@ -47,11 +47,11 @@ class LTR_Algorithm : private boost::noncopyable {
   /// \param scores The vector where scores are stored.
   /// \param offset The offset to the next feature in the data representation.
   virtual void score_query_results(
-      std::shared_ptr<quickrank::data::QueryResults> results,
-      quickrank::Score* scores, unsigned int offset) const;
+      std::shared_ptr<data::QueryResults> results,
+      Score* scores, unsigned int offset) const;
 
   /// Returns the score of a given document
-  virtual Score score_document(const quickrank::Feature* d,
+  virtual Score score_document(const Feature* d,
                                const unsigned int offset = 1) const;
 
   /// Save the current model to the output_file.

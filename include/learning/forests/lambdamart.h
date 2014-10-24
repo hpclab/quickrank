@@ -68,7 +68,7 @@ class LambdaMart : public LTR_Algorithm {
 
   void learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
              std::shared_ptr<quickrank::data::Dataset> validation_dataset,
-             quickrank::metric::ir::Metric*, unsigned int partial_save,
+             std::shared_ptr<quickrank::metric::ir::Metric>, unsigned int partial_save,
              const std::string output_basename);
 
 
