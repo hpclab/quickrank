@@ -28,6 +28,11 @@ std::ostream& LambdaMart::put(std::ostream& os) const {
   return os;
 }
 
+void LambdaMart::preprocess_dataset(std::shared_ptr<data::Dataset> dataset) const {
+  if (dataset->format() != data::Dataset::VERT)
+    dataset->transpose();
+}
+
 void LambdaMart::init(std::shared_ptr<quickrank::data::Dataset> training_dataset,
                       std::shared_ptr<quickrank::data::Dataset> validation_dataset) {
   printf("Initialization:\n");
@@ -36,8 +41,7 @@ void LambdaMart::init(std::shared_ptr<quickrank::data::Dataset> training_dataset
 #endif
 
   // make sure dataset is vertical
-  if (training_dataset->format() != quickrank::data::Dataset::VERT)
-    training_dataset->transpose();
+  preprocess_dataset(training_dataset);
 
   const unsigned int nentries = training_dataset->num_instances();
   trainingmodelscores = new double[nentries]();  //0.0f initialized
@@ -90,10 +94,8 @@ void LambdaMart::init(std::shared_ptr<quickrank::data::Dataset> training_dataset
     }
   }
   if (validation_dataset) {
-    if (validation_dataset->format() != quickrank::data::Dataset::VERT)
-      validation_dataset->transpose();
-    scores_on_validation = new quickrank::Score[validation_dataset
-        ->num_instances()]();
+    preprocess_dataset(validation_dataset);
+    scores_on_validation = new Score[validation_dataset->num_instances()]();
   }
   hist = new RTRootHistogram(training_dataset.get(), pseudoresponses, sortedsid,
                              sortedsize, thresholds, thresholds_size);

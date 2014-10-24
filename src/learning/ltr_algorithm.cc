@@ -13,10 +13,9 @@ namespace quickrank {
 namespace learning {
 
 
-void LTR_Algorithm::score_dataset(std::shared_ptr<quickrank::data::Dataset> dataset,
+void LTR_Algorithm::score_dataset(std::shared_ptr<data::Dataset> dataset,
                                   quickrank::Score* scores) const {
-  if (dataset->format() != quickrank::data::Dataset::VERT)
-    dataset->transpose();
+  preprocess_dataset(dataset);
   for (unsigned int q = 0; q < dataset->num_queries(); q++) {
     std::shared_ptr<quickrank::data::QueryResults> r = dataset->getQueryResults(q);
     score_query_results(r, scores, dataset->num_instances());

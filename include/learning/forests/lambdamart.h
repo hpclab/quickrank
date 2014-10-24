@@ -11,6 +11,13 @@ namespace learning {
 namespace forests {
 
 class LambdaMart : public LTR_Algorithm {
+ public:
+
+ protected:
+  /// Makes sure the dataset in in vertical format.
+  virtual void preprocess_dataset(std::shared_ptr<data::Dataset> dataset) const;
+
+ private:
 
  private:
   /// The output stream operator.
