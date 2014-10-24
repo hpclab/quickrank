@@ -18,7 +18,9 @@ void Evaluator::evaluate(learning::LTR_Algorithm* algo,
                          const std::string validation_filename,
                          const std::string test_filename,
                          const std::string feature_filename,
-                         const std::string output_filename) {
+                         const std::string output_filename,
+                         const unsigned int npartialsave) {
+
   // create reader: assum svml as ltr format
   quickrank::io::Svml reader;
 
@@ -30,7 +32,6 @@ void Evaluator::evaluate(learning::LTR_Algorithm* algo,
               << std::endl;
     training_dataset = reader.read_horizontal(training_filename);
     std::cout << reader << *training_dataset;
-    algo->set_training_dataset(training_dataset);
   } else {
     std::cerr << "!!! Error while loading training dataset" << std::endl;
     exit(EXIT_FAILURE);
@@ -41,21 +42,14 @@ void Evaluator::evaluate(learning::LTR_Algorithm* algo,
               << std::endl;
     validation_dataset = reader.read_horizontal(validation_filename);
     std::cout << reader << *validation_dataset;
-    algo->set_validation_dataset(validation_dataset);
   }
 
   if (!feature_filename.empty()) {
     /// \todo TODO: filter features while loading dataset
   }
 
-  if (!output_filename.empty())
-    algo->set_outputfilename(output_filename);
-
-  algo->set_scorer(train_metric);
-
   // run the learning process
-  algo->init();
-  algo->learn();
+  algo->learn(training_dataset, validation_dataset, train_metric, npartialsave, output_filename);
 
   if (test_metric and !test_filename.empty()) {
     // pre-clean
@@ -81,7 +75,7 @@ void Evaluator::evaluate(learning::LTR_Algorithm* algo,
 
   if (!output_filename.empty()) {
     std::cout << "# Writing model to file: " << output_filename << std::endl;
-    algo->write_outputtofile();
+    algo->save(output_filename);
   }
 }
 

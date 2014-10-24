@@ -2,7 +2,7 @@
 # ##          QuickRank         ## #
 # ## -------------------------- ## #
 # ## developed by the HPC. Lab. ## #
-# ##    quickrank@isti.cnr.it   ## #
+# ##  http://hpc.isti.cnr.it/   ## #
 # ## ========================== ## #
 #
 # Ranker: Lambda-MART
@@ -16,11 +16,11 @@
 # test scorer: NDCG@10
 #
 # Reading training dataset: data/msn1.fold1.train.5k.txt
-#	 Reading time: 0.353 s. @ 14.2 MB/s  (post-proc.: 0.00537 s.)
+#	 Reading time: 0.299 s. @ 16.7 MB/s  (post-proc.: 0.00294 s.)
 #	 Dataset size: 5000 x 136 (instances x features)
 #	 Num queries: 43 | Avg. len: 116
 # Reading validation dataset: data/msn1.fold1.vali.5k.txt
-#	 Reading time: 0.32 s. @ 15.6 MB/s  (post-proc.: 0.00512 s.)
+#	 Reading time: 0.292 s. @ 17.1 MB/s  (post-proc.: 0.00317 s.)
 #	 Dataset size: 5000 x 136 (instances x features)
 #	 Num queries: 49 | Avg. len: 102
 Initialization:
@@ -134,9 +134,8 @@ Training:
 	NDCG@10 on validation data = 0.4357
 	done
 # Reading test dataset: data/msn1.fold1.test.5k.txt
-#	 Reading time: 0.336 s. @ 14.877 MB/s  (post-proc.: 0.004 s.)
+#	 Reading time: 0.240 s. @ 20.843 MB/s  (post-proc.: 0.002 s.)
 #	 Dataset size: 5000 x 136 (instances x features)
 #	 Num queries: 43 | Avg. len: 116.279
 NDCG@10 on test data = 0.3485
 # Writing model to file: msn.fold1.quickrank.lmart.xml
-	model filename = msn.fold1.quickrank.lmart.xml.best.xml

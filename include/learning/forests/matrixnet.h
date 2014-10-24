@@ -10,6 +10,7 @@ namespace forests {
 class MatrixNet : public LambdaMart {
  public:
   const unsigned int treedepth;  //>0
+
  public:
   MatrixNet(unsigned int ntrees, float shrinkage, unsigned int nthresholds,
             unsigned int treedepth, unsigned int minleafsupport,
@@ -30,7 +31,6 @@ class MatrixNet : public LambdaMart {
 
   void learn();
 
- protected:
   void write_outputtofile(const char *filename);
 };
 

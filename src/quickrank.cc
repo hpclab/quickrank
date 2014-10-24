@@ -287,8 +287,6 @@ int main(int argc, char *argv[]) {
   // FILE STUFF
   unsigned int npartialsave = check_and_set<unsigned int>(
       vm, "partial", "Partial file save frequency was not set.");
-  if (npartialsave > 0)
-    r->set_partialsave(npartialsave);
 
   // TODO: check what can be null, everywhere!!!!
   std::string training_filename = check_and_set<std::string>(
@@ -310,7 +308,7 @@ int main(int argc, char *argv[]) {
                                          testing_scorer.get(),
                                          training_filename, validation_filename,
                                          test_filename, features_filename,
-                                         model_basename);
+                                         model_basename, npartialsave);
 
   return 0;
 }

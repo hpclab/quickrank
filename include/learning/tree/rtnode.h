@@ -69,6 +69,7 @@ class RTNode {
   }
 
   void write_outputtofile(FILE *f, const int indentsize);
+  std::ofstream& save_model_to_file(std::ofstream&, const int);
 };
 
 #endif

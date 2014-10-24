@@ -1,3 +1,5 @@
+#include <fstream>
+
 #include "learning/tree/rtnode.h"
 
 void RTNode::save_leaves(RTNode **&leaves, unsigned int &nleaves,
@@ -14,6 +16,7 @@ void RTNode::save_leaves(RTNode **&leaves, unsigned int &nleaves,
   }
 }
 
+// TODO TO BE REMOVED
 void RTNode::write_outputtofile(FILE *f, const int indentsize) {
   char* indent = new char[indentsize + 1];  // char indent[indentsize+1];
   for (int i = 0; i < indentsize; indent[i++] = '\t')
@@ -32,4 +35,23 @@ void RTNode::write_outputtofile(FILE *f, const int indentsize) {
     fprintf(f, "%s\t</split>\n", indent);
   }
   delete[] indent;
+}
+
+std::ofstream& RTNode::save_model_to_file(std::ofstream& os, const int indentsize) {
+  std::string indent = "";
+  for (int i = 0; i < indentsize; i++)
+    indent += "\t";
+  if (featureid == uint_max)
+    os << indent << "\t<output> " << avglabel << " </output>" << std::endl;
+  else {
+    os << indent << "\t<feature> " << featureid << " </feature>" << std::endl;
+    os << indent << "\t<threshold> " << threshold << " </threshold>" << std::endl;
+    os << indent << "\t<split pos=\"left\">" << std::endl;
+    left->save_model_to_file(os, indentsize + 1);
+    os << indent << "\t</split>" << std::endl;
+    os << indent << "\t<split pos=\"right\">" << std::endl;
+    right->save_model_to_file(os, indentsize + 1);
+    os << indent << "\t</split>" << std::endl;
+  }
+  return os;
 }

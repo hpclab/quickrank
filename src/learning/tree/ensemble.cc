@@ -1,3 +1,6 @@
+#include <fstream>
+#include <iomanip>
+
 #include "learning/tree/ensemble.h"
 
 Ensemble::~Ensemble() {
@@ -41,6 +44,7 @@ quickrank::Score Ensemble::score_instance(const quickrank::Feature* d,
   return sum;
 }
 
+// TODO TO BE REMOVED
 void Ensemble::write_outputtofile(FILE *f) {
   fprintf(f, "\n<ensemble>\n");
   for (unsigned int i = 0; i < size; ++i) {
@@ -53,4 +57,24 @@ void Ensemble::write_outputtofile(FILE *f) {
     fprintf(f, "\t</tree>\n");
   }
   fprintf(f, "</ensemble>\n");
+}
+
+std::ofstream& Ensemble::save_model_to_file(std::ofstream& os) const {
+  os << std::endl;
+  auto old_precision = os.precision();
+  os << "<ensemble>" << std::endl;
+  for (unsigned int i = 0; i < size; ++i) {
+    os << std::setprecision(3);
+    os << "\t<tree id=\"" << i+1 << "\" weight=\"" << arr[i].weight << "\">" << std::endl;
+    os << std::setprecision(15);
+    if (arr[i].root) {
+      os << "\t\t<split>" << std::endl;
+      arr[i].root->save_model_to_file(os, 2);
+      os << "\t\t</split>" << std::endl;
+    }
+    os << "\t</tree>" << std::endl;
+  }
+  os << "</ensemble>" << std::endl;
+  os << std::setprecision(old_precision);
+  return os;
 }

@@ -1,6 +1,7 @@
 #include "learning/forests/lambdamart.h"
 
 #include <iostream>
+#include <fstream>
 #include <iomanip>
 #include <cfloat>
 #include <cmath>
@@ -27,7 +28,8 @@ std::ostream& LambdaMart::put(std::ostream& os) const {
   return os;
 }
 
-void LambdaMart::init() {
+void LambdaMart::init(std::shared_ptr<quickrank::data::Dataset> training_dataset,
+                      std::shared_ptr<quickrank::data::Dataset> validation_dataset) {
   printf("Initialization:\n");
 #ifdef SHOWTIMER
   double timer = omp_get_wtime();
@@ -101,7 +103,13 @@ void LambdaMart::init() {
   printf("\tdone\n");
 }
 
-void LambdaMart::learn() {
+void LambdaMart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
+                       std::shared_ptr<quickrank::data::Dataset> validation_dataset,
+                       quickrank::metric::ir::Metric* scorer, unsigned int partial_save,
+                       const std::string output_basename) {
+
+  init(training_dataset, validation_dataset);
+
   // TODO: move this somewhere else?
   // fix output format for ndcg scores
   std::cout << std::fixed << std::setprecision(4);
@@ -119,7 +127,7 @@ void LambdaMart::learn() {
   //start iterations
   for (unsigned int m = 0;
       m < ntrees && (esr == 0 || m <= validation_bestmodel + esr); ++m) {
-    compute_pseudoresponses();
+    compute_pseudoresponses(training_dataset, scorer);
 
     //for (int ii=0; ii<20; ii++)
     //  printf("## %d \t %.16f\n", ii, pseudoresponses[ii]);
@@ -164,11 +172,9 @@ void LambdaMart::learn() {
     }
     printf("\n");
 
-    if (partialsave_niterations != 0 and !output_basename.empty()
-        and (m + 1) % partialsave_niterations == 0) {
-      char filename[256];
-      sprintf(filename, "%s.%u.xml", output_basename.c_str(), m + 1);
-      write_outputtofile(filename);
+    if (partial_save != 0 and !output_basename.empty()
+        and (m + 1) % partial_save == 0) {
+      save(output_basename, m + 1);
     }
 
   }
@@ -203,7 +209,7 @@ void LambdaMart::learn() {
 
 float LambdaMart::compute_modelscores(LTR_VerticalDataset const *samples,
                                       double *mscores,
-                                      RegressionTree const &tree) {
+                                      RegressionTree const &tree, quickrank::metric::ir::Metric* scorer) {
   const unsigned int ndatapoints = samples->get_ndatapoints();
   float **featurematrix = samples->get_fmatrix();
 #pragma omp parallel for
@@ -245,7 +251,7 @@ void LambdaMart::update_modelscores(data::Dataset* dataset, Score *scores,
 }
 
 std::unique_ptr<quickrank::Jacobian> LambdaMart::compute_mchange(
-    const ResultList &orig, const unsigned int offset) {
+    const ResultList &orig, const unsigned int offset, quickrank::metric::ir::Metric* scorer) {
   //build a ql made up of label values picked up from orig order by indexes of trainingmodelscores reversely sorted
   unsigned int *idx = idxdouble_mergesort(trainingmodelscores + offset,
                                           orig.size);
@@ -274,7 +280,7 @@ std::unique_ptr<quickrank::Jacobian> LambdaMart::compute_mchange(
 // Changes by Cla:
 // - added processing of ranked list in ranked order
 // - added cut-off in measure changes matrix
-void LambdaMart::compute_pseudoresponses() {
+void LambdaMart::compute_pseudoresponses(std::shared_ptr<quickrank::data::Dataset> training_dataset, quickrank::metric::ir::Metric* scorer) {
   const unsigned int cutoff = scorer->cutoff();
 
   const unsigned int nrankedlists = training_dataset->num_queries();
@@ -335,6 +341,23 @@ void LambdaMart::compute_pseudoresponses() {
     delete[] idx;
     delete[] sortedlabels;
   }
+}
+
+std::ofstream& LambdaMart::save_model_to_file(std::ofstream& os) const {
+
+  os << "# Ranker: LambdaMART" << std::endl;
+  os << "# max no. of trees = " << ntrees << std::endl;
+  os << "# no. of tree leaves = " << ntreeleaves << std::endl;
+  os << "# shrinkage = " << shrinkage << std::endl;
+  os << "# min leaf support = " << minleafsupport << std::endl;
+  if (nthresholds)
+    os << "# no. of thresholds = " << nthresholds << std::endl;
+  else
+    os << "# no. of thresholds = unlimited" << std::endl;
+  if (esr)
+    os << "# no. of no gain rounds before early stop = " << esr << std::endl;
+  ens.save_model_to_file(os);
+  return os;
 }
 
 }  // namespace forests

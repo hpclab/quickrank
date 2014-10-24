@@ -17,16 +17,9 @@ class LambdaMart : public LTR_Algorithm {
   friend std::ostream& operator<<(std::ostream& os, const LambdaMart& a) {
     return a.put(os);
   }
-  /// Prints the description of Algorithm, including its parameters
-  virtual std::ostream& put(std::ostream& os) const;
 
- public:
-  const unsigned int ntrees;  //>0
-  const double shrinkage;  //>0.0f
-  const unsigned int nthresholds;  //if nthresholds==0 then no. of thresholds is not limited
-  const unsigned int ntreeleaves;  //>0
-  const unsigned int minleafsupport;  //>0
-  const unsigned int esr;  //If no performance gain on validation data is observed in 'esr' rounds, stop the training process right away (if esr==0 feature is disabled).
+  /// Prints the description of Algorithm, including its parameters.
+  virtual std::ostream& put(std::ostream& os) const;
 
  protected:
   float **thresholds = NULL;
@@ -43,6 +36,14 @@ class LambdaMart : public LTR_Algorithm {
   quickrank::Score* scores_on_validation = NULL;  //[0..nentries-1]
 
  public:
+  const unsigned int ntrees;  //>0
+  const double shrinkage;  //>0.0f
+  const unsigned int nthresholds;  //if nthresholds==0 then no. of thresholds is not limited
+  const unsigned int ntreeleaves;  //>0
+  const unsigned int minleafsupport;  //>0
+  const unsigned int esr;  //If no performance gain on validation data is observed in 'esr' rounds, stop the training process right away (if esr==0 feature is disabled).
+
+ public:
   LambdaMart(unsigned int ntrees, float shrinkage, unsigned int nthresholds,
              unsigned int ntreeleaves, unsigned int minleafsupport,
              unsigned int esr)
@@ -56,18 +57,19 @@ class LambdaMart : public LTR_Algorithm {
 
   ~LambdaMart() {
     //const unsigned int nfeatures = training_dataset ? training_set->get_nfeatures() : 0;
-    if (sortedsid)
-      for (unsigned int i = 0; i < training_dataset->num_features(); ++i)
-        delete[] sortedsid[i], free(thresholds[i]);
-    delete[] thresholds, delete[] thresholds_size, delete[] trainingmodelscores, delete[] pseudoresponses, delete[] sortedsid, delete[] cachedweights;
-    delete hist;
-    delete[] scores_on_validation;
+    //if (sortedsid)
+      //for (unsigned int i = 0; i < training_dataset->num_features(); ++i)
+        //delete[] sortedsid[i], free(thresholds[i]);
+    //delete[] thresholds, delete[] thresholds_size, delete[] trainingmodelscores, delete[] pseudoresponses, delete[] sortedsid, delete[] cachedweights;
+    //delete hist;
+    //delete[] scores_on_validation;
     // perche' si mischiano free e delete?
   }
 
-  void init();
-
-  void learn();
+  void learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
+             std::shared_ptr<quickrank::data::Dataset> validation_dataset,
+             quickrank::metric::ir::Metric*, unsigned int partial_save,
+             const std::string output_basename);
 
   float eval_dp(float * const * const features, unsigned int idx) const {
     return ens.eval(features, idx);
@@ -79,42 +81,25 @@ class LambdaMart : public LTR_Algorithm {
     return ens.score_instance(d, offset);
   }
 
-  void write_outputtofile() {
-    if (!output_basename.empty()) {
-      char filename[256];
-      sprintf(filename, "%s.best.xml", output_basename.c_str());
-      write_outputtofile(filename);
-      printf("\tmodel filename = %s\n", filename);
-    }
-  }
-
  protected:
   float compute_modelscores(LTR_VerticalDataset const *samples, double *mscores,
-                            RegressionTree const &tree);
+                            RegressionTree const &tree, quickrank::metric::ir::Metric* scorer);
+
   void update_modelscores(quickrank::data::Dataset* dataset,
                           quickrank::Score *scores, RegressionTree* tree);
 
   std::unique_ptr<quickrank::Jacobian> compute_mchange(
-      const ResultList &orig, const unsigned int offset);
+      const ResultList &orig, const unsigned int offset, quickrank::metric::ir::Metric* scorer);
 
   // Changes by Cla:
   // - added processing of ranked list in ranked order
   // - added cut-off in measure changes matrix
-  void compute_pseudoresponses();
+  void compute_pseudoresponses(std::shared_ptr<quickrank::data::Dataset> training_dataset, quickrank::metric::ir::Metric* scorer);
 
-  void write_outputtofile(char *filename) {
-    FILE *f = fopen(filename, "w");
-    if (f) {
-      fprintf(
-          f,
-          "## LambdaMART\n## No. of trees = %u\n## No. of leaves = %u\n## No. of threshold candidates = %d\n## Learning rate = %f\n## Stop early = %u\n\n",
-          ntrees, ntreeleaves, nthresholds == 0 ? -1 : (int) nthresholds,
-          shrinkage, esr);
-      ens.write_outputtofile(f);
-      fclose(f);
-    }
-  }
-
+ private:
+  void init(std::shared_ptr<quickrank::data::Dataset> training_dataset,
+            std::shared_ptr<quickrank::data::Dataset> validation_dataset);
+  virtual std::ofstream& save_model_to_file(std::ofstream& os) const;
 };
 
 }  // namespace forests

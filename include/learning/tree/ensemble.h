@@ -5,19 +5,7 @@
 #include "types.h"
 
 class Ensemble {
- private:
-  struct wt {
-    wt(RTNode *root, float weight, float maxlabel)
-        : root(root),
-          weight(weight),
-          maxlabel(maxlabel) {
-    }
-    RTNode *root = NULL;
-    float weight = 0.0f;
-    float maxlabel = 0.0f;
-  };
-  unsigned int size = 0;
-  wt *arr = NULL;
+
  public:
   virtual ~Ensemble();
   void set_capacity(const unsigned int n);
@@ -38,6 +26,21 @@ class Ensemble {
                                           const unsigned int offset = 1) const;
 
   void write_outputtofile(FILE *f);
+  std::ofstream& save_model_to_file(std::ofstream& os) const;
+
+ private:
+  struct wt {
+    wt(RTNode *root, float weight, float maxlabel)
+        : root(root),
+          weight(weight),
+          maxlabel(maxlabel) {
+    }
+    RTNode *root = NULL;
+    float weight = 0.0f;
+    float maxlabel = 0.0f;
+  };
+  unsigned int size = 0;
+  wt *arr = NULL;
 };
 
 #endif

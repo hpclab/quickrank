@@ -34,8 +34,8 @@ class Evaluator : private boost::noncopyable {
                        const std::string validation_filename,
                        const std::string test_filename,
                        const std::string feature_filename,
-                       const std::string output_filename);
-
+                       const std::string output_filename,
+                       const unsigned int npartialsave);
 };
 
 }  // namespace metric
