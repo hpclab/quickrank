@@ -67,23 +67,37 @@ class Dataset : private boost::noncopyable {
   /// \returns The requested QueryResults.
   std::unique_ptr<QueryResults> getQueryResults(unsigned int i) const;
 
+
+  /// Add a new training instance, i.e., a labeled document, to the dataset.
+  ///
+  /// \warning Currently the addition words only when data is in HORIZ format.
+  /// \param q_id The query ID.
+  /// \param i_label The relevance label of the result.
+  /// \param i_features The feature vector of the document.
   void addInstance(QueryID q_id, Label i_label,
                    boost::container::vector<Feature> i_features);
 
+  /// Returns the number of features used to represent a document.
   unsigned int num_features() const {
     return num_features_;
   }
+  /// Returns the number of queries in the dataset.
   unsigned int num_queries() const {
     return num_queries_;
   }
+  /// Returns the number of documents in the dataset.
   unsigned int num_instances() const {
     return num_instances_;
   }
-
+  /// Returns current format, HORIZ vs. VERT, of the dataset.
   Format format() const {
     return format_;
   }
 
+  /// Transposes the matrix.
+  ///
+  /// The internal representation is transformed from HORIZ to VERT
+  /// or viceversa.
   void transpose();
 
   // - support normalization
