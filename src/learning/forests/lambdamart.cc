@@ -346,18 +346,9 @@ void LambdaMart::compute_pseudoresponses(std::shared_ptr<quickrank::data::Datase
 }
 
 std::ofstream& LambdaMart::save_model_to_file(std::ofstream& os) const {
-
-  os << "# Ranker: LambdaMART" << std::endl;
-  os << "# max no. of trees = " << ntrees << std::endl;
-  os << "# no. of tree leaves = " << ntreeleaves << std::endl;
-  os << "# shrinkage = " << shrinkage << std::endl;
-  os << "# min leaf support = " << minleafsupport << std::endl;
-  if (nthresholds)
-    os << "# no. of thresholds = " << nthresholds << std::endl;
-  else
-    os << "# no. of thresholds = unlimited" << std::endl;
-  if (esr)
-    os << "# no. of no gain rounds before early stop = " << esr << std::endl;
+  // write ranker description
+  os << *this;
+  // save xml model
   ens.save_model_to_file(os);
   return os;
 }
