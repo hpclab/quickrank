@@ -19,13 +19,22 @@ namespace io {
 
 class Instance : private boost::noncopyable {
  public:
-  explicit Instance() : label_(0) {}
-  virtual ~Instance() {}
+  explicit Instance()
+      : label_(0) {
+  }
+  virtual ~Instance() {
+  }
 
-  const std::string& comment() const { return comment_; }
-  void set_comment(const std::string& comment) { comment_ = comment; }
+  const std::string& comment() const {
+    return comment_;
+  }
+  void set_comment(const std::string& comment) {
+    comment_ = comment;
+  }
 
-  Feature get_feature(unsigned int i) const { return (i < features_.size() ? features_[i] : 0); }
+  Feature get_feature(unsigned int i) const {
+    return (i < features_.size() ? features_[i] : 0);
+  }
 
   void set_features(unsigned int i, const Feature& f) {
     if (i >= features_.size())
@@ -50,7 +59,7 @@ class Instance : private boost::noncopyable {
   std::string comment_;
 };
 
-} // namespace io
-} // namespace quickrank
+}  // namespace io
+}  // namespace quickrank
 
 #endif /* INSTANCE_H_ */

@@ -14,9 +14,9 @@
 #ifdef SHOWTIMER
 #include <sys/stat.h>
 double filesize(const char *filename) {
-	struct stat st;
-	stat(filename, &st);
-	return st.st_size/1048576.0;
+  struct stat st;
+  stat(filename, &st);
+  return st.st_size/1048576.0;
 }
 #endif
 
@@ -32,112 +32,125 @@ double filesize(const char *filename) {
 #define INIT_NOFEATURES 50 //>0
 
 struct ResultList {
-	ResultList(unsigned int size, double *labels, int qid) : size(size), labels(labels), qid(qid) {}
-	const unsigned int size;
-	double const *labels;
-	unsigned int const qid;
+  ResultList(unsigned int size, double *labels, int qid)
+      : size(size),
+        labels(labels),
+        qid(qid) {
+  }
+  const unsigned int size;
+  double const *labels;
+  unsigned int const qid;
 };
 
-class DataPoint { //each dp is related to a line read from file
-	public:
-		DataPoint(const float label, const unsigned int nline, const unsigned int initsize=1) :
-			maxsize(initsize>0?initsize:1),
-			maxfid(0),
-			nline(nline),
-			label(label),
-			features(NULL),
-			#ifndef SKIP_DPDESCRIPTION
-			description(NULL),
-			#endif
-			next(NULL) {
-			features = (float*)malloc(sizeof(float)*maxsize);
-			features[0] = 0.0f;
-		}
+class DataPoint {  //each dp is related to a line read from file
+ public:
+  DataPoint(const float label, const unsigned int nline,
+            const unsigned int initsize = 1)
+      : maxsize(initsize > 0 ? initsize : 1),
+        maxfid(0),
+        nline(nline),
+        label(label),
+        features(NULL),
+#ifndef SKIP_DPDESCRIPTION
+        description(NULL),
+#endif
+        next(NULL) {
+    features = (float*) malloc(sizeof(float) * maxsize);
+    features[0] = 0.0f;
+  }
 
-		void ins_feature(const unsigned int fid, const float fval);
+  void ins_feature(const unsigned int fid, const float fval);
 
-		float *get_resizedfeatures(const unsigned int size);
+  float *get_resizedfeatures(const unsigned int size);
 
-		float get_label() const {
-			return label;
-		}
-		#ifndef SKIP_DPDESCRIPTION
-		void set_description(char *str) {
-			description = str;
-		}
-		char *get_description() const {
-			return description;
-		}
-		#endif
-	private:
-		unsigned int maxsize, maxfid, nline;
-		float label, *features;
-		#ifndef SKIP_DPDESCRIPTION
-		char *description;
-		#endif
-		DataPoint *next;
-	friend class DataPointList;
-	#ifdef PRESERVE_DPFILEORDER
-	friend bool operator> (DataPoint &left, DataPoint &right) { return left.nline>right.nline; };
-	friend void listqsort<DataPoint>(DataPoint *&begin, DataPoint *end);
-	#endif
+  float get_label() const {
+    return label;
+  }
+#ifndef SKIP_DPDESCRIPTION
+  void set_description(char *str) {
+    description = str;
+  }
+  char *get_description() const {
+    return description;
+  }
+#endif
+ private:
+  unsigned int maxsize, maxfid, nline;
+  float label, *features;
+#ifndef SKIP_DPDESCRIPTION
+  char *description;
+#endif
+  DataPoint *next;
+  friend class DataPointList;
+#ifdef PRESERVE_DPFILEORDER
+  friend bool operator>(DataPoint &left, DataPoint &right) {
+    return left.nline > right.nline;
+  }
+  ;
+  friend void listqsort<DataPoint>(DataPoint *&begin, DataPoint *end);
+#endif
 };
 
 //dplist collects datapoints having the same qid
 class DataPointList {
-	public:
-		DataPointList(const unsigned int qid) : head(NULL), size(0), qid(qid) {}
-		void push(DataPoint* x) {
-			x->next = head;
-			head = x,
-			++size;
-		}
-		void pop() {
-			DataPoint* tmp = head;
-			head = head->next,
-			--size;
-			delete tmp;
-		}
-		DataPoint *front() const {
-			return head;
-		}
-		unsigned int get_size() const {
-			return size;
-		}
-		int get_qid() const {
-			return qid;
-		}
-		#ifdef PRESERVE_DPFILEORDER
-		void sort_bynline() {
-			listqsort<DataPoint>(head);
-		}
-		#endif
-	private:
-		DataPoint *head ;
-		unsigned int size, qid;
+ public:
+  DataPointList(const unsigned int qid)
+      : head(NULL),
+        size(0),
+        qid(qid) {
+  }
+  void push(DataPoint* x) {
+    x->next = head;
+    head = x, ++size;
+  }
+  void pop() {
+    DataPoint* tmp = head;
+    head = head->next, --size;
+    delete tmp;
+  }
+  DataPoint *front() const {
+    return head;
+  }
+  unsigned int get_size() const {
+    return size;
+  }
+  int get_qid() const {
+    return qid;
+  }
+#ifdef PRESERVE_DPFILEORDER
+  void sort_bynline() {
+    listqsort<DataPoint>(head);
+  }
+#endif
+ private:
+  DataPoint *head;
+  unsigned int size, qid;
 };
 
 class DataPointCollection {
-	public:
-		DataPointCollection() : arr(NULL), arrsize(0), nlists(0) {}
-		~DataPointCollection() {
-			for(unsigned int i=0; i<arrsize; ++i)
-				delete arr[i];
-			free(arr);
-		}
+ public:
+  DataPointCollection()
+      : arr(NULL),
+        arrsize(0),
+        nlists(0) {
+  }
+  ~DataPointCollection() {
+    for (unsigned int i = 0; i < arrsize; ++i)
+      delete arr[i];
+    free(arr);
+  }
 
-		void insert(const unsigned int qid, DataPoint* x);
+  void insert(const unsigned int qid, DataPoint* x);
 
-		unsigned int get_nlists() const {
-			return nlists;
-		}
+  unsigned int get_nlists() const {
+    return nlists;
+  }
 
-		DataPointList **get_lists();
+  DataPointList **get_lists();
 
-	private:
-		DataPointList **arr;
-		unsigned int arrsize, nlists;
+ private:
+  DataPointList **arr;
+  unsigned int arrsize, nlists;
 };
-
 
 #endif

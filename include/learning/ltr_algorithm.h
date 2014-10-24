@@ -14,7 +14,6 @@ class LTR_Algorithm {
 
  public:
 
-
  protected:
 
  private:
@@ -24,8 +23,6 @@ class LTR_Algorithm {
   }
   /// Prints the description of Algorithm, including its parameters
   virtual std::ostream& put(std::ostream& os) const = 0;
-
-
 
  protected:
   quickrank::metric::ir::Metric* scorer = NULL;
@@ -37,9 +34,11 @@ class LTR_Algorithm {
   std::shared_ptr<quickrank::data::Dataset> training_dataset;
 
  public:
-  LTR_Algorithm() {}
+  LTR_Algorithm() {
+  }
 
-  virtual ~LTR_Algorithm() {}
+  virtual ~LTR_Algorithm() {
+  }
 
   //
   // TODO: Candidate class structure
@@ -55,28 +54,31 @@ class LTR_Algorithm {
   //
   //
 
-  virtual void score_dataset(quickrank::data::Dataset &dataset, quickrank::Score* scores) const {
-    if (dataset.format()!=quickrank::data::Dataset::VERT)
+  virtual void score_dataset(quickrank::data::Dataset &dataset,
+                             quickrank::Score* scores) const {
+    if (dataset.format() != quickrank::data::Dataset::VERT)
       dataset.transpose();
-    for (unsigned int q=0; q<dataset.num_queries(); q++) {
-      std::shared_ptr<quickrank::data::QueryResults> r = dataset.getQueryResults(q);
+    for (unsigned int q = 0; q < dataset.num_queries(); q++) {
+      std::shared_ptr<quickrank::data::QueryResults> r =
+          dataset.getQueryResults(q);
       score_query_results(r, scores, dataset.num_instances());
       scores += r->num_results();
     }
   }
   // assumes vertical dataset
   // offset to next feature of the same instance
-  virtual void score_query_results(std::shared_ptr<quickrank::data::QueryResults> results,
-                                   quickrank::Score* scores,
-                                   unsigned int offset) const {
+  virtual void score_query_results(
+      std::shared_ptr<quickrank::data::QueryResults> results,
+      quickrank::Score* scores, unsigned int offset) const {
     const quickrank::Feature* d = results->features();
-    for (unsigned int i=0; i<results->num_results(); i++) {
-      scores[i] = score_document(d,offset);
+    for (unsigned int i = 0; i < results->num_results(); i++) {
+      scores[i] = score_document(d, offset);
       d++;
     }
   }
   // assumes vertical dataset
-  virtual quickrank::Score score_document(const quickrank::Feature* d, const unsigned int offset=1) const {
+  virtual quickrank::Score score_document(const quickrank::Feature* d,
+                                          const unsigned int offset = 1) const {
     return 0.0;
   }
 
@@ -106,7 +108,7 @@ class LTR_Algorithm {
                       quickrank::metric::ir::Metric* scorer);
 };
 
-} // namespace learning
-} // namespace quickrank
+}  // namespace learning
+}  // namespace quickrank
 
 #endif

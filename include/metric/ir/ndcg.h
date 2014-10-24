@@ -24,8 +24,12 @@ namespace ir {
  */
 class Ndcg : public Dcg {
  public:
-  explicit Ndcg(int k = NO_CUTOFF) : Dcg(k) {}
-  virtual ~Ndcg() {};
+  explicit Ndcg(int k = NO_CUTOFF)
+      : Dcg(k) {
+  }
+  virtual ~Ndcg() {
+  }
+  ;
 
   /// \todo TODO: for only zero result slist Yahoo! LTR returns 0.5 instead of 0.0.
   ///             Make this choice available.
@@ -33,7 +37,8 @@ class Ndcg : public Dcg {
   /// \param rl A results list.
   /// \param scores a list of scores
   /// \return The quality score of the result list.
-  virtual MetricScore evaluate_result_list(const quickrank::data::QueryResults* rl, const Score* scores) const;
+  virtual MetricScore evaluate_result_list(
+      const quickrank::data::QueryResults* rl, const Score* scores) const;
 
   /// \todo TODO: replace this results list with QueryResults
   virtual std::unique_ptr<Jacobian> get_jacobian(const ResultList &ql) const;
@@ -44,8 +49,10 @@ class Ndcg : public Dcg {
   /// \param nlabels number of input labels.
   /// \param k cut-off.
   /// \return IDCG\@K for computed on the given labels.
-  double compute_idcg(double const*, const unsigned int, const unsigned int) const;
-  MetricScore compute_idcg(const quickrank::data::QueryResults* rl, const Score* scores) const;
+  double compute_idcg(double const*, const unsigned int,
+                      const unsigned int) const;
+  MetricScore compute_idcg(const quickrank::data::QueryResults* rl,
+                           const Score* scores) const;
 
  private:
   friend std::ostream& operator<<(std::ostream& os, const Ndcg& ndcg) {
@@ -56,8 +63,8 @@ class Ndcg : public Dcg {
 
 };
 
-} // namespace ir
-} // namespace metric
-} // namespace quickrank
+}  // namespace ir
+}  // namespace metric
+}  // namespace quickrank
 
 #endif // QUICKRANK_NDCG_H_

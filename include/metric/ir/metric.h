@@ -11,8 +11,6 @@
 #include "data/dataset.h"
 #include "types.h"
 
-
-
 namespace quickrank {
 namespace metric {
 namespace ir {
@@ -20,8 +18,7 @@ namespace ir {
 /**
  * This class implements the basic functionalities of an IR evaluation metric.
  */
-class Metric : private boost::noncopyable
-{
+class Metric : private boost::noncopyable {
  public:
   /// This should be used when no cut-off on the results list is required.
   static const unsigned int NO_CUTOFF = UINT_MAX;
@@ -30,13 +27,21 @@ class Metric : private boost::noncopyable
   /// Creates a new metric with the specified cut-off threshold.
   ///
   /// \param k The cut-off threshold.
-  explicit Metric(unsigned int k = NO_CUTOFF) { set_cutoff(k); }
-  virtual ~Metric() {};
+  explicit Metric(unsigned int k = NO_CUTOFF) {
+    set_cutoff(k);
+  }
+  virtual ~Metric() {
+  }
+  ;
 
   /// Returns the current cut-off of the Metric.
-  unsigned int cutoff() const { return cutoff_; }
+  unsigned int cutoff() const {
+    return cutoff_;
+  }
   /// Updates the cut-off of the Metric.
-  void set_cutoff(unsigned int k) { cutoff_ = k == 0 ? NO_CUTOFF : k; }
+  void set_cutoff(unsigned int k) {
+    cutoff_ = k == 0 ? NO_CUTOFF : k;
+  }
 
   /// Measures the quality of the given results list according to the Metric.
   ///
@@ -49,13 +54,16 @@ class Metric : private boost::noncopyable
   /// \param rl A results list.
   /// \param scores a list of scores
   /// \return The quality score of the result list.
-  virtual MetricScore evaluate_result_list(const quickrank::data::QueryResults* rl, const Score* scores) const = 0;
-  virtual MetricScore evaluate_dataset(const quickrank::data::Dataset &dataset, const Score* scores) const {
-    if (dataset.num_queries()==0)
+  virtual MetricScore evaluate_result_list(
+      const quickrank::data::QueryResults* rl, const Score* scores) const = 0;
+  virtual MetricScore evaluate_dataset(const quickrank::data::Dataset &dataset,
+                                       const Score* scores) const {
+    if (dataset.num_queries() == 0)
       return 0.0;
     MetricScore avg_score = 0.0;
-    for (unsigned int q=0; q<dataset.num_queries(); q++) {
-      std::shared_ptr<quickrank::data::QueryResults> r = dataset.getQueryResults(q);
+    for (unsigned int q = 0; q < dataset.num_queries(); q++) {
+      std::shared_ptr<quickrank::data::QueryResults> r =
+          dataset.getQueryResults(q);
       avg_score += evaluate_result_list(r.get(), scores);
       scores += r->num_results();
     }
@@ -69,7 +77,9 @@ class Metric : private boost::noncopyable
   /// \param rl A results list.
   /// \return A smart-pointer to the Jacobian Matrix.
   /// \todo TODO: provide def implementation
-  virtual std::unique_ptr<Jacobian> get_jacobian(const ResultList &rl) const { return std::unique_ptr<Jacobian>(); }
+  virtual std::unique_ptr<Jacobian> get_jacobian(const ResultList &rl) const {
+    return std::unique_ptr<Jacobian>();
+  }
 
  private:
 
@@ -85,9 +95,8 @@ class Metric : private boost::noncopyable
 
 };
 
-} // namespace ir
-} // namespace metric
-} // namespace quickrank
-
+}  // namespace ir
+}  // namespace metric
+}  // namespace quickrank
 
 #endif

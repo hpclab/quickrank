@@ -5,7 +5,7 @@
 namespace quickrank {
 namespace data {
 
-Dataset::Dataset(unsigned int n_instances, unsigned int n_features){
+Dataset::Dataset(unsigned int n_instances, unsigned int n_features) {
   max_instances_ = n_instances;
   num_features_ = n_features;
   num_instances_ = 0;
@@ -13,34 +13,34 @@ Dataset::Dataset(unsigned int n_instances, unsigned int n_features){
   last_instance_id_ = 0;
 
   format_ = HORIZ;
-  data_ = new quickrank::Feature [max_instances_*num_features_] ();  // 0 initialization
-  labels_ = new quickrank::Label [max_instances_];               // no initialization
+  data_ = new quickrank::Feature[max_instances_ * num_features_]();  // 0 initialization
+  labels_ = new quickrank::Label[max_instances_];           // no initialization
 
   offsets_.push_back(0);
 }
 
 Dataset::~Dataset() {
-  delete [] data_;
-  delete [] labels_;
+  delete[] data_;
+  delete[] labels_;
 }
-
 
 void Dataset::addInstance(QueryID q_id, Label i_label,
                           boost::container::vector<Feature> i_features) {
 
-  if (i_features.size()>num_features_ || num_instances_==max_instances_) {
-    std::cerr << "!!! Impossible to add a new instance to the dataset." << std::endl;
+  if (i_features.size() > num_features_ || num_instances_ == max_instances_) {
+    std::cerr << "!!! Impossible to add a new instance to the dataset."
+              << std::endl;
     exit(EXIT_FAILURE);
   }
 
   // update label and features
   labels_[num_instances_] = i_label;
-  quickrank::Feature* new_instance = data_ + (num_instances_*num_features_);
-  for (unsigned int i=0; i<i_features.size(); i++)
+  quickrank::Feature* new_instance = data_ + (num_instances_ * num_features_);
+  for (unsigned int i = 0; i < i_features.size(); i++)
     new_instance[i] = i_features[i];
 
   // update offset of last query result
-  if (num_instances_==0 || last_instance_id_!=q_id) {
+  if (num_instances_ == 0 || last_instance_id_ != q_id) {
     num_queries_++;
     offsets_.push_back(0);
     last_instance_id_ = q_id;
@@ -50,11 +50,10 @@ void Dataset::addInstance(QueryID q_id, Label i_label,
 }
 
 std::unique_ptr<QueryResults> Dataset::getQueryResults(unsigned int i) const {
-  unsigned int num_results = offsets_[i+1]-offsets_[i];
-  quickrank::Feature* start_data = data_ +
-      ( (format_==HORIZ) ? (offsets_[i]*num_features_)
-          : (offsets_[i]) );
-  quickrank::Label* start_label  = labels_ + offsets_[i];
+  unsigned int num_results = offsets_[i + 1] - offsets_[i];
+  quickrank::Feature* start_data = data_
+      + ((format_ == HORIZ) ? (offsets_[i] * num_features_) : (offsets_[i]));
+  quickrank::Label* start_label = labels_ + offsets_[i];
 
   QueryResults* qr = new QueryResults(num_results, start_label, start_data);
 
@@ -63,32 +62,34 @@ std::unique_ptr<QueryResults> Dataset::getQueryResults(unsigned int i) const {
 
 // TODO: in-place block-based transpose?
 void Dataset::transpose() {
-  quickrank::Feature* transposed = new quickrank::Feature [max_instances_*num_features_];
+  quickrank::Feature* transposed = new quickrank::Feature[max_instances_
+      * num_features_];
 
-  for (unsigned int i=0; i<num_instances_; i++) {
-    for (unsigned int f=0; f<num_features_; f++) {
-      if (format_==HORIZ)
-        transposed[f*num_instances_ + i] = data_[i*num_features_ + f];
+  for (unsigned int i = 0; i < num_instances_; i++) {
+    for (unsigned int f = 0; f < num_features_; f++) {
+      if (format_ == HORIZ)
+        transposed[f * num_instances_ + i] = data_[i * num_features_ + f];
       else
-        transposed[i*num_features_ + f] = data_[f*num_instances_ + i];
+        transposed[i * num_features_ + f] = data_[f * num_instances_ + i];
     }
   }
 
-  if (format_==HORIZ) format_=VERT;
-  else format_=HORIZ;
+  if (format_ == HORIZ)
+    format_ = VERT;
+  else
+    format_ = HORIZ;
 
-  delete [] data_;
+  delete[] data_;
   data_ = transposed;
 }
 
 std::ostream& Dataset::put(std::ostream& os) const {
-  os  << "#\t Dataset size: " << num_instances_ << " x " << num_features_
-      << " (instances x features)" << std::endl
-      << "#\t Num queries: " << num_queries_
-      << " | Avg. len: " << std::setprecision(3) << num_instances_ / (float) num_queries_ << std::endl;
+  os << "#\t Dataset size: " << num_instances_ << " x " << num_features_
+     << " (instances x features)" << std::endl << "#\t Num queries: "
+     << num_queries_ << " | Avg. len: " << std::setprecision(3)
+     << num_instances_ / (float) num_queries_ << std::endl;
   return os;
 }
 
-
-} // namespace data
-} // namespace quickrank
+}  // namespace data
+}  // namespace quickrank

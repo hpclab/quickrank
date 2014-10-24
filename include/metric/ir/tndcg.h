@@ -26,8 +26,12 @@ namespace ir {
  */
 class Tndcg : public Ndcg {
  public:
-  explicit Tndcg(int k = NO_CUTOFF) : Ndcg(k) {}
-  virtual ~Tndcg() {};
+  explicit Tndcg(int k = NO_CUTOFF)
+      : Ndcg(k) {
+  }
+  virtual ~Tndcg() {
+  }
+  ;
 
  private:
   friend std::ostream& operator<<(std::ostream& os, const Tndcg& tndcg) {
@@ -38,8 +42,8 @@ class Tndcg : public Ndcg {
 
 };
 
-} // namespace ir
-} // namespace metric
-} // namespace quickrank
+}  // namespace ir
+}  // namespace metric
+}  // namespace quickrank
 
 #endif // QUICKRANK_METRIC_IR_TNDCG_H_

@@ -9,8 +9,10 @@
 class ObliviousRT : public RegressionTree {
  public:
   ObliviousRT(unsigned int nodes, LTR_VerticalDataset *dps, double *labels,
-     unsigned int minls, unsigned int treedepth) :
-       RegressionTree(nodes, dps, labels, minls), treedepth(treedepth) {}
+              unsigned int minls, unsigned int treedepth)
+      : RegressionTree(nodes, dps, labels, minls),
+        treedepth(treedepth) {
+  }
   void fit(RTNodeHistogram *hist);
 
  protected:

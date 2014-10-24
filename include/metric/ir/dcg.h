@@ -23,12 +23,17 @@ namespace ir {
  */
 class Dcg : public Metric {
  public:
-  explicit Dcg(int k = NO_CUTOFF) : Metric(k) {}
-  virtual ~Dcg() {};
+  explicit Dcg(int k = NO_CUTOFF)
+      : Metric(k) {
+  }
+  virtual ~Dcg() {
+  }
+  ;
 
   virtual MetricScore evaluate_result_list(const ResultList&) const;
 
-  virtual MetricScore evaluate_result_list(const quickrank::data::QueryResults* rl, const Score* scores) const;
+  virtual MetricScore evaluate_result_list(
+      const quickrank::data::QueryResults* rl, const Score* scores) const;
 
   virtual std::unique_ptr<Jacobian> get_jacobian(const ResultList &ql) const;
 
@@ -38,8 +43,10 @@ class Dcg : public Metric {
   /// \param nlabels number of input labels.
   /// \param k cut-off.
   /// \return DCG\@K for computed on the given labels.
-  double compute_dcg(double const* labels, const unsigned int nlabels, const unsigned int k) const;
-  MetricScore compute_dcg(Label const* labels, const unsigned int nlabels, const unsigned int k) const;
+  double compute_dcg(double const* labels, const unsigned int nlabels,
+                     const unsigned int k) const;
+  MetricScore compute_dcg(Label const* labels, const unsigned int nlabels,
+                          const unsigned int k) const;
 
  private:
   friend std::ostream& operator<<(std::ostream& os, const Dcg& ndcg) {
@@ -49,8 +56,8 @@ class Dcg : public Metric {
 
 };
 
-} // namespace ir
-} // namespace metric
-} // namespace quickrank
+}  // namespace ir
+}  // namespace metric
+}  // namespace quickrank
 
 #endif // QUICKRANK_DCG_H_

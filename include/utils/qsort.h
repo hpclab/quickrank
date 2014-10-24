@@ -7,8 +7,6 @@
  * \brief Set of functions implementing descending quick sort for floating point values (ideal for short array)
  */
 
-
-
 /*! sort an array of float values with respect to another one without modifing the input array and returning permuted indexes of the sorted items
  *  @param extvalues input float array
  *  @param fvalues input float array
@@ -16,43 +14,41 @@
  *  @return a sorted copy of \a extvalues wrt \a fvalues
  */
 template<typename EXT, typename SRC>
-std::unique_ptr<EXT[]> qsort_ext(EXT const* extarr, SRC const* arr, const unsigned int size) {
+std::unique_ptr<EXT[]> qsort_ext(EXT const* extarr, SRC const* arr,
+                                 const unsigned int size) {
   SRC *copyof_arr = new SRC[size];
-  memcpy(copyof_arr, arr, sizeof(SRC)*size);
+  memcpy(copyof_arr, arr, sizeof(SRC) * size);
   EXT *copyof_extarr = new EXT[size];
-  memcpy(copyof_extarr, extarr, sizeof(EXT)*size);
-  int* stack = new int [size]; // int stack[size];
+  memcpy(copyof_extarr, extarr, sizeof(EXT) * size);
+  int* stack = new int[size];  // int stack[size];
   int top = 1;
-  stack[0] = 0,
-  stack[1] = size-1;
-  while(top>=0) {
+  stack[0] = 0, stack[1] = size - 1;
+  while (top >= 0) {
     int h = stack[top--];
     int l = stack[top--];
     SRC p = copyof_arr[h];
-    int i = l-1;
-    for(int j=l; j<h; ++j)
-      if(p<copyof_arr[j]) {
+    int i = l - 1;
+    for (int j = l; j < h; ++j)
+      if (p < copyof_arr[j]) {
         std::swap(copyof_arr[++i], copyof_arr[j]);
         std::swap(copyof_extarr[i], copyof_extarr[j]);
       }
-    if(copyof_arr[++i]<copyof_arr[h])
-      std::swap(copyof_arr[i], copyof_arr[h]),
-      std::swap(copyof_extarr[i], copyof_extarr[h]);
-    if(i-1>l) {
+    if (copyof_arr[++i] < copyof_arr[h])
+      std::swap(copyof_arr[i], copyof_arr[h]), std::swap(copyof_extarr[i],
+                                                         copyof_extarr[h]);
+    if (i - 1 > l) {
       stack[++top] = l;
-      stack[++top] = i-1;
+      stack[++top] = i - 1;
     }
-    if(i+1<h) {
-      stack[++top] = i+1;
+    if (i + 1 < h) {
+      stack[++top] = i + 1;
       stack[++top] = h;
     }
   }
-  delete [] stack;
-  delete [] copyof_arr;
+  delete[] stack;
+  delete[] copyof_arr;
   return std::unique_ptr<EXT[]>(copyof_extarr);
 }
-
-
 
 /*! sort an array of float values
  *  @param fvalues input float array
@@ -86,7 +82,8 @@ unsigned int *idxdouble_qsort(double const* arr, const unsigned int size);
  *  @param nvalues length of \a fvalues
  *  @return a sorted copy of \a extvalues wrt \a fvalues
  */
-double *copyextdouble_qsort(double const* extarr, double const* arr, const unsigned int size);
+double *copyextdouble_qsort(double const* extarr, double const* arr,
+                            const unsigned int size);
 
 /*! sort an array of float values with respect to another one without modifing the input array and returning permuted indexes of the sorted items
  *  @param extvalues input float array
@@ -94,7 +91,7 @@ double *copyextdouble_qsort(double const* extarr, double const* arr, const unsig
  *  @param nvalues length of \a fvalues
  *  @return a sorted copy of \a extvalues wrt \a fvalues
  */
-float *copyextfloat_qsort(float const* extarr, float const* arr, const unsigned int size);
-
+float *copyextfloat_qsort(float const* extarr, float const* arr,
+                          const unsigned int size);
 
 #endif

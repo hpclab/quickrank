@@ -11,7 +11,8 @@
  *  @param n number of rows of input matrix
  *  @param m number of columns of input matrix
  */
-void transpose(float **output, float **input, const unsigned int n, const unsigned int m);
+void transpose(float **output, float **input, const unsigned int n,
+               const unsigned int m);
 
 #endif
 

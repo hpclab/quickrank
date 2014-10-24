@@ -28,7 +28,10 @@ namespace data {
 class Dataset : private boost::noncopyable {
  public:
 
-  enum Format {HORIZ, VERT};
+  enum Format {
+    HORIZ,
+    VERT
+  };
 
   /// Allocates an empty Dataset of given sizein horizontal format.
   ///
@@ -43,15 +46,20 @@ class Dataset : private boost::noncopyable {
   /// \param feature_id The feature of interest.
   /// \returns A reference to the requested feature value of the given document id.
   quickrank::Feature* at(unsigned int document_id, unsigned int feature_id) {
-    return (format_==HORIZ) ? (data_ + document_id*num_features_ + feature_id)
-        : (data_ + document_id + feature_id*num_instances_); }
+    return
+        (format_ == HORIZ) ?
+            (data_ + document_id * num_features_ + feature_id) :
+            (data_ + document_id + feature_id * num_instances_);
+  }
 
   /// Returns the offset in the internal data strcutures of the i-th query results list.
   ///
   /// \param i The i-th query results list of interest.
   /// \returns The offset of the first document in the i-th query results list.
   ///     This can be used to later invoke the \a at() function.
-  unsigned int offset(unsigned int i) const {return offsets_[i];}
+  unsigned int offset(unsigned int i) const {
+    return offsets_[i];
+  }
 
   /// Returns the i-th QueryResults in the dataset.
   ///
@@ -59,13 +67,22 @@ class Dataset : private boost::noncopyable {
   /// \returns The requested QueryResults.
   std::unique_ptr<QueryResults> getQueryResults(unsigned int i) const;
 
-  void addInstance(QueryID q_id, Label i_label, boost::container::vector<Feature> i_features);
+  void addInstance(QueryID q_id, Label i_label,
+                   boost::container::vector<Feature> i_features);
 
-  unsigned int num_features() const   {return num_features_;}
-  unsigned int num_queries() const    {return num_queries_;}
-  unsigned int num_instances() const  {return num_instances_;}
+  unsigned int num_features() const {
+    return num_features_;
+  }
+  unsigned int num_queries() const {
+    return num_queries_;
+  }
+  unsigned int num_instances() const {
+    return num_instances_;
+  }
 
-  Format format() const {return format_;}
+  Format format() const {
+    return format_;
+  }
 
   void transpose();
 
@@ -99,8 +116,7 @@ class Dataset : private boost::noncopyable {
 
 };
 
-} // namespace data
-} // namespace quickrank
-
+}  // namespace data
+}  // namespace quickrank
 
 #endif

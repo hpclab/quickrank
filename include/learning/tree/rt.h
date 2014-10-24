@@ -11,7 +11,6 @@
 #include "utils/omp-stubs.h"
 #endif
 
-
 #include "utils/maxheap.h"
 #include "data/ltrdata.h"
 #include "data/dataset.h"
@@ -22,15 +21,17 @@ typedef MaxHeap<RTNode*> rt_maxheap;
 
 class DevianceMaxHeap : public rt_maxheap {
  public:
-  DevianceMaxHeap(unsigned int initsize) : rt_maxheap(initsize) {}
+  DevianceMaxHeap(unsigned int initsize)
+      : rt_maxheap(initsize) {
+  }
   void push_chidrenof(RTNode *parent);
   void pop();
 };
 
 class RegressionTree {
  protected:
-  const unsigned int nrequiredleaves; //0 for unlimited number of nodes (the size of the tree will then be controlled only by minls)
-  const unsigned int minls; //minls>0
+  const unsigned int nrequiredleaves;  //0 for unlimited number of nodes (the size of the tree will then be controlled only by minls)
+  const unsigned int minls;  //minls>0
   // LTR_VerticalDataset *training_set = NULL;
   quickrank::data::Dataset* training_dataset = NULL;
   double *training_labels = NULL;
@@ -39,16 +40,21 @@ class RegressionTree {
   RTNode *root = NULL;
  public:
   RegressionTree(unsigned int nrequiredleaves, quickrank::data::Dataset *dps,
-                 double *labels, unsigned int minls) :
-                   nrequiredleaves(nrequiredleaves), minls(minls),
-                   training_dataset(dps), training_labels(labels) {}
+                 double *labels, unsigned int minls)
+      : nrequiredleaves(nrequiredleaves),
+        minls(minls),
+        training_dataset(dps),
+        training_labels(labels) {
+  }
   ~RegressionTree();
 
   void fit(RTNodeHistogram *hist);
 
-  double update_output(double const *pseudoresponses, double const *cachedweights);
+  double update_output(double const *pseudoresponses,
+                       double const *cachedweights);
 
-  double eval(float const* const* featurematrix, const unsigned int idx) const {
+  double eval(float const* const * featurematrix,
+              const unsigned int idx) const {
     return root->eval(featurematrix, idx);
   }
 
