@@ -71,9 +71,6 @@ class LambdaMart : public LTR_Algorithm {
              quickrank::metric::ir::Metric*, unsigned int partial_save,
              const std::string output_basename);
 
-  float eval_dp(float * const * const features, unsigned int idx) const {
-    return ens.eval(features, idx);
-  }
 
   // assumes vertical dataset
   virtual quickrank::Score score_document(const Feature* d,

@@ -63,7 +63,7 @@ void Evaluator::evaluate(learning::LTR_Algorithm* algo,
     std::cout << reader << *test_dataset;
     quickrank::Score* test_scores = new quickrank::Score[test_dataset
         ->num_instances()];
-    algo->score_dataset(*test_dataset, test_scores);
+    algo->score_dataset(test_dataset, test_scores);
     quickrank::MetricScore test_score = test_metric->evaluate_dataset(
         *test_dataset, test_scores);
 

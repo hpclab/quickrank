@@ -1,6 +1,9 @@
-# ##
-# ##  QuickRank
-# ##
+# ## ========================== ## #
+# ##          QuickRank         ## #
+# ## -------------------------- ## #
+# ## developed by the HPC. Lab. ## #
+# ##  http://hpc.isti.cnr.it/   ## #
+# ## ========================== ## #
 Missing algorithm, mandatory parmeter.
 Allowed options:
   --help                         produce help message

@@ -187,7 +187,7 @@ void LambdaMart::learn(std::shared_ptr<quickrank::data::Dataset> training_datase
       ens.pop();
   //Finishing up
   //training_score = compute_score(training_set, scorer);
-  score_dataset(*training_dataset, trainingmodelscores);
+  score_dataset(training_dataset, trainingmodelscores);
   quickrank::MetricScore metric_on_training = scorer->evaluate_dataset(
       *training_dataset, trainingmodelscores);
 
@@ -195,7 +195,7 @@ void LambdaMart::learn(std::shared_ptr<quickrank::data::Dataset> training_datase
   std::cout << "\t" << *scorer << " on training data = " << metric_on_training
             << std::endl;
   if (validation_dataset) {
-    score_dataset(*validation_dataset, scores_on_validation);
+    score_dataset(validation_dataset, scores_on_validation);
     best_metric_on_validation = scorer->evaluate_dataset(*validation_dataset,
                                                          scores_on_validation);
     std::cout << "\t" << *scorer << " on validation data = "
