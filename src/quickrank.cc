@@ -142,15 +142,17 @@ T check_and_set(const po::variables_map &vm, const std::string &name,
 
 // Auxiliary function to check and set/exit metric
 // TODO: smart pointer to be added
-quickrank::metric::ir::Metric* check_and_set_metric(const po::variables_map &vm,
+std::shared_ptr<quickrank::metric::ir::Metric> check_and_set_metric(const po::variables_map &vm,
                                                     const std::string &type) {
   int k = check_and_set<unsigned int>(vm, type + "-cutoff",
                                       type + " Metric cutoff was not set.");
   if (vm.count(type + "-metric")) {
     if (vm[type + "-metric"].as<metric_string>().value == "ndcg")
-      return new quickrank::metric::ir::Ndcg(k);
+      return std::shared_ptr<quickrank::metric::ir::Metric> (
+          new quickrank::metric::ir::Ndcg(k) );
     else
-      return new quickrank::metric::ir::Map(k);
+      return std::shared_ptr<quickrank::metric::ir::Metric> (
+          new quickrank::metric::ir::Map(k) );
   } else {
     std::cout << type + " Metric (ndcg or map) was not set." << std::endl;
     exit(1);
@@ -163,6 +165,7 @@ int main(int argc, char *argv[]) {
             << "# ## -------------------------- ## #" << std::endl
             << "# ## developed by the HPC. Lab. ## #" << std::endl
             << "# ##  http://hpc.isti.cnr.it/   ## #" << std::endl
+            << "# ##  quickrank@.isti.cnr.it/   ## #" << std::endl
             << "# ## ========================== ## #" << std::endl;
 
   // Declare the supported options.
@@ -261,31 +264,29 @@ int main(int argc, char *argv[]) {
       vm, "tree-depth", "Tree depth was not set.");
 
   // Create model
-  std::unique_ptr<quickrank::learning::LTR_Algorithm> r;
+  std::shared_ptr<quickrank::learning::LTR_Algorithm> ranking_algorithm;
   if (vm["algo"].as<model_string>().value == "lm")
-    r = std::unique_ptr<quickrank::learning::LTR_Algorithm>(
+    ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
         new quickrank::learning::forests::LambdaMart(ntrees, shrinkage,
                                                      nthresholds, ntreeleaves,
                                                      minleafsupport, esr));
   else if (vm["algo"].as<model_string>().value == "mn")
-    r = NULL;  //new quickrank::learning::forests::MatrixNet( ntrees, shrinkage, nthresholds, treedepth,   minleafsupport, esr);
+    ranking_algorithm = NULL;  //new quickrank::learning::forests::MatrixNet( ntrees, shrinkage, nthresholds, treedepth,   minleafsupport, esr);
 
   //show ranker parameters
-  std::cout << "#" << std::endl << *r;
+  std::cout << "#" << std::endl << *ranking_algorithm;
 
   // METRIC STUFF
-  std::shared_ptr<quickrank::metric::ir::Metric> training_scorer =
-      std::shared_ptr<quickrank::metric::ir::Metric>(
-          check_and_set_metric(vm, "train"));
-  std::shared_ptr<quickrank::metric::ir::Metric> testing_scorer =
-      std::shared_ptr<quickrank::metric::ir::Metric>(
-          check_and_set_metric(vm, "test"));
-  std::cout << "#" << std::endl << "# training scorer: " << *training_scorer
-            << std::endl << "# test scorer: " << *testing_scorer << std::endl
+  std::shared_ptr<quickrank::metric::ir::Metric> training_metric =
+      check_and_set_metric(vm, "train");
+  std::shared_ptr<quickrank::metric::ir::Metric> testing_metric =
+      check_and_set_metric(vm, "test");
+  std::cout << "#" << std::endl << "# training scorer: " << *training_metric
+            << std::endl << "# test scorer: " << *testing_metric << std::endl
             << "#" << std::endl;
 
   // FILE STUFF
-  unsigned int npartialsave = check_and_set<unsigned int>(
+  unsigned int partial_save = check_and_set<unsigned int>(
       vm, "partial", "Partial file save frequency was not set.");
 
   // TODO: check what can be null, everywhere!!!!
@@ -297,19 +298,19 @@ int main(int argc, char *argv[]) {
       vm, "test", "Test filename was not set.");
   std::string features_filename = check_and_set<std::string>(
       vm, "features", "Features filename was not set.");
-  std::string model_basename = check_and_set<std::string>(
+  std::string model_filename = check_and_set<std::string>(
       vm, "model", "Model output filename was not set.");
 
   //set seed for rand()
   srand(time(NULL));
 
   //instantiate a new evaluator with read arguments
-  quickrank::metric::Evaluator::evaluate(r.get(),
-                                         training_scorer,
-                                         testing_scorer,
+  quickrank::metric::Evaluator::evaluate(ranking_algorithm,
+                                         training_metric,
+                                         testing_metric,
                                          training_filename, validation_filename,
                                          test_filename, features_filename,
-                                         model_basename, npartialsave);
+                                         model_filename, partial_save);
 
   return 0;
 }

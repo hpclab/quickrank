@@ -28,7 +28,8 @@ class Evaluator : private boost::noncopyable {
   /// If empty, no performance is measured on the test set.
   /// \param output_filename Model output file.
   /// If empty, no output file is written.
-  static void evaluate(learning::LTR_Algorithm* algo,
+  /// \param npartialsave Allows to save a partial model every given number of iterations.
+  static void evaluate(std::shared_ptr<learning::LTR_Algorithm> algo,
                        std::shared_ptr<ir::Metric> train_metric,
                        std::shared_ptr<ir::Metric> test_metric,
                        const std::string training_filename,

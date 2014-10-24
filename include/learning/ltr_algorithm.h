@@ -22,7 +22,7 @@ class LTR_Algorithm : private boost::noncopyable {
   /// \param training_dataset The training dataset.
   /// \param validation_dataset The validation training dataset.
   /// \param metric The metric to be optimized.
-  /// \param partial_save Allows to save a partial model every given numver of iterations.
+  /// \param partial_save Allows to save a partial model every given number of iterations.
   /// \param model_filename The file where the model, and the partial models, are saved.
   virtual void learn(
       std::shared_ptr<data::Dataset> training_dataset,
@@ -50,7 +50,7 @@ class LTR_Algorithm : private boost::noncopyable {
       std::shared_ptr<data::QueryResults> results,
       Score* scores, unsigned int offset) const;
 
-  /// Returns the score of a given document
+  /// Returns the score of a given document.
   virtual Score score_document(const Feature* d,
                                const unsigned int offset = 1) const;
 
@@ -63,6 +63,7 @@ class LTR_Algorithm : private boost::noncopyable {
   // \todo TODO: add load_model();
 
  protected:
+
   /// Prepare the dataset before training or scoring takes place.
   ///
   /// Different algorithms might modify the data representation

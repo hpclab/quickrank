@@ -42,7 +42,7 @@ class LambdaMart : public LTR_Algorithm {
 
   quickrank::Score* scores_on_validation = NULL;  //[0..nentries-1]
 
- public:
+ private:
   const unsigned int ntrees;  //>0
   const double shrinkage;  //>0.0f
   const unsigned int nthresholds;  //if nthresholds==0 then no. of thresholds is not limited

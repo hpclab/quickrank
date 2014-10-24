@@ -12,7 +12,7 @@ Evaluator::Evaluator() {
 Evaluator::~Evaluator() {
 }
 
-void Evaluator::evaluate(learning::LTR_Algorithm* algo,
+void Evaluator::evaluate(std::shared_ptr<learning::LTR_Algorithm> algo,
                          std::shared_ptr<ir::Metric> train_metric,
                          std::shared_ptr<ir::Metric> test_metric,
                          const std::string training_filename,
