@@ -1,7 +1,6 @@
 #ifndef QUICKRANK_LEARNING_TREE_RTNODE_H_
 #define QUICKRANK_LEARNING_TREE_RTNODE_H_
 
-#include "data/ltrdata.h"
 #include "learning/tree/rtnode_histogram.h"
 #include "types.h"
 

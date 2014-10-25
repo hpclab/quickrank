@@ -4,7 +4,6 @@
 #include <string>
 #include <boost/noncopyable.hpp>
 
-#include "data/ltrdata.h"
 #include "data/dataset.h"
 
 namespace quickrank {
@@ -34,11 +33,6 @@ class Svml : private boost::noncopyable {
   }
   virtual ~Svml() {
   }
-
-  /// \deprecated Reads the input dataset and returns in vertical format.
-  /// \param filename the input filename.
-  /// \return The svml dataset in vertical format.
-  virtual LTR_VerticalDataset* read_vertical(const std::string &filename) const;
 
   /// Reads the input dataset and returns in horizontal format.
   /// \param filename the input filename.

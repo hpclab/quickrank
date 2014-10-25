@@ -7,8 +7,8 @@
 #include <boost/noncopyable.hpp>
 
 #include "data/queryresults.h"
-#include "data/ltrdata.h"
 #include "data/dataset.h"
+#include "learning/dpset.h"
 #include "types.h"
 
 namespace quickrank {

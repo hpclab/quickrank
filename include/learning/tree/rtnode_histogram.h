@@ -1,7 +1,6 @@
 #ifndef QUICKRANK_LEARNING_TREE_HISTOGRAM_H_
 #define QUICKRANK_LEARNING_TREE_HISTOGRAM_H_
 
-#include "data/ltrdata.h"
 #include "data/dataset.h"
 
 class RTNodeHistogram {

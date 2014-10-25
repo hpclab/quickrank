@@ -12,7 +12,6 @@
 #endif
 
 #include "utils/maxheap.h"
-#include "data/ltrdata.h"
 #include "data/dataset.h"
 #include "learning/tree/rtnode.h"
 #include "learning/tree/rtnode_histogram.h"
