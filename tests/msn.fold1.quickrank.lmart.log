@@ -3,6 +3,7 @@
 # ## -------------------------- ## #
 # ## developed by the HPC. Lab. ## #
 # ##  http://hpc.isti.cnr.it/   ## #
+# ##  quickrank@.isti.cnr.it/   ## #
 # ## ========================== ## #
 #
 # Ranker: Lambda-MART
@@ -16,11 +17,11 @@
 # test scorer: NDCG@10
 #
 # Reading training dataset: data/msn1.fold1.train.5k.txt
-#	 Reading time: 0.321 s. @ 15.6 MB/s  (post-proc.: 0.00515 s.)
+#	 Reading time: 0.315 s. @ 15.9 MB/s  (post-proc.: 0.00536 s.)
 #	 Dataset size: 5000 x 136 (instances x features)
 #	 Num queries: 43 | Avg. len: 116
 # Reading validation dataset: data/msn1.fold1.vali.5k.txt
-#	 Reading time: 0.319 s. @ 15.7 MB/s  (post-proc.: 0.00518 s.)
+#	 Reading time: 0.314 s. @ 15.9 MB/s  (post-proc.: 0.00598 s.)
 #	 Dataset size: 5000 x 136 (instances x features)
 #	 Num queries: 49 | Avg. len: 102
 Initialization:
@@ -134,7 +135,7 @@ Training:
 	NDCG@10 on validation data = 0.4357
 	done
 # Reading test dataset: data/msn1.fold1.test.5k.txt
-#	 Reading time: 0.520 s. @ 9.624 MB/s  (post-proc.: 0.005 s.)
+#	 Reading time: 0.299 s. @ 16.705 MB/s  (post-proc.: 0.004 s.)
 #	 Dataset size: 5000 x 136 (instances x features)
 #	 Num queries: 43 | Avg. len: 116.279
 NDCG@10 on test data = 0.3485

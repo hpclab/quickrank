@@ -16,9 +16,9 @@ namespace forests {
 
 std::ostream& LambdaMart::put(std::ostream& os) const {
   os << "# Ranker: Lambda-MART" << std::endl << "# max no. of trees = "
-     << ntrees << std::endl << "# no. of tree leaves = " << ntreeleaves
-     << std::endl << "# shrinkage = " << shrinkage << std::endl
-     << "# min leaf support = " << minleafsupport << std::endl;
+      << ntrees << std::endl << "# no. of tree leaves = " << ntreeleaves
+      << std::endl << "# shrinkage = " << shrinkage << std::endl
+      << "# min leaf support = " << minleafsupport << std::endl;
   if (nthresholds)
     os << "# no. of thresholds = " << nthresholds << std::endl;
   else
@@ -147,7 +147,7 @@ void LambdaMart::learn(std::shared_ptr<quickrank::data::Dataset> training_datase
     ens.push(tree.get_proot(), shrinkage, maxlabel);
 
     //Update the model's outputs on all training samples
-    update_modelscores(training_dataset.get(), trainingmodelscores, &tree);
+    update_modelscores(training_dataset, trainingmodelscores, &tree);
     // run metric
     quickrank::MetricScore metric_on_training = scorer->evaluate_dataset(
         *training_dataset, trainingmodelscores);
@@ -160,7 +160,7 @@ void LambdaMart::learn(std::shared_ptr<quickrank::data::Dataset> training_datase
     //Evaluate the current model on the validation data (if available)
     if (validation_dataset) {
       // update validation scores
-      update_modelscores(validation_dataset.get(), scores_on_validation, &tree);
+      update_modelscores(validation_dataset, scores_on_validation, &tree);
 
       // run metric
       quickrank::MetricScore metric_on_validation = scorer->evaluate_dataset(
@@ -195,13 +195,13 @@ void LambdaMart::learn(std::shared_ptr<quickrank::data::Dataset> training_datase
 
   printf("\t-----------------------------\n");
   std::cout << "\t" << *scorer << " on training data = " << metric_on_training
-            << std::endl;
+      << std::endl;
   if (validation_dataset) {
     score_dataset(validation_dataset, scores_on_validation);
     best_metric_on_validation = scorer->evaluate_dataset(*validation_dataset,
                                                          scores_on_validation);
     std::cout << "\t" << *scorer << " on validation data = "
-              << best_metric_on_validation << std::endl;
+        << best_metric_on_validation << std::endl;
   }
 #ifdef SHOWTIMER
   printf("\t\033[1melapsed time = %.3f seconds\033[0m\n", timer);
@@ -209,33 +209,8 @@ void LambdaMart::learn(std::shared_ptr<quickrank::data::Dataset> training_datase
   printf("\tdone\n");
 }
 
-float LambdaMart::compute_modelscores(LTR_VerticalDataset const *samples,
-                                      double *mscores,
-                                      RegressionTree const &tree, quickrank::metric::ir::Metric* scorer) {
-  const unsigned int ndatapoints = samples->get_ndatapoints();
-  float **featurematrix = samples->get_fmatrix();
-#pragma omp parallel for
-  for (unsigned int i = 0; i < ndatapoints; ++i)
-    mscores[i] += shrinkage * tree.eval(featurematrix, i);
-  const unsigned int nrankedlists = samples->get_nrankedlists();
-//  const unsigned int *offsets = samples->get_rloffsets()();
-  float score = 0.0f;
-  if (nrankedlists) {
-#pragma omp parallel for reduction(+:score)
-    for (unsigned int i = 0; i < nrankedlists; ++i) {
-      ResultList orig = samples->get_qlist(i);
-      //double *sortedlabels = copyextdouble_qsort(orig.labels, mscores+samples->get_rloffsets(i), orig.size);
-      std::unique_ptr<double[]> sortedlabels = copyextdouble_mergesort<double,
-          double>(orig.labels, mscores + samples->get_rloffsets(i), orig.size);
-      score += scorer->evaluate_result_list(
-          ResultList(orig.size, sortedlabels.get(), orig.qid));
-    }
-    score /= nrankedlists;
-  }
-  return score;
-}
 
-void LambdaMart::update_modelscores(data::Dataset* dataset, Score *scores,
+void LambdaMart::update_modelscores(std::shared_ptr<data::Dataset> dataset, Score *scores,
                                     RegressionTree* tree) {
   quickrank::Score* score_i = scores;
   for (unsigned int q = 0; q < dataset->num_queries(); q++) {
@@ -252,7 +227,7 @@ void LambdaMart::update_modelscores(data::Dataset* dataset, Score *scores,
 
 }
 
-std::unique_ptr<quickrank::Jacobian> LambdaMart::compute_mchange(
+std::unique_ptr<quickrank::Jacobian> LambdaMart::getJacobian(
     const ResultList &orig, const unsigned int offset, quickrank::metric::ir::Metric* scorer) {
   //build a ql made up of label values picked up from orig order by indexes of trainingmodelscores reversely sorted
   unsigned int *idx = idxdouble_mergesort(trainingmodelscores + offset,
@@ -331,7 +306,7 @@ void LambdaMart::compute_pseudoresponses(std::shared_ptr<quickrank::data::Datase
                 / (1.0
                     + exp(
                         trainingmodelscores[offset + idx[j]]
-                            - trainingmodelscores[offset + idx[k]]));
+                                            - trainingmodelscores[offset + idx[k]]));
             double lambda = rho * deltandcg;
             double delta = rho * (1.0 - rho) * deltandcg;
             lambdas[idx[j]] += lambda, lambdas[idx[k]] -= lambda, weights[idx[j]] +=
