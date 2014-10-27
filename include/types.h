@@ -12,8 +12,6 @@ typedef float Feature;  // data type for instance feature
 typedef unsigned int QueryID;  // data type for QueryID in L-t-R datasets
 typedef double MetricScore;  // data type for evaluation metric final outcome
 
-typedef std::vector<Feature> FeatureVector;  // data type for vector of instance features
-
 typedef SymMatrix<double> Jacobian;  // data type for a Metric's Jacobian Matrix
 
 }  // namespace quickrank

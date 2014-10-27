@@ -1,21 +1,31 @@
-#ifndef QUICKRANK_LEARNING_LTR_ALGORITHM_H_
-#define QUICKRANK_LEARNING_LTR_ALGORITHM_H_
+#ifndef QUICKRANK_LEARNING_CUSTOM_LTR_H_
+#define QUICKRANK_LEARNING_CUSTOM_LTR_H_
 
 #include <boost/noncopyable.hpp>
 #include <memory>
 
 #include "data/dataset.h"
 #include "metric/ir/metric.h"
+#include "learning/ltr_algorithm.h"
 
 namespace quickrank {
 namespace learning {
 
-class LTR_Algorithm : private boost::noncopyable {
+/*
+ * Command lin
+ ./bin/quickrank --algo custom \
+ --train tests/data/msn1.fold1.train.5k.txt \
+ --valid tests/data/msn1.fold1.vali.5k.txt \
+ --test tests/data/msn1.fold1.test.5k.txt \
+ --model model.xml
+*/
+
+class CustomLTR : public LTR_Algorithm {
 
  public:
-  LTR_Algorithm() {}
+  CustomLTR();
 
-  virtual ~LTR_Algorithm() {}
+  virtual ~CustomLTR();
 
   /// Executes the learning process.
   ///
@@ -29,7 +39,7 @@ class LTR_Algorithm : private boost::noncopyable {
       std::shared_ptr<data::Dataset> validation_dataset,
       std::shared_ptr<metric::ir::Metric> metric,
       unsigned int partial_save,
-      const std::string model_filename) = 0;
+      const std::string model_filename);
 
 
   /// Given and input \a dateset, the current ranker generates
@@ -54,13 +64,11 @@ class LTR_Algorithm : private boost::noncopyable {
   virtual Score score_document(const Feature* d,
                                const unsigned int offset = 1) const;
 
-  /// Save the current model to the output_file.
-  ///
-  /// \param output_basename The output file name.
-  /// \param suffix The suffix used to identify partial model saves.
-  virtual void save(std::string model_filename, int suffix = -1) const;
 
   /// \todo TODO: add load_model();
+
+
+  const Score FIXED_SCORE = 666.0;
 
  protected:
 
@@ -69,20 +77,20 @@ class LTR_Algorithm : private boost::noncopyable {
   /// Different algorithms might modify the data representation
   /// to improve efficacy or efficiency,
   /// This is also used to make sure dataset is in the right vertical vs. horizontal format.
-  virtual void preprocess_dataset(std::shared_ptr<data::Dataset> dataset) const = 0;
+  virtual void preprocess_dataset(std::shared_ptr<data::Dataset> dataset) const;
 
  private:
 
   /// The output stream operator.
-  friend std::ostream& operator<<(std::ostream& os, const LTR_Algorithm& a) {
+  friend std::ostream& operator<<(std::ostream& os, const CustomLTR& a) {
     return a.put(os);
   }
 
   /// Prints the description of Algorithm, including its parameters
-  virtual std::ostream& put(std::ostream& os) const = 0;
+  virtual std::ostream& put(std::ostream& os) const;
 
   /// Save the current model in the given output file stream.
-  virtual std::ofstream& save_model_to_file(std::ofstream& of) const = 0;
+  virtual std::ofstream& save_model_to_file(std::ofstream& of) const;
 };
 
 }  // namespace learning

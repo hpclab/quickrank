@@ -14,10 +14,10 @@ namespace learning {
 
 
 void LTR_Algorithm::score_dataset(std::shared_ptr<data::Dataset> dataset,
-                                  quickrank::Score* scores) const {
+                                  Score* scores) const {
   preprocess_dataset(dataset);
   for (unsigned int q = 0; q < dataset->num_queries(); q++) {
-    std::shared_ptr<quickrank::data::QueryResults> r = dataset->getQueryResults(q);
+    std::shared_ptr<data::QueryResults> r = dataset->getQueryResults(q);
     score_query_results(r, scores, dataset->num_instances());
     scores += r->num_results();
   }
@@ -26,8 +26,8 @@ void LTR_Algorithm::score_dataset(std::shared_ptr<data::Dataset> dataset,
 // assumes vertical dataset
 // offset to next feature of the same instance
 void LTR_Algorithm::score_query_results(
-    std::shared_ptr<quickrank::data::QueryResults> results,
-    quickrank::Score* scores, unsigned int offset) const {
+    std::shared_ptr<data::QueryResults> results,
+    Score* scores, unsigned int offset) const {
   const quickrank::Feature* d = results->features();
   for (unsigned int i = 0; i < results->num_results(); i++) {
     scores[i] = score_document(d, offset);

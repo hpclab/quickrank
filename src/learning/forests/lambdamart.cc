@@ -150,7 +150,7 @@ void LambdaMart::learn(std::shared_ptr<quickrank::data::Dataset> training_datase
     update_modelscores(training_dataset, trainingmodelscores, &tree);
     // run metric
     quickrank::MetricScore metric_on_training = scorer->evaluate_dataset(
-        *training_dataset, trainingmodelscores);
+        training_dataset, trainingmodelscores);
 
     //				for (int ii=0; ii<20; ii++)
     //					printf("## %d \t %.16f\n", ii, trainingmodelscores[ii]);
@@ -164,7 +164,7 @@ void LambdaMart::learn(std::shared_ptr<quickrank::data::Dataset> training_datase
 
       // run metric
       quickrank::MetricScore metric_on_validation = scorer->evaluate_dataset(
-          *validation_dataset, scores_on_validation);
+          validation_dataset, scores_on_validation);
       printf(" %9.4f", metric_on_validation);
 
       if (metric_on_validation > best_metric_on_validation
@@ -191,14 +191,14 @@ void LambdaMart::learn(std::shared_ptr<quickrank::data::Dataset> training_datase
   //training_score = compute_score(training_set, scorer);
   score_dataset(training_dataset, trainingmodelscores);
   quickrank::MetricScore metric_on_training = scorer->evaluate_dataset(
-      *training_dataset, trainingmodelscores);
+      training_dataset, trainingmodelscores);
 
   printf("\t-----------------------------\n");
   std::cout << "\t" << *scorer << " on training data = " << metric_on_training
       << std::endl;
   if (validation_dataset) {
     score_dataset(validation_dataset, scores_on_validation);
-    best_metric_on_validation = scorer->evaluate_dataset(*validation_dataset,
+    best_metric_on_validation = scorer->evaluate_dataset(validation_dataset,
                                                          scores_on_validation);
     std::cout << "\t" << *scorer << " on validation data = "
         << best_metric_on_validation << std::endl;

@@ -58,6 +58,7 @@
 
 #include "metric/evaluator.h"
 #include "learning/forests/lambdamart.h"
+#include "learning/custom/custom_ltr.h"
 //#include "learning/matrixnet.h"
 #include "metric/ir/ndcg.h"
 #include "metric/ir/map.h"
@@ -121,7 +122,7 @@ void validate(boost::any& v, std::vector<std::string> const& values,
   // one string, it's an error, and exception will be thrown.
   std::string const& s = validators::get_single_string(values);
 
-  if (s == "lm" || s == "mn") {
+  if (s == "lm" || s == "mn" || s=="custom") {
     v = boost::any(model_string(s));
   } else {
     throw validation_error(validation_error::invalid_option_value);
@@ -172,7 +173,7 @@ int main(int argc, char *argv[]) {
   po::options_description model_desc("Model options");
   model_desc.add_options()(
       "algo", po::value<model_string>(),
-      "[mandatory] set ltr algorithm to use (allowed values are lm and mn)")(
+      "[mandatory] set ltr algorithm to use (allowed values are lm, mn and custom )")(
       "num-trees", po::value<unsigned int>()->default_value(1000),
       "set number of trees")("shrinkage",
                              po::value<float>()->default_value(0.1),
@@ -194,6 +195,8 @@ int main(int argc, char *argv[]) {
   mn_model_desc.add_options()("tree-depth",
                               po::value<unsigned int>()->default_value(3),
                               "set tree depth");
+
+  po::options_description custom_model_desc("Custom options");
 
   po::options_description metric_desc("Metric options");
   metric_desc.add_options()(
@@ -225,7 +228,7 @@ int main(int argc, char *argv[]) {
 
   po::options_description all_desc("Allowed options");
   all_desc.add(model_desc).add(metric_desc).add(file_desc).add(lm_model_desc)
-      .add(mn_model_desc);
+      .add(mn_model_desc).add(custom_model_desc);
   all_desc.add_options()("help", "produce help message");
 
   po::variables_map vm;
@@ -260,8 +263,8 @@ int main(int argc, char *argv[]) {
   unsigned int ntreeleaves = check_and_set<unsigned int>(
       vm, "num-leaves", "Number of leaves was not set.");
   // Matrixnet specific options
-  unsigned int treedepth = check_and_set<unsigned int>(
-      vm, "tree-depth", "Tree depth was not set.");
+  //unsigned int treedepth = check_and_set<unsigned int>(
+  //    vm, "tree-depth", "Tree depth was not set.");
 
   // Create model
   std::shared_ptr<quickrank::learning::LTR_Algorithm> ranking_algorithm;
@@ -270,8 +273,12 @@ int main(int argc, char *argv[]) {
         new quickrank::learning::forests::LambdaMart(ntrees, shrinkage,
                                                      nthresholds, ntreeleaves,
                                                      minleafsupport, esr));
-  else if (vm["algo"].as<model_string>().value == "mn")
-    ranking_algorithm = NULL;  //new quickrank::learning::forests::MatrixNet( ntrees, shrinkage, nthresholds, treedepth,   minleafsupport, esr);
+  //else if (vm["algo"].as<model_string>().value == "mn")
+  //  ranking_algorithm = NULL;  //new quickrank::learning::forests::MatrixNet( ntrees, shrinkage, nthresholds, treedepth,   minleafsupport, esr);
+  else if (vm["algo"].as<model_string>().value == "custom")
+    ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
+        new quickrank::learning::CustomLTR());
+
 
   //show ranker parameters
   std::cout << "#" << std::endl << *ranking_algorithm;
