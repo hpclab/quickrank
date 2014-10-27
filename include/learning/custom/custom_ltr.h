@@ -12,7 +12,7 @@ namespace quickrank {
 namespace learning {
 
 /*
- * Command lin
+ * Command line
  ./bin/quickrank --algo custom \
  --train tests/data/msn1.fold1.train.5k.txt \
  --valid tests/data/msn1.fold1.vali.5k.txt \
