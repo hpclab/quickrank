@@ -9,6 +9,10 @@
 namespace quickrank {
 namespace data {
 
+/// This class wraps a set of results for a given query.
+///
+/// The internal data representation is the same as the
+/// \a Dataset it comes from.
 class QueryResults : private boost::noncopyable {
  public:
 
