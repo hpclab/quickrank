@@ -227,33 +227,6 @@ void LambdaMart::update_modelscores(std::shared_ptr<data::Dataset> dataset, Scor
 
 }
 
-std::unique_ptr<quickrank::Jacobian> LambdaMart::getJacobian(
-    const ResultList &orig, const unsigned int offset, quickrank::metric::ir::Metric* scorer) {
-  //build a ql made up of label values picked up from orig order by indexes of trainingmodelscores reversely sorted
-  unsigned int *idx = idxdouble_mergesort(trainingmodelscores + offset,
-                                          orig.size);
-  //unsigned int *idx = idxdouble_qsort(trainingmodelscores+offset, orig.size);
-  double* sortedlabels = new double[orig.size];  // float sortedlabels[orig.size];
-  for (unsigned int i = 0; i < orig.size; ++i)
-    sortedlabels[i] = orig.labels[idx[i]];
-  ResultList tmprl(orig.size, sortedlabels, orig.qid);
-  //alloc mem
-  std::unique_ptr<quickrank::Jacobian> reschanges = std::unique_ptr<
-      quickrank::Jacobian>(new quickrank::Jacobian(orig.size));
-  quickrank::Jacobian* reschanges_p = reschanges.get();
-  //compute temp swap changes on ql
-  std::unique_ptr<quickrank::Jacobian> tmpchanges = scorer->get_jacobian(tmprl);
-  quickrank::Jacobian* tmpchanges_p = tmpchanges.get();
-#pragma omp parallel for
-  for (unsigned int i = 0; i < orig.size; ++i)
-    for (unsigned int j = i; j < orig.size; ++j)
-      reschanges_p->at(idx[i], idx[j]) = tmpchanges_p->at(i, j);
-  // delete tmpchanges,
-  delete[] idx;
-  delete[] sortedlabels;
-  return reschanges;
-}
-
 // Changes by Cla:
 // - added processing of ranked list in ranked order
 // - added cut-off in measure changes matrix
@@ -262,61 +235,60 @@ void LambdaMart::compute_pseudoresponses(std::shared_ptr<quickrank::data::Datase
 
   const unsigned int nrankedlists = training_dataset->num_queries();
   //const unsigned int *rloffsets = training_set->get_rloffsets();
-#pragma omp parallel for
+  #pragma omp parallel for
   for (unsigned int i = 0; i < nrankedlists; ++i) {
+    std::shared_ptr<data::QueryResults> qr = training_dataset->getQueryResults(i);
+
     const unsigned int offset = training_dataset->offset(i);
-    // ResultList ql = training_set->get_qlist(i);
-    std::unique_ptr<quickrank::data::QueryResults> qr = training_dataset
-        ->getQueryResults(i);
+    double *lambdas = pseudoresponses + offset;
+    double *weights = cachedweights + offset;
+    for (unsigned int j = 0; j < qr->num_results(); ++j)
+      lambdas[j] = weights[j] = 0.0;
 
     // CLA: line below uses the old sort and not mergesort as in ranklib
     // unsigned int *idx = idxdouble_qsort(trainingmodelscores+offset, ql.size);
-    unsigned int *idx = idxdouble_mergesort<quickrank::Score>(
+    unsigned int *idx = idxdouble_mergesort<Score>(
         trainingmodelscores + offset, qr->num_results());
 
-    double* sortedlabels = new double[qr->num_results()];
+    Label* sortedlabels = new Label[qr->num_results()];
     for (unsigned int i = 0; i < qr->num_results(); ++i)
       sortedlabels[i] = qr->labels()[idx[i]];
 
-    ResultList ranked_list(qr->num_results(), sortedlabels, 0);
-    //compute temp swap changes on ql
-    std::unique_ptr<quickrank::Jacobian> changes = scorer->get_jacobian(
-        ranked_list);
-    quickrank::Jacobian* changes_p = changes.get();
+    std::shared_ptr<data::QueryResults> ranked_list = std::shared_ptr<data::QueryResults>(
+        new data::QueryResults(qr->num_results(), sortedlabels, NULL) );
 
-    double *lambdas = pseudoresponses + offset;
-    double *weights = cachedweights + offset;
-    for (unsigned int j = 0; j < ranked_list.size; ++j)
-      lambdas[j] = 0.0, weights[j] = 0.0;
-    for (unsigned int j = 0; j < ranked_list.size; ++j) {
-      float jthlabel = ranked_list.labels[j];
-      for (unsigned int k = 0; k < ranked_list.size; ++k)
+    std::unique_ptr<Jacobian> changes = scorer->get_jacobian(ranked_list);
+
+    for (unsigned int j = 0; j < ranked_list->num_results(); ++j) {
+      float jthlabel = ranked_list->labels()[j];
+      for (unsigned int k = 0; k < ranked_list->num_results(); ++k)
         if (k != j) {
           // skip if we are beyond the top-K results
           if (j >= cutoff && k >= cutoff)
             break;
 
-          float kthlabel = ranked_list.labels[k];
+          float kthlabel = ranked_list->labels()[k];
           if (jthlabel > kthlabel) {
             int i_max = j >= k ? j : k;
             int i_min = j >= k ? k : j;
-            double deltandcg = fabs(changes_p->at(i_min, i_max));
+            double deltandcg = fabs(changes->at(i_min, i_max));
 
-            double rho = 1.0
-                / (1.0
-                    + exp(
-                        trainingmodelscores[offset + idx[j]]
-                                            - trainingmodelscores[offset + idx[k]]));
+            double rho = 1.0 / (1.0 + exp(
+                        trainingmodelscores[offset + idx[j]] -
+                        trainingmodelscores[offset + idx[k]] ));
             double lambda = rho * deltandcg;
             double delta = rho * (1.0 - rho) * deltandcg;
-            lambdas[idx[j]] += lambda, lambdas[idx[k]] -= lambda, weights[idx[j]] +=
-                delta, weights[idx[k]] += delta;
+            lambdas[idx[j]] += lambda;
+            lambdas[idx[k]] -= lambda;
+            weights[idx[j]] += delta;
+            weights[idx[k]] += delta;
           }
         }
     }
 
     delete[] idx;
     delete[] sortedlabels;
+
   }
 }
 

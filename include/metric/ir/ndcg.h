@@ -42,6 +42,7 @@ class Ndcg : public Dcg {
 
   /// \todo TODO: replace this results list with QueryResults
   virtual std::unique_ptr<Jacobian> get_jacobian(const ResultList &ql) const;
+  virtual std::unique_ptr<Jacobian> get_jacobian(std::shared_ptr<data::QueryResults> results) const;
 
  protected:
   /// Computes the IDCG\@K of a given list of labels.
@@ -51,8 +52,7 @@ class Ndcg : public Dcg {
   /// \return IDCG\@K for computed on the given labels.
   double compute_idcg(double const*, const unsigned int,
                       const unsigned int) const;
-  MetricScore compute_idcg(const quickrank::data::QueryResults* rl,
-                           const Score* scores) const;
+  MetricScore compute_idcg(const quickrank::data::QueryResults* rl) const;
 
  private:
   friend std::ostream& operator<<(std::ostream& os, const Ndcg& ndcg) {

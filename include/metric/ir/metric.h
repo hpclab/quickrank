@@ -62,7 +62,7 @@ class Metric : private boost::noncopyable {
       return 0.0;
     MetricScore avg_score = 0.0;
     for (unsigned int q = 0; q < dataset->num_queries(); q++) {
-      std::shared_ptr<quickrank::data::QueryResults> r =
+      std::shared_ptr<data::QueryResults> r =
           dataset->getQueryResults(q);
       avg_score += evaluate_result_list(r.get(), scores);
       scores += r->num_results();
@@ -71,13 +71,19 @@ class Metric : private boost::noncopyable {
     return avg_score;
   }
 
+  /// \deprecated
+  virtual std::unique_ptr<Jacobian> get_jacobian(const ResultList &rl) const {
+    return std::unique_ptr<Jacobian>();
+  }
+
   /// Computes the Jacobian matrix.
   /// This is a symmetric matrix storing the metric change when two documents scores
   /// are swaped.
   /// \param rl A results list.
   /// \return A smart-pointer to the Jacobian Matrix.
   /// \todo TODO: provide def implementation
-  virtual std::unique_ptr<Jacobian> get_jacobian(const ResultList &rl) const {
+  /// \todo add a vector of score to be used to re-order the list
+  virtual std::unique_ptr<Jacobian> get_jacobian(std::shared_ptr<data::QueryResults> results) const {
     return std::unique_ptr<Jacobian>();
   }
 

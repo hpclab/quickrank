@@ -56,6 +56,26 @@ MetricScore Dcg::evaluate_result_list(const quickrank::data::QueryResults* rl,
   return compute_dcg(sorted_labels.get(), rl->num_results(), cutoff());
 }
 
+std::unique_ptr<Jacobian> Dcg::get_jacobian(std::shared_ptr<data::QueryResults> results) const {
+  const unsigned int size = std::min(cutoff(), results->num_results());
+  std::unique_ptr<Jacobian> changes = std::unique_ptr<Jacobian>(
+      new Jacobian(results->num_results()));
+
+#pragma omp parallel for
+  for (unsigned int i = 0; i < size; ++i) {
+    //get the pointer to the i-th line of matrix
+    double *vchanges = changes->vectat(i, i + 1);
+    for (unsigned int j = i + 1; j < results->num_results(); ++j) {
+      *vchanges++ = (1.0f / log2((double) (i + 2))
+          - 1.0f / log2((double) (j + 2)))
+          * (pow(2.0, (double) results->labels()[i]) - pow(2.0, (double) results->labels()[j]));
+    }
+  }
+
+  return changes;
+
+}
+
 std::unique_ptr<Jacobian> Dcg::get_jacobian(const ResultList &ql) const {
   const unsigned int size = std::min(cutoff(), ql.size);
   std::unique_ptr<Jacobian> changes = std::unique_ptr<Jacobian>(

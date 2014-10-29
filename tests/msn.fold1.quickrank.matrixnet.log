@@ -3,6 +3,7 @@
 # ## -------------------------- ## #
 # ## developed by the HPC. Lab. ## #
 # ##  http://hpc.isti.cnr.it/   ## #
+# ##  quickrank@.isti.cnr.it/   ## #
 # ## ========================== ## #
 Missing algorithm, mandatory parmeter.
 Allowed options:
@@ -10,7 +11,7 @@ Allowed options:
 
 Model options:
   --algo arg                     [mandatory] set ltr algorithm to use (allowed 
-                                 values are lm and mn)
+                                 values are lm, mn and custom )
   --num-trees arg (=1000)        set number of trees
   --shrinkage arg (=0.100000001) set shrinkage
   --num-thresholds arg (=0)      set number of thresholds
@@ -37,4 +38,6 @@ Lambdamart options:
 
 Matrixnet options:
   --tree-depth arg (=3) set tree depth
+
+Custom options:
 

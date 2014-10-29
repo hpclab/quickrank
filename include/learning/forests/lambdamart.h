@@ -80,9 +80,6 @@ class LambdaMart : public LTR_Algorithm {
                           Score *scores,
                           RegressionTree* tree);
 
-  std::unique_ptr<quickrank::Jacobian> getJacobian(
-      const ResultList &orig, const unsigned int offset, quickrank::metric::ir::Metric* scorer);
-
  private:
   /// Prepares private data structurs befor training takes place.
   void init(std::shared_ptr<data::Dataset> training_dataset,

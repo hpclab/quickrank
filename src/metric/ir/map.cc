@@ -41,6 +41,40 @@ MetricScore Map::evaluate_result_list(const quickrank::data::QueryResults* rl,
   return count > 0 ? ap / count : 0.0;
 }
 
+std::unique_ptr<Jacobian> Map::get_jacobian(std::shared_ptr<data::QueryResults> results) const {
+  int* labels = new int[results->num_results()];  // int labels[ql.size];
+  int* relcount = new int[results->num_results()];  // int relcount[ql.size];
+  MetricScore count = 0;
+  for (unsigned int i = 0; i < results->num_results(); ++i) {
+    if (results->labels()[i] > 0.0f)  //relevant if true
+      labels[i] = 1, ++count;
+    else
+      labels[i] = 0;
+    relcount[i] = count;
+  }
+  // count = (ql.qid<nrelevantdocs && relevantdocs[ql.qid]>count) ? relevantdocs[ql.qid] : count;
+  std::unique_ptr<Jacobian> changes = std::unique_ptr<Jacobian>(
+      new Jacobian(results->num_results()));
+  if (count != 0) {
+#pragma omp parallel for
+    for (unsigned int i = 0; i < results->num_results() - 1; ++i)
+      for (unsigned int j = i + 1; j < results->num_results(); ++j)
+        if (labels[i] != labels[j]) {
+          const int diff = labels[j] - labels[i];
+          MetricScore change = ((relcount[i] + diff) * labels[j]
+              - relcount[i] * labels[i]) / (i + 1.0f);
+          for (unsigned int k = i + 1; k < j; ++k)
+            if (labels[k] > 0)
+              change += (relcount[k] + diff) / (k + 1.0f);
+          change += (-relcount[j] * diff) / (j + 1.0f);
+          changes->at(i, j) = change / count;
+        }
+  }
+  delete[] labels;
+  delete[] relcount;
+  return changes;
+}
+
 std::unique_ptr<Jacobian> Map::get_jacobian(const ResultList &ql) const {
   int* labels = new int[ql.size];  // int labels[ql.size];
   int* relcount = new int[ql.size];  // int relcount[ql.size];
