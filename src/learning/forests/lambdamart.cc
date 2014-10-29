@@ -259,6 +259,8 @@ void LambdaMart::compute_pseudoresponses(std::shared_ptr<quickrank::data::Datase
 
     std::unique_ptr<Jacobian> changes = scorer->get_jacobian(ranked_list);
 
+    // \todo TODO: rank by label one and for all ?
+    // \todo TODO: look at the top score or at the top labelled ?
     for (unsigned int j = 0; j < ranked_list->num_results(); ++j) {
       float jthlabel = ranked_list->labels()[j];
       for (unsigned int k = 0; k < ranked_list->num_results(); ++k)
