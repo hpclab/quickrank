@@ -8,7 +8,6 @@
 
 #include "data/queryresults.h"
 #include "data/dataset.h"
-#include "learning/dpset.h"
 #include "types.h"
 
 namespace quickrank {
@@ -46,12 +45,6 @@ class Metric : private boost::noncopyable {
   /// Measures the quality of the given results list according to the Metric.
   ///
   /// \param rl A results list.
-  /// \return The quality score of the result list.
-  virtual MetricScore evaluate_result_list(const ResultList& rl) const = 0;
-
-  /// Measures the quality of the given results list according to the Metric.
-  ///
-  /// \param rl A results list.
   /// \param scores a list of scores
   /// \return The quality score of the result list.
   virtual MetricScore evaluate_result_list(
@@ -69,11 +62,6 @@ class Metric : private boost::noncopyable {
     }
     avg_score /= (MetricScore) dataset->num_queries();
     return avg_score;
-  }
-
-  /// \deprecated
-  virtual std::unique_ptr<Jacobian> get_jacobian(const ResultList &rl) const {
-    return std::unique_ptr<Jacobian>();
   }
 
   /// Computes the Jacobian matrix.

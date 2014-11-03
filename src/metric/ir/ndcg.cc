@@ -46,17 +46,6 @@ MetricScore Ndcg::compute_idcg(const quickrank::data::QueryResults* rl) const {
   return dcg;
 }
 
-MetricScore Ndcg::evaluate_result_list(const ResultList& ql) const {
-  if (ql.size == 0)
-    return 0.0;
-  const unsigned int size = std::min(cutoff(), ql.size);
-  const double idcg = Ndcg::compute_idcg(ql.labels, ql.size, size);
-  return
-      idcg > (MetricScore) 0.0 ?
-          (MetricScore) compute_dcg(ql.labels, ql.size, size) / idcg :
-          (MetricScore) 0.0;
-}
-
 MetricScore Ndcg::evaluate_result_list(const quickrank::data::QueryResults* rl,
                                        const Score* scores) const {
   if (rl->num_results() == 0)
@@ -88,28 +77,6 @@ std::unique_ptr<Jacobian> Ndcg::get_jacobian(std::shared_ptr<data::QueryResults>
     }
   }
 
-  return changes;
-}
-
-
-std::unique_ptr<Jacobian> Ndcg::get_jacobian(const ResultList &ql) const {
-  const unsigned int size = std::min(cutoff(), ql.size);
-  const double idcg = compute_idcg(ql.labels, ql.size, size);
-  std::unique_ptr<Jacobian> changes = std::unique_ptr<Jacobian>(
-      new Jacobian(ql.size));
-  if (idcg > 0.0) {
-#pragma omp parallel for
-    for (unsigned int i = 0; i < size; ++i) {
-      //get the pointer to the i-th line of matrix
-      double *vchanges = changes->vectat(i, i + 1);
-      for (unsigned int j = i + 1; j < ql.size; ++j) {
-        *vchanges++ =
-            (1.0f / log2((double) (i + 2)) - 1.0f / log2((double) (j + 2)))
-                * (pow(2.0, (double) ql.labels[i])
-                    - pow(2.0, (double) ql.labels[j])) / idcg;
-      }
-    }
-  }
   return changes;
 }
 

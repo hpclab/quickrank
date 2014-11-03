@@ -33,15 +33,12 @@ class Ndcg : public Dcg {
 
   /// \todo TODO: for only zero result slist Yahoo! LTR returns 0.5 instead of 0.0.
   ///             Make this choice available.
-  virtual MetricScore evaluate_result_list(const ResultList&) const;
   /// \param rl A results list.
   /// \param scores a list of scores
   /// \return The quality score of the result list.
   virtual MetricScore evaluate_result_list(
       const quickrank::data::QueryResults* rl, const Score* scores) const;
 
-  /// \todo TODO: replace this results list with QueryResults
-  virtual std::unique_ptr<Jacobian> get_jacobian(const ResultList &ql) const;
   virtual std::unique_ptr<Jacobian> get_jacobian(std::shared_ptr<data::QueryResults> results) const;
 
  protected:
