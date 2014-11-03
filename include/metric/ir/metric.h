@@ -22,7 +22,6 @@ class Metric : private boost::noncopyable {
   /// This should be used when no cut-off on the results list is required.
   static const unsigned int NO_CUTOFF = UINT_MAX;
 
-  // TODO: Fix k = 0, no cutoff
   /// Creates a new metric with the specified cut-off threshold.
   ///
   /// \param k The cut-off threshold.
