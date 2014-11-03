@@ -69,7 +69,6 @@ class Metric : private boost::noncopyable {
   /// \param rl A results list.
   /// \return A smart-pointer to the Jacobian Matrix.
   /// \todo TODO: provide def implementation
-  /// \todo add a vector of score to be used to re-order the list
   virtual std::unique_ptr<Jacobian> get_jacobian(std::shared_ptr<data::QueryResults> results) const {
     return std::unique_ptr<Jacobian>();
   }
