@@ -37,14 +37,9 @@ class Dcg : public Metric {
 
  protected:
   /// Computes the DCG\@K of a given list of labels.
-  /// \param labels input labels.
-  /// \param nlabels number of input labels.
-  /// \param k cut-off.
+  /// \param rl The given results list. Only labels are actually used.
   /// \return DCG\@K for computed on the given labels.
-  double compute_dcg(double const* labels, const unsigned int nlabels,
-                     const unsigned int k) const;
-  MetricScore compute_dcg(Label const* labels, const unsigned int nlabels,
-                          const unsigned int k) const;
+  MetricScore compute_dcg(const quickrank::data::QueryResults* rl) const;
 
  private:
   friend std::ostream& operator<<(std::ostream& os, const Dcg& ndcg) {

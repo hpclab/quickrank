@@ -16,26 +16,15 @@ namespace quickrank {
 namespace metric {
 namespace ir {
 
-double Dcg::compute_dcg(double const* labels, const unsigned int nlabels,
-                        const unsigned int k) const {
-  unsigned int size = std::min(k, nlabels);
+MetricScore Dcg::compute_dcg(const quickrank::data::QueryResults* results) const {
+  const unsigned int size = std::min(cutoff(), results->num_results());
   double dcg = 0.0;
 #pragma omp parallel for reduction(+:dcg)
   for (unsigned int i = 0; i < size; ++i)
-    dcg += (pow(2.0, labels[i]) - 1.0f) / log2(i + 2.0f);
-  return dcg;
-}
-
-
-MetricScore Dcg::compute_dcg(Label const* labels, const unsigned int nlabels,
-                             const unsigned int k) const {
-  unsigned int size = std::min(k, nlabels);
-  double dcg = 0.0;
-#pragma omp parallel for reduction(+:dcg)
-  for (unsigned int i = 0; i < size; ++i)
-    dcg += (pow(2.0, labels[i]) - 1.0f) / log2(i + 2.0f);
+    dcg += (pow(2.0, results->labels()[i]) - 1.0f) / log2(i + 2.0f);
   return (MetricScore) dcg;
 }
+
 
 MetricScore Dcg::evaluate_result_list(const quickrank::data::QueryResults* rl,
                                       const Score* scores) const {
@@ -47,7 +36,11 @@ MetricScore Dcg::evaluate_result_list(const quickrank::data::QueryResults* rl,
       copyextdouble_mergesort<Label, Score>(rl->labels(), scores,
                                             rl->num_results());
 
-  return compute_dcg(sorted_labels.get(), rl->num_results(), cutoff());
+  data::QueryResults* sorted_results = new data::QueryResults (rl->num_results(), sorted_labels.get(), NULL);
+  MetricScore dcg = compute_dcg(sorted_results);
+  delete sorted_results;
+
+  return dcg;
 }
 
 std::unique_ptr<Jacobian> Dcg::get_jacobian(std::shared_ptr<data::QueryResults> results) const {

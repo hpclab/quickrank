@@ -16,21 +16,6 @@ namespace quickrank {
 namespace metric {
 namespace ir {
 
-double Ndcg::compute_idcg(double const* labels, const unsigned int nlabels,
-                          const unsigned int k) const {
-  //make a copy of lables
-  double *copyoflabels = new double[nlabels];
-  memcpy(copyoflabels, labels, sizeof(double) * nlabels);
-  //sort the copy
-  double_qsort(copyoflabels, nlabels);
-  //compute dcg
-  double dcg = compute_dcg(copyoflabels, nlabels, k);
-  //free mem
-  delete[] copyoflabels;
-  //return dcg
-  return dcg;
-}
-
 MetricScore Ndcg::compute_idcg(const quickrank::data::QueryResults* rl) const {
   //make a copy of lables
   Label* copyoflabels = new Label[rl->num_results()];
@@ -39,8 +24,10 @@ MetricScore Ndcg::compute_idcg(const quickrank::data::QueryResults* rl) const {
   std::sort(copyoflabels, copyoflabels + rl->num_results(),
             std::greater<int>());
   //compute dcg
-  MetricScore dcg = compute_dcg(copyoflabels, rl->num_results(), cutoff());
+  data::QueryResults* sorted_results = new data::QueryResults (rl->num_results(), copyoflabels, NULL);
+  MetricScore dcg = compute_dcg(sorted_results);
   //free mem
+  delete sorted_results;
   delete[] copyoflabels;
   //return dcg
   return dcg;

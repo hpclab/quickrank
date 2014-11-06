@@ -29,7 +29,6 @@ class Ndcg : public Dcg {
   }
   virtual ~Ndcg() {
   }
-  ;
 
   /// \todo TODO: for only zero result slist Yahoo! LTR returns 0.5 instead of 0.0.
   ///             Make this choice available.
@@ -43,12 +42,8 @@ class Ndcg : public Dcg {
 
  protected:
   /// Computes the IDCG\@K of a given list of labels.
-  /// \param labels input labels.
-  /// \param nlabels number of input labels.
-  /// \param k cut-off.
+  /// \param rl The given results list. Only labels are actually used.
   /// \return IDCG\@K for computed on the given labels.
-  double compute_idcg(double const*, const unsigned int,
-                      const unsigned int) const;
   MetricScore compute_idcg(const quickrank::data::QueryResults* rl) const;
 
  private:
