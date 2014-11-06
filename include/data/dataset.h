@@ -112,8 +112,8 @@ class Dataset : private boost::noncopyable {
 
   Format format_;
 
-  quickrank::Feature* data_;
-  quickrank::Label* labels_;
+  quickrank::Feature* data_ = NULL;
+  quickrank::Label* labels_ = NULL;
   boost::container::vector<unsigned int> offsets_;
 
   unsigned int last_instance_id_;
