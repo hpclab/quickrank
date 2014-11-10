@@ -6,7 +6,7 @@
 #include <cmath>
 
 BOOST_AUTO_TEST_CASE( ndcg_test ) {
-  quickrank::Label labels[] = { 3, 2, 1, 0, 0 };
+  quickrank::Label labels[] = { 2, 3, 1, 0, 0 };
   quickrank::Score scores[] = { 5, 4, 3, 2, 1 };
   quickrank::data::QueryResults results(5, &labels[0], NULL);
 

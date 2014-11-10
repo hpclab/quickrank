@@ -64,8 +64,8 @@ class Metric : private boost::noncopyable {
   }
 
   /// Computes the Jacobian matrix.
-  /// This is a symmetric matrix storing the metric change when two documents scores
-  /// are swaped.
+  /// This is a symmetric matrix storing the metric "decrease" when two documents scores
+  /// are swapped.
   /// \param rl A results list.
   /// \return A smart-pointer to the Jacobian Matrix.
   /// \todo TODO: provide def implementation
