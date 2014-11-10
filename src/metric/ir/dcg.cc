@@ -19,7 +19,7 @@ namespace ir {
 MetricScore Dcg::compute_dcg(const quickrank::data::QueryResults* results) const {
   const unsigned int size = std::min(cutoff(), results->num_results());
   double dcg = 0.0;
-#pragma omp parallel for reduction(+:dcg)
+//#pragma omp parallel for reduction(+:dcg)
   for (unsigned int i = 0; i < size; ++i)
     dcg += (pow(2.0, results->labels()[i]) - 1.0f) / log2(i + 2.0f);
   return (MetricScore) dcg;
