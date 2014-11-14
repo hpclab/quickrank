@@ -60,6 +60,7 @@
 #include "learning/forests/lambdamart.h"
 #include "learning/custom/custom_ltr.h"
 //#include "learning/matrixnet.h"
+#include "metric/ir/tndcg.h"
 #include "metric/ir/ndcg.h"
 #include "metric/ir/map.h"
 
@@ -67,9 +68,7 @@ namespace po = boost::program_options;
 
 // Structure used to validate allowed metric
 struct metric_string {
-  metric_string(std::string const& val)
-      : value(val) {
-  }
+  metric_string(std::string const& val): value(val) {}
   std::string value;
 };
 
@@ -80,9 +79,7 @@ std::ostream& operator<<(std::ostream &os, const metric_string &m) {
 
 // Structure used to validate allowed model
 struct model_string {
-  model_string(std::string const& val)
-      : value(val) {
-  }
+  model_string(std::string const& val) : value(val) {}
   std::string value;
 };
 
@@ -103,7 +100,7 @@ void validate(boost::any& v, std::vector<std::string> const& values,
   // one string, it's an error, and exception will be thrown.
   std::string const& s = validators::get_single_string(values);
 
-  if (s == "ndcg" || s == "map") {
+  if (s == "ndcg" || s == "map" || s == "tndcg") {
     v = boost::any(metric_string(s));
   } else {
     throw validation_error(validation_error::invalid_option_value);
@@ -151,11 +148,13 @@ std::shared_ptr<quickrank::metric::ir::Metric> check_and_set_metric(const po::va
     if (vm[type + "-metric"].as<metric_string>().value == "ndcg")
       return std::shared_ptr<quickrank::metric::ir::Metric> (
           new quickrank::metric::ir::Ndcg(k) );
-    else
+    else if (vm[type + "-metric"].as<metric_string>().value == "tndcg")
       return std::shared_ptr<quickrank::metric::ir::Metric> (
+          new quickrank::metric::ir::Tndcg(k) );
+    else return std::shared_ptr<quickrank::metric::ir::Metric> (
           new quickrank::metric::ir::Map(k) );
   } else {
-    std::cout << type + " Metric (ndcg or map) was not set." << std::endl;
+    std::cout << type + " Metric (ndcg or map ot ndcg) was not set." << std::endl;
     exit(1);
   }
 }
@@ -203,7 +202,7 @@ int main(int argc, char *argv[]) {
       "train-metric",
       po::value<metric_string>()->default_value(
           metric_string(std::string("ndcg"))),
-      "set train metric (allowed values are ndcg and map)")(
+      "set train metric (allowed values are [ndcg|tndcg|map])")(
       "train-cutoff", po::value<unsigned int>()->default_value(10),
       "set train metric cutoff")(
       "test-metric",

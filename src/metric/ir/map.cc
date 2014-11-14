@@ -32,12 +32,12 @@ MetricScore Map::evaluate_result_list(const quickrank::data::QueryResults* rl,
   return count > 0 ? ap / count : 0.0;
 }
 
-std::unique_ptr<Jacobian> Map::get_jacobian(std::shared_ptr<data::QueryResults> results) const {
-  int* labels = new int[results->num_results()];  // int labels[ql.size];
-  int* relcount = new int[results->num_results()];  // int relcount[ql.size];
+std::unique_ptr<Jacobian> Map::jacobian(std::shared_ptr<data::RankedResults> ranked) const {
+  int* labels = new int[ranked->num_results()];  // int labels[ql.size];
+  int* relcount = new int[ranked->num_results()];  // int relcount[ql.size];
   MetricScore count = 0;
-  for (unsigned int i = 0; i < results->num_results(); ++i) {
-    if (results->labels()[i] > 0.0f)  //relevant if true
+  for (unsigned int i = 0; i < ranked->num_results(); ++i) {
+    if (ranked->sorted_labels()[i] > 0.0f)  //relevant if true
       labels[i] = 1, ++count;
     else
       labels[i] = 0;
@@ -45,11 +45,11 @@ std::unique_ptr<Jacobian> Map::get_jacobian(std::shared_ptr<data::QueryResults> 
   }
   // count = (ql.qid<nrelevantdocs && relevantdocs[ql.qid]>count) ? relevantdocs[ql.qid] : count;
   std::unique_ptr<Jacobian> changes = std::unique_ptr<Jacobian>(
-      new Jacobian(results->num_results()));
+      new Jacobian(ranked->num_results()));
   if (count != 0) {
 #pragma omp parallel for
-    for (unsigned int i = 0; i < results->num_results() - 1; ++i)
-      for (unsigned int j = i + 1; j < results->num_results(); ++j)
+    for (unsigned int i = 0; i < ranked->num_results() - 1; ++i)
+      for (unsigned int j = i + 1; j < ranked->num_results(); ++j)
         if (labels[i] != labels[j]) {
           const int diff = labels[j] - labels[i];
           MetricScore change = ((relcount[i] + diff) * labels[j]
@@ -64,8 +64,8 @@ std::unique_ptr<Jacobian> Map::get_jacobian(std::shared_ptr<data::QueryResults> 
   delete[] labels;
   delete[] relcount;
   return changes;
-}
 
+}
 
 std::ostream& Map::put(std::ostream& os) const {
   if (cutoff() != Metric::NO_CUTOFF)

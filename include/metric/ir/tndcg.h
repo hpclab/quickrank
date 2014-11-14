@@ -39,7 +39,7 @@ class Tndcg : public Ndcg {
   virtual MetricScore evaluate_result_list(
       const quickrank::data::QueryResults* rl, const Score* scores) const;
 
-  virtual std::unique_ptr<Jacobian> get_jacobian(std::shared_ptr<data::QueryResults> results) const;
+  virtual std::unique_ptr<Jacobian> jacobian(std::shared_ptr<data::RankedResults> ranked) const;
 
  protected:
   /// Computes the TNDCG\@K of a given list of labels.

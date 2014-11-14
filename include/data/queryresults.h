@@ -13,6 +13,7 @@ namespace data {
 ///
 /// The internal data representation is the same as the
 /// \a Dataset it comes from.
+/// \todo TODO: it seems we need also a class withouth features
 class QueryResults : private boost::noncopyable {
  public:
 

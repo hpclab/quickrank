@@ -7,6 +7,7 @@
 #include <boost/noncopyable.hpp>
 
 #include "data/queryresults.h"
+#include "data/rankedresults.h"
 #include "data/dataset.h"
 #include "types.h"
 
@@ -69,8 +70,24 @@ class Metric : private boost::noncopyable {
   /// \param rl A results list.
   /// \return A smart-pointer to the Jacobian Matrix.
   /// \todo TODO: provide def implementation
-  virtual std::unique_ptr<Jacobian> get_jacobian(std::shared_ptr<data::QueryResults> results) const {
-    return std::unique_ptr<Jacobian>();
+  virtual std::unique_ptr<Jacobian> jacobian(std::shared_ptr<data::RankedResults> ranked) const {
+    auto jacobian = std::unique_ptr<Jacobian>( new Jacobian(ranked->num_results()) );
+    auto results = std::shared_ptr<data::QueryResults> (
+        new data::QueryResults (ranked->num_results(), ranked->sorted_labels(), NULL) );
+
+    MetricScore orig_score = evaluate_result_list(results.get(), ranked->sorted_scores());
+    const unsigned int size = std::min(cutoff(), results->num_results());
+    for (unsigned int i = 0; i < size; ++i) {
+      double *p_jacobian = jacobian->vectat(i, i + 1);
+      for (unsigned int j = i + 1; j < results->num_results(); ++j) {
+        std::swap(ranked->sorted_scores()[i], ranked->sorted_scores()[j]);
+        MetricScore new_score = evaluate_result_list(results.get(), ranked->sorted_scores());
+        *p_jacobian++ = new_score - orig_score;
+        std::swap(ranked->sorted_scores()[i], ranked->sorted_scores()[j]);
+      }
+    }
+
+    return jacobian;
   }
 
  private:

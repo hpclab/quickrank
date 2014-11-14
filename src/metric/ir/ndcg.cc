@@ -44,27 +44,34 @@ MetricScore Ndcg::evaluate_result_list(const quickrank::data::QueryResults* rl,
     return 0;
 }
 
-std::unique_ptr<Jacobian> Ndcg::get_jacobian(std::shared_ptr<data::QueryResults> results) const {
-  const unsigned int size = std::min(cutoff(), results->num_results());
-  const double idcg = compute_idcg(results.get());
-  std::unique_ptr<Jacobian> changes = std::unique_ptr<Jacobian>(
-      new Jacobian(results->num_results()));
+std::unique_ptr<Jacobian> Ndcg::jacobian(std::shared_ptr<data::RankedResults> ranked) const {
+  std::unique_ptr<Jacobian> jacobian = std::unique_ptr<Jacobian>(
+      new Jacobian(ranked->num_results()));
 
-  if (idcg > 0.0) {
-#pragma omp parallel for
-    for (unsigned int i = 0; i < size; ++i) {
-      //get the pointer to the i-th line of matrix
-      double *vchanges = changes->vectat(i, i + 1);
-      for (unsigned int j = i + 1; j < results->num_results(); ++j) {
-        *vchanges++ =
-            (1.0f / log2((double) (i + 2)) - 1.0f / log2((double) (j + 2)))
-                * (pow(2.0, (double) results->labels()[i])
-                    - pow(2.0, (double) results->labels()[j])) / idcg;
+  auto results = std::shared_ptr<data::QueryResults> (
+      new data::QueryResults (ranked->num_results(), ranked->sorted_labels(), NULL) );
+  const double idcg = compute_idcg(results.get());
+  if (idcg <= 0.0)
+    return jacobian;
+
+  const unsigned int size = std::min(cutoff(), ranked->num_results());
+
+  for (unsigned int i = 0; i < size; ++i) {
+    for (unsigned int j = i + 1; j < ranked->num_results(); ++j) {
+      // if the score is the same, non changes occur
+      if (ranked->sorted_labels()[i]!=ranked->sorted_labels()[j] ) {
+        //*p_jacobian =
+        jacobian->at(i,j) =
+            ( 1.0f / log2((double) (j + 2)) - 1.0f / log2((double) (i + 2)) ) *
+            ( pow(2.0, (double) ranked->sorted_labels()[i]) -
+                pow(2.0, (double) ranked->sorted_labels()[j]) ) /
+                idcg;
       }
+      //p_jacobian++;
     }
   }
 
-  return changes;
+  return jacobian;
 }
 
 std::ostream& Ndcg::put(std::ostream& os) const {

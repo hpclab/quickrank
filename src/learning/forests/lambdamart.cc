@@ -9,6 +9,7 @@
 #include "utils/radix.h"
 #include "utils/qsort.h"
 #include "utils/mergesorter.h"
+#include "data/rankedresults.h"
 
 namespace quickrank {
 namespace learning {
@@ -227,9 +228,60 @@ void LambdaMart::update_modelscores(std::shared_ptr<data::Dataset> dataset, Scor
 
 }
 
+
+void LambdaMart::compute_pseudoresponses( std::shared_ptr<quickrank::data::Dataset> training_dataset,
+                                          quickrank::metric::ir::Metric* scorer) {
+  const unsigned int cutoff = scorer->cutoff();
+
+  const unsigned int nrankedlists = training_dataset->num_queries();
+  #pragma omp parallel for
+  for (unsigned int i = 0; i < nrankedlists; ++i) {
+    std::shared_ptr<data::QueryResults> qr = training_dataset->getQueryResults(i);
+
+    const unsigned int offset = training_dataset->offset(i);
+    double *lambdas = pseudoresponses + offset;
+    double *weights = cachedweights + offset;
+    for (unsigned int j = 0; j < qr->num_results(); ++j)
+      lambdas[j] = weights[j] = 0.0;
+
+    auto ranked = std::shared_ptr<data::RankedResults>( new data::RankedResults(qr, trainingmodelscores + offset) );
+
+    std::unique_ptr<Jacobian> jacobian = scorer->jacobian(ranked);
+
+    // \todo TODO: rank by label once and for all ?
+    // \todo TODO: avoid n^2 loop ?
+    for (unsigned int j = 0; j < ranked->num_results(); j++) {
+      Label jthlabel = ranked->sorted_labels()[j];
+      for (unsigned int k = 0; k < ranked->num_results(); k++)
+        if (k != j) {
+          // skip if we are beyond the top-K results
+          if (j >= cutoff && k >= cutoff)
+            break;
+
+          Label kthlabel = ranked->sorted_labels()[k];
+          if (jthlabel > kthlabel) {
+            double deltandcg = fabs(jacobian->at(j, k));
+
+            double rho = 1.0 / (1.0 + exp(
+                        trainingmodelscores[offset + ranked->pos_of_rank(j)] -
+                        trainingmodelscores[offset + ranked->pos_of_rank(k)] ));
+            double lambda = rho * deltandcg;
+            double delta = rho * (1.0 - rho) * deltandcg;
+            lambdas[ranked->pos_of_rank(j)] += lambda;
+            lambdas[ranked->pos_of_rank(k)] -= lambda;
+            weights[ranked->pos_of_rank(j)] += delta;
+            weights[ranked->pos_of_rank(k)] += delta;
+          }
+        }
+    }
+  }
+}
+
+
 // Changes by Cla:
 // - added processing of ranked list in ranked order
 // - added cut-off in measure changes matrix
+/*
 void LambdaMart::compute_pseudoresponses(std::shared_ptr<quickrank::data::Dataset> training_dataset, quickrank::metric::ir::Metric* scorer) {
   const unsigned int cutoff = scorer->cutoff();
 
@@ -293,6 +345,7 @@ void LambdaMart::compute_pseudoresponses(std::shared_ptr<quickrank::data::Datase
 
   }
 }
+*/
 
 std::ofstream& LambdaMart::save_model_to_file(std::ofstream& os) const {
   // write ranker description
