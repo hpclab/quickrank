@@ -49,6 +49,8 @@ class RegressionTree {
 
   void fit(RTNodeHistogram *hist);
 
+  double update_output(double const *pseudoresponses);
+
   double update_output(double const *pseudoresponses,
                        double const *cachedweights);
 

@@ -59,6 +59,26 @@ void RegressionTree::fit(RTNodeHistogram *hist) {
   // TODO: (by cla) is memory of "unpopped" de-allocated?
 }
 
+double RegressionTree::update_output(double const *pseudoresponses) {
+  double maxlabel = -DBL_MAX;
+#pragma omp parallel for reduction(max:maxlabel)
+  for (unsigned int i = 0; i < nleaves; ++i) {
+    double psum = 0.0f;
+    const unsigned int nsampleids = leaves[i]->nsampleids;
+    const unsigned int *sampleids = leaves[i]->sampleids;
+    for (unsigned int j = 0; j < nsampleids; ++j) {
+      unsigned int k = sampleids[j];
+      psum += pseudoresponses[k];
+    }
+    leaves[i]->avglabel = psum / nsampleids;
+
+    if (leaves[i]->avglabel > maxlabel)
+      maxlabel = leaves[i]->avglabel;
+  }
+  return maxlabel;
+}
+
+
 double RegressionTree::update_output(double const *pseudoresponses,
                                      double const *cachedweights) {
   double maxlabel = -DBL_MAX;

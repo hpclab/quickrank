@@ -142,7 +142,7 @@ void LambdaMart::learn(std::shared_ptr<quickrank::data::Dataset> training_datase
                         minleafsupport);
     tree.fit(hist);
     //update the outputs of the tree (with gamma computed using the Newton-Raphson method)
-    float maxlabel = tree.update_output(pseudoresponses, cachedweights);
+    float maxlabel = update_tree_prediction(&tree);
 
     //add this tree to the ensemble (our model)
     ens.push(tree.get_proot(), shrinkage, maxlabel);
@@ -228,6 +228,10 @@ void LambdaMart::update_modelscores(std::shared_ptr<data::Dataset> dataset, Scor
 
 }
 
+
+float LambdaMart::update_tree_prediction( RegressionTree* tree) {
+  return tree->update_output(pseudoresponses, cachedweights);
+}
 
 void LambdaMart::compute_pseudoresponses( std::shared_ptr<quickrank::data::Dataset> training_dataset,
                                           quickrank::metric::ir::Metric* scorer) {

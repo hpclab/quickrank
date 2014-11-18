@@ -52,6 +52,11 @@ class Dataset : private boost::noncopyable {
             (data_ + document_id + feature_id * num_instances_);
   }
 
+  /// Returns the value of the i-th relevance label.
+  Label getLabel(unsigned int document_id) {
+    return labels_[document_id];
+  }
+
   /// Returns the offset in the internal data strcutures of the i-th query results list.
   ///
   /// \param i The i-th query results list of interest.
