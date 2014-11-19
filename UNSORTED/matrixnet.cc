@@ -41,7 +41,7 @@ void MatrixNet::learn() {
                      treedepth);
     tree.fit(hist);
     //update the outputs of the tree (with gamma computed using the Newton-Raphson method)
-    float maxlabel = tree.update_output(pseudoresponses, cachedweights);
+    float maxlabel = tree.update_output(pseudoresponses, instance_weights_);
     //add this tree to the ensemble (our model)
     ens.push(tree.get_proot(), shrinkage, maxlabel);
     //Update the model's outputs on all training samples

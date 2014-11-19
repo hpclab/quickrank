@@ -19,28 +19,19 @@ class Mart : public LTR_Algorithm {
   /// \param nthresholds Number of bins in discretization. 0 means no discretization.
   /// \param ntreeleaves Maximum number of leaves in each tree.
   /// \param minleafsupport Minimum number of instances in each leaf.
-  /// \param esr Early stopping if no improvement after \esr iterations
+  /// \param valid_iterations Early stopping if no improvement after \esr iterations
   /// on the validation set.
   Mart(unsigned int ntrees, float shrinkage, unsigned int nthresholds,
        unsigned int ntreeleaves, unsigned int minleafsupport,
-       unsigned int esr)
- : ntrees(ntrees),
-   shrinkage(shrinkage),
-   nthresholds(nthresholds),
-   ntreeleaves(ntreeleaves),
-   minleafsupport(minleafsupport),
-   esr(esr) {}
+       unsigned int valid_iterations)
+ : ntrees_(ntrees),
+   shrinkage_(shrinkage),
+   nthresholds_(nthresholds),
+   nleaves_(ntreeleaves),
+   minleafsupport_(minleafsupport),
+   valid_iterations_(valid_iterations) {}
 
-  virtual ~Mart() {
-    //const unsigned int nfeatures = training_dataset ? training_set->get_nfeatures() : 0;
-    //if (sortedsid)
-    //for (unsigned int i = 0; i < training_dataset->num_features(); ++i)
-    //delete[] sortedsid[i], free(thresholds[i]);
-    //delete[] thresholds, delete[] thresholds_size, delete[] trainingmodelscores, delete[] pseudoresponses, delete[] sortedsid, delete[] cachedweights;
-    //delete hist;
-    //delete[] scores_on_validation;
-    // perche' si mischiano free e delete?
-  }
+  virtual ~Mart() {}
 
   /// Start the learning process.
 
@@ -57,7 +48,7 @@ class Mart : public LTR_Algorithm {
   /// \param offset Offset to the next feature from \a d.
   virtual Score score_document(const Feature* d,
                                const unsigned int offset = 1) const {
-    return ens.score_instance(d, offset);
+    return ensemble_model_.score_instance(d, offset);
   }
 
  protected:
@@ -67,6 +58,9 @@ class Mart : public LTR_Algorithm {
   /// Prepares private data structures before training takes place.
   virtual void init(std::shared_ptr<data::Dataset> training_dataset,
                     std::shared_ptr<data::Dataset> validation_dataset);
+
+  /// De-allocates private data structure after training has taken place.
+  virtual void clear(std::shared_ptr<data::Dataset> training_dataset);
 
   /// Computes pseudo responses.
   ///
@@ -92,24 +86,24 @@ class Mart : public LTR_Algorithm {
                                   RegressionTree* tree);
 
  protected:
-  float **thresholds = NULL;
-  unsigned int *thresholds_size = NULL;
-  double *trainingmodelscores = NULL;  //[0..nentries-1]
-  unsigned int validation_bestmodel = 0;
-  double *pseudoresponses = NULL;  //[0..nentries-1]
-  unsigned int **sortedsid = NULL;
-  unsigned int sortedsize = 0;
-  RTRootHistogram *hist = NULL;
-  Ensemble ens;
+  float **thresholds_ = NULL;
+  unsigned int *thresholds_size_ = NULL;
+  double *scores_on_training_ = NULL;  //[0..nentries-1]
+  quickrank::Score* scores_on_validation_ = NULL;  //[0..nentries-1]
+  unsigned int validation_bestmodel_ = 0;
+  double *pseudoresponses_ = NULL;  //[0..nentries-1]
+  Ensemble ensemble_model_;
 
-  quickrank::Score* scores_on_validation = NULL;  //[0..nentries-1]
+  const unsigned int ntrees_;  //>0
+  const double shrinkage_;  //>0.0f
+  const unsigned int nthresholds_;  //if ==0 then no. of thresholds is not limited
+  const unsigned int nleaves_;  //>0
+  const unsigned int minleafsupport_;  //>0
+  const unsigned int valid_iterations_;  //If no performance gain on validation data is observed in 'esr' rounds, stop the training process right away (if esr==0 feature is disabled).
 
-  const unsigned int ntrees;  //>0
-  const double shrinkage;  //>0.0f
-  const unsigned int nthresholds;  //if nthresholds==0 then no. of thresholds is not limited
-  const unsigned int ntreeleaves;  //>0
-  const unsigned int minleafsupport;  //>0
-  const unsigned int esr;  //If no performance gain on validation data is observed in 'esr' rounds, stop the training process right away (if esr==0 feature is disabled).
+  unsigned int **sortedsid_ = NULL;
+  unsigned int sortedsize_ = 0;
+  RTRootHistogram *hist_ = NULL;
 
  private:
 

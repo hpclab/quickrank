@@ -26,14 +26,15 @@ class LambdaMart : public Mart {
              unsigned int esr)
  : Mart(ntrees, shrinkage, nthresholds, ntreeleaves, minleafsupport, esr) {}
 
-  virtual ~LambdaMart() {
-    if (cachedweights) delete [] cachedweights;
-  }
+  virtual ~LambdaMart() {}
 
  protected:
   /// Prepares private data structurs befor training takes place.
   virtual void init(std::shared_ptr<data::Dataset> training_dataset,
                     std::shared_ptr<data::Dataset> validation_dataset);
+
+  /// De-allocates private data structure after training has taken place.
+  virtual void clear(std::shared_ptr<data::Dataset> training_dataset);
 
   /// Computes pseudo responses.
   ///
@@ -58,7 +59,7 @@ class LambdaMart : public Mart {
   virtual std::ostream& put(std::ostream& os) const;
 
  protected:
-  double* cachedweights = NULL;  //corresponds to datapoint.cache
+  double* instance_weights_ = NULL;  //corresponds to datapoint.cache
 
 };
 
