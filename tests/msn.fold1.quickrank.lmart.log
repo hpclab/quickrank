@@ -17,15 +17,15 @@
 # test scorer: NDCG@10
 #
 # Reading training dataset: data/msn1.fold1.train.5k.txt
-#	 Reading time: 0.337 s. @ 14.8 MB/s  (post-proc.: 0.00523 s.)
+#	 Reading time: 0.319 s. @ 15.7 MB/s  (post-proc.: 0.0051 s.)
 #	 Dataset size: 5000 x 136 (instances x features)
 #	 Num queries: 43 | Avg. len: 116
 # Reading validation dataset: data/msn1.fold1.vali.5k.txt
-#	 Reading time: 0.334 s. @ 15 MB/s  (post-proc.: 0.00562 s.)
+#	 Reading time: 0.32 s. @ 15.6 MB/s  (post-proc.: 0.00486 s.)
 #	 Dataset size: 5000 x 136 (instances x features)
 #	 Num queries: 49 | Avg. len: 102
-Initialization:
-	done
+# Initialization	done
+: 0.0305 s.
 Training:
 	-----------------------------
 	iteration training validation
@@ -135,7 +135,7 @@ Training:
 	NDCG@10 on validation data = 0.4357
 	done
 # Reading test dataset: data/msn1.fold1.test.5k.txt
-#	 Reading time: 0.341 s. @ 14.646 MB/s  (post-proc.: 0.005 s.)
+#	 Reading time: 0.303 s. @ 16.514 MB/s  (post-proc.: 0.004 s.)
 #	 Dataset size: 5000 x 136 (instances x features)
 #	 Num queries: 43 | Avg. len: 116.279
 NDCG@10 on test data = 0.3485

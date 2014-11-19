@@ -20,7 +20,8 @@ Model options:
                                  before ending (if 0 disabled)
 
 Metric options:
-  --train-metric arg (=ndcg) set train metric (allowed values are ndcg and map)
+  --train-metric arg (=ndcg) set train metric (allowed values are 
+                             [ndcg|tndcg|map])
   --train-cutoff arg (=10)   set train metric cutoff
   --test-metric arg (=ndcg)  set test metric (allowed values are ndcg and map)
   --test-cutoff arg (=10)    set test metric cutoff

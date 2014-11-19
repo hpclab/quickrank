@@ -168,6 +168,8 @@ int main(int argc, char *argv[]) {
             << "# ##  quickrank@.isti.cnr.it/   ## #" << std::endl
             << "# ## ========================== ## #" << std::endl;
 
+  std::cout << std::fixed;
+
   // Declare the supported options.
   po::options_description model_desc("Model options");
   model_desc.add_options()(

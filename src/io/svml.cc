@@ -141,7 +141,7 @@ std::unique_ptr<data::Dataset> Svml::read_horizontal(
 
 std::ostream& Svml::put(std::ostream& os) const {
   // num threads is not reported here.
-  os << std::setprecision(3) << "#\t Reading time: " << reading_time_
+  os << std::setprecision(2) << "#\t Reading time: " << reading_time_
      << " s. @ " << file_size_ / 1024 / 1024 / reading_time_ << " MB/s "
      << " (post-proc.: " << processing_time_ << " s.)" << std::endl;
   return os;

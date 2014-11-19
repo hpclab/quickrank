@@ -57,6 +57,7 @@ void Evaluator::evaluate(std::shared_ptr<learning::LTR_Algorithm> algo,
     training_dataset.reset();
     validation_dataset.reset();
 
+    std::cout << std::endl;
     std::cout << "# Reading test dataset: " << test_filename << std::endl;
 
     std::shared_ptr<quickrank::data::Dataset> test_dataset = reader
@@ -68,6 +69,7 @@ void Evaluator::evaluate(std::shared_ptr<learning::LTR_Algorithm> algo,
     quickrank::MetricScore test_score = test_metric->evaluate_dataset(
         test_dataset, test_scores);
 
+    std::cout << std::endl;
     std::cout << *test_metric << " on test data = " << std::setprecision(4)
               << test_score << std::endl;
 
@@ -75,6 +77,7 @@ void Evaluator::evaluate(std::shared_ptr<learning::LTR_Algorithm> algo,
   }
 
   if (!output_filename.empty()) {
+    std::cout << std::endl;
     std::cout << "# Writing model to file: " << output_filename << std::endl;
     algo->save(output_filename);
   }

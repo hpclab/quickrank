@@ -11,6 +11,7 @@ void DevianceMaxHeap::pop() {
   rt_maxheap::pop();
 }
 
+/// \todo TODO: memory management of regression tree is wrong!!!
 RegressionTree::~RegressionTree() {
   if (root) {
     delete[] root->sampleids;
