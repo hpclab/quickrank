@@ -38,7 +38,7 @@ void MatrixNet::learn() {
     hist->update(pseudoresponses, training_set->get_ndatapoints());
     //Fit a oblivious tree
     ObliviousRT tree(ntreeleaves, training_set, pseudoresponses, minleafsupport,
-                     treedepth);
+                     treedepth_);
     tree.fit(hist);
     //update the outputs of the tree (with gamma computed using the Newton-Raphson method)
     float maxlabel = tree.update_output(pseudoresponses, instance_weights_);

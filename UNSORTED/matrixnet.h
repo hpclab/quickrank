@@ -9,7 +9,7 @@ namespace forests {
 
 class MatrixNet : public LambdaMart {
  public:
-  const unsigned int treedepth;  //>0
+  const unsigned int treedepth_;  //>0
 
  public:
   MatrixNet(unsigned int ntrees, float shrinkage, unsigned int nthresholds,
@@ -17,7 +17,7 @@ class MatrixNet : public LambdaMart {
             unsigned int esr)
       : LambdaMart(ntrees, shrinkage, nthresholds, 1 << treedepth,
                    minleafsupport, esr),
-        treedepth(treedepth) {
+        treedepth_(treedepth) {
   }
 
   const char *whoami() const {
@@ -26,7 +26,7 @@ class MatrixNet : public LambdaMart {
 
   void showme() {
     LambdaMart::showme();
-    printf("\ttree depth = %u\n", treedepth);
+    printf("\ttree depth = %u\n", treedepth_);
   }
 
   void learn();

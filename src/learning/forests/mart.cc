@@ -17,7 +17,7 @@ namespace learning {
 namespace forests {
 
 std::ostream& Mart::put(std::ostream& os) const {
-  os << "# Ranker: MART" << std::endl
+  os  << "# Ranker: MART" << std::endl
       << "# max no. of trees = " << ntrees_ << std::endl
       << "# no. of tree leaves = " << nleaves_ << std::endl
       << "# shrinkage = " << shrinkage_ << std::endl

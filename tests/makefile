@@ -16,7 +16,7 @@ msn.fold1.ranklib.lmart.log: ./other/RankLib.jar
 
 msn.fold1.quickrank.lmart.log: ../bin/quickrank
 	../bin/quickrank \
-	--algo lm \
+	--algo lambdamart \
 	--num-trees 100 \
 	--shrinkage 0.1 \
 	--num-thresholds 0 \
@@ -33,29 +33,27 @@ msn.fold1.quickrank.lmart.log: ../bin/quickrank
 	--test data/msn1.fold1.test.5k.txt \
 	--model msn.fold1.quickrank.lmart.xml \
 	> msn.fold1.quickrank.lmart.log
-	#rm msn.fold1.quickrank.lmart.xml*
+	rm msn.fold1.quickrank.lmart.xml*
 	cat msn.fold1.quickrank.lmart.log
 	
-#msn.fold1.quickrank.lmart.log: ../bin/quickrank
-#	../bin/quickrank lm 100 0.1 0 8 1 0 \
-#	ndcg 10 ndcg 10 0 \
-#	data/msn1.fold1.train.5k.txt \
-#	data/msn1.fold1.vali.5k.txt \
-#	data/msn1.fold1.test.5k.txt \
-#	- \
-#	msn.fold1.quickrank.lmart.xml \
-#	> msn.fold1.quickrank.lmart.log
-#	rm msn.fold1.quickrank.lmart.xml*
-#	cat msn.fold1.quickrank.lmart.log
-
 msn.fold1.quickrank.matrixnet.log: ../bin/quickrank
-	../bin/quickrank mn 100 0.1 0 3 1 0 \
-	ndcg 10 ndcg 10 0 \
-	data/msn1.fold1.train.5k.txt \
-	data/msn1.fold1.vali.5k.txt \
-	data/msn1.fold1.test.5k.txt \
-	- \
-	msn.fold1.quickrank.matrixnet.xml \
+	../bin/quickrank \
+	--algo matrixnet \
+	--num-trees 100 \
+	--shrinkage 0.1 \
+	--num-thresholds 0 \
+	--tree-depth 3 \
+	--min-leaf-support 1 \
+	--end-after-rounds 0 \
+	--train-metric ndcg \
+	--train-cutoff 10 \
+	--test-metric ndcg \
+	--test-cutoff 10 \
+	--partial 0 \
+	--train data/msn1.fold1.train.5k.txt \
+	--valid data/msn1.fold1.vali.5k.txt \
+	--test data/msn1.fold1.test.5k.txt \
+	--model msn.fold1.quickrank.matrixnet.xml \
 	> msn.fold1.quickrank.matrixnet.log
 	rm msn.fold1.quickrank.matrixnet.xml*
 	cat msn.fold1.quickrank.matrixnet.log
