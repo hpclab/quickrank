@@ -15,7 +15,6 @@
 namespace quickrank {
 namespace learning {
 
-
 void LTR_Algorithm::score_dataset(std::shared_ptr<data::Dataset> dataset,
                                   Score* scores) const {
   preprocess_dataset(dataset);
@@ -29,8 +28,8 @@ void LTR_Algorithm::score_dataset(std::shared_ptr<data::Dataset> dataset,
 // assumes vertical dataset
 // offset to next feature of the same instance
 void LTR_Algorithm::score_query_results(
-    std::shared_ptr<data::QueryResults> results,
-    Score* scores, unsigned int offset) const {
+    std::shared_ptr<data::QueryResults> results, Score* scores,
+    unsigned int offset) const {
   const quickrank::Feature* d = results->features();
   for (unsigned int i = 0; i < results->num_results(); i++) {
     scores[i] = score_document(d, offset);
@@ -61,14 +60,33 @@ LTR_Algorithm* LTR_Algorithm::load_model_from_file(std::string model_filename) {
     return NULL;
 
   std::ifstream is;
+  std::string current_line;
+  std::string model;
   is.open(model_filename, std::ifstream::in);
+  while (getline(is, current_line)) {
+    model += current_line;
+  }
+  is.close();
+
+  int counter = 0;
+  std::string* args = std::string[5];
+
+  std::size_t found = model.find_first_of("#");
+   while (found != std::string::npos)
+   {
+     args[counter] = model
+     found=str.find_first_of("aeiou",found+1);
+   }
+
+   std::cout << str << '\n';
+
+
+  str.find_first_of
+
+
   boost::property_tree::ptree xml_tree;
   read_xml(is, xml_tree);
   is.close();
-
-  std::cout<<"ci starebbe bene un bestemmione!"<< std::endl;
-
-
 
   return NULL;
 
