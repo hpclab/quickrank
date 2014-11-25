@@ -8,5 +8,5 @@
 BOOST_AUTO_TEST_CASE( test_xml_load ) {
 
   // read model
-  quickrank::learning::LTR_Algorithm* prova = quickrank::learning::LTR_Algorithm::load_model_from_file("tests/data/msn.fold1.quickrank.lmart.xml");
+  quickrank::learning::LTR_Algorithm* prova = quickrank::learning::LTR_Algorithm::load_model_from_file("tests/msn.fold1.quickrank.lmart.xml");
 }

@@ -1,5 +1,8 @@
 #include <fstream>
 
+#include <boost/property_tree/xml_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
+
 #include "learning/ltr_algorithm.h"
 #include "utils/mergesorter.h"
 
@@ -57,7 +60,16 @@ LTR_Algorithm* LTR_Algorithm::load_model_from_file(std::string model_filename) {
   if (model_filename.empty())
     return NULL;
 
+  std::ifstream is;
+  is.open(model_filename, std::ifstream::in);
+  boost::property_tree::ptree xml_tree;
+  read_xml(is, xml_tree);
+  is.close();
+
   std::cout<<"ci starebbe bene un bestemmione!"<< std::endl;
+
+
+
   return NULL;
 
 }
