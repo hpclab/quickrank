@@ -31,10 +31,16 @@ class Mart : public LTR_Algorithm {
    minleafsupport_(minleafsupport),
    valid_iterations_(valid_iterations) {}
 
+  /// Generates a LTR_Algorithm instance from a previously saved XML model.
+  Mart(const boost::property_tree::ptree &info_ptree, const boost::property_tree::ptree &model_ptree);
+
+
   virtual ~Mart() {}
 
-  /// Start the learning process.
+  /// Returns the name of the ranker.
+  virtual std::string name() const {return "MART";};
 
+  /// Start the learning process.
   virtual void learn(std::shared_ptr<data::Dataset> training_dataset,
                      std::shared_ptr<data::Dataset> validation_dataset,
                      std::shared_ptr<metric::ir::Metric> training_metric,
@@ -85,6 +91,8 @@ class Mart : public LTR_Algorithm {
                                   Score *scores,
                                   RegressionTree* tree);
 
+  virtual std::ofstream& save_model_to_file(std::ofstream& os) const;
+
  protected:
   float **thresholds_ = NULL;
   unsigned int *thresholds_size_ = NULL;
@@ -94,12 +102,12 @@ class Mart : public LTR_Algorithm {
   double *pseudoresponses_ = NULL;  //[0..nentries-1]
   Ensemble ensemble_model_;
 
-  const unsigned int ntrees_;  //>0
-  const double shrinkage_;  //>0.0f
-  const unsigned int nthresholds_;  //if ==0 then no. of thresholds is not limited
-  const unsigned int nleaves_;  //>0
-  const unsigned int minleafsupport_;  //>0
-  const unsigned int valid_iterations_;  //If no performance gain on validation data is observed in 'esr' rounds, stop the training process right away (if esr==0 feature is disabled).
+  unsigned int ntrees_;  //>0
+  double shrinkage_;  //>0.0f
+  unsigned int nthresholds_;  //if ==0 then no. of thresholds is not limited
+  unsigned int nleaves_;  //>0
+  unsigned int minleafsupport_;  //>0
+  unsigned int valid_iterations_;  //If no performance gain on validation data is observed in 'esr' rounds, stop the training process right away (if esr==0 feature is disabled).
 
   unsigned int **sortedsid_ = NULL;
   unsigned int sortedsize_ = 0;
@@ -114,8 +122,6 @@ class Mart : public LTR_Algorithm {
 
   /// Prints the description of Algorithm, including its parameters.
   virtual std::ostream& put(std::ostream& os) const;
-
-  virtual std::ofstream& save_model_to_file(std::ofstream& os) const;
 
 };
 

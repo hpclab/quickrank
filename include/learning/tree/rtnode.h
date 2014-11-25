@@ -20,6 +20,18 @@ class RTNode {
   unsigned int featureidx = uint_max;  //refer the index in the feature matrix
   unsigned int featureid = uint_max;  //refer to the id occurring in the dataset file
  public:
+  RTNode(float new_threshold, unsigned int new_featureidx, unsigned int new_featureid,
+         double new_avglabel)
+      : sampleids(NULL),
+        nsampleids(0),
+        deviance(-1),
+        hist(NULL) {
+    threshold = new_threshold;
+    featureidx = new_featureidx;
+    featureid = new_featureid;
+    avglabel = new_avglabel;
+  }
+
   RTNode(unsigned int *sampleids, unsigned int nsampleids, double deviance,
          double sumlabel, RTNodeHistogram* hist)
       : sampleids(sampleids),

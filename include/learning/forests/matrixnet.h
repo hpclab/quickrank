@@ -31,12 +31,17 @@ class MatrixNet : public LambdaMart {
 
   virtual ~MatrixNet() {}
 
+  /// Returns the name of the ranker.
+  virtual std::string name() const {return "MATRIXNET";};
+
  protected:
   /// Fits a regression tree on the gradient given by the pseudo residuals
   ///
   /// \param training_dataset The dataset used for training
   virtual std::unique_ptr<RegressionTree> fit_regressor_on_gradient (
       std::shared_ptr<data::Dataset> training_dataset );
+
+  virtual std::ofstream& save_model_to_file(std::ofstream& os) const;
 
   const unsigned int treedepth_;  //>0
 

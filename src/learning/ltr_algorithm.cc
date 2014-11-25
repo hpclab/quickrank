@@ -1,10 +1,12 @@
 #include <fstream>
 
 #include <boost/property_tree/xml_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
+#include <boost/foreach.hpp>
 
 #include "learning/ltr_algorithm.h"
 #include "utils/mergesorter.h"
+
+#include "learning/forests/mart.h"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -48,42 +50,61 @@ void LTR_Algorithm::save(std::string output_basename, int iteration) const {
     std::string filename = output_basename;
     if (iteration != -1)
       filename += iteration + ".xml";
-    std::ofstream output_file;
-    output_file.open(filename);
-    save_model_to_file(output_file);
-    output_file.close();
+    std::ofstream output_stream;
+    output_stream.open(filename);
+    // Wrap actual model
+    output_stream  << "<ranker>" << std::endl;
+
+    // Save the actual model
+    save_model_to_file(output_stream);
+
+    output_stream  << "</ranker>" << std::endl;
+
+    output_stream.close();
   }
 }
 
 LTR_Algorithm* LTR_Algorithm::load_model_from_file(std::string model_filename) {
-  if (model_filename.empty())
-    return NULL;
-
-  std::ifstream is;
-  std::string current_line;
-  std::string model;
-  is.open(model_filename, std::ifstream::in);
-  while (getline(is, current_line)) {
-    model += current_line;
+  if (model_filename.empty()) {
+    std::cerr << "!!! Model filename is empty." << std::endl;
+    exit(EXIT_FAILURE);
   }
-  is.close();
-
-  int counter = 0;
-  std::string args[5];
-
-  std::size_t found = model.find_first_of("#");
-   while (found != std::string::npos)
-   {
-     args[counter] = model;
-     found=model.find_first_of("#",found+1);
-   }
 
   boost::property_tree::ptree xml_tree;
-  read_xml(is, xml_tree);
+
+  std::ifstream is;
+  is.open(model_filename, std::ifstream::in);
+
+  boost::property_tree::read_xml(is, xml_tree);
+
   is.close();
 
-  return NULL;
+  boost::property_tree::ptree info_ptree;
+  boost::property_tree::ptree ensemble_ptree;
 
+  BOOST_FOREACH(const boost::property_tree::ptree::value_type& node, xml_tree.get_child("ranker")) {
+    if (node.first=="info")
+      info_ptree = node.second;
+    else if (node.first=="ensemble")
+      ensemble_ptree = node.second;
+  }
+
+  std::string ranker_type = info_ptree.get<std::string>("type");
+  if (ranker_type=="MART")
+      return new forests::Mart(info_ptree, ensemble_ptree);
+/*
+  else
+      break;
+    case "LAMBDAMART":
+      return NULL;
+      break;
+    case "MATRIXNET":
+      return NULL;
+      break;
+    default:
+      break;
+  }*/
+  return NULL;
 }
 
 }  // namespace learning

@@ -6,6 +6,8 @@
 #include <cfloat>
 #include <cmath>
 #include <chrono>
+#include <boost/foreach.hpp>
+
 
 #include "utils/radix.h"
 #include "utils/qsort.h"
@@ -15,6 +17,39 @@
 namespace quickrank {
 namespace learning {
 namespace forests {
+
+
+Mart::Mart(const boost::property_tree::ptree &info_ptree, const boost::property_tree::ptree &model_ptree) {
+  ntrees_= 0;
+  shrinkage_ = 0;
+  nthresholds_ = 0;
+  nleaves_ = 0;
+  minleafsupport_ = 0;
+  valid_iterations_ = 0;
+
+  // read (training) info
+  ntrees_ = info_ptree.get<unsigned int>("trees");
+  nleaves_ = info_ptree.get<unsigned int>("leaves");
+  minleafsupport_ = info_ptree.get<unsigned int>("leafsupport");
+  nthresholds_ = info_ptree.get<unsigned int>("discretization");
+  valid_iterations_ = info_ptree.get<unsigned int>("estop");
+  shrinkage_ = info_ptree.get<double>("shrinkage");
+
+  // read ensemble
+  ensemble_model_.set_capacity(ntrees_);
+
+  // loop over trees
+  BOOST_FOREACH(const boost::property_tree::ptree::value_type& tree, model_ptree) {
+    std::cout << tree.first << std::endl;
+    std::cout << tree.second.get<double>("<xmlattr>.weight", shrinkage_) << std::endl;
+    BOOST_FOREACH(const boost::property_tree::ptree::value_type& node, tree.second.get_child("split")) {
+      std::cout << node.first << std::endl;
+      //  if (node.first=="feature")
+    }
+    break;
+  }
+}
+
 
 std::ostream& Mart::put(std::ostream& os) const {
   os  << "# Ranker: MART" << std::endl
@@ -45,7 +80,7 @@ void Mart::init(std::shared_ptr<quickrank::data::Dataset> training_dataset,
 #pragma omp parallel for
   for (unsigned int i = 0; i < nfeatures; ++i)
     sortedsid_[i] = idx_radixsort(training_dataset->at(0, i),
-                                 training_dataset->num_instances()).release();
+                                  training_dataset->num_instances()).release();
   // for(unsigned int i=0; i<nfeatures; ++i)
   //    training_set->sort_dpbyfeature(i, sortedsid[i], sortedsize);
   //for each featureid, init threshold array by keeping track of the list of "unique values" and their max, min
@@ -90,7 +125,7 @@ void Mart::init(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     scores_on_validation_ = new Score[validation_dataset->num_instances()]();
   }
   hist_ = new RTRootHistogram(training_dataset.get(), pseudoresponses_, sortedsid_,
-                             sortedsize_, thresholds_, thresholds_size_);
+                              sortedsize_, thresholds_, thresholds_size_);
 }
 
 void Mart::clear(std::shared_ptr<data::Dataset> training_dataset){
@@ -263,11 +298,22 @@ void Mart::update_modelscores(std::shared_ptr<data::Dataset> dataset, Score *sco
   }
 }
 
+
 std::ofstream& Mart::save_model_to_file(std::ofstream& os) const {
   // write ranker description
-  os << *this;
+  os  << "\t<info>" << std::endl
+      << "\t\t<type>" << name() << "</type>" << std::endl
+      << "\t\t<trees>" << ntrees_ << "</trees>" << std::endl
+      << "\t\t<leaves>" << nleaves_ << "</leaves>" << std::endl
+      << "\t\t<shrinkage>" << shrinkage_ << "</shrinkage>" << std::endl
+      << "\t\t<leafsupport>" << minleafsupport_ << "</leafsupport>" << std::endl
+      << "\t\t<discretization>" << nthresholds_ << "</discretization>" << std::endl
+      << "\t\t<estop>" << valid_iterations_ << "</estop>" << std::endl
+      << "\t</info>" << std::endl;
+
   // save xml model
   ensemble_model_.save_model_to_file(os);
+
   return os;
 }
 

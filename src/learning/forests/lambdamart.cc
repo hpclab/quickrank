@@ -174,6 +174,24 @@ void LambdaMart::compute_pseudoresponses(std::shared_ptr<quickrank::data::Datase
 }
 */
 
+std::ofstream& LambdaMart::save_model_to_file(std::ofstream& os) const {
+  // write ranker description
+  os  << "\t<info>" << std::endl
+      << "\t\t<type>"<< name() << "</type>" << std::endl
+      << "\t\t<trees>" << ntrees_ << "</trees>" << std::endl
+      << "\t\t<leaves>" << nleaves_ << "</leaves>" << std::endl
+      << "\t\t<shrinkage>" << shrinkage_ << "</shrinkage>" << std::endl
+      << "\t\t<leafsupport>" << minleafsupport_ << "</leafsupport>" << std::endl
+      << "\t\t<discretization>" << nthresholds_ << "</discretization>" << std::endl
+      << "\t\t<estop>" << valid_iterations_ << "</estop>" << std::endl
+      << "\t</info>" << std::endl;
+
+  // save xml model
+  ensemble_model_.save_model_to_file(os);
+
+  return os;
+}
+
 
 }  // namespace forests
 }  // namespace learning

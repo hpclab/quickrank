@@ -2,10 +2,12 @@
 #define QUICKRANK_LEARNING_LTR_ALGORITHM_H_
 
 #include <boost/noncopyable.hpp>
+#include <boost/property_tree/ptree.hpp>
 #include <memory>
 
 #include "data/dataset.h"
 #include "metric/ir/metric.h"
+
 
 namespace quickrank {
 namespace learning {
@@ -13,9 +15,16 @@ namespace learning {
 class LTR_Algorithm : private boost::noncopyable {
 
  public:
-  LTR_Algorithm() {}
+  LTR_Algorithm() {};
+
+  /// Generates a LTR_Algorithm instance from a previously saved XML model.
+  LTR_Algorithm(const boost::property_tree::ptree &info_ptree, const boost::property_tree::ptree &model_ptree);
 
   virtual ~LTR_Algorithm() {}
+
+
+  /// Returns the name of the ranker.
+  virtual std::string name() const = 0;
 
   /// Executes the learning process.
   ///
@@ -65,6 +74,9 @@ class LTR_Algorithm : private boost::noncopyable {
   /// \param model_filename The input file name.
   static LTR_Algorithm* load_model_from_file(std::string model_filename);
 
+  /// Save the current model in the given output file stream.
+  virtual std::ofstream& save_model_to_file(std::ofstream& of) const = 0;
+
  protected:
 
   /// Prepare the dataset before training or scoring takes place.
@@ -84,8 +96,6 @@ class LTR_Algorithm : private boost::noncopyable {
   /// Prints the description of Algorithm, including its parameters
   virtual std::ostream& put(std::ostream& os) const = 0;
 
-  /// Save the current model in the given output file stream.
-  virtual std::ofstream& save_model_to_file(std::ofstream& of) const = 0;
 };
 
 }  // namespace learning

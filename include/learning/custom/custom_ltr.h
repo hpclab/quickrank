@@ -2,6 +2,7 @@
 #define QUICKRANK_LEARNING_CUSTOM_LTR_H_
 
 #include <boost/noncopyable.hpp>
+#include <boost/property_tree/ptree.hpp>
 #include <memory>
 
 #include "data/dataset.h"
@@ -25,7 +26,12 @@ class CustomLTR : public LTR_Algorithm {
  public:
   CustomLTR();
 
+  CustomLTR(const boost::property_tree::ptree &info_ptree, const boost::property_tree::ptree &model_ptree) {};
+
   virtual ~CustomLTR();
+
+  /// Returns the name of the ranker.
+  virtual std::string name() const {return "CUSTOM";};
 
   /// Executes the learning process.
   ///

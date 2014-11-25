@@ -28,6 +28,9 @@ class LambdaMart : public Mart {
 
   virtual ~LambdaMart() {}
 
+  /// Returns the name of the ranker.
+  virtual std::string name() const {return "LAMBDAMART";};
+
  protected:
   /// Prepares private data structurs befor training takes place.
   virtual void init(std::shared_ptr<data::Dataset> training_dataset,
@@ -48,6 +51,8 @@ class LambdaMart : public Mart {
   /// \param training_dataset The dataset used for training
   virtual std::unique_ptr<RegressionTree> fit_regressor_on_gradient (
       std::shared_ptr<data::Dataset> training_dataset );
+
+  virtual std::ofstream& save_model_to_file(std::ofstream& os) const;
 
  private:
   /// The output stream operator.
