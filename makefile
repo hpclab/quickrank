@@ -58,7 +58,7 @@ unit-tests: $(BINDIR)/unit-tests
 # example is: make test.unit-tests.metric.ir.test-dcg.cc
 test.%.cc: $(OBJS) $(OBJSDIR)/unit-tests/test-main.o
 	@make $(OBJSDIR)/$(subst .,/,$*).o
-	@$(CXX) \
+	@$(CXX) $(CXXFLAGS) \
 	$(filter-out $(OBJSDIR)/$(SRCDIR)/quickrank.o,$(OBJS)) \
 	$(OBJSDIR)/unit-tests/test-main.o \
 	$(OBJSDIR)/$(subst .,/,$*).o \

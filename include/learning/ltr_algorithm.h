@@ -56,11 +56,14 @@ class LTR_Algorithm : private boost::noncopyable {
 
   /// Save the current model to the output_file.
   ///
-  /// \param output_basename The output file name.
+  /// \param model_filename The output file name.
   /// \param suffix The suffix used to identify partial model saves.
   virtual void save(std::string model_filename, int suffix = -1) const;
 
-  /// \todo TODO: add load_model();
+  /// Load a model from a given XML file.
+  ///
+  /// \param model_filename The input file name.
+  static LTR_Algorithm* load_model_from_file(std::string model_filename);
 
  protected:
 

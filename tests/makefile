@@ -33,7 +33,6 @@ msn.fold1.quickrank.lmart.log: ../bin/quickrank
 	--test data/msn1.fold1.test.5k.txt \
 	--model msn.fold1.quickrank.lmart.xml \
 	> msn.fold1.quickrank.lmart.log
-	rm msn.fold1.quickrank.lmart.xml*
 	cat msn.fold1.quickrank.lmart.log
 	
 msn.fold1.quickrank.matrixnet.log: ../bin/quickrank

@@ -53,5 +53,14 @@ void LTR_Algorithm::save(std::string output_basename, int iteration) const {
   }
 }
 
+LTR_Algorithm* LTR_Algorithm::load_model_from_file(std::string model_filename) {
+  if (model_filename.empty())
+    return NULL;
+
+  std::cout<<"ci starebbe bene un bestemmione!"<< std::endl;
+  return NULL;
+
+}
+
 }  // namespace learning
 }  // namespace quickrank
