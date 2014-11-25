@@ -69,20 +69,14 @@ LTR_Algorithm* LTR_Algorithm::load_model_from_file(std::string model_filename) {
   is.close();
 
   int counter = 0;
-  std::string* args = std::string[5];
+  std::string args[5];
 
   std::size_t found = model.find_first_of("#");
    while (found != std::string::npos)
    {
-     args[counter] = model
-     found=str.find_first_of("aeiou",found+1);
+     args[counter] = model;
+     found=model.find_first_of("#",found+1);
    }
-
-   std::cout << str << '\n';
-
-
-  str.find_first_of
-
 
   boost::property_tree::ptree xml_tree;
   read_xml(is, xml_tree);

@@ -2,7 +2,6 @@ QUICKRANK:=quickrank
 SRCDIR:=src
 UTESTSDIR:=unit-tests
 BINDIR:=bin
-#INCDIRS:=-Iinclude
 INCDIRS:=-Iinclude
 OBJSDIR:=_build
 DEPSDIR:=_deps
@@ -44,7 +43,6 @@ quickrank: $(BINDIR)/$(QUICKRANK)
 $(BINDIR)/$(QUICKRANK): $(OBJS)
 	@mkdir -p $(BINDIR)
 	$(CXX) $(OBJS) $(LDLIBS) -o $(BINDIR)/$(QUICKRANK)
-#	strip $@
 
 # creates the documentation
 doc:
