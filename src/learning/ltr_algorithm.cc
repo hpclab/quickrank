@@ -64,7 +64,7 @@ void LTR_Algorithm::save(std::string output_basename, int iteration) const {
   }
 }
 
-LTR_Algorithm* LTR_Algorithm::load_model_from_file(std::string model_filename) {
+std::shared_ptr<LTR_Algorithm> LTR_Algorithm::load_model_from_file(std::string model_filename) {
   if (model_filename.empty()) {
     std::cerr << "!!! Model filename is empty." << std::endl;
     exit(EXIT_FAILURE);
@@ -91,7 +91,7 @@ LTR_Algorithm* LTR_Algorithm::load_model_from_file(std::string model_filename) {
 
   std::string ranker_type = info_ptree.get<std::string>("type");
   if (ranker_type=="MART")
-      return new forests::Mart(info_ptree, ensemble_ptree);
+      return std::shared_ptr<LTR_Algorithm>( new forests::Mart(info_ptree, ensemble_ptree) );
 /*
   else
       break;

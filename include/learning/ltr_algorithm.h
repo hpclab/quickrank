@@ -72,7 +72,7 @@ class LTR_Algorithm : private boost::noncopyable {
   /// Load a model from a given XML file.
   ///
   /// \param model_filename The input file name.
-  static LTR_Algorithm* load_model_from_file(std::string model_filename);
+  static std::shared_ptr<LTR_Algorithm> load_model_from_file(std::string model_filename);
 
   /// Save the current model in the given output file stream.
   virtual std::ofstream& save_model_to_file(std::ofstream& of) const = 0;

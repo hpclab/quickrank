@@ -20,28 +20,50 @@ class RTNode {
   unsigned int featureidx = uint_max;  //refer the index in the feature matrix
   unsigned int featureid = uint_max;  //refer to the id occurring in the dataset file
  public:
+  // new leaf
+  RTNode(double prediction) {
+    avglabel = prediction;
+    /*
+    featureidx  = uint_max;
+    featureid  = uint_max;
+    sampleids = NULL;
+    nsampleids = 0;
+    deviance = -1;
+    hist = NULL;
+    left = NULL;
+    right = NULL;
+    */
+  }
+
+  // new node
   RTNode(float new_threshold, unsigned int new_featureidx, unsigned int new_featureid,
-         double new_avglabel)
-      : sampleids(NULL),
-        nsampleids(0),
-        deviance(-1),
-        hist(NULL) {
+         RTNode* new_left, RTNode* new_right) {
     threshold = new_threshold;
     featureidx = new_featureidx;
     featureid = new_featureid;
-    avglabel = new_avglabel;
+    left = new_left;
+    right = new_right;
+    /*
+    sampleids = NULL;
+    nsampleids = 0;
+    deviance = -1;
+    hist = NULL;
+    avglabel = 0.0;
+    */
   }
 
-  RTNode(unsigned int *sampleids, unsigned int nsampleids, double deviance,
-         double sumlabel, RTNodeHistogram* hist)
-      : sampleids(sampleids),
-        nsampleids(nsampleids),
-        deviance(deviance),
-        hist(hist) {
+  RTNode(unsigned int *new_sampleids, unsigned int new_nsampleids, double new_deviance,
+         double sumlabel, RTNodeHistogram* new_hist) {
+    sampleids = new_sampleids;
+    nsampleids = new_nsampleids;
+    deviance = new_deviance;
+    hist = new_hist;
     avglabel = nsampleids ? sumlabel / nsampleids : 0.0;
   }
+
   ~RTNode() {
-    delete left, delete right;
+    if (left) delete left;
+    if (right) delete right;
   }
   void set_feature(unsigned int fidx, unsigned int fid) {
     //if(fidx==uint_max or fid==uint_max) exit(7);
