@@ -8,7 +8,6 @@
 #include <chrono>
 #include <boost/foreach.hpp>
 
-
 #include "utils/radix.h"
 #include "utils/qsort.h"
 #include "utils/mergesorter.h"
@@ -17,8 +16,6 @@
 namespace quickrank {
 namespace learning {
 namespace forests {
-
-
 
 RTNode* RTNode_parse_xml(const boost::property_tree::ptree &split_xml) {
   RTNode* model_node = NULL;
@@ -32,17 +29,17 @@ RTNode* RTNode_parse_xml(const boost::property_tree::ptree &split_xml) {
   double prediction = 0.0;
 
   BOOST_FOREACH(const boost::property_tree::ptree::value_type& split_child, split_xml ) {
-    if (split_child.first=="output") {
+    if (split_child.first == "output") {
       prediction = split_child.second.get_value<double>();
       is_leaf = true;
       break;
-    } else if (split_child.first=="feature") {
+    } else if (split_child.first == "feature") {
       feature_id = split_child.second.get_value<unsigned int>();
-    } else if (split_child.first=="threshold") {
+    } else if (split_child.first == "threshold") {
       threshold = split_child.second.get_value<float>();
-    } else if (split_child.first=="split") {
+    } else if (split_child.first == "split") {
       std::string pos = split_child.second.get<std::string>("<xmlattr>.pos");
-      if (pos=="left")
+      if (pos == "left")
         left_child = RTNode_parse_xml(split_child.second);
       else
         right_child = RTNode_parse_xml(split_child.second);
@@ -53,14 +50,15 @@ RTNode* RTNode_parse_xml(const boost::property_tree::ptree &split_xml) {
     model_node = new RTNode(prediction);
   else
     /// \todo TODO: this should be changed with item mapping
-    model_node = new RTNode(threshold, feature_id-1, feature_id, left_child, right_child);
+    model_node = new RTNode(threshold, feature_id - 1, feature_id, left_child,
+                            right_child);
 
   return model_node;
 }
 
-
-Mart::Mart(const boost::property_tree::ptree &info_ptree, const boost::property_tree::ptree &model_ptree) {
-  ntrees_= 0;
+Mart::Mart(const boost::property_tree::ptree &info_ptree,
+           const boost::property_tree::ptree &model_ptree) {
+  ntrees_ = 0;
   shrinkage_ = 0;
   nthresholds_ = 0;
   nleaves_ = 0;
@@ -85,13 +83,13 @@ Mart::Mart(const boost::property_tree::ptree &info_ptree, const boost::property_
 
     // find the root of the tree
     BOOST_FOREACH(const boost::property_tree::ptree::value_type& node, tree.second ) {
-      if (node.first=="split") {
+      if (node.first == "split") {
         root = RTNode_parse_xml(node.second);
         break;
       }
     }
 
-    if (root==NULL) {
+    if (root == NULL) {
       std::cerr << "!!! Unable to parse tree from XML model." << std::endl;
       exit(EXIT_FAILURE);
     }
@@ -100,19 +98,18 @@ Mart::Mart(const boost::property_tree::ptree &info_ptree, const boost::property_
   }
 }
 
-
 std::ostream& Mart::put(std::ostream& os) const {
-  os  << "# Ranker: MART" << std::endl
-      << "# max no. of trees = " << ntrees_ << std::endl
-      << "# no. of tree leaves = " << nleaves_ << std::endl
-      << "# shrinkage = " << shrinkage_ << std::endl
-      << "# min leaf support = " << minleafsupport_ << std::endl;
+  os << "# Ranker: MART" << std::endl << "# max no. of trees = " << ntrees_
+     << std::endl << "# no. of tree leaves = " << nleaves_ << std::endl
+     << "# shrinkage = " << shrinkage_ << std::endl << "# min leaf support = "
+     << minleafsupport_ << std::endl;
   if (nthresholds_)
     os << "# no. of thresholds = " << nthresholds_ << std::endl;
   else
     os << "# no. of thresholds = unlimited" << std::endl;
   if (valid_iterations_)
-    os << "# no. of no gain rounds before early stop = " << valid_iterations_ << std::endl;
+    os << "# no. of no gain rounds before early stop = " << valid_iterations_
+       << std::endl;
   return os;
 }
 
@@ -145,7 +142,8 @@ void Mart::init(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     //get_ sample indexes sorted by the fid-th feature
     unsigned int uniqs_size = 0;
     float *uniqs = (float*) malloc(
-        sizeof(float) * (nthresholds_ == 0 ? sortedsize_ + 1 : nthresholds_ + 1));
+        sizeof(float)
+            * (nthresholds_ == 0 ? sortedsize_ + 1 : nthresholds_ + 1));
     //skip samples with the same feature value. early stop for if nthresholds!=size_max
     uniqs[uniqs_size++] = features[idx[0]];
     for (unsigned int j = 1;
@@ -164,7 +162,8 @@ void Mart::init(std::shared_ptr<quickrank::data::Dataset> training_dataset,
       free(uniqs), thresholds_size_[i] = nthresholds_ + 1, thresholds_[i] =
           (float*) malloc(sizeof(float) * (nthresholds_ + 1));
       float t = features[idx[0]];  //equals fmin
-      const float step = fabs(features[idx[sortedsize_ - 1]] - t) / nthresholds_;  //(fmax-fmin)/nthresholds
+      const float step = fabs(features[idx[sortedsize_ - 1]] - t)
+          / nthresholds_;  //(fmax-fmin)/nthresholds
       for (unsigned int j = 0; j != nthresholds_; t += step)
         thresholds_[i][j++] = t;
       thresholds_[i][nthresholds_] = FLT_MAX;
@@ -174,16 +173,22 @@ void Mart::init(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     preprocess_dataset(validation_dataset);
     scores_on_validation_ = new Score[validation_dataset->num_instances()]();
   }
-  hist_ = new RTRootHistogram(training_dataset.get(), pseudoresponses_, sortedsid_,
-                              sortedsize_, thresholds_, thresholds_size_);
+  hist_ = new RTRootHistogram(training_dataset.get(), pseudoresponses_,
+                              sortedsid_, sortedsize_, thresholds_,
+                              thresholds_size_);
 }
 
-void Mart::clear(std::shared_ptr<data::Dataset> training_dataset){
-  if (scores_on_training_) delete [] scores_on_training_;
-  if (scores_on_validation_) delete [] scores_on_validation_;
-  if (pseudoresponses_) delete [] pseudoresponses_;
-  if (hist_) delete hist_;
-  if (thresholds_size_) delete [] thresholds_size_;
+void Mart::clear(std::shared_ptr<data::Dataset> training_dataset) {
+  if (scores_on_training_)
+    delete[] scores_on_training_;
+  if (scores_on_validation_)
+    delete[] scores_on_validation_;
+  if (pseudoresponses_)
+    delete[] pseudoresponses_;
+  if (hist_)
+    delete hist_;
+  if (thresholds_size_)
+    delete[] thresholds_size_;
   if (sortedsid_) {
     for (unsigned int i = 0; i < training_dataset->num_features(); ++i) {
       delete[] sortedsid_[i];
@@ -197,11 +202,10 @@ void Mart::preprocess_dataset(std::shared_ptr<data::Dataset> dataset) const {
     dataset->transpose();
 }
 
-
 void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
                  std::shared_ptr<quickrank::data::Dataset> validation_dataset,
-                 std::shared_ptr<quickrank::metric::ir::Metric> scorer, unsigned int partial_save,
-                 const std::string output_basename) {
+                 std::shared_ptr<quickrank::metric::ir::Metric> scorer,
+                 unsigned int partial_save, const std::string output_basename) {
   // ---------- Initialization ----------
   std::cout << "# Initialization";
   std::cout.flush();
@@ -216,7 +220,6 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   double init_time = std::chrono::duration_cast<std::chrono::duration<double>>(
       chrono_init_end - chrono_init_start).count();
   std::cout << ": " << std::setprecision(2) << init_time << " s." << std::endl;
-
 
   // ---------- Training ----------
   std::cout << std::fixed << std::setprecision(4);
@@ -234,17 +237,20 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   ensemble_model_.set_capacity(ntrees_);
   //start iterations
   for (unsigned int m = 0;
-      m < ntrees_ && (valid_iterations_ == 0 || m <= validation_bestmodel_ + valid_iterations_); ++m) {
+      m < ntrees_
+          && (valid_iterations_ == 0
+              || m <= validation_bestmodel_ + valid_iterations_); ++m) {
     compute_pseudoresponses(training_dataset, scorer.get());
 
     //update the histogram with these training_seting labels (the feature histogram will be used to find the best tree rtnode)
     hist_->update(pseudoresponses_, training_dataset->num_instances());
 
     //Fit a regression tree
-    std::unique_ptr<RegressionTree> tree = fit_regressor_on_gradient ( training_dataset );
+    std::unique_ptr<RegressionTree> tree = fit_regressor_on_gradient(
+        training_dataset);
 
     //add this tree to the ensemble (our model)
-    ensemble_model_.push(tree->get_proot(), shrinkage_, 0 ); // maxlabel);
+    ensemble_model_.push(tree->get_proot(), shrinkage_, 0);  // maxlabel);
 
     //Update the model's outputs on all training samples
     update_modelscores(training_dataset, scores_on_training_, tree.get());
@@ -253,7 +259,7 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
         training_dataset, scores_on_training_);
 
     //show results
-    std::cout << std::setw(7) << m+1 << std::setw(9) << metric_on_training;
+    std::cout << std::setw(7) << m + 1 << std::setw(9) << metric_on_training;
     //Evaluate the current model on the validation data (if available)
     if (validation_dataset) {
       // update validation scores
@@ -268,7 +274,7 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
           || best_metric_on_validation == 0.0f) {
         best_metric_on_validation = metric_on_validation;
         validation_bestmodel_ = ensemble_model_.get_size() - 1;
-        std::cout <<" *";
+        std::cout << " *";
       }
     }
     std::cout << std::endl;
@@ -281,7 +287,8 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   }
   //Rollback to the best model observed on the validation data
   if (validation_dataset)
-    while (ensemble_model_.is_notempty() && ensemble_model_.get_size() > validation_bestmodel_ + 1)
+    while (ensemble_model_.is_notempty()
+        && ensemble_model_.get_size() > validation_bestmodel_ + 1)
       ensemble_model_.pop();
 
   std::chrono::high_resolution_clock::time_point chrono_train_end =
@@ -296,35 +303,37 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
 
   std::cout << std::endl;
   std::cout << *scorer << " on training data = " << metric_on_training
-      << std::endl;
+            << std::endl;
   if (validation_dataset) {
     score_dataset(validation_dataset, scores_on_validation_);
     best_metric_on_validation = scorer->evaluate_dataset(validation_dataset,
                                                          scores_on_validation_);
     std::cout << *scorer << " on validation data = "
-        << best_metric_on_validation << std::endl;
+              << best_metric_on_validation << std::endl;
   }
 
   clear(training_dataset);
 
   std::cout << std::endl;
-  std::cout << "#\t Training Time: " << std::setprecision(2) << train_time << " s." << std::endl;
+  std::cout << "#\t Training Time: " << std::setprecision(2) << train_time
+            << " s." << std::endl;
 }
 
-
-void Mart::compute_pseudoresponses( std::shared_ptr<quickrank::data::Dataset> training_dataset,
-                                    quickrank::metric::ir::Metric* scorer) {
+void Mart::compute_pseudoresponses(
+    std::shared_ptr<quickrank::data::Dataset> training_dataset,
+    quickrank::metric::ir::Metric* scorer) {
   const unsigned int nentries = training_dataset->num_instances();
-  for(unsigned int i=0; i<nentries; i++)
-    pseudoresponses_[i] = training_dataset->getLabel(i) - scores_on_training_[i];
+  for (unsigned int i = 0; i < nentries; i++)
+    pseudoresponses_[i] = training_dataset->getLabel(i)
+        - scores_on_training_[i];
 }
 
-std::unique_ptr<RegressionTree> Mart::fit_regressor_on_gradient (
-    std::shared_ptr<data::Dataset> training_dataset ) {
+std::unique_ptr<RegressionTree> Mart::fit_regressor_on_gradient(
+    std::shared_ptr<data::Dataset> training_dataset) {
   //Fit a regression tree
   /// \todo TODO: memory management of regression tree is wrong!!!
-  RegressionTree* tree = new RegressionTree ( nleaves_, training_dataset.get(),
-                                              pseudoresponses_, minleafsupport_);
+  RegressionTree* tree = new RegressionTree(nleaves_, training_dataset.get(),
+                                            pseudoresponses_, minleafsupport_);
   tree->fit(hist_);
   //update the outputs of the tree (with gamma computed using the Newton-Raphson method)
   //float maxlabel =
@@ -333,11 +342,12 @@ std::unique_ptr<RegressionTree> Mart::fit_regressor_on_gradient (
 
 }
 
-void Mart::update_modelscores(std::shared_ptr<data::Dataset> dataset, Score *scores,
-                              RegressionTree* tree) {
+void Mart::update_modelscores(std::shared_ptr<data::Dataset> dataset,
+                              Score *scores, RegressionTree* tree) {
   quickrank::Score* score_i = scores;
   for (unsigned int q = 0; q < dataset->num_queries(); q++) {
-    std::shared_ptr<quickrank::data::QueryResults> results = dataset->getQueryResults(q);
+    std::shared_ptr<quickrank::data::QueryResults> results = dataset
+        ->getQueryResults(q);
     const unsigned int offset = dataset->num_instances();
     const Feature* d = results->features();
     for (unsigned int i = 0; i < results->num_results(); i++) {
@@ -348,18 +358,16 @@ void Mart::update_modelscores(std::shared_ptr<data::Dataset> dataset, Score *sco
   }
 }
 
-
 std::ofstream& Mart::save_model_to_file(std::ofstream& os) const {
   // write ranker description
-  os  << "\t<info>" << std::endl
-      << "\t\t<type>" << name() << "</type>" << std::endl
-      << "\t\t<trees>" << ntrees_ << "</trees>" << std::endl
-      << "\t\t<leaves>" << nleaves_ << "</leaves>" << std::endl
-      << "\t\t<shrinkage>" << shrinkage_ << "</shrinkage>" << std::endl
-      << "\t\t<leafsupport>" << minleafsupport_ << "</leafsupport>" << std::endl
-      << "\t\t<discretization>" << nthresholds_ << "</discretization>" << std::endl
-      << "\t\t<estop>" << valid_iterations_ << "</estop>" << std::endl
-      << "\t</info>" << std::endl;
+  os << "\t<info>" << std::endl << "\t\t<type>" << name() << "</type>"
+     << std::endl << "\t\t<trees>" << ntrees_ << "</trees>" << std::endl
+     << "\t\t<leaves>" << nleaves_ << "</leaves>" << std::endl
+     << "\t\t<shrinkage>" << shrinkage_ << "</shrinkage>" << std::endl
+     << "\t\t<leafsupport>" << minleafsupport_ << "</leafsupport>" << std::endl
+     << "\t\t<discretization>" << nthresholds_ << "</discretization>"
+     << std::endl << "\t\t<estop>" << valid_iterations_ << "</estop>"
+     << std::endl << "\t</info>" << std::endl;
 
   // save xml model
   ensemble_model_.save_model_to_file(os);

@@ -27,8 +27,7 @@ class RankedResults : private boost::noncopyable {
   /// It also provides an un-mapping function.
   /// \param n_instances The number of training instances (lines) in the dataset.
   /// \param n_features The number of features.
-  RankedResults(std::shared_ptr<QueryResults> results,
-               Score* scores);
+  RankedResults(std::shared_ptr<QueryResults> results, Score* scores);
   virtual ~RankedResults();
 
   // provide some kinf od unmap function ?
@@ -41,9 +40,14 @@ class RankedResults : private boost::noncopyable {
     return scores_;
   }
 
-  const unsigned int pos_of_rank(const unsigned int rank) const{ return unmap_[rank]; };
+  const unsigned int pos_of_rank(const unsigned int rank) const {
+    return unmap_[rank];
+  }
+  ;
 
-  const unsigned int num_results() const { return num_results_; }
+  const unsigned int num_results() const {
+    return num_results_;
+  }
 
  private:
   Label* labels_ = NULL;

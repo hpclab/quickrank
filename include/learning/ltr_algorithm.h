@@ -8,20 +8,22 @@
 #include "data/dataset.h"
 #include "metric/ir/metric.h"
 
-
 namespace quickrank {
 namespace learning {
 
 class LTR_Algorithm : private boost::noncopyable {
 
  public:
-  LTR_Algorithm() {};
+  LTR_Algorithm() {
+  }
+  ;
 
   /// Generates a LTR_Algorithm instance from a previously saved XML model.
-  LTR_Algorithm(const boost::property_tree::ptree &info_ptree, const boost::property_tree::ptree &model_ptree);
+  LTR_Algorithm(const boost::property_tree::ptree &info_ptree,
+                const boost::property_tree::ptree &model_ptree);
 
-  virtual ~LTR_Algorithm() {}
-
+  virtual ~LTR_Algorithm() {
+  }
 
   /// Returns the name of the ranker.
   virtual std::string name() const = 0;
@@ -33,13 +35,11 @@ class LTR_Algorithm : private boost::noncopyable {
   /// \param metric The metric to be optimized.
   /// \param partial_save Allows to save a partial model every given number of iterations.
   /// \param model_filename The file where the model, and the partial models, are saved.
-  virtual void learn(
-      std::shared_ptr<data::Dataset> training_dataset,
-      std::shared_ptr<data::Dataset> validation_dataset,
-      std::shared_ptr<metric::ir::Metric> metric,
-      unsigned int partial_save,
-      const std::string model_filename) = 0;
-
+  virtual void learn(std::shared_ptr<data::Dataset> training_dataset,
+                     std::shared_ptr<data::Dataset> validation_dataset,
+                     std::shared_ptr<metric::ir::Metric> metric,
+                     unsigned int partial_save,
+                     const std::string model_filename) = 0;
 
   /// Given and input \a dateset, the current ranker generates
   /// scores for each instance and store the in the \a scores vector.
@@ -55,9 +55,8 @@ class LTR_Algorithm : private boost::noncopyable {
   /// \param results The results list to be evaluated
   /// \param scores The vector where scores are stored.
   /// \param offset The offset to the next feature in the data representation.
-  virtual void score_query_results(
-      std::shared_ptr<data::QueryResults> results,
-      Score* scores, unsigned int offset) const;
+  virtual void score_query_results(std::shared_ptr<data::QueryResults> results,
+                                   Score* scores, unsigned int offset) const;
 
   /// Returns the score of a given document.
   virtual Score score_document(const Feature* d,
@@ -72,7 +71,8 @@ class LTR_Algorithm : private boost::noncopyable {
   /// Load a model from a given XML file.
   ///
   /// \param model_filename The input file name.
-  static std::shared_ptr<LTR_Algorithm> load_model_from_file(std::string model_filename);
+  static std::shared_ptr<LTR_Algorithm> load_model_from_file(
+      std::string model_filename);
 
   /// Save the current model in the given output file stream.
   virtual std::ofstream& save_model_to_file(std::ofstream& of) const = 0;
@@ -84,7 +84,8 @@ class LTR_Algorithm : private boost::noncopyable {
   /// Different algorithms might modify the data representation
   /// to improve efficacy or efficiency,
   /// This is also used to make sure dataset is in the right vertical vs. horizontal format.
-  virtual void preprocess_dataset(std::shared_ptr<data::Dataset> dataset) const = 0;
+  virtual void preprocess_dataset(
+      std::shared_ptr<data::Dataset> dataset) const = 0;
 
  private:
 

@@ -24,12 +24,21 @@ class LambdaMart : public Mart {
   LambdaMart(unsigned int ntrees, float shrinkage, unsigned int nthresholds,
              unsigned int ntreeleaves, unsigned int minleafsupport,
              unsigned int esr)
- : Mart(ntrees, shrinkage, nthresholds, ntreeleaves, minleafsupport, esr) {}
+      : Mart(ntrees, shrinkage, nthresholds, ntreeleaves, minleafsupport, esr) {
+  }
 
-  virtual ~LambdaMart() {}
+  /// Generates a LTR_Algorithm instance from a previously saved XML model.
+  LambdaMart(const boost::property_tree::ptree &info_ptree,
+             const boost::property_tree::ptree &model_ptree)
+      : Mart(info_ptree, model_ptree);
+
+  virtual ~LambdaMart() {
+  }
 
   /// Returns the name of the ranker.
-  virtual std::string name() const {return "LAMBDAMART";};
+  virtual std::string name() const {
+    return "LAMBDAMART";
+  }
 
  protected:
   /// Prepares private data structurs befor training takes place.
@@ -43,14 +52,15 @@ class LambdaMart : public Mart {
   ///
   /// \param training_dataset The training data.
   /// \param metric The metric to be optimized.
-  virtual void compute_pseudoresponses(std::shared_ptr<data::Dataset> training_dataset,
-                                       metric::ir::Metric* metric);
+  virtual void compute_pseudoresponses(
+      std::shared_ptr<data::Dataset> training_dataset,
+      metric::ir::Metric* metric);
 
   /// Fits a regression tree on the gradient given by the pseudo residuals
   ///
   /// \param training_dataset The dataset used for training
-  virtual std::unique_ptr<RegressionTree> fit_regressor_on_gradient (
-      std::shared_ptr<data::Dataset> training_dataset );
+  virtual std::unique_ptr<RegressionTree> fit_regressor_on_gradient(
+      std::shared_ptr<data::Dataset> training_dataset);
 
   virtual std::ofstream& save_model_to_file(std::ofstream& os) const;
 

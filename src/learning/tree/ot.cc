@@ -78,7 +78,7 @@ void ObliviousRT::fit(RTNodeHistogram *hist) {
           node->hist->sqsumlbl[best_featureidx][best_thresholdid];
       const double best_lvar = fabs(lsqsum - lsum * lsum / lcount);
       const double rsum = node->hist->sumlbl[best_featureidx][last_thresholdid]
-                                                              - lsum;
+          - lsum;
       const double rsqsum =
           node->hist->sqsumlbl[best_featureidx][last_thresholdid] - lsqsum;
       const double best_rvar = fabs(rsqsum - rsum * rsum / rcount);
@@ -111,9 +111,13 @@ void ObliviousRT::fit(RTNodeHistogram *hist) {
         }
       }
       //update current node
-      node->left = nodearray[2 * i + 1] =  new RTNode( lsamples, lsize, best_lvar, lsum, lhist);
-      node->right =  nodearray[2 * i + 2] = new RTNode(rsamples, rsize, best_rvar, rsum, rhist);
-      node->set_feature(best_featureidx, best_featureidx+1 /*training_set->get_featureid(best_featureidx)*/);
+      node->left = nodearray[2 * i + 1] = new RTNode(lsamples, lsize, best_lvar,
+                                                     lsum, lhist);
+      node->right = nodearray[2 * i + 2] = new RTNode(rsamples, rsize,
+                                                      best_rvar, rsum, rhist);
+      node->set_feature(
+          best_featureidx,
+          best_featureidx + 1 /*training_set->get_featureid(best_featureidx)*/);
       node->threshold = best_threshold;
       node->deviance = minvar;
       //free mem
@@ -160,7 +164,7 @@ void ObliviousRT::fill(double **sumvar, const unsigned int nfeaturesamples,
           double rsum = s - lsum;
           double rsqsum = sq - lsqsum;
           sumvar[f][t] += fabs(lsqsum - lsum * lsum / lcount)
-                  + fabs(rsqsum - rsum * rsum / rcount);
+              + fabs(rsqsum - rsum * rsum / rcount);
         } else
           sumvar[f][t] = invalid;
       }

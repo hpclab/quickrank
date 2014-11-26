@@ -20,9 +20,12 @@ RankedResults::RankedResults(std::shared_ptr<QueryResults> results,
 }
 
 RankedResults::~RankedResults() {
-  if (labels_) delete [] labels_;
-  if (scores_) delete [] scores_;
-  if (unmap_) delete [] unmap_;
+  if (labels_)
+    delete[] labels_;
+  if (scores_)
+    delete[] scores_;
+  if (unmap_)
+    delete[] unmap_;
 }
 
 }  // namespace data

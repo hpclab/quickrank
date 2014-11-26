@@ -50,7 +50,8 @@ void Evaluator::evaluate(std::shared_ptr<learning::LTR_Algorithm> algo,
   }
 
   // run the learning process
-  algo->learn(training_dataset, validation_dataset, train_metric, npartialsave, output_filename);
+  algo->learn(training_dataset, validation_dataset, train_metric, npartialsave,
+              output_filename);
 
   if (test_metric and !test_filename.empty()) {
     // pre-clean

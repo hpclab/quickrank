@@ -24,36 +24,36 @@ class RTNode {
   RTNode(double prediction) {
     avglabel = prediction;
     /*
-    featureidx  = uint_max;
-    featureid  = uint_max;
-    sampleids = NULL;
-    nsampleids = 0;
-    deviance = -1;
-    hist = NULL;
-    left = NULL;
-    right = NULL;
-    */
+     featureidx  = uint_max;
+     featureid  = uint_max;
+     sampleids = NULL;
+     nsampleids = 0;
+     deviance = -1;
+     hist = NULL;
+     left = NULL;
+     right = NULL;
+     */
   }
 
   // new node
-  RTNode(float new_threshold, unsigned int new_featureidx, unsigned int new_featureid,
-         RTNode* new_left, RTNode* new_right) {
+  RTNode(float new_threshold, unsigned int new_featureidx,
+         unsigned int new_featureid, RTNode* new_left, RTNode* new_right) {
     threshold = new_threshold;
     featureidx = new_featureidx;
     featureid = new_featureid;
     left = new_left;
     right = new_right;
     /*
-    sampleids = NULL;
-    nsampleids = 0;
-    deviance = -1;
-    hist = NULL;
-    avglabel = 0.0;
-    */
+     sampleids = NULL;
+     nsampleids = 0;
+     deviance = -1;
+     hist = NULL;
+     avglabel = 0.0;
+     */
   }
 
-  RTNode(unsigned int *new_sampleids, unsigned int new_nsampleids, double new_deviance,
-         double sumlabel, RTNodeHistogram* new_hist) {
+  RTNode(unsigned int *new_sampleids, unsigned int new_nsampleids,
+         double new_deviance, double sumlabel, RTNodeHistogram* new_hist) {
     sampleids = new_sampleids;
     nsampleids = new_nsampleids;
     deviance = new_deviance;
@@ -62,8 +62,10 @@ class RTNode {
   }
 
   ~RTNode() {
-    if (left) delete left;
-    if (right) delete right;
+    if (left)
+      delete left;
+    if (right)
+      delete right;
   }
   void set_feature(unsigned int fidx, unsigned int fid) {
     //if(fidx==uint_max or fid==uint_max) exit(7);

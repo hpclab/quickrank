@@ -7,6 +7,8 @@
 #include "utils/mergesorter.h"
 
 #include "learning/forests/mart.h"
+#include "learning/forests/lambdamart.h"
+#include "learning/forests/matrixnet.h"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -53,18 +55,19 @@ void LTR_Algorithm::save(std::string output_basename, int iteration) const {
     std::ofstream output_stream;
     output_stream.open(filename);
     // Wrap actual model
-    output_stream  << "<ranker>" << std::endl;
+    output_stream << "<ranker>" << std::endl;
 
     // Save the actual model
     save_model_to_file(output_stream);
 
-    output_stream  << "</ranker>" << std::endl;
+    output_stream << "</ranker>" << std::endl;
 
     output_stream.close();
   }
 }
 
-std::shared_ptr<LTR_Algorithm> LTR_Algorithm::load_model_from_file(std::string model_filename) {
+std::shared_ptr<LTR_Algorithm> LTR_Algorithm::load_model_from_file(
+    std::string model_filename) {
   if (model_filename.empty()) {
     std::cerr << "!!! Model filename is empty." << std::endl;
     exit(EXIT_FAILURE);
@@ -83,27 +86,23 @@ std::shared_ptr<LTR_Algorithm> LTR_Algorithm::load_model_from_file(std::string m
   boost::property_tree::ptree ensemble_ptree;
 
   BOOST_FOREACH(const boost::property_tree::ptree::value_type& node, xml_tree.get_child("ranker")) {
-    if (node.first=="info")
+    if (node.first == "info")
       info_ptree = node.second;
-    else if (node.first=="ensemble")
+    else if (node.first == "ensemble")
       ensemble_ptree = node.second;
   }
 
   std::string ranker_type = info_ptree.get<std::string>("type");
-  if (ranker_type=="MART")
-      return std::shared_ptr<LTR_Algorithm>( new forests::Mart(info_ptree, ensemble_ptree) );
-/*
-  else
-      break;
-    case "LAMBDAMART":
-      return NULL;
-      break;
-    case "MATRIXNET":
-      return NULL;
-      break;
-    default:
-      break;
-  }*/
+  if (ranker_type == "MART")
+    return std::shared_ptr<LTR_Algorithm>(
+        new forests::Mart(info_ptree, ensemble_ptree));
+  if (ranker_type == "LAMBDAMART")
+    return std::shared_ptr<LTR_Algorithm>(
+        new forests::LambdaMart(info_ptree, ensemble_ptree));
+  if (ranker_type == "MATRIXNET")
+    return std::shared_ptr<LTR_Algorithm>(
+        new forests::MatrixNet(info_ptree, ensemble_ptree));
+
   return NULL;
 }
 

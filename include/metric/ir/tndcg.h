@@ -39,15 +39,16 @@ class Tndcg : public Ndcg {
   virtual MetricScore evaluate_result_list(
       const quickrank::data::QueryResults* rl, const Score* scores) const;
 
-  virtual std::unique_ptr<Jacobian> jacobian(std::shared_ptr<data::RankedResults> ranked) const;
+  virtual std::unique_ptr<Jacobian> jacobian(
+      std::shared_ptr<data::RankedResults> ranked) const;
 
  protected:
   /// Computes the TNDCG\@K of a given list of labels.
   /// \param rl The given results list. Only labels are actually used.
   /// \param scores The scores to be used to re-order the result list.
   /// \return TNDCG\@K for computed on the given labels.
-  MetricScore compute_tndcg(const quickrank::data::QueryResults* rl, const Score* scores) const;
-
+  MetricScore compute_tndcg(const quickrank::data::QueryResults* rl,
+                            const Score* scores) const;
 
  private:
   friend std::ostream& operator<<(std::ostream& os, const Tndcg& tndcg) {

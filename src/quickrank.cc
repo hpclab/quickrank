@@ -69,7 +69,9 @@ namespace po = boost::program_options;
 
 // Structure used to validate allowed metric
 struct metric_string {
-  metric_string(std::string const& val): value(val) {}
+  metric_string(std::string const& val)
+      : value(val) {
+  }
   std::string value;
 };
 
@@ -80,7 +82,9 @@ std::ostream& operator<<(std::ostream &os, const metric_string &m) {
 
 // Structure used to validate allowed model
 struct model_string {
-  model_string(std::string const& val) : value(val) {}
+  model_string(std::string const& val)
+      : value(val) {
+  }
   std::string value;
 };
 
@@ -120,7 +124,7 @@ void validate(boost::any& v, std::vector<std::string> const& values,
   // one string, it's an error, and exception will be thrown.
   std::string const& s = validators::get_single_string(values);
 
-  if (s == "lambdamart" || s == "mart" || s == "matrixnet" || s=="custom") {
+  if (s == "lambdamart" || s == "mart" || s == "matrixnet" || s == "custom") {
     v = boost::any(model_string(s));
   } else {
     throw validation_error(validation_error::invalid_option_value);
@@ -141,62 +145,65 @@ T check_and_set(const po::variables_map &vm, const std::string &name,
 
 // Auxiliary function to check and set/exit metric
 // TODO: smart pointer to be added
-std::shared_ptr<quickrank::metric::ir::Metric> check_and_set_metric(const po::variables_map &vm,
-                                                                    const std::string &type) {
+std::shared_ptr<quickrank::metric::ir::Metric> check_and_set_metric(
+    const po::variables_map &vm, const std::string &type) {
   int k = check_and_set<unsigned int>(vm, type + "-cutoff",
                                       type + " Metric cutoff was not set.");
   if (vm.count(type + "-metric")) {
     if (vm[type + "-metric"].as<metric_string>().value == "ndcg")
-      return std::shared_ptr<quickrank::metric::ir::Metric> (
-          new quickrank::metric::ir::Ndcg(k) );
+      return std::shared_ptr<quickrank::metric::ir::Metric>(
+          new quickrank::metric::ir::Ndcg(k));
     else if (vm[type + "-metric"].as<metric_string>().value == "tndcg")
-      return std::shared_ptr<quickrank::metric::ir::Metric> (
-          new quickrank::metric::ir::Tndcg(k) );
-    else return std::shared_ptr<quickrank::metric::ir::Metric> (
-        new quickrank::metric::ir::Map(k) );
+      return std::shared_ptr<quickrank::metric::ir::Metric>(
+          new quickrank::metric::ir::Tndcg(k));
+    else
+      return std::shared_ptr<quickrank::metric::ir::Metric>(
+          new quickrank::metric::ir::Map(k));
   } else {
-    std::cout << type + " Metric (ndcg or map ot ndcg) was not set." << std::endl;
+    std::cout << type + " Metric (ndcg or map ot ndcg) was not set."
+              << std::endl;
     exit(1);
   }
 }
 
 int main(int argc, char *argv[]) {
   std::cout << "# ## ========================== ## #" << std::endl
-      << "# ##          QuickRank         ## #" << std::endl
-      << "# ## -------------------------- ## #" << std::endl
-      << "# ## developed by the HPC. Lab. ## #" << std::endl
-      << "# ##  http://hpc.isti.cnr.it/   ## #" << std::endl
-      << "# ##  quickrank@.isti.cnr.it/   ## #" << std::endl
-      << "# ## ========================== ## #" << std::endl;
+            << "# ##          QuickRank         ## #" << std::endl
+            << "# ## -------------------------- ## #" << std::endl
+            << "# ## developed by the HPC. Lab. ## #" << std::endl
+            << "# ##  http://hpc.isti.cnr.it/   ## #" << std::endl
+            << "# ##  quickrank@.isti.cnr.it/   ## #" << std::endl
+            << "# ## ========================== ## #" << std::endl;
 
   std::cout << std::fixed;
 
   // Declare the supported options.
   po::options_description model_desc("Model options");
   model_desc.add_options()(
-      "algo", po::value<model_string>(),
+      "algo",
+      po::value<model_string>(),
       "[mandatory] set ltr algorithm to use (allowed values are mart, lambdamart, matrixnet and custom )")(
-          "num-trees", po::value<unsigned int>()->default_value(1000),
-          "set number of trees")("shrinkage",
-              po::value<float>()->default_value(0.1),
-              "set shrinkage")(
-                  "num-thresholds", po::value<unsigned int>()->default_value(0),
-                  "set number of thresholds")("min-leaf-support",
-                      po::value<unsigned int>()->default_value(1),
-                      "set minimum number of leaf support")(
-                          "end-after-rounds",
-                          po::value<unsigned int>()->default_value(100),
-                          "set num. rounds with no boost in validation before ending (if 0 disabled)");
+      "num-trees", po::value<unsigned int>()->default_value(1000),
+      "set number of trees")("shrinkage",
+                             po::value<float>()->default_value(0.1),
+                             "set shrinkage")(
+      "num-thresholds", po::value<unsigned int>()->default_value(0),
+      "set number of thresholds")("min-leaf-support",
+                                  po::value<unsigned int>()->default_value(1),
+                                  "set minimum number of leaf support")(
+      "end-after-rounds",
+      po::value<unsigned int>()->default_value(100),
+      "set num. rounds with no boost in validation before ending (if 0 disabled)");
 
   po::options_description lm_model_desc("Mart/LambdaMart options");
   lm_model_desc.add_options()("num-leaves",
-      po::value<unsigned int>()->default_value(10),
-      "set number of leaves");
+                              po::value<unsigned int>()->default_value(10),
+                              "set number of leaves");
 
   po::options_description mn_model_desc("Matrixnet options");
   mn_model_desc.add_options()("tree-depth",
-      po::value<unsigned int>()->default_value(3),
-      "set tree depth");
+                              po::value<unsigned int>()->default_value(3),
+                              "set tree depth");
 
   po::options_description custom_model_desc("Custom options");
 
@@ -205,32 +212,32 @@ int main(int argc, char *argv[]) {
       "train-metric",
       po::value<metric_string>()->default_value(
           metric_string(std::string("ndcg"))),
-          "set train metric (allowed values are [ndcg|tndcg|map])")(
-              "train-cutoff", po::value<unsigned int>()->default_value(10),
-              "set train metric cutoff")(
-                  "test-metric",
-                  po::value<metric_string>()->default_value(
-                      metric_string(std::string("ndcg"))),
-                      "set test metric (allowed values are ndcg and map)")(
-                          "test-cutoff", po::value<unsigned int>()->default_value(10),
-                          "set test metric cutoff");
+      "set train metric (allowed values are [ndcg|tndcg|map])")(
+      "train-cutoff", po::value<unsigned int>()->default_value(10),
+      "set train metric cutoff")(
+      "test-metric",
+      po::value<metric_string>()->default_value(
+          metric_string(std::string("ndcg"))),
+      "set test metric (allowed values are ndcg and map)")(
+      "test-cutoff", po::value<unsigned int>()->default_value(10),
+      "set test metric cutoff");
 
   po::options_description file_desc("File options");
   file_desc.add_options()("partial",
-      po::value<unsigned int>()->default_value(100),
-      "set partial file save frequency")(
-          "train", po::value<std::string>(), "set training file")(
-              "valid", po::value<std::string>()->default_value(""),
-              "set validation file")("test",
-                  po::value<std::string>()->default_value(""),
-                  "set testing file")(
-                      "features", po::value<std::string>()->default_value(""),
-                      "set features file")("model", po::value<std::string>(),
-                          "set output model file");
+                          po::value<unsigned int>()->default_value(100),
+                          "set partial file save frequency")(
+      "train", po::value<std::string>(), "set training file")(
+      "valid", po::value<std::string>()->default_value(""),
+      "set validation file")("test",
+                             po::value<std::string>()->default_value(""),
+                             "set testing file")(
+      "features", po::value<std::string>()->default_value(""),
+      "set features file")("model", po::value<std::string>(),
+                           "set output model file");
 
   po::options_description all_desc("Allowed options");
   all_desc.add(model_desc).add(metric_desc).add(file_desc).add(lm_model_desc)
-          .add(mn_model_desc).add(custom_model_desc);
+      .add(mn_model_desc).add(custom_model_desc);
   all_desc.add_options()("help", "produce help message");
 
   po::variables_map vm;
@@ -279,9 +286,9 @@ int main(int argc, char *argv[]) {
   //  ranking_algorithm = NULL;  //new quickrank::learning::forests::MatrixNet( ntrees, shrinkage, nthresholds, treedepth,   minleafsupport, esr);
   else if (vm["algo"].as<model_string>().value == "mart")
     ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
-        new quickrank::learning::forests::Mart(ntrees, shrinkage,
-                                               nthresholds, ntreeleaves,
-                                               minleafsupport, esr));
+        new quickrank::learning::forests::Mart(ntrees, shrinkage, nthresholds,
+                                               ntreeleaves, minleafsupport,
+                                               esr));
   else if (vm["algo"].as<model_string>().value == "matrixnet")
     ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
         new quickrank::learning::forests::MatrixNet(ntrees, shrinkage,
@@ -290,7 +297,6 @@ int main(int argc, char *argv[]) {
   else if (vm["algo"].as<model_string>().value == "custom")
     ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
         new quickrank::learning::CustomLTR());
-
 
   //show ranker parameters
   std::cout << "#" << std::endl << *ranking_algorithm;
@@ -301,8 +307,8 @@ int main(int argc, char *argv[]) {
   std::shared_ptr<quickrank::metric::ir::Metric> testing_metric =
       check_and_set_metric(vm, "test");
   std::cout << "#" << std::endl << "# training scorer: " << *training_metric
-      << std::endl << "# test scorer: " << *testing_metric << std::endl
-      << "#" << std::endl;
+            << std::endl << "# test scorer: " << *testing_metric << std::endl
+            << "#" << std::endl;
 
   // FILE STUFF
   unsigned int partial_save = check_and_set<unsigned int>(
@@ -324,12 +330,11 @@ int main(int argc, char *argv[]) {
   srand(time(NULL));
 
   //instantiate a new evaluator with read arguments
-  quickrank::metric::Evaluator::evaluate(ranking_algorithm,
-                                         training_metric,
-                                         testing_metric,
-                                         training_filename, validation_filename,
-                                         test_filename, features_filename,
-                                         model_filename, partial_save);
+  quickrank::metric::Evaluator::evaluate(ranking_algorithm, training_metric,
+                                         testing_metric, training_filename,
+                                         validation_filename, test_filename,
+                                         features_filename, model_filename,
+                                         partial_save);
 
   return 0;
 }

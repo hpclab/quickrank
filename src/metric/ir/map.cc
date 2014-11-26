@@ -32,7 +32,8 @@ MetricScore Map::evaluate_result_list(const quickrank::data::QueryResults* rl,
   return count > 0 ? ap / count : 0.0;
 }
 
-std::unique_ptr<Jacobian> Map::jacobian(std::shared_ptr<data::RankedResults> ranked) const {
+std::unique_ptr<Jacobian> Map::jacobian(
+    std::shared_ptr<data::RankedResults> ranked) const {
   int* labels = new int[ranked->num_results()];  // int labels[ql.size];
   int* relcount = new int[ranked->num_results()];  // int relcount[ql.size];
   MetricScore count = 0;

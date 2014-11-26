@@ -16,16 +16,19 @@ Dataset::Dataset(unsigned int n_instances, unsigned int n_features) {
   format_ = HORIZ;
   // data_ = new quickrank::Feature[max_instances_ * num_features_]();  // 0 initialization
   // labels_ = new quickrank::Label[max_instances_];           // no initialization
-  if ( posix_memalign((void**)&data_, 16, max_instances_ * num_features_ * sizeof(Feature)) !=0 ) {
+  if (posix_memalign((void**) &data_, 16,
+                     max_instances_ * num_features_ * sizeof(Feature)) != 0) {
     std::cerr << "!!! Impossible to allocate memory for dataset storage."
               << std::endl;
     exit(EXIT_FAILURE);
   }
   std::memset(data_, 0, max_instances_ * num_features_ * sizeof(Feature));
 
-  if ( posix_memalign((void**)&labels_, 16, max_instances_ * sizeof(Label)) !=0 ) {
-    std::cerr << "!!! Impossible to allocate memory for relevance labels storage."
-              << std::endl;
+  if (posix_memalign((void**) &labels_, 16, max_instances_ * sizeof(Label))
+      != 0) {
+    std::cerr
+        << "!!! Impossible to allocate memory for relevance labels storage."
+        << std::endl;
     exit(EXIT_FAILURE);
   }
 
@@ -35,8 +38,10 @@ Dataset::Dataset(unsigned int n_instances, unsigned int n_features) {
 Dataset::~Dataset() {
   // delete[] data_;
   // delete[] labels_;
-  if (data_) free(data_);
-  if (labels_) free(labels_);
+  if (data_)
+    free(data_);
+  if (labels_)
+    free(labels_);
 }
 
 void Dataset::addInstance(QueryID q_id, Label i_label,
@@ -77,13 +82,14 @@ std::unique_ptr<QueryResults> Dataset::getQueryResults(unsigned int i) const {
 
 // TODO: in-place block-based transpose?
 void Dataset::transpose() {
-  quickrank::Feature* transposed; // = new quickrank::Feature[max_instances_ * num_features_];
-  if ( posix_memalign((void**)&transposed, 16, max_instances_ * num_features_ * sizeof(Feature)) !=0 ) {
-    std::cerr << "!!! Impossible to allocate memory for transposed dataset storage."
-              << std::endl;
+  quickrank::Feature* transposed;  // = new quickrank::Feature[max_instances_ * num_features_];
+  if (posix_memalign((void**) &transposed, 16,
+                     max_instances_ * num_features_ * sizeof(Feature)) != 0) {
+    std::cerr
+        << "!!! Impossible to allocate memory for transposed dataset storage."
+        << std::endl;
     exit(EXIT_FAILURE);
   }
-
 
   for (unsigned int i = 0; i < num_instances_; i++) {
     for (unsigned int f = 0; f < num_features_; f++) {

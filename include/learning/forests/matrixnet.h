@@ -6,7 +6,6 @@
 #include "learning/tree/ot.h"
 #include "learning/tree/ensemble.h"
 
-
 namespace quickrank {
 namespace learning {
 namespace forests {
@@ -27,19 +26,29 @@ class MatrixNet : public LambdaMart {
             unsigned int esr)
       : LambdaMart(ntrees, shrinkage, nthresholds, 1 << treedepth,
                    minleafsupport, esr),
-        treedepth_(treedepth) {}
+        treedepth_(treedepth) {
+  }
 
-  virtual ~MatrixNet() {}
+  MatrixNet(const boost::property_tree::ptree &info_ptree,
+             const boost::property_tree::ptree &model_ptree)
+      : LambdaMart(info_ptree, model_ptree) {
+  }
+
+  virtual ~MatrixNet() {
+  }
 
   /// Returns the name of the ranker.
-  virtual std::string name() const {return "MATRIXNET";};
+  virtual std::string name() const {
+    return "MATRIXNET";
+  }
+  ;
 
  protected:
   /// Fits a regression tree on the gradient given by the pseudo residuals
   ///
   /// \param training_dataset The dataset used for training
-  virtual std::unique_ptr<RegressionTree> fit_regressor_on_gradient (
-      std::shared_ptr<data::Dataset> training_dataset );
+  virtual std::unique_ptr<RegressionTree> fit_regressor_on_gradient(
+      std::shared_ptr<data::Dataset> training_dataset);
 
   virtual std::ofstream& save_model_to_file(std::ofstream& os) const;
 

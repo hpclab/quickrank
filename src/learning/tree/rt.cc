@@ -79,7 +79,6 @@ double RegressionTree::update_output(double const *pseudoresponses) {
   return maxlabel;
 }
 
-
 double RegressionTree::update_output(double const *pseudoresponses,
                                      double const *cachedweights) {
   double maxlabel = -DBL_MAX;

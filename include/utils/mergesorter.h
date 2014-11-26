@@ -34,7 +34,8 @@ std::unique_ptr<EXT[]> copyextdouble_mergesort(EXT const *extarr,
                                                const bool asc = false);
 
 template<typename T>
-unsigned int* positions_mergesort(T *arr, const int size, const bool asc=false);
+unsigned int* positions_mergesort(T *arr, const int size,
+                                  const bool asc = false);
 
 template<typename T>
 int *merge(T const *list, int *sortedleft, const int leftlength,

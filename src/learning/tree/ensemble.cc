@@ -65,7 +65,8 @@ std::ofstream& Ensemble::save_model_to_file(std::ofstream& os) const {
   os << "<ensemble>" << std::endl;
   for (unsigned int i = 0; i < size; ++i) {
     os << std::setprecision(3);
-    os << "\t<tree id=\"" << i+1 << "\" weight=\"" << arr[i].weight << "\">" << std::endl;
+    os << "\t<tree id=\"" << i + 1 << "\" weight=\"" << arr[i].weight << "\">"
+       << std::endl;
     os << std::setprecision(15);
     if (arr[i].root) {
       os << "\t\t<split>" << std::endl;

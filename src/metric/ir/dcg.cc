@@ -16,7 +16,8 @@ namespace quickrank {
 namespace metric {
 namespace ir {
 
-MetricScore Dcg::compute_dcg(const quickrank::data::QueryResults* results) const {
+MetricScore Dcg::compute_dcg(
+    const quickrank::data::QueryResults* results) const {
   const unsigned int size = std::min(cutoff(), results->num_results());
   double dcg = 0.0;
 //#pragma omp parallel for reduction(+:dcg)
@@ -24,7 +25,6 @@ MetricScore Dcg::compute_dcg(const quickrank::data::QueryResults* results) const
     dcg += (pow(2.0, results->labels()[i]) - 1.0f) / log2(i + 2.0f);
   return (MetricScore) dcg;
 }
-
 
 MetricScore Dcg::evaluate_result_list(const quickrank::data::QueryResults* rl,
                                       const Score* scores) const {
@@ -36,14 +36,16 @@ MetricScore Dcg::evaluate_result_list(const quickrank::data::QueryResults* rl,
       copyextdouble_mergesort<Label, Score>(rl->labels(), scores,
                                             rl->num_results());
 
-  data::QueryResults* sorted_results = new data::QueryResults (rl->num_results(), sorted_labels.get(), NULL);
+  data::QueryResults* sorted_results = new data::QueryResults(
+      rl->num_results(), sorted_labels.get(), NULL);
   MetricScore dcg = compute_dcg(sorted_results);
   delete sorted_results;
 
   return dcg;
 }
 
-std::unique_ptr<Jacobian> Dcg::jacobian(std::shared_ptr<data::RankedResults> ranked) const {
+std::unique_ptr<Jacobian> Dcg::jacobian(
+    std::shared_ptr<data::RankedResults> ranked) const {
   const unsigned int size = std::min(cutoff(), ranked->num_results());
   std::unique_ptr<Jacobian> jacobian = std::unique_ptr<Jacobian>(
       new Jacobian(ranked->num_results()));
@@ -51,13 +53,16 @@ std::unique_ptr<Jacobian> Dcg::jacobian(std::shared_ptr<data::RankedResults> ran
   for (unsigned int i = 0; i < size; ++i) {
     for (unsigned int j = i + 1; j < ranked->num_results(); ++j) {
       // if the score is the same, non changes occur
-      if ( ranked->sorted_labels()[ranked->pos_of_rank(i)] !=
-           ranked->sorted_labels()[ranked->pos_of_rank(j)] ) {
+      if (ranked->sorted_labels()[ranked->pos_of_rank(i)]
+          != ranked->sorted_labels()[ranked->pos_of_rank(j)]) {
         //*p_jacobian =
-        jacobian->at( ranked->pos_of_rank(i), ranked->pos_of_rank(j) ) =
-            (1.0f / log2((double) (i + 2)) - 1.0f / log2((double) (j + 2))) *
-            ( pow(2.0, (double) ranked->sorted_labels()[ranked->pos_of_rank(i)]) -
-                pow(2.0, (double) ranked->sorted_labels()[ranked->pos_of_rank(j)]));
+        jacobian->at(ranked->pos_of_rank(i), ranked->pos_of_rank(j)) =
+            (1.0f / log2((double) (i + 2)) - 1.0f / log2((double) (j + 2)))
+                * (pow(2.0,
+                       (double) ranked->sorted_labels()[ranked->pos_of_rank(i)])
+                    - pow(
+                        2.0,
+                        (double) ranked->sorted_labels()[ranked->pos_of_rank(j)]));
       }
       //p_jacobian++;
     }
@@ -65,7 +70,6 @@ std::unique_ptr<Jacobian> Dcg::jacobian(std::shared_ptr<data::RankedResults> ran
 
   return jacobian;
 }
-
 
 std::ostream& Dcg::put(std::ostream& os) const {
   if (cutoff() != Metric::NO_CUTOFF)

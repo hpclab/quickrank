@@ -72,7 +72,6 @@ class Dataset : private boost::noncopyable {
   /// \returns The requested QueryResults.
   std::unique_ptr<QueryResults> getQueryResults(unsigned int i) const;
 
-
   /// Add a new training instance, i.e., a labeled document, to the dataset.
   ///
   /// \warning Currently the addition words only when data is in HORIZ format.

@@ -19,19 +19,25 @@ namespace learning {
  --valid tests/data/msn1.fold1.vali.5k.txt \
  --test tests/data/msn1.fold1.test.5k.txt \
  --model model.xml
-*/
+ */
 
 class CustomLTR : public LTR_Algorithm {
 
  public:
   CustomLTR();
 
-  CustomLTR(const boost::property_tree::ptree &info_ptree, const boost::property_tree::ptree &model_ptree) {};
+  CustomLTR(const boost::property_tree::ptree &info_ptree,
+            const boost::property_tree::ptree &model_ptree) {
+  }
+  ;
 
   virtual ~CustomLTR();
 
   /// Returns the name of the ranker.
-  virtual std::string name() const {return "CUSTOM";};
+  virtual std::string name() const {
+    return "CUSTOM";
+  }
+  ;
 
   /// Executes the learning process.
   ///
@@ -40,13 +46,11 @@ class CustomLTR : public LTR_Algorithm {
   /// \param metric The metric to be optimized.
   /// \param partial_save Allows to save a partial model every given number of iterations.
   /// \param model_filename The file where the model, and the partial models, are saved.
-  virtual void learn(
-      std::shared_ptr<data::Dataset> training_dataset,
-      std::shared_ptr<data::Dataset> validation_dataset,
-      std::shared_ptr<metric::ir::Metric> metric,
-      unsigned int partial_save,
-      const std::string model_filename);
-
+  virtual void learn(std::shared_ptr<data::Dataset> training_dataset,
+                     std::shared_ptr<data::Dataset> validation_dataset,
+                     std::shared_ptr<metric::ir::Metric> metric,
+                     unsigned int partial_save,
+                     const std::string model_filename);
 
   /// Given and input \a dateset, the current ranker generates
   /// scores for each instance and store the in the \a scores vector.
@@ -62,17 +66,14 @@ class CustomLTR : public LTR_Algorithm {
   /// \param results The results list to be evaluated
   /// \param scores The vector where scores are stored.
   /// \param offset The offset to the next feature in the data representation.
-  virtual void score_query_results(
-      std::shared_ptr<data::QueryResults> results,
-      Score* scores, unsigned int offset) const;
+  virtual void score_query_results(std::shared_ptr<data::QueryResults> results,
+                                   Score* scores, unsigned int offset) const;
 
   /// Returns the score of a given document.
   virtual Score score_document(const Feature* d,
                                const unsigned int offset = 1) const;
 
-
   /// \todo TODO: add load_model();
-
 
   const Score FIXED_SCORE = 666.0;
 

@@ -37,7 +37,8 @@ void RTNode::write_outputtofile(FILE *f, const int indentsize) {
   delete[] indent;
 }
 
-std::ofstream& RTNode::save_model_to_file(std::ofstream& os, const int indentsize) {
+std::ofstream& RTNode::save_model_to_file(std::ofstream& os,
+                                          const int indentsize) {
   std::string indent = "";
   for (int i = 0; i < indentsize; i++)
     indent += "\t";
@@ -45,7 +46,8 @@ std::ofstream& RTNode::save_model_to_file(std::ofstream& os, const int indentsiz
     os << indent << "\t<output> " << avglabel << " </output>" << std::endl;
   else {
     os << indent << "\t<feature> " << featureid << " </feature>" << std::endl;
-    os << indent << "\t<threshold> " << threshold << " </threshold>" << std::endl;
+    os << indent << "\t<threshold> " << threshold << " </threshold>"
+       << std::endl;
     os << indent << "\t<split pos=\"left\">" << std::endl;
     left->save_model_to_file(os, indentsize + 1);
     os << indent << "\t</split>" << std::endl;
