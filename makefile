@@ -1,4 +1,5 @@
 QUICKRANK:=quickrank
+QUICKSCORE:=quickscore
 SRCDIR:=src
 UTESTSDIR:=unit-tests
 BINDIR:=bin
@@ -42,7 +43,9 @@ quickrank: $(BINDIR)/$(QUICKRANK)
 # builds QuickRank
 $(BINDIR)/$(QUICKRANK): $(OBJS)
 	@mkdir -p $(BINDIR)
-	$(CXX) $(OBJS) $(LDLIBS) -o $(BINDIR)/$(QUICKRANK)
+	$(CXX) \
+	$(filter-out $(OBJSDIR)/$(SRCDIR)/scoring/scoring.o,$(OBJS)) \
+	$(LDLIBS) -o $(BINDIR)/$(QUICKRANK)
 
 # creates the documentation
 doc:
@@ -63,6 +66,16 @@ test.%.cc: $(OBJS) $(OBJSDIR)/unit-tests/test-main.o
 	$(LDLIBS) -lboost_unit_test_framework \
 	-o $(BINDIR)/single-test
 	$(BINDIR)/single-test --log_level=test_suite
+
+# compile scorer
+# make scorer RANKER=claudio
+scorer: $(OBJS)
+	$(CXX) $(CXXFLAGS) $(INCDIRS) -c $(RANKER).cc -o $(RANKER).o 
+	$(CXX) \
+	$(filter-out $(OBJSDIR)/$(SRCDIR)/quickrank.o,$(OBJS)) \
+	$(RANKER).o \
+	$(LDLIBS) \
+	-o $(BINDIR)/$(QUICKSCORE)
 
 # removes intermediate files
 clean:

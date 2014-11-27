@@ -13,16 +13,6 @@ BOOST_AUTO_TEST_CASE( test_xml_io ) {
 
   quickrank::io::Xml xml;
 
-  xml.generate_c_code("tests/msn.fold1.quickrank.lmart.xml", "tests/prova.c");
+  xml.generate_c_code("tests/msn.fold1.quickrank.lmart.xml", "tests/ranker.c");
 
-  /*
-  // read model
-  auto model = quickrank::learning::LTR_Algorithm::load_model_from_file("tests/msn.fold1.quickrank.lmart.xml");
-
-  std::ofstream out;
-  out.open("tests/prova.out.xml", std::ofstream::out);
-  model->save_model_to_file(out);
-
-  out.close();
-  */
 }
