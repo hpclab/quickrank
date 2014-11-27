@@ -56,7 +56,7 @@ class Svml : private boost::noncopyable {
 
 };
 
-}  // namespace data
+}  // namespace io
 }  // namespace quickrank
 
 #endif

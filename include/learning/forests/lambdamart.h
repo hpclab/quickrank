@@ -29,8 +29,7 @@ class LambdaMart : public Mart {
 
   /// Generates a LTR_Algorithm instance from a previously saved XML model.
   LambdaMart(const boost::property_tree::ptree &info_ptree,
-             const boost::property_tree::ptree &model_ptree)
-      : Mart(info_ptree, model_ptree);
+             const boost::property_tree::ptree &model_ptree);
 
   virtual ~LambdaMart() {
   }

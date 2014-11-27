@@ -58,7 +58,7 @@ std::unique_ptr<Jacobian> Tndcg::jacobian(
 
   auto _results = std::shared_ptr<data::QueryResults>(
       new data::QueryResults(ranked->num_results(), ranked->sorted_labels(),
-                             NULL));
+      NULL));
   const double idcg = compute_idcg(_results.get());
   if (idcg <= 0.0)
     return jacobian;

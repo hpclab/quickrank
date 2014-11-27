@@ -30,9 +30,7 @@ class MatrixNet : public LambdaMart {
   }
 
   MatrixNet(const boost::property_tree::ptree &info_ptree,
-             const boost::property_tree::ptree &model_ptree)
-      : LambdaMart(info_ptree, model_ptree) {
-  }
+             const boost::property_tree::ptree &model_ptree);
 
   virtual ~MatrixNet() {
   }
@@ -52,7 +50,7 @@ class MatrixNet : public LambdaMart {
 
   virtual std::ofstream& save_model_to_file(std::ofstream& os) const;
 
-  const unsigned int treedepth_;  //>0
+  unsigned int treedepth_;  //>0
 
  private:
   /// The output stream operator.

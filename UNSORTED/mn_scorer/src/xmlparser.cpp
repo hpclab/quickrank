@@ -942,7 +942,7 @@ static NextToken GetNextToken(XML *pXML, int *pcbToken,
   do {
     indexStart = pXML->nIndex;
     ch = getNextChar(pXML);
-  } whileXML_isSPACECHAR(ch);
+  } while XML_isSPACECHAR(ch);
 
   if (ch) {
     // Cache the current string pointer
@@ -1062,7 +1062,7 @@ static NextToken GetNextToken(XML *pXML, int *pcbToken,
       // Indicate we are dealing with text
       *pType = eTokenText;
       while ((ch = getNextChar(pXML))) {
-        ifXML_isSPACECHAR(ch)
+        if XML_isSPACECHAR(ch)
         {
           indexStart++; break;
 
@@ -2946,15 +2946,15 @@ xmlnode::XMLCharEncoding xmlnode::guessCharEncoding(
   if (!b)
     return bestGuess;
   b += 8;
-  whileXML_isSPACECHAR(*b) b++;
+  while XML_isSPACECHAR(*b) b++;
   if (*b != '=')
     return bestGuess;
   b++;
-  whileXML_isSPACECHAR(*b) b++;
+  while XML_isSPACECHAR(*b) b++;
   if ((*b != '\'') && (*b != '"'))
     return bestGuess;
   b++;
-  whileXML_isSPACECHAR(*b) b++;
+  while XML_isSPACECHAR(*b) b++;
 
   if ((xstrnicmp((char*) b, "utf-8", 5) == 0)
       || (xstrnicmp((char*) b, "utf8", 4) == 0)) {

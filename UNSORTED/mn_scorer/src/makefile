@@ -1,4 +1,4 @@
-cc=$(shell dpkg -l|tr -s [:blank:] ' '|grep "^ii g++"|cut -f2 -d' '|sort|tail -n1)
+cc=g++-4.9
 pwd=$(shell echo $(PWD))
 
 compile:

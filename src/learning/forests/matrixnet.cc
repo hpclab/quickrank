@@ -8,52 +8,16 @@
 #include <boost/foreach.hpp>
 
 #include "utils/qsort.h"
+#include "io/xml.h"
 
 namespace quickrank {
 namespace learning {
 namespace forests {
 
-RTNode* RTNode_parse_xml(const boost::property_tree::ptree &split_xml) {
-  RTNode* model_node = NULL;
-  RTNode* left_child = NULL;
-  RTNode* right_child = NULL;
-
-  bool is_leaf = false;
-
-  unsigned int feature_id = 0;
-  float threshold = 0.0f;
-  double prediction = 0.0;
-
-  BOOST_FOREACH(const boost::property_tree::ptree::value_type& split_child, split_xml ) {
-    if (split_child.first=="output") {
-      prediction = split_child.second.get_value<double>();
-      is_leaf = true;
-      break;
-    } else if (split_child.first=="feature") {
-      feature_id = split_child.second.get_value<unsigned int>();
-    } else if (split_child.first=="threshold") {
-      threshold = split_child.second.get_value<float>();
-    } else if (split_child.first=="split") {
-      std::string pos = split_child.second.get<std::string>("<xmlattr>.pos");
-      if (pos=="left")
-      left_child = RTNode_parse_xml(split_child.second);
-      else
-      right_child = RTNode_parse_xml(split_child.second);
-    }
-  }
-
-  if (is_leaf)
-    model_node = new RTNode(prediction);
-  else
-    /// \todo TODO: this should be changed with item mapping
-    model_node = new RTNode(threshold, feature_id - 1, feature_id, left_child,
-                            right_child);
-
-  return model_node;
-}
 
 MatrixNet::MatrixNet(const boost::property_tree::ptree &info_ptree,
-           const boost::property_tree::ptree &model_ptree) {
+                     const boost::property_tree::ptree &model_ptree)
+    : LambdaMart(info_ptree, model_ptree) {
   ntrees_ = 0;
   shrinkage_ = 0;
   nthresholds_ = 0;
@@ -74,27 +38,26 @@ MatrixNet::MatrixNet(const boost::property_tree::ptree &info_ptree,
   ensemble_model_.set_capacity(ntrees_);
 
   // loop over trees
-BOOST_FOREACH(const boost::property_tree::ptree::value_type& tree, model_ptree) {
-  RTNode* root = NULL;
-  float tree_weight = tree.second.get<double>("<xmlattr>.weight", shrinkage_);
+  BOOST_FOREACH(const boost::property_tree::ptree::value_type& tree, model_ptree) {
+    RTNode* root = NULL;
+    float tree_weight = tree.second.get<double>("<xmlattr>.weight", shrinkage_);
 
-  // find the root of the tree
-  BOOST_FOREACH(const boost::property_tree::ptree::value_type& node, tree.second ) {
-    if (node.first=="split") {
-      root = RTNode_parse_xml(node.second);
-      break;
+    // find the root of the tree
+    BOOST_FOREACH(const boost::property_tree::ptree::value_type& node, tree.second ) {
+      if (node.first == "split") {
+        root = io::RTNode_parse_xml(node.second);
+        break;
+      }
     }
+
+    if (root == NULL) {
+      std::cerr << "!!! Unable to parse tree from XML model." << std::endl;
+      exit(EXIT_FAILURE);
+    }
+
+    ensemble_model_.push(root, tree_weight, -1);
   }
-
-  if (root==NULL) {
-    std::cerr << "!!! Unable to parse tree from XML model." << std::endl;
-    exit(EXIT_FAILURE);
-  }
-
-  ensemble_model_.push(root, tree_weight, -1);
 }
-}
-
 
 std::ostream& MatrixNet::put(std::ostream& os) const {
   os << "# Ranker: MatrixNet" << std::endl << "# max no. of trees = " << ntrees_
