@@ -16,7 +16,6 @@ class LTR_Algorithm : private boost::noncopyable {
  public:
   LTR_Algorithm() {
   }
-  ;
 
   /// Generates a LTR_Algorithm instance from a previously saved XML model.
   LTR_Algorithm(const boost::property_tree::ptree &info_ptree,

@@ -29,7 +29,7 @@ class Svml : private boost::noncopyable {
   /// Creates a new Svml IO reader/writer.
   ///
   /// \param k The cut-off threshold.
-  explicit Svml() {
+  Svml() {
   }
   virtual ~Svml() {
   }

@@ -39,12 +39,6 @@ class Mart : public LTR_Algorithm {
   virtual ~Mart() {
   }
 
-  /// Returns the name of the ranker.
-  virtual std::string name() const {
-    return "MART";
-  }
-  ;
-
   /// Start the learning process.
   virtual void learn(std::shared_ptr<data::Dataset> training_dataset,
                      std::shared_ptr<data::Dataset> validation_dataset,
@@ -59,6 +53,11 @@ class Mart : public LTR_Algorithm {
   virtual Score score_document(const Feature* d,
                                const unsigned int offset = 1) const {
     return ensemble_model_.score_instance(d, offset);
+  }
+
+  /// Returns the name of the ranker.
+  virtual std::string name() const {
+    return "MART";
   }
 
  protected:
@@ -117,7 +116,6 @@ class Mart : public LTR_Algorithm {
   RTRootHistogram *hist_ = NULL;
 
  private:
-
   /// The output stream operator.
   friend std::ostream& operator<<(std::ostream& os, const Mart& a) {
     return a.put(os);

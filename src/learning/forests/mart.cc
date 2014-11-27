@@ -6,6 +6,8 @@
 #include <cfloat>
 #include <cmath>
 #include <chrono>
+
+#include <boost/property_tree/xml_parser.hpp>
 #include <boost/foreach.hpp>
 
 #include "data/rankedresults.h"

@@ -144,7 +144,6 @@ T check_and_set(const po::variables_map &vm, const std::string &name,
 }
 
 // Auxiliary function to check and set/exit metric
-// TODO: smart pointer to be added
 std::shared_ptr<quickrank::metric::ir::Metric> check_and_set_metric(
     const po::variables_map &vm, const std::string &type) {
   int k = check_and_set<unsigned int>(vm, type + "-cutoff",
@@ -172,7 +171,7 @@ int main(int argc, char *argv[]) {
             << "# ## -------------------------- ## #" << std::endl
             << "# ## developed by the HPC. Lab. ## #" << std::endl
             << "# ##  http://hpc.isti.cnr.it/   ## #" << std::endl
-            << "# ##  quickrank@.isti.cnr.it/   ## #" << std::endl
+            << "# ##  quickrank@.isti.cnr.it    ## #" << std::endl
             << "# ## ========================== ## #" << std::endl;
 
   std::cout << std::fixed;
