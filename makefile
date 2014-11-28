@@ -8,10 +8,12 @@ OBJSDIR:=_build
 DEPSDIR:=_deps
 DOCDIR:=documentation
 
+# all sources
 SRCS:=$(wildcard $(SRCDIR)/*.cc) $(wildcard $(SRCDIR)/*/*.cc) $(wildcard $(SRCDIR)/*/*/*.cc)
 DEPS:=$(subst $(SRCDIR),$(DEPSDIR)/$(SRCDIR),$(SRCS:.cc=.d))
 OBJS:=$(subst $(SRCDIR),$(OBJSDIR)/$(SRCDIR),$(SRCS:.cc=.o))
 
+# all test sources
 UTESTS:=$(wildcard $(UTESTSDIR)/*.cc) $(wildcard $(UTESTSDIR)/*/*.cc) $(wildcard $(UTESTSDIR)/*/*/*.cc)
 UTESTSOBJS:=$(subst $(UTESTSDIR),$(OBJSDIR)/$(UTESTSDIR),$(UTESTS:.cc=.o))
 
@@ -38,10 +40,7 @@ endif
 all: quickrank
 
 # builds QuickRank
-quickrank: $(BINDIR)/$(QUICKRANK)
-
-# builds QuickRank
-$(BINDIR)/$(QUICKRANK): $(OBJS)
+quickrank: $(OBJS)
 	@mkdir -p $(BINDIR)
 	$(CXX) \
 	$(filter-out $(OBJSDIR)/$(SRCDIR)/scoring/scoring.o,$(OBJS)) \
@@ -52,24 +51,13 @@ doc:
 	cd $(DOCDIR); doxygen quickrank.doxygen
 
 # runs all the unit tests
+# to run a single test use make unit-tests TEST=dcg_test
 unit-tests: $(BINDIR)/unit-tests
-	$(BINDIR)/unit-tests --log_level=test_suite
-
-# runs a single unit test
-# example is: make test.unit-tests.metric.ir.test-dcg.cc
-test.%.cc: $(OBJS) $(OBJSDIR)/unit-tests/test-main.o
-	@make $(OBJSDIR)/$(subst .,/,$*).o
-	@$(CXX) $(CXXFLAGS) \
-	$(filter-out $(OBJSDIR)/$(SRCDIR)/quickrank.o,$(OBJS)) \
-	$(OBJSDIR)/unit-tests/test-main.o \
-	$(OBJSDIR)/$(subst .,/,$*).o \
-	$(LDLIBS) -lboost_unit_test_framework \
-	-o $(BINDIR)/single-test
-	$(BINDIR)/single-test --log_level=test_suite
+	$(BINDIR)/unit-tests --log_level=test_suite --run_test=$(TEST)
 
 # compile scorer
-# make scorer RANKER=claudio
-scorer: $(OBJS)
+# make quickscore RANKER=claudio
+quickscore: $(OBJS)
 	$(CXX) $(CXXFLAGS) $(INCDIRS) -c $(RANKER).cc -o $(RANKER).o 
 	$(CXX) \
 	$(filter-out $(OBJSDIR)/$(SRCDIR)/quickrank.o,$(OBJS)) \
@@ -100,7 +88,7 @@ $(OBJSDIR)/%.o: %.cc
 # linking
 $(BINDIR)/unit-tests: $(OBJS) $(UTESTSOBJS)
 	$(CXX) \
-	$(filter-out $(OBJSDIR)/$(SRCDIR)/quickrank.o,$(OBJS)) \
+	$(filter-out $(OBJSDIR)/$(SRCDIR)/quickrank.o $(OBJSDIR)/$(SRCDIR)/scoring/scoring.o,$(OBJS)) \
 	$(UTESTSOBJS) \
 	$(LDLIBS) -lboost_unit_test_framework \
 	-o $(BINDIR)/unit-tests
