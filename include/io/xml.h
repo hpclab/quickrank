@@ -29,11 +29,18 @@ class Xml : private boost::noncopyable {
   }
 
   /// Generates the C++ implementation of the model scoring function.
+  /// This applies to tree forests and generates a cascade of conditional operators.
   ///
   /// \param model_filename Previously saved xml ranker model.
   /// \param code_filename Output source code file name.
-  void generate_c_code(std::string model_filename, std::string code_filename);
+  void generate_c_code_baseline(std::string model_filename, std::string code_filename);
 
+  /// Generates the C++ implementation of the model scoring function.
+  /// This applies to forests of oblivious trees and generates a smart level-wise evaluator.
+  ///
+  /// \param model_filename Previously saved xml ranker model.
+  /// \param code_filename Output source code file name.
+  void generate_c_code_oblivious_trees(std::string model_filename, std::string code_filename);
 
 
 

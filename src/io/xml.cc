@@ -99,7 +99,7 @@ void model_node_to_c_code(const boost::property_tree::ptree &split_xml,
 }
 
 
-void Xml::generate_c_code(std::string model_filename, std::string code_filename) {
+void Xml::generate_c_code_baseline(std::string model_filename, std::string code_filename) {
   if (model_filename.empty()) {
     std::cerr << "!!! Model filename is empty." << std::endl;
     exit(EXIT_FAILURE);
@@ -134,6 +134,39 @@ void Xml::generate_c_code(std::string model_filename, std::string code_filename)
   output.open(code_filename, std::ofstream::out);
   output << source_code.str();
   output.close();
+}
+
+
+void Xml::generate_c_code_oblivious_trees(std::string model_filename, std::string code_filename) {
+  if (model_filename.empty()) {
+    std::cerr << "!!! Model filename is empty." << std::endl;
+    exit(EXIT_FAILURE);
+  }
+  // parse XML
+  boost::property_tree::ptree xml_tree;
+  std::ifstream is;
+  is.open(model_filename, std::ifstream::in);
+  boost::property_tree::read_xml(is, xml_tree);
+  is.close();
+
+  // create output stream
+  std::stringstream source_code;
+
+  // Forests info
+//  #define N 1 //no. of trees
+//  #define M 5 //max tree depth
+
+  // Tree Weights
+//float ws[N] = { 0.50000000 };
+
+  std::cout << source_code.str();
+
+  /*
+  std::ofstream output;
+  output.open(code_filename, std::ofstream::out);
+  output << source_code.str();
+  output.close();
+  */
 }
 
 
