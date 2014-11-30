@@ -20,19 +20,23 @@ int main(int argc, char *argv[]) {
   std::cout << "usage: quickscore <dataset> [output scores file]" << std::endl;
   char* data_file = argv[1];
 
+  unsigned int rounds = 10;
+
   // read dataset
   quickrank::io::Svml reader;
   auto dataset = reader.read_horizontal(data_file);
   std::cout << *dataset;
 
   // score dataset
+  double* scores = new double[dataset->num_instances()];
   auto start_scoring = std::chrono::high_resolution_clock::now();
 
-  double* scores = new double[dataset->num_instances()];
-  float* document = dataset->at(0, 0);
-  for (unsigned int i = 0; i < dataset->num_instances(); i++) {
-    scores[i] = ranker(document);
-    document += dataset->num_features();
+  for (unsigned int r = 0; r < rounds; r++) {
+    float* document = dataset->at(0, 0);
+    for (unsigned int i = 0; i < dataset->num_instances(); i++) {
+      scores[i] = ranker(document);
+      document += dataset->num_features();
+    }
   }
 
   auto end_scoring = std::chrono::high_resolution_clock::now();
@@ -41,17 +45,20 @@ int main(int argc, char *argv[]) {
       std::chrono::duration_cast<std::chrono::duration<double>>(
           end_scoring - start_scoring).count();
 
-  std::cout << "    Total scoring time: " << scoring_time << " s."
+  std::cout << "       Total scoring time: " << scoring_time << " s."
             << std::endl;
-  std::cout << "Avg. Doc. scoring time: "
-            << scoring_time / dataset->num_instances() << " s." << std::endl;
+  std::cout << "Avg. Dataset scoring time: " << scoring_time / rounds << " s."
+            << std::endl;
+  std::cout << "Avg.    Doc. scoring time: "
+            << scoring_time / dataset->num_instances() / rounds << " s."
+            << std::endl;
 
   // potentially save scores
-  if (argc>2) {
+  if (argc > 2) {
     std::fstream output;
     output.open(argv[2], std::ofstream::out);
     output << std::setprecision(15);
-    for (unsigned int i=0; i<dataset->num_instances(); i++) {
+    for (unsigned int i = 0; i < dataset->num_instances(); i++) {
       output << scores[i] << std::endl;
     }
     output.close();

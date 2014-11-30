@@ -17,10 +17,10 @@ msn.fold1.ranklib.lmart.log: ./other/RankLib.jar
 msn.fold1.quickrank.lmart.log: ../bin/quickrank
 	../bin/quickrank \
 	--algo lambdamart \
-	--num-trees 100 \
+	--num-trees 500 \
 	--shrinkage 0.1 \
 	--num-thresholds 0 \
-	--num-leaves 8 \
+	--num-leaves 25 \
 	--min-leaf-support 1 \
 	--end-after-rounds 0 \
 	--train-metric ndcg \
@@ -29,19 +29,20 @@ msn.fold1.quickrank.lmart.log: ../bin/quickrank
 	--test-cutoff 10 \
 	--partial 0 \
 	--train data/msn1.fold1.train.5k.txt \
-	--valid data/msn1.fold1.vali.5k.txt \
-	--test data/msn1.fold1.test.5k.txt \
 	--model msn.fold1.quickrank.lmart.xml \
 	> msn.fold1.quickrank.lmart.log
 	cat msn.fold1.quickrank.lmart.log
+
+#	--valid data/msn1.fold1.vali.5k.txt \
+#	--test data/msn1.fold1.test.5k.txt \
 	
 msn.fold1.quickrank.matrixnet.log: ../bin/quickrank
 	../bin/quickrank \
 	--algo matrixnet \
-	--num-trees 100 \
-	--shrinkage 0.1 \
+	--num-trees 500 \
+	--shrinkage 0.05 \
 	--num-thresholds 0 \
-	--tree-depth 3 \
+	--tree-depth 4 \
 	--min-leaf-support 1 \
 	--end-after-rounds 0 \
 	--train-metric ndcg \
@@ -50,12 +51,12 @@ msn.fold1.quickrank.matrixnet.log: ../bin/quickrank
 	--test-cutoff 10 \
 	--partial 0 \
 	--train data/msn1.fold1.train.5k.txt \
-	--valid data/msn1.fold1.vali.5k.txt \
-	--test data/msn1.fold1.test.5k.txt \
 	--model msn.fold1.quickrank.matrixnet.xml \
 	> msn.fold1.quickrank.matrixnet.log
-	rm msn.fold1.quickrank.matrixnet.xml*
 	cat msn.fold1.quickrank.matrixnet.log
+
+#	--valid data/msn1.fold1.vali.5k.txt \
+#	--test data/msn1.fold1.test.5k.txt \
 
 # correctness check: synching with ranklib
 correct:

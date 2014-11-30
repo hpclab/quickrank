@@ -1,4 +1,5 @@
 #include <boost/property_tree/xml_parser.hpp>
+#include <boost/property_tree/detail/ptree_utils.hpp>
 #include <boost/foreach.hpp>
 
 #include <string>
@@ -54,12 +55,8 @@ RTNode* RTNode_parse_xml(const boost::property_tree::ptree &split_xml) {
   return model_node;
 }
 
-
-
-
-
-void model_node_to_c_code(const boost::property_tree::ptree &split_xml,
-                          std::stringstream &os) {
+void model_node_to_c_baseline(const boost::property_tree::ptree &split_xml,
+                              std::stringstream &os) {
   unsigned int feature_id = 0;
   float threshold = 0.0f;
   double prediction = 0.0;
@@ -89,17 +86,52 @@ void model_node_to_c_code(const boost::property_tree::ptree &split_xml,
     os << std::setprecision(15) << prediction;
   else {
     /// \todo TODO: this should be changed with item mapping
-    os << "( v[" << feature_id-1 << "] <= " << std::setprecision(15) << threshold;
+    os << "( v[" << feature_id - 1 << "] <= " << std::setprecision(15)
+       << threshold;
     os << " ? ";
-    model_node_to_c_code(*left, os);
+    model_node_to_c_baseline(*left, os);
     os << " : ";
-    model_node_to_c_code(*right, os);
+    model_node_to_c_baseline(*right, os);
     os << " )";
   }
 }
 
+void model_node_to_c_oblivious_trees(
+    const boost::property_tree::ptree &split_xml, std::stringstream &os) {
 
-void Xml::generate_c_code_baseline(std::string model_filename, std::string code_filename) {
+  double prediction = 0.0;
+  bool is_leaf = false;
+  const boost::property_tree::ptree* left = NULL;
+  const boost::property_tree::ptree* right = NULL;
+
+  BOOST_FOREACH(const boost::property_tree::ptree::value_type& split_child, split_xml ) {
+    if (split_child.first == "output") {
+      prediction = split_child.second.get_value<double>();
+      is_leaf = true;
+      break;
+    } else if (split_child.first == "split") {
+      std::string pos = split_child.second.get<std::string>("<xmlattr>.pos");
+      if (pos == "left")
+        left = &(split_child.second);
+      else
+        right = &(split_child.second);
+    }
+  }
+
+  if (is_leaf)
+    os << std::setprecision(15) << prediction;
+  else {
+    /// \todo TODO: this should be changed with item mapping
+    //os << " ";
+    model_node_to_c_oblivious_trees(*left, os);
+    os << ", ";
+    model_node_to_c_oblivious_trees(*right, os);
+    //os << " ";
+  }
+}
+
+void Xml::generate_c_code_baseline(std::string model_filename,
+                                   std::string code_filename) {
   if (model_filename.empty()) {
     std::cerr << "!!! Model filename is empty." << std::endl;
     exit(EXIT_FAILURE);
@@ -117,14 +149,15 @@ void Xml::generate_c_code_baseline(std::string model_filename, std::string code_
   source_code << "double ranker(float* v) {" << std::endl;
   source_code << "\treturn 0.0 ";
   BOOST_FOREACH(const boost::property_tree::ptree::value_type& tree, xml_tree.get_child("ranker.ensemble")) {
-    float tree_weight = tree.second.get("<xmlattr>.weight",1.0f);
+    float tree_weight = tree.second.get("<xmlattr>.weight", 1.0f);
 
     // find the root of the tree
     boost::property_tree::ptree root;
     BOOST_FOREACH(const boost::property_tree::ptree::value_type& node, tree.second ) {
       if (node.first == "split") {
-        source_code << std::endl << "\t\t + " << std::setprecision(3) << tree_weight << " * ";
-        model_node_to_c_code(node.second, source_code);
+        source_code << std::endl << "\t\t + " << std::setprecision(3)
+                    << tree_weight << " * ";
+        model_node_to_c_baseline(node.second, source_code);
       }
     }
   }
@@ -136,12 +169,13 @@ void Xml::generate_c_code_baseline(std::string model_filename, std::string code_
   output.close();
 }
 
-
-void Xml::generate_c_code_oblivious_trees(std::string model_filename, std::string code_filename) {
+void Xml::generate_c_code_oblivious_trees(std::string model_filename,
+                                          std::string code_filename) {
   if (model_filename.empty()) {
     std::cerr << "!!! Model filename is empty." << std::endl;
     exit(EXIT_FAILURE);
   }
+
   // parse XML
   boost::property_tree::ptree xml_tree;
   std::ifstream is;
@@ -152,24 +186,114 @@ void Xml::generate_c_code_oblivious_trees(std::string model_filename, std::strin
   // create output stream
   std::stringstream source_code;
 
+  auto ensemble = xml_tree.get_child("ranker.ensemble");
+  unsigned int trees = ensemble.size();
+  unsigned int depth = xml_tree.get<unsigned int>("ranker.info.depth");
+
   // Forests info
-//  #define N 1 //no. of trees
-//  #define M 5 //max tree depth
+  source_code << "#define N " << trees << " // no. of trees" << std::endl;
+  source_code << "#define M " << depth << " // max tree depth" << std::endl;
+  source_code << std::endl;
 
   // Tree Weights
-//float ws[N] = { 0.50000000 };
+  source_code << "double ws[N] = { ";
+  for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); p_tree++) {
+    if (p_tree != ensemble.begin())
+      source_code << ", ";
+    float tree_weight = p_tree->second.get("<xmlattr>.weight", 1.0f);
+    source_code << tree_weight;
+  }
+  source_code << " };" << std::endl << std::endl;
 
-  std::cout << source_code.str();
+  // Actual Tree Depths
+  int counter;
+  source_code << "unsigned int ds[N] = { ";
+  for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); p_tree++) {
+    if (p_tree != ensemble.begin())
+      source_code << ", ";
 
-  /*
+    counter = 0;
+    auto p_split = p_tree->second.get_child("split");
+    while (p_split.size() != 2) {
+      counter++;
+      p_split = p_split.get_child("split");
+    }
+    source_code << counter;
+  }
+  source_code << " };" << std::endl << std::endl;
+
+  // Leaf Outputs
+  source_code << "double os[N][1 << M] = { " << std::endl;
+  for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); p_tree++) {
+    if (p_tree != ensemble.begin())
+      source_code << "," << std::endl;
+    auto root_split = p_tree->second.get_child("split");
+    source_code << "\t{ ";
+    model_node_to_c_oblivious_trees(root_split, source_code);
+    source_code << "}";
+  }
+  source_code << std::endl << "};" << std::endl << std::endl;
+
+  // Features ids
+  source_code << "unsigned int fs[N][M] = { " << std::endl;
+  for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); p_tree++) {
+    if (p_tree != ensemble.begin())
+      source_code << "," << std::endl;
+
+    source_code << "\t{ ";
+    auto p_split = p_tree->second.get_child("split");
+    std::string separator = "";
+    while (p_split.size() != 2) {
+      source_code << separator << p_split.get<unsigned int>("feature");
+      p_split = p_split.get_child("split");
+      separator = ", ";
+    }
+    source_code << "}";
+  }
+  source_code << std::endl << "};" << std::endl << std::endl;
+
+  // Thresholds values
+  source_code << "float ts[N][M] = { " << std::endl;
+  for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); p_tree++) {
+    if (p_tree != ensemble.begin())
+      source_code << "," << std::endl;
+
+    source_code << "\t{ ";
+    auto p_split = p_tree->second.get_child("split");
+    std::string separator = "";
+    while (p_split.size() != 2) {
+      source_code << separator << p_split.get<float>("threshold");
+      p_split = p_split.get_child("split");
+      separator = ", ";
+    }
+    source_code << "}";
+  }
+  source_code << std::endl << "};" << std::endl << std::endl;
+
+  source_code << "#define SHL(n,p) ((n)<<(p))" << std::endl << std::endl;
+
+  source_code
+  << "unsigned int leaf_id(float *v, unsigned int const *fids, float const *thresholds, const unsigned int m) {" << std::endl
+  << "  unsigned int leafidx = 0;" << std::endl
+  << "  for (unsigned int i = 0; i<M && i < m; ++i)" << std::endl
+  << "    leafidx |= SHL( v[fids[i]-1]>thresholds[i], M-1-i);" << std::endl
+  << "  return leafidx;" << std::endl
+  << "}" << std::endl << std::endl;
+
+  source_code
+  << "double ranker(float *v) {" << std::endl
+  << "  double score = 0.0;" << std::endl
+  << "  //#pragma omp parallel for reduction(+:score)" << std::endl
+  << "  for (int i = 0; i < N; ++i)" << std::endl
+  << "    score += ws[i] * os[i][leaf_id(v, fs[i], ts[i], ds[i])];" << std::endl
+  << "  return score;" << std::endl
+  << "}" << std::endl << std::endl;
+
   std::ofstream output;
   output.open(code_filename, std::ofstream::out);
   output << source_code.str();
   output.close();
-  */
 }
-
-
 
 std::shared_ptr<learning::LTR_Algorithm> Xml::load_model_from_file(
     std::string model_filename) {
