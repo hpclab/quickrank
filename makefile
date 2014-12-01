@@ -1,4 +1,4 @@
-QUICKRANK:=quickrank
+QUICKLEARN:=quickrank
 QUICKSCORE:=quickscore
 SRCDIR:=src
 UTESTSDIR:=unit-tests
@@ -36,15 +36,15 @@ else
 	endif
 endif
 
-# builds QuickRank
-all: quickrank
+# builds QuickLearn
+all: quicklearn
 
-# builds QuickRank
-quickrank: $(OBJS)
+# builds QuickLeanr
+quicklearn: $(OBJS)
 	@mkdir -p $(BINDIR)
 	$(CXX) \
-	$(filter-out $(OBJSDIR)/$(SRCDIR)/scoring/scoring.o,$(OBJS)) \
-	$(LDLIBS) -o $(BINDIR)/$(QUICKRANK)
+	$(filter-out $(OBJSDIR)/$(SRCDIR)/$(QUICKSCORE).o,$(OBJS)) \
+	$(LDLIBS) -o $(BINDIR)/$(QUICKLEARN)
 
 # creates the documentation
 doc:
@@ -55,12 +55,12 @@ doc:
 unit-tests: $(BINDIR)/unit-tests
 	$(BINDIR)/unit-tests --log_level=test_suite --run_test=$(TEST)
 
-# compile scorer
-# make quickscore RANKER=claudio
+# builds QuickScore
+# make quickscore RANKER=modelfile
 quickscore: $(OBJS)
 	$(CXX) $(CXXFLAGS) $(INCDIRS) -c $(RANKER).cc -o $(RANKER).o 
 	$(CXX) \
-	$(filter-out $(OBJSDIR)/$(SRCDIR)/quickrank.o,$(OBJS)) \
+	$(filter-out $(OBJSDIR)/$(SRCDIR)/$(QUICKLEARN).o,$(OBJS)) \
 	$(RANKER).o \
 	$(LDLIBS) \
 	-o $(BINDIR)/$(QUICKSCORE)
@@ -88,7 +88,7 @@ $(OBJSDIR)/%.o: %.cc
 # linking
 $(BINDIR)/unit-tests: $(OBJS) $(UTESTSOBJS)
 	$(CXX) \
-	$(filter-out $(OBJSDIR)/$(SRCDIR)/quickrank.o $(OBJSDIR)/$(SRCDIR)/scoring/scoring.o,$(OBJS)) \
+	$(filter-out $(OBJSDIR)/$(SRCDIR)/$(QUICKLEARN).o $(OBJSDIR)/$(SRCDIR)/$(QUICKSCORE).o,$(OBJS)) \
 	$(UTESTSOBJS) \
 	$(LDLIBS) -lboost_unit_test_framework \
 	-o $(BINDIR)/unit-tests
