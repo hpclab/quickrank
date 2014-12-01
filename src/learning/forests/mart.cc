@@ -32,7 +32,6 @@ namespace quickrank {
 namespace learning {
 namespace forests {
 
-
 Mart::Mart(const boost::property_tree::ptree &info_ptree,
            const boost::property_tree::ptree &model_ptree) {
   ntrees_ = 0;

@@ -236,19 +236,27 @@ int main(int argc, char *argv[]) {
       "set test metric cutoff");
 
   po::options_description file_desc("File options");
-  file_desc.add_options()
-      ("partial", po::value<unsigned int>()->default_value(100), "set partial file save frequency")
-      ("train", po::value<std::string>(), "set training file")
-      ("valid", po::value<std::string>()->default_value(""), "set validation file")
-      ("test", po::value<std::string>()->default_value(""), "set testing file")
-      ("features", po::value<std::string>()->default_value(""), "set features file")
-      ("model", po::value<std::string>(), "set output model file");
+  file_desc.add_options()("partial",
+                          po::value<unsigned int>()->default_value(100),
+                          "set partial file save frequency")(
+      "train", po::value<std::string>(), "set training file")(
+      "valid", po::value<std::string>()->default_value(""),
+      "set validation file")("test",
+                             po::value<std::string>()->default_value(""),
+                             "set testing file")(
+      "features", po::value<std::string>()->default_value(""),
+      "set features file")("model", po::value<std::string>(),
+                           "set output model file");
 
   po::options_description score_desc("Scoring options");
-  score_desc.add_options()
-      ("dump-model", po::value<std::string>()->default_value(""), "set XML model file path")
-      ("dump-code", po::value<std::string>()->default_value(""), "set C code file path")
-      ("dump-type", po::value<std::string>()->default_value("baseline"), "set C code generation strategy. Allowed options are: \"baseline\" and \"oblivious\".");
+  score_desc.add_options()("dump-model",
+                           po::value<std::string>()->default_value(""),
+                           "set XML model file path")(
+      "dump-code", po::value<std::string>()->default_value(""),
+      "set C code file path")(
+      "dump-type",
+      po::value<std::string>()->default_value("baseline"),
+      "set C code generation strategy. Allowed options are: \"baseline\" and \"oblivious\".");
 
   po::options_description all_desc("Allowed options");
   all_desc.add(model_desc).add(metric_desc).add(file_desc).add(lm_model_desc)
@@ -265,103 +273,110 @@ int main(int argc, char *argv[]) {
   }
 
   if (vm.count("algo")) {
-  // MODEL STUFF
-  unsigned int ntrees = check_and_set<unsigned int>(
-      vm, "num-trees", "Number of trees was not set.");
-  float shrinkage = check_and_set<float>(vm, "shrinkage",
-                                         "Shrinkage was not set.");
-  unsigned int nthresholds = check_and_set<unsigned int>(
-      vm, "num-thresholds", "Number of thresholds was not set.");
-  unsigned int minleafsupport = check_and_set<unsigned int>(
-      vm, "min-leaf-support", "Number of minimum leaf support was not set.");
-  unsigned int esr = check_and_set<unsigned int>(
-      vm, "end-after-rounds",
-      "Num. rounds with no boost in validation before ending was not set.");
+    // MODEL STUFF
+    unsigned int ntrees = check_and_set<unsigned int>(
+        vm, "num-trees", "Number of trees was not set.");
+    float shrinkage = check_and_set<float>(vm, "shrinkage",
+                                           "Shrinkage was not set.");
+    unsigned int nthresholds = check_and_set<unsigned int>(
+        vm, "num-thresholds", "Number of thresholds was not set.");
+    unsigned int minleafsupport = check_and_set<unsigned int>(
+        vm, "min-leaf-support", "Number of minimum leaf support was not set.");
+    unsigned int esr = check_and_set<unsigned int>(
+        vm, "end-after-rounds",
+        "Num. rounds with no boost in validation before ending was not set.");
 
-  // Lambdamart specific options
-  unsigned int ntreeleaves = check_and_set<unsigned int>(
-      vm, "num-leaves", "Number of leaves was not set.");
-  // Matrixnet specific options
-  unsigned int treedepth = check_and_set<unsigned int>(
-      vm, "tree-depth", "Tree depth was not set.");
+    // Lambdamart specific options
+    unsigned int ntreeleaves = check_and_set<unsigned int>(
+        vm, "num-leaves", "Number of leaves was not set.");
+    // Matrixnet specific options
+    unsigned int treedepth = check_and_set<unsigned int>(
+        vm, "tree-depth", "Tree depth was not set.");
 
-  // Create model
-  std::shared_ptr<quickrank::learning::LTR_Algorithm> ranking_algorithm;
-  if (vm["algo"].as<model_string>().value == "lambdamart")
-    ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
-        new quickrank::learning::forests::LambdaMart(ntrees, shrinkage,
-                                                     nthresholds, ntreeleaves,
-                                                     minleafsupport, esr));
-  //else if (vm["algo"].as<model_string>().value == "mn")
-  //  ranking_algorithm = NULL;  //new quickrank::learning::forests::MatrixNet( ntrees, shrinkage, nthresholds, treedepth,   minleafsupport, esr);
-  else if (vm["algo"].as<model_string>().value == "mart")
-    ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
-        new quickrank::learning::forests::Mart(ntrees, shrinkage, nthresholds,
-                                               ntreeleaves, minleafsupport,
-                                               esr));
-  else if (vm["algo"].as<model_string>().value == "matrixnet")
-    ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
-        new quickrank::learning::forests::MatrixNet(ntrees, shrinkage,
-                                                    nthresholds, treedepth,
-                                                    minleafsupport, esr));
-  else if (vm["algo"].as<model_string>().value == "custom")
-    ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
-        new quickrank::learning::CustomLTR());
+    // Create model
+    std::shared_ptr<quickrank::learning::LTR_Algorithm> ranking_algorithm;
+    if (vm["algo"].as<model_string>().value == "lambdamart")
+      ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
+          new quickrank::learning::forests::LambdaMart(ntrees, shrinkage,
+                                                       nthresholds, ntreeleaves,
+                                                       minleafsupport, esr));
+    //else if (vm["algo"].as<model_string>().value == "mn")
+    //  ranking_algorithm = NULL;  //new quickrank::learning::forests::MatrixNet( ntrees, shrinkage, nthresholds, treedepth,   minleafsupport, esr);
+    else if (vm["algo"].as<model_string>().value == "mart")
+      ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
+          new quickrank::learning::forests::Mart(ntrees, shrinkage, nthresholds,
+                                                 ntreeleaves, minleafsupport,
+                                                 esr));
+    else if (vm["algo"].as<model_string>().value == "matrixnet")
+      ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
+          new quickrank::learning::forests::MatrixNet(ntrees, shrinkage,
+                                                      nthresholds, treedepth,
+                                                      minleafsupport, esr));
+    else if (vm["algo"].as<model_string>().value == "custom")
+      ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
+          new quickrank::learning::CustomLTR());
 
-  //show ranker parameters
-  std::cout << "#" << std::endl << *ranking_algorithm;
+    //show ranker parameters
+    std::cout << "#" << std::endl << *ranking_algorithm;
 
-  // METRIC STUFF
-  std::shared_ptr<quickrank::metric::ir::Metric> training_metric =
-      check_and_set_metric(vm, "train");
-  std::shared_ptr<quickrank::metric::ir::Metric> testing_metric =
-      check_and_set_metric(vm, "test");
-  std::cout << "#" << std::endl << "# training scorer: " << *training_metric
-            << std::endl << "# test scorer: " << *testing_metric << std::endl
-            << "#" << std::endl;
+    // METRIC STUFF
+    std::shared_ptr<quickrank::metric::ir::Metric> training_metric =
+        check_and_set_metric(vm, "train");
+    std::shared_ptr<quickrank::metric::ir::Metric> testing_metric =
+        check_and_set_metric(vm, "test");
+    std::cout << "#" << std::endl << "# training scorer: " << *training_metric
+              << std::endl << "# test scorer: " << *testing_metric << std::endl
+              << "#" << std::endl;
 
-  // FILE STUFF
-  unsigned int partial_save = check_and_set<unsigned int>(
-      vm, "partial", "Partial file save frequency was not set.");
+    // FILE STUFF
+    unsigned int partial_save = check_and_set<unsigned int>(
+        vm, "partial", "Partial file save frequency was not set.");
 
-  // TODO: check what can be null, everywhere!!!!
-  std::string training_filename = check_and_set<std::string>(
-      vm, "train", "Training filename was not set.");
-  std::string validation_filename = check_and_set<std::string>(
-      vm, "valid", "Validation filename was not set.");
-  std::string test_filename = check_and_set<std::string>(
-      vm, "test", "Test filename was not set.");
-  std::string features_filename = check_and_set<std::string>(
-      vm, "features", "Features filename was not set.");
-  std::string model_filename = check_and_set<std::string>(
-      vm, "model", "Model output filename was not set.");
+    // TODO: check what can be null, everywhere!!!!
+    std::string training_filename = check_and_set<std::string>(
+        vm, "train", "Training filename was not set.");
+    std::string validation_filename = check_and_set<std::string>(
+        vm, "valid", "Validation filename was not set.");
+    std::string test_filename = check_and_set<std::string>(
+        vm, "test", "Test filename was not set.");
+    std::string features_filename = check_and_set<std::string>(
+        vm, "features", "Features filename was not set.");
+    std::string model_filename = check_and_set<std::string>(
+        vm, "model", "Model output filename was not set.");
 
+    //set seed for rand()
+    srand(time(NULL));
 
+    quickrank::metric::Evaluator::evaluate(ranking_algorithm, training_metric,
+                                           testing_metric, training_filename,
+                                           validation_filename, test_filename,
+                                           features_filename, model_filename,
+                                           partial_save);
 
-  //set seed for rand()
-  srand(time(NULL));
-
-  quickrank::metric::Evaluator::evaluate(ranking_algorithm, training_metric,
-                                         testing_metric, training_filename,
-                                         validation_filename, test_filename,
-                                         features_filename, model_filename,
-                                         partial_save);
-
-  return 0;
+    return 0;
   }
 
   // SCORING STUFF
-  std::string xml_filename = check_and_set<std::string>(vm, "dump-model", "XML model file was not set.");
-  std::string c_filename = check_and_set<std::string>(vm, "dump-code", "C code file was not set.");
-  std::string type = check_and_set<std::string>(vm, "dump-type", "Dump type was not set.");
+  std::string xml_filename = check_and_set<std::string>(
+      vm, "dump-model", "XML model file was not set.");
+  std::string c_filename = check_and_set<std::string>(
+      vm, "dump-code", "C code file was not set.");
+  std::string type = check_and_set<std::string>(vm, "dump-type",
+                                                "Dump type was not set.");
 
   // if the dump files are set, it proceeds to dump the model by following a given strategy.
   if (xml_filename != "" && c_filename != "") {
     quickrank::io::Xml xml;
-    //if (type == "baseline")
+    if (type == "baseline") {
+      std::cout << "applying baseline strategy for C code generation to: "
+                << xml_filename << std::endl;
       xml.generate_c_code_baseline(xml_filename, c_filename);
-    //else
-      //xml.generate_c_code_oblivious_trees(xml_filename, c_filename);
+      std::cout << "done.";
+    } else
+      std::cout << "applying oblivious strategy for C code generation to: "
+                << xml_filename << std::endl;
+    xml.generate_c_code_oblivious_trees(xml_filename, c_filename);
+    std::cout << "done.";
   }
 
   return 0;

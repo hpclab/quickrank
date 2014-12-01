@@ -285,21 +285,19 @@ void Xml::generate_c_code_oblivious_trees(std::string model_filename,
   source_code << "#define SHL(n,p) ((n)<<(p))" << std::endl << std::endl;
 
   source_code
-  << "unsigned int leaf_id(float *v, unsigned int const *fids, float const *thresholds, const unsigned int m) {" << std::endl
-  << "  unsigned int leafidx = 0;" << std::endl
-  << "  for (unsigned int i = 0; i<M && i < m; ++i)" << std::endl
-  << "    leafidx |= SHL( v[fids[i]-1]>thresholds[i], M-1-i);" << std::endl
-  << "  return leafidx;" << std::endl
-  << "}" << std::endl << std::endl;
+      << "unsigned int leaf_id(float *v, unsigned int const *fids, float const *thresholds, const unsigned int m) {"
+      << std::endl << "  unsigned int leafidx = 0;" << std::endl
+      << "  for (unsigned int i = 0; i<M && i < m; ++i)" << std::endl
+      << "    leafidx |= SHL( v[fids[i]-1]>thresholds[i], M-1-i);" << std::endl
+      << "  return leafidx;" << std::endl << "}" << std::endl << std::endl;
 
-  source_code
-  << "double ranker(float *v) {" << std::endl
-  << "  double score = 0.0;" << std::endl
-  << "  //#pragma omp parallel for reduction(+:score)" << std::endl
-  << "  for (int i = 0; i < N; ++i)" << std::endl
-  << "    score += ws[i] * os[i][leaf_id(v, fs[i], ts[i], ds[i])];" << std::endl
-  << "  return score;" << std::endl
-  << "}" << std::endl << std::endl;
+  source_code << "double ranker(float *v) {" << std::endl
+              << "  double score = 0.0;" << std::endl
+              << "  //#pragma omp parallel for reduction(+:score)" << std::endl
+              << "  for (int i = 0; i < N; ++i)" << std::endl
+              << "    score += ws[i] * os[i][leaf_id(v, fs[i], ts[i], ds[i])];"
+              << std::endl << "  return score;" << std::endl << "}" << std::endl
+              << std::endl;
 
   std::ofstream output;
   output.open(code_filename, std::ofstream::out);

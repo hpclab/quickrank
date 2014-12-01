@@ -42,7 +42,7 @@ class MatrixNet : public LambdaMart {
   }
 
   MatrixNet(const boost::property_tree::ptree &info_ptree,
-             const boost::property_tree::ptree &model_ptree);
+            const boost::property_tree::ptree &model_ptree);
 
   virtual ~MatrixNet() {
   }

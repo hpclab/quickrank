@@ -87,7 +87,7 @@ class Metric : private boost::noncopyable {
         new Jacobian(ranked->num_results()));
     auto results = std::shared_ptr<data::QueryResults>(
         new data::QueryResults(ranked->num_results(), ranked->sorted_labels(),
-                               NULL));
+        NULL));
 
     MetricScore orig_score = evaluate_result_list(results.get(),
                                                   ranked->sorted_scores());
