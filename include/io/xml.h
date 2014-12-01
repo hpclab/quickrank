@@ -45,24 +45,23 @@ class Xml : private boost::noncopyable {
   ///
   /// \param model_filename Previously saved xml ranker model.
   /// \param code_filename Output source code file name.
-  void generate_c_code_baseline(std::string model_filename, std::string code_filename);
+  void generate_c_code_baseline(std::string model_filename,
+                                std::string code_filename);
 
   /// Generates the C++ implementation of the model scoring function.
   /// This applies to forests of oblivious trees and generates a smart level-wise evaluator.
   ///
   /// \param model_filename Previously saved xml ranker model.
   /// \param code_filename Output source code file name.
-  void generate_c_code_oblivious_trees(std::string model_filename, std::string code_filename);
-
-
-
+  void generate_c_code_oblivious_trees(std::string model_filename,
+                                       std::string code_filename);
 
   /// Loads a LTR algorithm from a previously saved XML file
   ///
   /// \param model_filename The file name of the xml model.
   /// \returns A new instance of a \a LTR_Algorithm.
   std::shared_ptr<learning::LTR_Algorithm> load_model_from_file(
-      std::string model_filename );
+      std::string model_filename);
 
  private:
 

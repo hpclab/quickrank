@@ -1,4 +1,4 @@
-QUICKLEARN:=quickrank
+QUICKLEARN:=quicklearn
 QUICKSCORE:=quickscore
 SRCDIR:=src
 UTESTSDIR:=unit-tests
@@ -17,7 +17,6 @@ OBJS:=$(subst $(SRCDIR),$(OBJSDIR)/$(SRCDIR),$(SRCS:.cc=.o))
 UTESTS:=$(wildcard $(UTESTSDIR)/*.cc) $(wildcard $(UTESTSDIR)/*/*.cc) $(wildcard $(UTESTSDIR)/*/*/*.cc)
 UTESTSOBJS:=$(subst $(UTESTSDIR),$(OBJSDIR)/$(UTESTSDIR),$(UTESTS:.cc=.o))
 
-
 CXX=
 CXXFLAGS:=-std=c++11 -Wall -pedantic -march=native -Ofast -fopenmp
 LDLIBS:=-lboost_program_options -lboost_system -lboost_filesystem -fopenmp
@@ -26,14 +25,14 @@ LDLIBS:=-lboost_program_options -lboost_system -lboost_filesystem -fopenmp
 ifneq ($(shell whereis g++-4.8),)
 	CXX=g++-4.8
 else 
-	ifneq ($(shell whereis g++-4.9),)
+  ifneq ($(shell whereis g++-4.9),)
 	CXX=g++-4.9
   else
     ifneq ($(shell /usr/local/bin/g++-4.9 --version),)
       CXX=/usr/local/bin/g++-4.9
       CXXFLAGS+=-Wa,-q
     endif
-	endif
+  endif
 endif
 
 # builds QuickLearn
@@ -42,28 +41,25 @@ all: quicklearn
 # builds QuickLearn
 quicklearn: $(OBJS)
 	@mkdir -p $(BINDIR)
-	$(CXX) \
-	$(filter-out $(OBJSDIR)/$(SRCDIR)/$(QUICKSCORE).o,$(OBJS)) \
-	$(LDLIBS) -o $(BINDIR)/$(QUICKLEARN)
-
-# creates the documentation
-doc:
-	cd $(DOCDIR); doxygen quickrank.doxygen
-
-# runs all the unit tests
-# to run a single test use make unit-tests TEST=dcg_test
-unit-tests: $(BINDIR)/unit-tests
-	$(BINDIR)/unit-tests --log_level=test_suite --run_test=$(TEST)
+	$(CXX) $(filter-out $(OBJSDIR)/$(SRCDIR)/$(QUICKSCORE).o,$(OBJS)) $(LDLIBS) -o $(BINDIR)/$(QUICKLEARN)
 
 # builds QuickScore
 # make quickscore RANKER=modelfile
 quickscore: $(OBJS)
 	$(CXX) $(CXXFLAGS) $(INCDIRS) -c $(RANKER).cc -o $(RANKER).o 
-	$(CXX) \
-	$(filter-out $(OBJSDIR)/$(SRCDIR)/$(QUICKLEARN).o,$(OBJS)) \
-	$(RANKER).o \
-	$(LDLIBS) \
-	-o $(BINDIR)/$(QUICKSCORE)
+	$(CXX) $(filter-out $(OBJSDIR)/$(SRCDIR)/$(QUICKLEARN).o,$(OBJS)) $(RANKER).o $(LDLIBS) -o $(BINDIR)/$(QUICKSCORE)
+
+
+# creates the documentation
+doc:
+	cd $(DOCDIR);
+	doxygen quickrank.doxygen
+
+# runs all the unit tests
+# to run a single test use make unit-tests TEST=dcg_test
+unit-tests:
+	$(BINDIR)/unit-tests
+	$(BINDIR)/unit-tests --log_level=test_suite --run_test=$(TEST)
 
 # removes intermediate files
 clean:
@@ -71,7 +67,8 @@ clean:
 	rm -rf $(DEPSDIR)
 
 # removes everything but the source
-dist-clean: clean
+dist-clean: 
+	clean
 	@rm -rf $(BINDIR)
 	@rm -rf $(DOCDIR)/html
 
@@ -86,7 +83,8 @@ $(OBJSDIR)/%.o: %.cc
 	$(CXX) $(CXXFLAGS) $(INCDIRS) -c -o $@ $<
 
 # linking
-$(BINDIR)/unit-tests: $(OBJS) $(UTESTSOBJS)
+$(BINDIR)/unit-tests:
+	$(OBJS) $(UTESTSOBJS)
 	$(CXX) \
 	$(filter-out $(OBJSDIR)/$(SRCDIR)/$(QUICKLEARN).o $(OBJSDIR)/$(SRCDIR)/$(QUICKSCORE).o,$(OBJS)) \
 	$(UTESTSOBJS) \
