@@ -39,7 +39,7 @@ endif
 # builds QuickLearn
 all: quicklearn
 
-# builds QuickLeanr
+# builds QuickLearn
 quicklearn: $(OBJS)
 	@mkdir -p $(BINDIR)
 	$(CXX) \
