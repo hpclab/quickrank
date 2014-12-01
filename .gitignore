@@ -1,4 +1,5 @@
 bin
+tests
 _deps
 _build
 .cproject
