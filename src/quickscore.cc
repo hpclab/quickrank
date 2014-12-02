@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
   // potentially save scores
   if (!scores_file.empty()) {
     std::fstream output;
-    output.open(argv[2], std::ofstream::out);
+    output.open(scores_file, std::ofstream::out);
     output << std::setprecision(15);
     for (unsigned int i = 0; i < dataset->num_instances(); i++) {
       output << scores[i] << std::endl;

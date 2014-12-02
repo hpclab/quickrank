@@ -13,6 +13,8 @@
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/property_tree/detail/ptree_utils.hpp>
 #include <boost/foreach.hpp>
+#include <boost/container/list.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <string>
 #include <memory>
@@ -140,6 +142,63 @@ void model_node_to_c_oblivious_trees(
     model_node_to_c_oblivious_trees(*right, os);
     //os << " ";
   }
+}
+
+
+void model_tree_get_tests(const boost::property_tree::ptree &tree_xml,
+                          boost::container::list<unsigned int> &features,
+                          boost::container::list<float> &thresholds) {
+  const boost::property_tree::ptree* left = NULL;
+  const boost::property_tree::ptree* right = NULL;
+  unsigned int feature;
+  float threshold;
+  bool is_leaf = false;
+  for (auto p_node = tree_xml.begin(); p_node != tree_xml.end(); p_node++) {
+    if (p_node->first=="split") {
+      std::string pos = p_node->second.get<std::string>("<xmlattr>.pos");
+      if (pos=="left")
+        left = &(p_node->second);
+      else
+        right = &(p_node->second);
+    } else if (p_node->first=="feature") {
+      feature = p_node->second.get_value<unsigned int>();
+    } else if (p_node->first=="threshold") {
+      threshold = p_node->second.get_value<float>();
+    } else if (p_node->first=="output") {
+      is_leaf = true;
+    }
+  }
+  if (is_leaf) return;
+  model_tree_get_tests(*left, features, thresholds);
+  std::cout << feature << "<=" << threshold << std::endl;
+  model_tree_get_tests(*right, features, thresholds);
+}
+
+void model_get_tests(const boost::property_tree::ptree &model_xml) {
+  auto ensemble = model_xml.get_child("ranker.ensemble");
+  for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); p_tree++) {
+    boost::container::list<unsigned int> features;
+    boost::container::list<float> thresholds;
+    auto tree_root = p_tree->second.find("split");
+    model_tree_get_tests(tree_root->second, features, thresholds);
+  }
+}
+
+void Xml::generate_c_code_vectorized(std::string model_filename,
+                                     std::string code_filename) {
+  if (model_filename.empty()) {
+    std::cerr << "!!! Model filename is empty." << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  // parse XML
+  boost::property_tree::ptree xml_model;
+  std::ifstream is;
+  is.open(model_filename, std::ifstream::in);
+  boost::property_tree::read_xml(is, xml_model);
+  is.close();
+
+  model_get_tests(xml_model);
 }
 
 void Xml::generate_c_code_baseline(std::string model_filename,

@@ -57,8 +57,7 @@ doc:
 
 # runs all the unit tests
 # to run a single test use make unit-tests TEST=dcg_test
-unit-tests:
-	$(BINDIR)/unit-tests
+unit-tests: $(BINDIR)/unit-tests
 	$(BINDIR)/unit-tests --log_level=test_suite --run_test=$(TEST)
 
 # removes intermediate files
@@ -67,8 +66,7 @@ clean:
 	rm -rf $(DEPSDIR)
 
 # removes everything but the source
-dist-clean: 
-	clean
+dist-clean: clean
 	@rm -rf $(BINDIR)
 	@rm -rf $(DOCDIR)/html
 
@@ -83,8 +81,7 @@ $(OBJSDIR)/%.o: %.cc
 	$(CXX) $(CXXFLAGS) $(INCDIRS) -c -o $@ $<
 
 # linking
-$(BINDIR)/unit-tests:
-	$(OBJS) $(UTESTSOBJS)
+$(BINDIR)/unit-tests: $(OBJS) $(UTESTSOBJS)
 	$(CXX) \
 	$(filter-out $(OBJSDIR)/$(SRCDIR)/$(QUICKLEARN).o $(OBJSDIR)/$(SRCDIR)/$(QUICKSCORE).o,$(OBJS)) \
 	$(UTESTSOBJS) \

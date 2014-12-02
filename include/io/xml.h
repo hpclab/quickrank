@@ -63,6 +63,13 @@ class Xml : private boost::noncopyable {
   std::shared_ptr<learning::LTR_Algorithm> load_model_from_file(
       std::string model_filename);
 
+  /// Generates the C++ implementation of the model scoring function.
+  /// This is en experimental method.
+  ///
+  /// \param model_filename Previously saved xml ranker model.
+  /// \param code_filename Output source code file name.
+  void generate_c_code_vectorized(std::string model_filename,
+                                  std::string code_filename);
  private:
 
 };
