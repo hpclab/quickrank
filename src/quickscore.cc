@@ -14,6 +14,9 @@
 #include <fstream>
 #include <iomanip>
 #include <chrono>
+#include <string>
+
+#include <boost/program_options.hpp>
 
 #include "data/dataset.h"
 #include "io/svml.h"
@@ -21,22 +24,51 @@
 double ranker(float* v);
 
 int main(int argc, char *argv[]) {
-  std::cout << "# ## ========================== ## #" << std::endl
-            << "# ##          QuickRank         ## #" << std::endl
-            << "# ## -------------------------- ## #" << std::endl
-            << "# ## developed by the HPC. Lab. ## #" << std::endl
-            << "# ##  http://hpc.isti.cnr.it/   ## #" << std::endl
-            << "# ##  quickrank@.isti.cnr.it    ## #" << std::endl
-            << "# ## ========================== ## #" << std::endl;
+  std::cout << "# ## ================================== ## #" << std::endl
+            << "# ##              QuickRank             ## #" << std::endl
+            << "# ## ---------------------------------- ## #" << std::endl
+            << "# ##     developed by the HPC. Lab.     ## #" << std::endl
+            << "# ##      http://hpc.isti.cnr.it/       ## #" << std::endl
+            << "# ##      quickrank@.isti.cnr.it        ## #" << std::endl
+            << "# ## ================================== ## #" << std::endl;
 
-  std::cout << "usage: quickscore <dataset> [output scores file]" << std::endl;
-  char* data_file = argv[1];
+  namespace po = boost::program_options;
 
-  unsigned int rounds = 10;
+  // parameters
+  std::string dataset_file;
+  unsigned int rounds;
+  std::string scores_file;
+
+  // prepare options
+  po::options_description options("Options");
+  options.add_options()("help,h", "Print help messages");
+  options.add_options()("dataset,d",
+                        po::value<std::string>(&dataset_file)->required(),
+                        "Input dataset in SVML format");
+  options.add_options()("rounds,r",
+                        po::value<unsigned int>(&rounds)->default_value(10),
+                        "Number of test repetitions");
+  options.add_options()(
+      "scores,s",
+      po::value<std::string>(&scores_file)->default_value(std::string()),
+      "File where scores are saved");
+
+  // parse command line
+  po::variables_map vm;
+  po::store(po::parse_command_line(argc, argv, options), vm);
+
+  // print help
+  if (vm.count("help")) {
+    std::cout << options << "\n";
+    return EXIT_FAILURE;
+  }
+
+  // raise any error
+  po::notify(vm);
 
   // read dataset
   quickrank::io::Svml reader;
-  auto dataset = reader.read_horizontal(data_file);
+  auto dataset = reader.read_horizontal(dataset_file);
   std::cout << *dataset;
 
   // score dataset
@@ -66,7 +98,7 @@ int main(int argc, char *argv[]) {
             << std::endl;
 
   // potentially save scores
-  if (argc > 2) {
+  if (!scores_file.empty()) {
     std::fstream output;
     output.open(argv[2], std::ofstream::out);
     output << std::setprecision(15);
