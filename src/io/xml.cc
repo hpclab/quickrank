@@ -15,6 +15,8 @@
 #include <boost/foreach.hpp>
 #include <boost/container/list.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/iterator/zip_iterator.hpp>
+#include <boost/range.hpp>
 
 #include <string>
 #include <memory>
@@ -150,8 +152,8 @@ void model_tree_get_tests(const boost::property_tree::ptree &tree_xml,
                           boost::container::list<float> &thresholds) {
   const boost::property_tree::ptree* left = NULL;
   const boost::property_tree::ptree* right = NULL;
-  unsigned int feature;
-  float threshold;
+  unsigned int feature = 0;
+  float threshold = 0.0f;
   bool is_leaf = false;
   for (auto p_node = tree_xml.begin(); p_node != tree_xml.end(); p_node++) {
     if (p_node->first=="split") {
@@ -170,17 +172,37 @@ void model_tree_get_tests(const boost::property_tree::ptree &tree_xml,
   }
   if (is_leaf) return;
   model_tree_get_tests(*left, features, thresholds);
-  std::cout << feature << "<=" << threshold << std::endl;
+  features.push_back(feature);
+  thresholds.push_back(threshold);
   model_tree_get_tests(*right, features, thresholds);
 }
 
 void model_get_tests(const boost::property_tree::ptree &model_xml) {
+  namespace bc = boost::container;
+  bc::list< bc::list<unsigned int> > tree_features;
+  bc::list< bc::list<float> > tree_thresholds;
+
+  // collect data
   auto ensemble = model_xml.get_child("ranker.ensemble");
   for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); p_tree++) {
     boost::container::list<unsigned int> features;
     boost::container::list<float> thresholds;
     auto tree_root = p_tree->second.find("split");
     model_tree_get_tests(tree_root->second, features, thresholds);
+    tree_features.push_back(features);
+    tree_thresholds.push_back(thresholds);
+  }
+
+  // iterate over trees
+  auto features = tree_features.begin();
+  auto thresholds = tree_thresholds.begin();
+  for (;features!=tree_features.end() && thresholds!=tree_thresholds.end();
+      ++features, ++thresholds) {
+    // iterate over nodes of the given tree
+    auto f = features->begin();
+    auto t = thresholds->begin();
+    for (;f!=features->end() && t!=thresholds->end(); ++f, ++t )
+      std::cout << *f << "<=" << *t << std::endl;
   }
 }
 
