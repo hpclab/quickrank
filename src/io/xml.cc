@@ -43,23 +43,23 @@ RTNode* RTNode_parse_xml(const boost::property_tree::ptree &split_xml) {
   float threshold = 0.0f;
   double prediction = 0.0;
 
-  BOOST_FOREACH(const boost::property_tree::ptree::value_type& split_child, split_xml ) {
-    if (split_child.first == "output") {
-      prediction = split_child.second.get_value<double>();
-      is_leaf = true;
-      break;
-    } else if (split_child.first == "feature") {
-      feature_id = split_child.second.get_value<unsigned int>();
-    } else if (split_child.first == "threshold") {
-      threshold = split_child.second.get_value<float>();
-    } else if (split_child.first == "split") {
-      std::string pos = split_child.second.get<std::string>("<xmlattr>.pos");
-      if (pos == "left")
-        left_child = RTNode_parse_xml(split_child.second);
-      else
-        right_child = RTNode_parse_xml(split_child.second);
-    }
+  BOOST_FOREACH(const boost::property_tree::ptree::value_type& split_child, split_xml ){
+  if (split_child.first == "output") {
+    prediction = split_child.second.get_value<double>();
+    is_leaf = true;
+    break;
+  } else if (split_child.first == "feature") {
+    feature_id = split_child.second.get_value<unsigned int>();
+  } else if (split_child.first == "threshold") {
+    threshold = split_child.second.get_value<float>();
+  } else if (split_child.first == "split") {
+    std::string pos = split_child.second.get<std::string>("<xmlattr>.pos");
+    if (pos == "left")
+    left_child = RTNode_parse_xml(split_child.second);
+    else
+    right_child = RTNode_parse_xml(split_child.second);
   }
+}
 
   if (is_leaf)
     model_node = new RTNode(prediction);
@@ -80,23 +80,23 @@ void model_node_to_c_baseline(const boost::property_tree::ptree &split_xml,
   const boost::property_tree::ptree* left = NULL;
   const boost::property_tree::ptree* right = NULL;
 
-  BOOST_FOREACH(const boost::property_tree::ptree::value_type& split_child, split_xml ) {
-    if (split_child.first == "output") {
-      prediction = split_child.second.get_value<double>();
-      is_leaf = true;
-      break;
-    } else if (split_child.first == "feature") {
-      feature_id = split_child.second.get_value<unsigned int>();
-    } else if (split_child.first == "threshold") {
-      threshold = split_child.second.get_value<float>();
-    } else if (split_child.first == "split") {
-      std::string pos = split_child.second.get<std::string>("<xmlattr>.pos");
-      if (pos == "left")
-        left = &(split_child.second);
-      else
-        right = &(split_child.second);
-    }
+  BOOST_FOREACH(const boost::property_tree::ptree::value_type& split_child, split_xml ){
+  if (split_child.first == "output") {
+    prediction = split_child.second.get_value<double>();
+    is_leaf = true;
+    break;
+  } else if (split_child.first == "feature") {
+    feature_id = split_child.second.get_value<unsigned int>();
+  } else if (split_child.first == "threshold") {
+    threshold = split_child.second.get_value<float>();
+  } else if (split_child.first == "split") {
+    std::string pos = split_child.second.get<std::string>("<xmlattr>.pos");
+    if (pos == "left")
+    left = &(split_child.second);
+    else
+    right = &(split_child.second);
   }
+}
 
   if (is_leaf)
     os << std::setprecision(15) << prediction;
@@ -120,19 +120,19 @@ void model_node_to_c_oblivious_trees(
   const boost::property_tree::ptree* left = NULL;
   const boost::property_tree::ptree* right = NULL;
 
-  BOOST_FOREACH(const boost::property_tree::ptree::value_type& split_child, split_xml ) {
-    if (split_child.first == "output") {
-      prediction = split_child.second.get_value<double>();
-      is_leaf = true;
-      break;
-    } else if (split_child.first == "split") {
-      std::string pos = split_child.second.get<std::string>("<xmlattr>.pos");
-      if (pos == "left")
-        left = &(split_child.second);
-      else
-        right = &(split_child.second);
-    }
+  BOOST_FOREACH(const boost::property_tree::ptree::value_type& split_child, split_xml ){
+  if (split_child.first == "output") {
+    prediction = split_child.second.get_value<double>();
+    is_leaf = true;
+    break;
+  } else if (split_child.first == "split") {
+    std::string pos = split_child.second.get<std::string>("<xmlattr>.pos");
+    if (pos == "left")
+    left = &(split_child.second);
+    else
+    right = &(split_child.second);
   }
+}
 
   if (is_leaf)
     os << std::setprecision(15) << prediction;
@@ -146,7 +146,6 @@ void model_node_to_c_oblivious_trees(
   }
 }
 
-
 void model_tree_get_tests(const boost::property_tree::ptree &tree_xml,
                           boost::container::list<unsigned int> &features,
                           boost::container::list<float> &thresholds) {
@@ -156,55 +155,28 @@ void model_tree_get_tests(const boost::property_tree::ptree &tree_xml,
   float threshold = 0.0f;
   bool is_leaf = false;
   for (auto p_node = tree_xml.begin(); p_node != tree_xml.end(); p_node++) {
-    if (p_node->first=="split") {
+    if (p_node->first == "split") {
       std::string pos = p_node->second.get<std::string>("<xmlattr>.pos");
-      if (pos=="left")
+      if (pos == "left")
         left = &(p_node->second);
       else
         right = &(p_node->second);
-    } else if (p_node->first=="feature") {
+    } else if (p_node->first == "feature") {
       feature = p_node->second.get_value<unsigned int>();
-    } else if (p_node->first=="threshold") {
+    } else if (p_node->first == "threshold") {
       threshold = p_node->second.get_value<float>();
-    } else if (p_node->first=="output") {
+    } else if (p_node->first == "output") {
       is_leaf = true;
     }
   }
-  if (is_leaf) return;
+  if (is_leaf)
+    return;
   model_tree_get_tests(*left, features, thresholds);
   features.push_back(feature);
   thresholds.push_back(threshold);
   model_tree_get_tests(*right, features, thresholds);
 }
 
-void model_get_tests(const boost::property_tree::ptree &model_xml) {
-  namespace bc = boost::container;
-  bc::list< bc::list<unsigned int> > tree_features;
-  bc::list< bc::list<float> > tree_thresholds;
-
-  // collect data
-  auto ensemble = model_xml.get_child("ranker.ensemble");
-  for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); p_tree++) {
-    boost::container::list<unsigned int> features;
-    boost::container::list<float> thresholds;
-    auto tree_root = p_tree->second.find("split");
-    model_tree_get_tests(tree_root->second, features, thresholds);
-    tree_features.push_back(features);
-    tree_thresholds.push_back(thresholds);
-  }
-
-  // iterate over trees
-  auto features = tree_features.begin();
-  auto thresholds = tree_thresholds.begin();
-  for (;features!=tree_features.end() && thresholds!=tree_thresholds.end();
-      ++features, ++thresholds) {
-    // iterate over nodes of the given tree
-    auto f = features->begin();
-    auto t = thresholds->begin();
-    for (;f!=features->end() && t!=thresholds->end(); ++f, ++t )
-      std::cout << *f << "<=" << *t << std::endl;
-  }
-}
 
 void Xml::generate_c_code_vectorized(std::string model_filename,
                                      std::string code_filename) {
@@ -220,7 +192,56 @@ void Xml::generate_c_code_vectorized(std::string model_filename,
   boost::property_tree::read_xml(is, xml_model);
   is.close();
 
-  model_get_tests(xml_model);
+  namespace bc = boost::container;
+  bc::list<bc::list<unsigned int> > tree_features;
+  bc::list<bc::list<float> > tree_thresholds;
+
+  // collect data
+  auto ensemble = xml_model.get_child("ranker.ensemble");
+  for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); ++p_tree) {
+    boost::container::list<unsigned int> features;
+    boost::container::list<float> thresholds;
+    auto tree_root = p_tree->second.find("split");
+    model_tree_get_tests(tree_root->second, features, thresholds);
+    tree_features.push_back(features);
+    tree_thresholds.push_back(thresholds);
+  }
+
+  // create output stream
+  std::stringstream source_code;
+  source_code << "double ranker(float *v) {" << std::endl
+              << "  double score =";
+
+  // iterate over trees
+  auto features = tree_features.begin();
+  auto thresholds = tree_thresholds.begin();
+  unsigned int t=0;
+  for (; features != tree_features.end() && thresholds != tree_thresholds.end();
+      ++features, ++thresholds, ++t) {
+    // iterate over nodes of the given tree
+    source_code << std::endl << "    ";
+    if (t!=0)
+      source_code << " + ";
+    source_code << "(double)( ";
+    auto f = features->begin();
+    auto t = thresholds->begin();
+    unsigned int l = 0;
+    for (; f != features->end() && t != thresholds->end(); ++f, ++t, ++l) {
+      if (l!=0)
+        source_code << " | ";
+      source_code << "((v[" << *f << "]<=" << *t << ")<<"<<l<<")";
+    }
+    source_code << " )";
+  }
+  source_code << ";" << std::endl;
+  source_code << "  return score;" << std::endl << "}" << std::endl
+              << std::endl;
+
+  std::ofstream output;
+  output.open(code_filename, std::ofstream::out);
+  output << source_code.str();
+  output.close();
+
 }
 
 void Xml::generate_c_code_baseline(std::string model_filename,
@@ -241,19 +262,19 @@ void Xml::generate_c_code_baseline(std::string model_filename,
 
   source_code << "double ranker(float* v) {" << std::endl;
   source_code << "\treturn 0.0 ";
-  BOOST_FOREACH(const boost::property_tree::ptree::value_type& tree, xml_tree.get_child("ranker.ensemble")) {
-    float tree_weight = tree.second.get("<xmlattr>.weight", 1.0f);
+  BOOST_FOREACH(const boost::property_tree::ptree::value_type& tree, xml_tree.get_child("ranker.ensemble")){
+  float tree_weight = tree.second.get("<xmlattr>.weight", 1.0f);
 
-    // find the root of the tree
-    boost::property_tree::ptree root;
-    BOOST_FOREACH(const boost::property_tree::ptree::value_type& node, tree.second ) {
-      if (node.first == "split") {
-        source_code << std::endl << "\t\t + " << std::setprecision(3)
-                    << tree_weight << " * ";
-        model_node_to_c_baseline(node.second, source_code);
-      }
+  // find the root of the tree
+  boost::property_tree::ptree root;
+  BOOST_FOREACH(const boost::property_tree::ptree::value_type& node, tree.second ) {
+    if (node.first == "split") {
+      source_code << std::endl << "\t\t + " << std::setprecision(3)
+      << tree_weight << " * ";
+      model_node_to_c_baseline(node.second, source_code);
     }
   }
+}
   source_code << ";" << std::endl << "}" << std::endl;
 
   std::ofstream output;
@@ -405,12 +426,12 @@ std::shared_ptr<learning::LTR_Algorithm> Xml::load_model_from_file(
   boost::property_tree::ptree info_ptree;
   boost::property_tree::ptree ensemble_ptree;
 
-  BOOST_FOREACH(const boost::property_tree::ptree::value_type& node, xml_tree.get_child("ranker")) {
-    if (node.first == "info")
-      info_ptree = node.second;
-    else if (node.first == "ensemble")
-      ensemble_ptree = node.second;
-  }
+  BOOST_FOREACH(const boost::property_tree::ptree::value_type& node, xml_tree.get_child("ranker")){
+  if (node.first == "info")
+  info_ptree = node.second;
+  else if (node.first == "ensemble")
+  ensemble_ptree = node.second;
+}
 
   std::string ranker_type = info_ptree.get<std::string>("type");
   if (ranker_type == "MART")
