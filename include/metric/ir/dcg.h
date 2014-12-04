@@ -33,7 +33,13 @@ class Dcg : public Metric {
   }
   virtual ~Dcg() {
   }
-  ;
+
+  /// Returns the name of the metric.
+  virtual std::string name() const {
+    return NAME_;
+  }
+
+  static const std::string NAME_;
 
   virtual MetricScore evaluate_result_list(
       const quickrank::data::QueryResults* rl, const Score* scores) const;

@@ -43,7 +43,9 @@ class Metric : private boost::noncopyable {
   }
   virtual ~Metric() {
   }
-  ;
+
+  /// Returns the name of the metric.
+  virtual std::string name() const = 0;
 
   /// Returns the current cut-off of the Metric.
   unsigned int cutoff() const {

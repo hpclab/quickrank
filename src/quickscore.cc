@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
 
   // parameters
   std::string dataset_file;
-  unsigned int rounds;
+  unsigned int rounds = 10;
   std::string scores_file;
 
   // prepare options
@@ -46,11 +46,11 @@ int main(int argc, char *argv[]) {
                         po::value<std::string>(&dataset_file)->required(),
                         "Input dataset in SVML format");
   options.add_options()("rounds,r",
-                        po::value<unsigned int>(&rounds)->default_value(10),
+                        po::value<unsigned int>(&rounds)->default_value(rounds),
                         "Number of test repetitions");
   options.add_options()(
       "scores,s",
-      po::value<std::string>(&scores_file)->default_value(std::string()),
+      po::value<std::string>(&scores_file)->default_value(scores_file),
       "File where scores are saved");
 
   // parse command line
@@ -109,6 +109,7 @@ int main(int argc, char *argv[]) {
   }
 
   delete[] scores;
+
   return EXIT_SUCCESS;
 }
 

@@ -22,6 +22,8 @@ namespace quickrank {
 namespace metric {
 namespace ir {
 
+const std::string Tndcg::NAME_ = "TNDCG";
+
 MetricScore Tndcg::compute_tndcg(const quickrank::data::QueryResults* rl,
                                  const Score* scores) const {
   const double idcg = Ndcg::compute_idcg(rl);
@@ -117,9 +119,9 @@ std::unique_ptr<Jacobian> Tndcg::jacobian(
 
 std::ostream& Tndcg::put(std::ostream& os) const {
   if (cutoff() != Metric::NO_CUTOFF)
-    return os << "TNDCG@" << cutoff();
+    return os << name() << "@" << cutoff();
   else
-    return os << "TNDCG";
+    return os << name();
 }
 
 }  // namespace ir

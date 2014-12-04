@@ -41,15 +41,15 @@ class CustomLTR : public LTR_Algorithm {
   CustomLTR(const boost::property_tree::ptree &info_ptree,
             const boost::property_tree::ptree &model_ptree) {
   }
-  ;
 
   virtual ~CustomLTR();
 
   /// Returns the name of the ranker.
   virtual std::string name() const {
-    return "CUSTOM";
+    return NAME_;
   }
-  ;
+
+  static const std::string NAME_;
 
   /// Executes the learning process.
   ///

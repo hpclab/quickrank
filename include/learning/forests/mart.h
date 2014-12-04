@@ -69,8 +69,10 @@ class Mart : public LTR_Algorithm {
 
   /// Returns the name of the ranker.
   virtual std::string name() const {
-    return "MART";
+    return NAME_;
   }
+
+  static const std::string NAME_;
 
  protected:
   /// Makes sure the dataset in in vertical format.

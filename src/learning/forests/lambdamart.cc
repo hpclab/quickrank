@@ -29,6 +29,8 @@ namespace quickrank {
 namespace learning {
 namespace forests {
 
+const std::string LambdaMart::NAME_ = "LAMBDAMART";
+
 LambdaMart::LambdaMart(const boost::property_tree::ptree &info_ptree,
                        const boost::property_tree::ptree &model_ptree)
     : Mart(info_ptree, model_ptree) {
@@ -51,32 +53,33 @@ LambdaMart::LambdaMart(const boost::property_tree::ptree &info_ptree,
   ensemble_model_.set_capacity(ntrees_);
 
   // loop over trees
-  BOOST_FOREACH(const boost::property_tree::ptree::value_type& tree, model_ptree) {
-    RTNode* root = NULL;
-    float tree_weight = tree.second.get<double>("<xmlattr>.weight", shrinkage_);
+  BOOST_FOREACH(const boost::property_tree::ptree::value_type& tree, model_ptree){
+  RTNode* root = NULL;
+  float tree_weight = tree.second.get<double>("<xmlattr>.weight", shrinkage_);
 
-    // find the root of the tree
-    BOOST_FOREACH(const boost::property_tree::ptree::value_type& node, tree.second ) {
-      if (node.first == "split") {
-        root = io::RTNode_parse_xml(node.second);
-        break;
-      }
+  // find the root of the tree
+  BOOST_FOREACH(const boost::property_tree::ptree::value_type& node, tree.second ) {
+    if (node.first == "split") {
+      root = io::RTNode_parse_xml(node.second);
+      break;
     }
-
-    if (root == NULL) {
-      std::cerr << "!!! Unable to parse tree from XML model." << std::endl;
-      exit(EXIT_FAILURE);
-    }
-
-    ensemble_model_.push(root, tree_weight, -1);
   }
+
+  if (root == NULL) {
+    std::cerr << "!!! Unable to parse tree from XML model." << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  ensemble_model_.push(root, tree_weight, -1);
+}
 }
 
 std::ostream& LambdaMart::put(std::ostream& os) const {
-  os << "# Ranker: Lambda-MART" << std::endl << "# max no. of trees = "
-     << ntrees_ << std::endl << "# no. of tree leaves = " << nleaves_
-     << std::endl << "# shrinkage = " << shrinkage_ << std::endl
-     << "# min leaf support = " << minleafsupport_ << std::endl;
+  os << "# Ranker: " << name() << std::endl;
+  os << "# max no. of trees = " << ntrees_ << std::endl;
+  os << "# no. of tree leaves = " << nleaves_ << std::endl;
+  os << "# shrinkage = " << shrinkage_ << std::endl;
+  os << "# min leaf support = " << minleafsupport_ << std::endl;
   if (nthresholds_)
     os << "# no. of thresholds = " << nthresholds_ << std::endl;
   else
@@ -239,14 +242,16 @@ void LambdaMart::compute_pseudoresponses(
 
 std::ofstream& LambdaMart::save_model_to_file(std::ofstream& os) const {
   // write ranker description
-  os << "\t<info>" << std::endl << "\t\t<type>" << name() << "</type>"
-     << std::endl << "\t\t<trees>" << ntrees_ << "</trees>" << std::endl
-     << "\t\t<leaves>" << nleaves_ << "</leaves>" << std::endl
-     << "\t\t<shrinkage>" << shrinkage_ << "</shrinkage>" << std::endl
-     << "\t\t<leafsupport>" << minleafsupport_ << "</leafsupport>" << std::endl
-     << "\t\t<discretization>" << nthresholds_ << "</discretization>"
-     << std::endl << "\t\t<estop>" << valid_iterations_ << "</estop>"
-     << std::endl << "\t</info>" << std::endl;
+  os << "\t<info>" << std::endl;
+  os << "\t\t<type>" << name() << "</type>" << std::endl;
+  os << "\t\t<trees>" << ntrees_ << "</trees>" << std::endl;
+  os << "\t\t<leaves>" << nleaves_ << "</leaves>" << std::endl;
+  os << "\t\t<shrinkage>" << shrinkage_ << "</shrinkage>" << std::endl;
+  os << "\t\t<leafsupport>" << minleafsupport_ << "</leafsupport>" << std::endl;
+  os << "\t\t<discretization>" << nthresholds_ << "</discretization>"
+     << std::endl;
+  os << "\t\t<estop>" << valid_iterations_ << "</estop>" << std::endl;
+  os << "\t</info>" << std::endl;
 
   // save xml model
   ensemble_model_.save_model_to_file(os);

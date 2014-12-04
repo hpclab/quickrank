@@ -20,6 +20,8 @@ namespace quickrank {
 namespace metric {
 namespace ir {
 
+const std::string Map::NAME_ = "MAP";
+
 MetricScore Map::evaluate_result_list(const quickrank::data::QueryResults* rl,
                                       const Score* scores) const {
   unsigned int size = std::min(cutoff(), rl->num_results());
@@ -76,9 +78,9 @@ std::unique_ptr<Jacobian> Map::jacobian(
 
 std::ostream& Map::put(std::ostream& os) const {
   if (cutoff() != Metric::NO_CUTOFF)
-    return os << "MAP@" << cutoff();
+    return os << name() << "@" << cutoff();
   else
-    return os << "MAP";
+    return os << name();
 }
 
 }  // namespace ir

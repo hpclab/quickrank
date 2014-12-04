@@ -48,8 +48,10 @@ class LambdaMart : public Mart {
 
   /// Returns the name of the ranker.
   virtual std::string name() const {
-    return "LAMBDAMART";
+    return NAME_;
   }
+
+  static const std::string NAME_;
 
  protected:
   /// Prepares private data structurs befor training takes place.

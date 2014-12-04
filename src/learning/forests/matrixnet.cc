@@ -26,6 +26,9 @@ namespace quickrank {
 namespace learning {
 namespace forests {
 
+const std::string MatrixNet::NAME_ = "MATRIXNET";
+
+
 MatrixNet::MatrixNet(const boost::property_tree::ptree &info_ptree,
                      const boost::property_tree::ptree &model_ptree)
     : LambdaMart(info_ptree, model_ptree) {

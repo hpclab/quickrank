@@ -25,6 +25,8 @@
 namespace quickrank {
 namespace learning {
 
+const std::string CustomLTR::NAME_ = "CUSTOM";
+
 CustomLTR::CustomLTR() {
 }
 
@@ -32,7 +34,7 @@ CustomLTR::~CustomLTR() {
 }
 
 std::ostream& CustomLTR::put(std::ostream& os) const {
-  os << "# Ranker: Custom" << std::endl;
+  os << "# Ranker: " << name() << std::endl;
   return os;
 }
 

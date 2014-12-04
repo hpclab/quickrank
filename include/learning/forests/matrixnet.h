@@ -49,9 +49,10 @@ class MatrixNet : public LambdaMart {
 
   /// Returns the name of the ranker.
   virtual std::string name() const {
-    return "MATRIXNET";
+    return NAME_;
   }
-  ;
+
+  static const std::string NAME_;
 
  protected:
   /// Fits a regression tree on the gradient given by the pseudo residuals

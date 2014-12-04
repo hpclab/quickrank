@@ -22,6 +22,8 @@ namespace quickrank {
 namespace metric {
 namespace ir {
 
+const std::string Dcg::NAME_ = "DCG";
+
 MetricScore Dcg::compute_dcg(
     const quickrank::data::QueryResults* results) const {
   const unsigned int size = std::min(cutoff(), results->num_results());
@@ -79,9 +81,9 @@ std::unique_ptr<Jacobian> Dcg::jacobian(
 
 std::ostream& Dcg::put(std::ostream& os) const {
   if (cutoff() != Metric::NO_CUTOFF)
-    return os << "DCG@" << cutoff();
+    return os << name() << "@" << cutoff();
   else
-    return os << "DCG";
+    return os << name();
 }
 
 }  // namespace ir

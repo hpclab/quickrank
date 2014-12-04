@@ -36,6 +36,13 @@ class Ndcg : public Dcg {
   virtual ~Ndcg() {
   }
 
+  /// Returns the name of the metric.
+  virtual std::string name() const {
+    return NAME_;
+  }
+
+  static const std::string NAME_;
+
   /// \todo TODO: for only zero result slist Yahoo! LTR returns 0.5 instead of 0.0.
   ///             Make this choice available.
   /// \param rl A results list.

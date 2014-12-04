@@ -22,6 +22,8 @@ namespace quickrank {
 namespace metric {
 namespace ir {
 
+const std::string Ndcg::NAME_ = "NDCG";
+
 MetricScore Ndcg::compute_idcg(const quickrank::data::QueryResults* rl) const {
   //make a copy of lables
   Label* copyoflabels = new Label[rl->num_results()];
@@ -85,9 +87,9 @@ std::unique_ptr<Jacobian> Ndcg::jacobian(
 
 std::ostream& Ndcg::put(std::ostream& os) const {
   if (cutoff() != Metric::NO_CUTOFF)
-    return os << "NDCG@" << cutoff();
+    return os << name() << "@" << cutoff();
   else
-    return os << "NDCG";
+    return os << name();
 }
 
 }  // namespace ir
