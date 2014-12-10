@@ -25,10 +25,10 @@ BOOST_AUTO_TEST_CASE( test_xml_io ) {
 
   quickrank::io::Xml xml;
 
-  xml.generate_c_code_baseline("tests/msn.fold1.quickrank.lmart.xml", "tests/lmart.cc");
+  xml.generate_c_code_baseline("tests/model.xml", "tests/lmart.cc");
 
   // xml.generate_c_code_oblivious_trees("tests/msn.fold1.quickrank.matrixnet.xml", "tests/matrixnet.cc");
 
-  xml.generate_c_code_vectorized("tests/msn.fold1.quickrank.lmart.xml", "tests/lmart-fast.cc");
+  xml.generate_c_code_vectorized("tests/model.xml", "tests/lmart-fast.cc");
 
 }
