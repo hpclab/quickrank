@@ -19,6 +19,7 @@
 #include "data/queryresults.h"
 #include "io/svml.h"
 #include <cmath>
+#include <iomanip>
 
 BOOST_AUTO_TEST_CASE( Horizontal_Dataset_Test ) {
 
@@ -26,6 +27,10 @@ BOOST_AUTO_TEST_CASE( Horizontal_Dataset_Test ) {
   quickrank::io::Svml reader;
   std::unique_ptr<quickrank::data::Dataset> dataset = reader.read_horizontal(
       "tests/data/msn1.fold1.train.5k.txt");
+
+  // 226244459
+  // std::cout << std::setprecision(16) << *(dataset->at(4329, 127)) << std::endl;
+  // std::cout << std::setprecision(16) << 226244459.0f << std::endl;
 
   BOOST_CHECK_EQUAL(dataset->num_features(), 136);
   BOOST_CHECK_EQUAL(dataset->num_instances(), 5000);
