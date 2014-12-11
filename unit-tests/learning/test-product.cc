@@ -25,16 +25,27 @@
 
 #include <cmath>
 
+
+void precompute(unsigned int num_docs, unsigned int num_fx, double* scores, double* w, float* data, unsigned int skip) {
+#pragma omp parallel for //num_threads(2)
+  for (unsigned int d = 0; d < num_docs; d++) {
+    for (unsigned int f = 0; f < num_fx; f++) {
+      if (f!=skip)
+	scores[d] += w[f]*data[d*num_fx + f];
+    }
+  }
+}
+
 BOOST_AUTO_TEST_CASE( test_product ) {
 
-  unsigned int cache_size = 3000000/sizeof(float);
+  unsigned int cache_size = 2000000/sizeof(float);
   unsigned int num_rounds = 10;
   unsigned int num_docs = 10*cache_size; // this is more than 3MB
   unsigned int num_fx = 136;
 
   std::cout << "Num docs: " << num_docs << std::endl;
 
-  float* scores = new float[num_docs]();
+  double* scores = new double[num_docs]();
 
   std::cout << "init data" << std::endl;
   float* data = new float[num_docs * num_fx];
@@ -42,10 +53,11 @@ BOOST_AUTO_TEST_CASE( test_product ) {
     data[i] = static_cast<float>(rand())
         / (static_cast<float>(RAND_MAX / 10.0));
   std::cout << "init weights" << std::endl;
-  float* w = new float[num_fx];
+  double* w = new double[num_fx];
   for (unsigned int i = 0; i < num_fx; i++)
-    w[i] = static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / 10.0));
+    w[i] = static_cast<double>(rand()) / (static_cast<double>(RAND_MAX / 10.0));
 
+  /*
   auto start_serial = std::chrono::high_resolution_clock::now();
   for (unsigned int r = 0; r < num_rounds; r++) {
     for (unsigned int d = 0; d < num_docs; d++) {
@@ -57,15 +69,17 @@ BOOST_AUTO_TEST_CASE( test_product ) {
   auto end_serial = std::chrono::high_resolution_clock::now();
   double time_serial = std::chrono::duration_cast<std::chrono::duration<double>>(
       end_serial - start_serial).count();
+  */
 
   auto start_parallel = std::chrono::high_resolution_clock::now();
   for (unsigned int r = 0; r < num_rounds; r++) {
-#pragma omp parallel for //num_threads(2)
-    for (unsigned int d = 0; d < num_docs; d++) {
-      for (unsigned int f = 0; f < num_fx; f++) {
-        scores[d] += w[f]*data[d*num_fx + f];
-      }
-    }
+    precompute(num_docs, num_fx, scores, w, data, r);
+    //#pragma omp parallel for //num_threads(2)
+    //for (unsigned int d = 0; d < num_docs; d++) {
+    //  for (unsigned int f = 0; f < num_fx; f++) {
+    //    scores[d] += w[f]*data[d*num_fx + f];
+    //  }
+    //}
   }
   auto end_parallel = std::chrono::high_resolution_clock::now();
   double time_parallel = std::chrono::duration_cast<std::chrono::duration<double>>(
@@ -78,7 +92,7 @@ BOOST_AUTO_TEST_CASE( test_product ) {
           / (static_cast<float>(RAND_MAX) / num_docs))]
       << std::endl;
 
-  std::cout << "Serial time: " << time_serial << std::endl;
+  //std::cout << "Serial time: " << time_serial << std::endl;
   std::cout << "Parallel time: " << time_parallel << std::endl;
 
 
