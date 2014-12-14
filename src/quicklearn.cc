@@ -81,7 +81,6 @@
 
 namespace po = boost::program_options;
 
-
 /// \todo TODO: To be moved elsewhere
 std::shared_ptr<quickrank::metric::ir::Metric> metric_factory(
     std::string metric, unsigned int cutoff) {
@@ -111,6 +110,7 @@ int main(int argc, char *argv[]) {
             << "# ##      quickrank@.isti.cnr.it        ## #" << std::endl
             << "# ## ================================== ## #" << std::endl;
   std::cout << std::fixed;
+  srand(time(NULL));
 
   // default parameters
   std::string algorithm_string = quickrank::learning::forests::LambdaMart::NAME_;
@@ -131,13 +131,17 @@ int main(int argc, char *argv[]) {
   std::string test_filename;
   std::string features_filename;
   std::string model_filename;
+  std::string scores_filename;
   std::string xml_filename;
   std::string c_filename;
   std::string model_code_type;
 
+  // data structures
+  std::shared_ptr<quickrank::learning::LTR_Algorithm> ranking_algorithm;
+
   // Declare the supported options.
-  po::options_description learning_desc("Training options");
-  learning_desc.add_options()(
+  po::options_description learning_options("Training options");
+  learning_options.add_options()(
       "algo",
       po::value<std::string>(&algorithm_string)->default_value(
           algorithm_string),
@@ -145,7 +149,7 @@ int main(int argc, char *argv[]) {
           + quickrank::learning::forests::LambdaMart::NAME_ + "|"
           + quickrank::learning::forests::MatrixNet::NAME_ + "|"
           + quickrank::learning::CustomLTR::NAME_ + "]").c_str());
-  learning_desc.add_options()(
+  learning_options.add_options()(
       "train-metric",
       po::value<std::string>(&train_metric_string)->default_value(
           train_metric_string),
@@ -153,11 +157,65 @@ int main(int argc, char *argv[]) {
           + quickrank::metric::ir::Ndcg::NAME_ + "|"
           + quickrank::metric::ir::Tndcg::NAME_ + "|"
           + quickrank::metric::ir::Map::NAME_ + "]").c_str());
-  learning_desc.add_options()(
+  learning_options.add_options()(
       "train-cutoff",
       po::value<unsigned int>(&train_cutoff)->default_value(train_cutoff),
       "set train metric cutoff");
-  learning_desc.add_options()(
+  learning_options.add_options()(
+      "partial",
+      po::value<unsigned int>(&partial_save)->default_value(partial_save),
+      "set partial file save frequency");
+  learning_options.add_options()(
+      "train",
+      po::value<std::string>(&training_filename)->default_value(
+          training_filename),
+      "set training file");
+  learning_options.add_options()(
+      "valid",
+      po::value<std::string>(&validation_filename)->default_value(
+          validation_filename),
+      "set validation file");
+  learning_options.add_options()(
+      "features",
+      po::value<std::string>(&features_filename)->default_value(
+          features_filename),
+      "set features file");
+  learning_options.add_options()(
+      "model",
+      po::value<std::string>(&model_filename)->default_value(model_filename),
+      "set output model file for training or input model file for testing");
+
+  po::options_description tree_model_options(
+      "Training options for tree-based models");
+  tree_model_options.add_options()(
+      "num-trees", po::value<unsigned int>(&ntrees)->default_value(ntrees),
+      "set number of trees");
+  tree_model_options.add_options()(
+      "shrinkage", po::value<float>(&shrinkage)->default_value(shrinkage),
+      "set shrinkage");
+  tree_model_options.add_options()(
+      "num-thresholds",
+      po::value<unsigned int>(&nthresholds)->default_value(nthresholds),
+      "set number of thresholds");
+  tree_model_options.add_options()(
+      "min-leaf-support",
+      po::value<unsigned int>(&minleafsupport)->default_value(minleafsupport),
+      "set minimum number of leaf support");
+  tree_model_options.add_options()(
+      "end-after-rounds",
+      po::value<unsigned int>(&esr)->default_value(esr),
+      "set num. rounds with no boost in validation before ending (if 0 disabled)");
+  tree_model_options.add_options()(
+      "num-leaves",
+      po::value<unsigned int>(&ntreeleaves)->default_value(ntreeleaves),
+      "set number of leaves [applies only to Mart/LambdaMart]");
+  tree_model_options.add_options()(
+      "tree-depth",
+      po::value<unsigned int>(&treedepth)->default_value(treedepth),
+      "set tree depth [applies only to MatrixNet]");
+
+  po::options_description testing_options("Testing options");
+  testing_options.add_options()(
       "test-metric",
       po::value<std::string>(&test_metric_string)->default_value(
           test_metric_string),
@@ -165,99 +223,51 @@ int main(int argc, char *argv[]) {
           + quickrank::metric::ir::Ndcg::NAME_ + "|"
           + quickrank::metric::ir::Tndcg::NAME_ + "|"
           + quickrank::metric::ir::Map::NAME_ + "]").c_str());
-  learning_desc.add_options()(
+  testing_options.add_options()(
       "test-cutoff",
       po::value<unsigned int>(&test_cutoff)->default_value(test_cutoff),
       "set test metric cutoff");
-  learning_desc.add_options()(
-      "partial",
-      po::value<unsigned int>(&partial_save)->default_value(partial_save),
-      "set partial file save frequency");
-  learning_desc.add_options()(
-      "train",
-      po::value<std::string>(&training_filename)->default_value(
-          training_filename),
-      "set training file");
-  learning_desc.add_options()(
-      "valid",
-      po::value<std::string>(&validation_filename)->default_value(
-          validation_filename),
-      "set validation file");
-  learning_desc.add_options()(
+  testing_options.add_options()(
       "test",
       po::value<std::string>(&test_filename)->default_value(test_filename),
       "set testing file");
-  learning_desc.add_options()(
-      "features",
-      po::value<std::string>(&features_filename)->default_value(
-          features_filename),
-      "set features file");
-  learning_desc.add_options()(
-      "model",
-      po::value<std::string>(&model_filename)->default_value(model_filename),
-      "set output model file");
+  testing_options.add_options()(
+      "scores",
+      po::value<std::string>(&scores_filename)->default_value(scores_filename),
+      "set output scores file");
 
-  po::options_description model_desc("Tree-based models options");
-  model_desc.add_options()(
-      "num-trees", po::value<unsigned int>(&ntrees)->default_value(ntrees),
-      "set number of trees");
-  model_desc.add_options()(
-      "shrinkage", po::value<float>(&shrinkage)->default_value(shrinkage),
-      "set shrinkage");
-  model_desc.add_options()(
-      "num-thresholds",
-      po::value<unsigned int>(&nthresholds)->default_value(nthresholds),
-      "set number of thresholds");
-  model_desc.add_options()(
-      "min-leaf-support",
-      po::value<unsigned int>(&minleafsupport)->default_value(minleafsupport),
-      "set minimum number of leaf support");
-  model_desc.add_options()(
-      "end-after-rounds",
-      po::value<unsigned int>(&esr)->default_value(esr),
-      "set num. rounds with no boost in validation before ending (if 0 disabled)");
-
-  po::options_description lm_model_desc("Mart/LambdaMart options");
-  lm_model_desc.add_options()(
-      "num-leaves",
-      po::value<unsigned int>(&ntreeleaves)->default_value(ntreeleaves),
-      "set number of leaves");
-
-  po::options_description mn_model_desc("MatrixNet options");
-  mn_model_desc.add_options()(
-      "tree-depth",
-      po::value<unsigned int>(&treedepth)->default_value(treedepth),
-      "set tree depth");
-
-  po::options_description score_desc("Scoring options");
-  score_desc.add_options()("dump-model",
-                           po::value<std::string>(&xml_filename)->default_value(xml_filename),
-                           "set XML model file path")(
-      "dump-code", po::value<std::string>(&c_filename)->default_value(c_filename),
+  po::options_description fast_scoring_options("Fast Scoring options");
+  fast_scoring_options.add_options()(
+      "dump-model",
+      po::value<std::string>(&xml_filename)->default_value(xml_filename),
+      "set XML model file path")(
+      "dump-code",
+      po::value<std::string>(&c_filename)->default_value(c_filename),
       "set C code file path")(
       "dump-type",
       po::value<std::string>(&model_code_type)->default_value("baseline"),
       "set C code generation strategy. Allowed options are: \"baseline\" and \"oblivious\".");
 
   po::options_description all_desc("Allowed options");
-  all_desc.add(learning_desc).add(model_desc).add(lm_model_desc).add(
-      mn_model_desc).add(score_desc);
+  all_desc.add(learning_options).add(tree_model_options).add(testing_options)
+      .add(fast_scoring_options);
   all_desc.add_options()("help,h", "produce help message");
 
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, all_desc), vm);
   po::notify(vm);
 
+  // Show Help
   if (vm.count("help")) {
     std::cout << all_desc << "\n";
     return 1;
   }
 
-  if (vm.count("algo")) {
+  // Run Training
+  if (!training_filename.empty()) {
 
     // Create model
     boost::to_upper(algorithm_string);
-    std::shared_ptr<quickrank::learning::LTR_Algorithm> ranking_algorithm;
     if (algorithm_string == quickrank::learning::forests::LambdaMart::NAME_)
       ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
           new quickrank::learning::forests::LambdaMart(ntrees, shrinkage,
@@ -290,6 +300,30 @@ int main(int argc, char *argv[]) {
       exit(EXIT_FAILURE);
     }
 
+    //show ranker parameters
+    std::cout << "#" << std::endl << *ranking_algorithm;
+    std::cout << "#" << std::endl << "# training scorer: " << *training_metric
+              << std::endl;
+
+    quickrank::metric::Evaluator::training_phase(ranking_algorithm,
+                                                 training_metric,
+                                                 training_filename,
+                                                 validation_filename,
+                                                 features_filename,
+                                                 model_filename, partial_save);
+  }
+
+  if (!test_filename.empty()) {
+    if (!ranking_algorithm) {
+      std::cout << "# Loading model from file " << model_filename << std::endl;
+      ranking_algorithm = quickrank::learning::LTR_Algorithm::load_model_from_file(model_filename);
+      std::cout << "#" << std::endl << *ranking_algorithm;
+      if (!ranking_algorithm) {
+        std::cout << " !! Unable to load model from file." << std::endl;
+        exit(EXIT_FAILURE);
+      }
+    }
+
     boost::to_upper(test_metric_string);
     std::shared_ptr<quickrank::metric::ir::Metric> testing_metric =
         metric_factory(test_metric_string, test_cutoff);
@@ -298,28 +332,15 @@ int main(int argc, char *argv[]) {
       exit(EXIT_FAILURE);
     }
 
-    //show ranker parameters
-    std::cout << "#" << std::endl << *ranking_algorithm;
-    std::cout << "#" << std::endl << "# training scorer: " << *training_metric
-              << std::endl << "# test scorer: " << *testing_metric << std::endl
-              << "#" << std::endl;
-
-    // FILE STUFF
-
-    //set seed for rand()
-    srand(time(NULL));
-
-    quickrank::metric::Evaluator::evaluate(ranking_algorithm, training_metric,
-                                           testing_metric, training_filename,
-                                           validation_filename, test_filename,
-                                           features_filename, model_filename,
-                                           partial_save);
-
-    return EXIT_SUCCESS;
+    std::cout << "# test scorer: " << *testing_metric << std::endl << "#"
+              << std::endl;
+    quickrank::metric::Evaluator::testing_phase(ranking_algorithm,
+                                                 testing_metric,
+                                                 test_filename,
+                                                 scores_filename);
   }
 
-  // SCORING STUFF
-
+  // Fast Scoring
 
   // if the dump files are set, it proceeds to dump the model by following a given strategy.
   if (xml_filename != "" && c_filename != "") {

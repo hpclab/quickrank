@@ -105,13 +105,13 @@ std::shared_ptr<LTR_Algorithm> LTR_Algorithm::load_model_from_file(
   }
 
   std::string ranker_type = info_ptree.get<std::string>("type");
-  if (ranker_type == "MART")
+  if (ranker_type == forests::Mart::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
         new forests::Mart(info_ptree, ensemble_ptree));
-  if (ranker_type == "LAMBDAMART")
+  if (ranker_type == forests::LambdaMart::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
         new forests::LambdaMart(info_ptree, ensemble_ptree));
-  if (ranker_type == "MATRIXNET")
+  if (ranker_type == forests::MatrixNet::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
         new forests::MatrixNet(info_ptree, ensemble_ptree));
 

@@ -32,8 +32,6 @@ namespace quickrank {
 namespace learning {
 namespace forests {
 
-
-
 const std::string Mart::NAME_ = "MART";
 
 Mart::Mart(const boost::property_tree::ptree &info_ptree,
@@ -57,29 +55,29 @@ Mart::Mart(const boost::property_tree::ptree &info_ptree,
   ensemble_model_.set_capacity(ntrees_);
 
   // loop over trees
-  BOOST_FOREACH(const boost::property_tree::ptree::value_type& tree, model_ptree) {
-    RTNode* root = NULL;
-    float tree_weight = tree.second.get<double>("<xmlattr>.weight", shrinkage_);
+  BOOST_FOREACH(const boost::property_tree::ptree::value_type& tree, model_ptree){
+  RTNode* root = NULL;
+  float tree_weight = tree.second.get<double>("<xmlattr>.weight", shrinkage_);
 
-    // find the root of the tree
-    BOOST_FOREACH(const boost::property_tree::ptree::value_type& node, tree.second ) {
-      if (node.first == "split") {
-        root = io::RTNode_parse_xml(node.second);
-        break;
-      }
+  // find the root of the tree
+  BOOST_FOREACH(const boost::property_tree::ptree::value_type& node, tree.second ) {
+    if (node.first == "split") {
+      root = io::RTNode_parse_xml(node.second);
+      break;
     }
-
-    if (root == NULL) {
-      std::cerr << "!!! Unable to parse tree from XML model." << std::endl;
-      exit(EXIT_FAILURE);
-    }
-
-    ensemble_model_.push(root, tree_weight, -1);
   }
+
+  if (root == NULL) {
+    std::cerr << "!!! Unable to parse tree from XML model." << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  ensemble_model_.push(root, tree_weight, -1);
+}
 }
 
 std::ostream& Mart::put(std::ostream& os) const {
-  os << "# Ranker: MART" << std::endl << "# max no. of trees = " << ntrees_
+  os << "# Ranker: "<< name() << std::endl << "# max no. of trees = " << ntrees_
      << std::endl << "# no. of tree leaves = " << nleaves_ << std::endl
      << "# shrinkage = " << shrinkage_ << std::endl << "# min leaf support = "
      << minleafsupport_ << std::endl;
@@ -216,11 +214,13 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   //set max capacity of the ensamble
   ensemble_model_.set_capacity(ntrees_);
   //start iterations
-  for (unsigned int m = 0;
-      m < ntrees_
-          && (valid_iterations_ == 0
-              || m <= validation_bestmodel_ + valid_iterations_); ++m) {
-    compute_pseudoresponses(training_dataset, scorer.get());
+  for (unsigned int m = 0; m < ntrees_; ++m) {
+    if (validation_dataset
+        && (valid_iterations_ != 0
+            && m > validation_bestmodel_ + valid_iterations_))
+      break;
+
+      compute_pseudoresponses(training_dataset, scorer.get());
 
     //update the histogram with these training_seting labels (the feature histogram will be used to find the best tree rtnode)
     hist_->update(pseudoresponses_, training_dataset->num_instances());
