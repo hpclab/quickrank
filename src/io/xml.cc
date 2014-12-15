@@ -76,21 +76,21 @@ RTNode* RTNode_parse_xml(const boost::property_tree::ptree &split_xml) {
 void model_node_to_c_baseline(const boost::property_tree::ptree &split_xml,
                               std::stringstream &os) {
   unsigned int feature_id = 0;
-  float threshold = 0.0f;
-  double prediction = 0.0;
+  std::string threshold;
+  std::string prediction;
   bool is_leaf = false;
   const boost::property_tree::ptree* left = NULL;
   const boost::property_tree::ptree* right = NULL;
 
   BOOST_FOREACH(const boost::property_tree::ptree::value_type& split_child, split_xml ){
   if (split_child.first == "output") {
-    prediction = split_child.second.get_value<double>();
+    prediction = split_child.second.get_value<std::string>();
     is_leaf = true;
     break;
   } else if (split_child.first == "feature") {
     feature_id = split_child.second.get_value<unsigned int>();
   } else if (split_child.first == "threshold") {
-    threshold = split_child.second.get_value<float>();
+    threshold = split_child.second.get_value<std::string>();
   } else if (split_child.first == "split") {
     std::string pos = split_child.second.get<std::string>("<xmlattr>.pos");
     if (pos == "left")
@@ -101,13 +101,10 @@ void model_node_to_c_baseline(const boost::property_tree::ptree &split_xml,
 }
 
   if (is_leaf)
-    os << std::setprecision(std::numeric_limits<quickrank::Score>::digits10)
-       << prediction;
+    os << prediction;
   else {
     /// \todo TODO: this should be changed with item mapping
-    os << "( v[" << feature_id - 1 << "] <= "
-       << std::setprecision(std::numeric_limits<quickrank::Feature>::digits10)
-       << threshold << "f";
+    os << "( v[" << feature_id - 1 << "] <= " << threshold;
     os << " ? ";
     model_node_to_c_baseline(*left, os);
     os << " : ";
@@ -119,14 +116,14 @@ void model_node_to_c_baseline(const boost::property_tree::ptree &split_xml,
 void model_node_to_c_oblivious_trees(
     const boost::property_tree::ptree &split_xml, std::stringstream &os) {
 
-  double prediction = 0.0;
+  std::string prediction;
   bool is_leaf = false;
   const boost::property_tree::ptree* left = NULL;
   const boost::property_tree::ptree* right = NULL;
 
   BOOST_FOREACH(const boost::property_tree::ptree::value_type& split_child, split_xml ){
   if (split_child.first == "output") {
-    prediction = split_child.second.get_value<Score>();
+    prediction = split_child.second.get_value<std::string>();
     is_leaf = true;
     break;
   } else if (split_child.first == "split") {
@@ -139,8 +136,7 @@ void model_node_to_c_oblivious_trees(
 }
 
   if (is_leaf)
-    os << std::setprecision(std::numeric_limits<quickrank::Score>::digits10)
-       << prediction;
+    os << prediction;
   else {
     /// \todo TODO: this should be changed with item mapping
     //os << " ";
