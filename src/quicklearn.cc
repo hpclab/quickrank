@@ -316,7 +316,9 @@ int main(int argc, char *argv[]) {
   if (!test_filename.empty()) {
     if (!ranking_algorithm) {
       std::cout << "# Loading model from file " << model_filename << std::endl;
-      ranking_algorithm = quickrank::learning::LTR_Algorithm::load_model_from_file(model_filename);
+      ranking_algorithm =
+          quickrank::learning::LTR_Algorithm::load_model_from_file(
+              model_filename);
       std::cout << "#" << std::endl << *ranking_algorithm;
       if (!ranking_algorithm) {
         std::cout << " !! Unable to load model from file." << std::endl;
@@ -335,9 +337,8 @@ int main(int argc, char *argv[]) {
     std::cout << "# test scorer: " << *testing_metric << std::endl << "#"
               << std::endl;
     quickrank::metric::Evaluator::testing_phase(ranking_algorithm,
-                                                 testing_metric,
-                                                 test_filename,
-                                                 scores_filename);
+                                                testing_metric, test_filename,
+                                                scores_filename);
   }
 
   // Fast Scoring
@@ -350,11 +351,12 @@ int main(int argc, char *argv[]) {
                 << xml_filename << std::endl;
       xml.generate_c_code_baseline(xml_filename, c_filename);
       std::cout << "done.";
-    } else
+    } else {
       std::cout << "applying oblivious strategy for C code generation to: "
                 << xml_filename << std::endl;
-    xml.generate_c_code_oblivious_trees(xml_filename, c_filename);
-    std::cout << "done.";
+      xml.generate_c_code_oblivious_trees(xml_filename, c_filename);
+      std::cout << "done.";
+    }
   }
 
   return EXIT_SUCCESS;

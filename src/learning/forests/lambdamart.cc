@@ -53,7 +53,7 @@ LambdaMart::LambdaMart(const boost::property_tree::ptree &info_ptree,
   ensemble_model_.set_capacity(ntrees_);
 
   // loop over trees
-  BOOST_FOREACH(const boost::property_tree::ptree::value_type& tree, model_ptree){
+  BOOST_FOREACH(const boost::property_tree::ptree::value_type& tree, model_ptree ){
   RTNode* root = NULL;
   float tree_weight = tree.second.get<double>("<xmlattr>.weight", shrinkage_);
 

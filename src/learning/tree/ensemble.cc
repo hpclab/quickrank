@@ -73,12 +73,12 @@ void Ensemble::write_outputtofile(FILE *f) {
 
 std::ofstream& Ensemble::save_model_to_file(std::ofstream& os) const {
   auto old_precision = os.precision();
+  os.setf(std::ios::floatfield, std::ios::fixed);
   os << "\t<ensemble>" << std::endl;
   for (unsigned int i = 0; i < size; ++i) {
     os << std::setprecision(3);
     os << "\t\t<tree id=\"" << i + 1 << "\" weight=\"" << arr[i].weight << "\">"
        << std::endl;
-    os << std::setprecision(15);
     if (arr[i].root) {
       os << "\t\t\t<split>" << std::endl;
       arr[i].root->save_model_to_file(os, 3);

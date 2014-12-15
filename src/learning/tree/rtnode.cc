@@ -11,6 +11,8 @@
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
 #include <fstream>
+#include <iomanip>
+#include <limits>
 
 #include "learning/tree/rtnode.h"
 
@@ -54,10 +56,12 @@ std::ofstream& RTNode::save_model_to_file(std::ofstream& os,
   std::string indent = "";
   for (int i = 0; i < indentsize; i++)
     indent += "\t";
-  if (featureid == uint_max)
+  if (featureid == uint_max) {
+    os << std::setprecision(std::numeric_limits<quickrank::Score>::digits10);
     os << indent << "\t<output> " << avglabel << " </output>" << std::endl;
-  else {
+  } else {
     os << indent << "\t<feature> " << featureid << " </feature>" << std::endl;
+    os << std::setprecision(std::numeric_limits<quickrank::Feature>::digits10);
     os << indent << "\t<threshold> " << threshold << " </threshold>"
        << std::endl;
     os << indent << "\t<split pos=\"left\">" << std::endl;

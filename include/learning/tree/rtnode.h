@@ -107,6 +107,11 @@ class RTNode {
 
   quickrank::Score score_instance(const quickrank::Feature* d,
                                   const unsigned int offset) const {
+    /*if (featureidx == uint_max)
+      std::cout << avglabel << std::endl;
+    else
+      std::cout << d[featureidx * offset] << "<=" << threshold << std::endl;
+      */
     return
         featureidx == uint_max ?
             avglabel :

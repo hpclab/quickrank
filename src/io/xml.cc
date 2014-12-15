@@ -22,6 +22,8 @@
 #include <memory>
 #include <fstream>
 #include <sstream>
+#include <iomanip>
+#include <limits>
 
 #include "io/xml.h"
 
@@ -40,18 +42,18 @@ RTNode* RTNode_parse_xml(const boost::property_tree::ptree &split_xml) {
   bool is_leaf = false;
 
   unsigned int feature_id = 0;
-  float threshold = 0.0f;
-  double prediction = 0.0;
+  Feature threshold = 0.0f;
+  Score prediction = 0.0;
 
   BOOST_FOREACH(const boost::property_tree::ptree::value_type& split_child, split_xml ){
   if (split_child.first == "output") {
-    prediction = split_child.second.get_value<double>();
+    prediction = split_child.second.get_value<Score>();
     is_leaf = true;
     break;
   } else if (split_child.first == "feature") {
     feature_id = split_child.second.get_value<unsigned int>();
   } else if (split_child.first == "threshold") {
-    threshold = split_child.second.get_value<float>();
+    threshold = split_child.second.get_value<Feature>();
   } else if (split_child.first == "split") {
     std::string pos = split_child.second.get<std::string>("<xmlattr>.pos");
     if (pos == "left")
@@ -99,11 +101,13 @@ void model_node_to_c_baseline(const boost::property_tree::ptree &split_xml,
 }
 
   if (is_leaf)
-    os << std::setprecision(15) << prediction;
+    os << std::setprecision(std::numeric_limits<quickrank::Score>::digits10)
+       << prediction;
   else {
     /// \todo TODO: this should be changed with item mapping
-    os << "( v[" << feature_id - 1 << "] <= " << std::setprecision(15)
-       << threshold;
+    os << "( v[" << feature_id - 1 << "] <= "
+       << std::setprecision(std::numeric_limits<quickrank::Feature>::digits10)
+       << threshold << "f";
     os << " ? ";
     model_node_to_c_baseline(*left, os);
     os << " : ";
@@ -122,7 +126,7 @@ void model_node_to_c_oblivious_trees(
 
   BOOST_FOREACH(const boost::property_tree::ptree::value_type& split_child, split_xml ){
   if (split_child.first == "output") {
-    prediction = split_child.second.get_value<double>();
+    prediction = split_child.second.get_value<Score>();
     is_leaf = true;
     break;
   } else if (split_child.first == "split") {
@@ -135,7 +139,8 @@ void model_node_to_c_oblivious_trees(
 }
 
   if (is_leaf)
-    os << std::setprecision(15) << prediction;
+    os << std::setprecision(std::numeric_limits<quickrank::Score>::digits10)
+       << prediction;
   else {
     /// \todo TODO: this should be changed with item mapping
     //os << " ";
@@ -156,7 +161,7 @@ void model_tree_get_tests(const boost::property_tree::ptree &tree_xml,
   bool is_leaf = false;
   for (auto p_node = tree_xml.begin(); p_node != tree_xml.end(); p_node++) {
     if (p_node->first == "split") {
-      std::string pos = p_node->second.get<std::string>("<xmlattr>.pos");
+      std::string pos = p_node->second.get < std::string > ("<xmlattr>.pos");
       if (pos == "left")
         left = &(p_node->second);
       else
@@ -177,7 +182,6 @@ void model_tree_get_tests(const boost::property_tree::ptree &tree_xml,
   model_tree_get_tests(*right, features, thresholds);
 }
 
-
 void Xml::generate_c_code_vectorized(std::string model_filename,
                                      std::string code_filename) {
   if (model_filename.empty()) {
@@ -185,7 +189,7 @@ void Xml::generate_c_code_vectorized(std::string model_filename,
     exit(EXIT_FAILURE);
   }
 
-  // parse XML
+// parse XML
   boost::property_tree::ptree xml_model;
   std::ifstream is;
   is.open(model_filename, std::ifstream::in);
@@ -196,7 +200,7 @@ void Xml::generate_c_code_vectorized(std::string model_filename,
   bc::list<bc::list<unsigned int> > tree_features;
   bc::list<bc::list<float> > tree_thresholds;
 
-  // collect data
+// collect data
   auto ensemble = xml_model.get_child("ranker.ensemble");
   for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); ++p_tree) {
     boost::container::list<unsigned int> features;
@@ -207,29 +211,28 @@ void Xml::generate_c_code_vectorized(std::string model_filename,
     tree_thresholds.push_back(thresholds);
   }
 
-  // create output stream
+// create output stream
   std::stringstream source_code;
-  source_code << "double ranker(float *v) {" << std::endl
-              << "  double score =";
+  source_code << "double ranker(float *v) {" << std::endl << "  double score =";
 
-  // iterate over trees
+// iterate over trees
   auto features = tree_features.begin();
   auto thresholds = tree_thresholds.begin();
-  unsigned int t=0;
+  unsigned int t = 0;
   for (; features != tree_features.end() && thresholds != tree_thresholds.end();
       ++features, ++thresholds, ++t) {
     // iterate over nodes of the given tree
     source_code << std::endl << "    ";
-    if (t!=0)
+    if (t != 0)
       source_code << " + ";
     source_code << "(double)( ";
     auto f = features->begin();
     auto t = thresholds->begin();
     unsigned int l = 0;
     for (; f != features->end() && t != thresholds->end(); ++f, ++t, ++l) {
-      if (l!=0)
+      if (l != 0)
         source_code << " | ";
-      source_code << "((v[" << *f << "]<=" << *t << ")<<"<<l<<")";
+      source_code << "((v[" << *f << "]<=" << *t << ")<<" << l << ")";
     }
     source_code << " )";
   }
@@ -250,27 +253,28 @@ void Xml::generate_c_code_baseline(std::string model_filename,
     std::cerr << "!!! Model filename is empty." << std::endl;
     exit(EXIT_FAILURE);
   }
-  // parse XML
+// parse XML
   boost::property_tree::ptree xml_tree;
   std::ifstream is;
   is.open(model_filename, std::ifstream::in);
   boost::property_tree::read_xml(is, xml_tree);
   is.close();
 
-  // create output stream
+// create output stream
   std::stringstream source_code;
+  source_code.setf(std::ios::floatfield, std::ios::fixed);
 
   source_code << "double ranker(float* v) {" << std::endl;
   source_code << "\treturn 0.0 ";
   BOOST_FOREACH(const boost::property_tree::ptree::value_type& tree, xml_tree.get_child("ranker.ensemble")){
   float tree_weight = tree.second.get("<xmlattr>.weight", 1.0f);
 
-  // find the root of the tree
+// find the root of the tree
   boost::property_tree::ptree root;
   BOOST_FOREACH(const boost::property_tree::ptree::value_type& node, tree.second ) {
     if (node.first == "split") {
       source_code << std::endl << "\t\t + " << std::setprecision(3)
-      << tree_weight << " * ";
+      << tree_weight << "f * ";
       model_node_to_c_baseline(node.second, source_code);
     }
   }
@@ -290,36 +294,37 @@ void Xml::generate_c_code_oblivious_trees(std::string model_filename,
     exit(EXIT_FAILURE);
   }
 
-  // parse XML
+// parse XML
   boost::property_tree::ptree xml_tree;
   std::ifstream is;
   is.open(model_filename, std::ifstream::in);
   boost::property_tree::read_xml(is, xml_tree);
   is.close();
 
-  // create output stream
+// create output stream
   std::stringstream source_code;
 
   auto ensemble = xml_tree.get_child("ranker.ensemble");
   unsigned int trees = ensemble.size();
   unsigned int depth = xml_tree.get<unsigned int>("ranker.info.depth");
 
-  // Forests info
+// Forests info
   source_code << "#define N " << trees << " // no. of trees" << std::endl;
   source_code << "#define M " << depth << " // max tree depth" << std::endl;
   source_code << std::endl;
 
-  // Tree Weights
-  source_code << "double ws[N] = { ";
+// Tree Weights
+  source_code.setf(std::ios::floatfield, std::ios::fixed);
+  source_code << "float ws[N] = { ";
   for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); p_tree++) {
     if (p_tree != ensemble.begin())
       source_code << ", ";
     float tree_weight = p_tree->second.get("<xmlattr>.weight", 1.0f);
-    source_code << tree_weight;
+    source_code << tree_weight << "f";
   }
   source_code << " };" << std::endl << std::endl;
 
-  // Actual Tree Depths
+// Actual Tree Depths
   int counter;
   source_code << "unsigned int ds[N] = { ";
   for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); p_tree++) {
@@ -336,7 +341,7 @@ void Xml::generate_c_code_oblivious_trees(std::string model_filename,
   }
   source_code << " };" << std::endl << std::endl;
 
-  // Leaf Outputs
+// Leaf Outputs
   source_code << "double os[N][1 << M] = { " << std::endl;
   for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); p_tree++) {
     if (p_tree != ensemble.begin())
@@ -348,7 +353,7 @@ void Xml::generate_c_code_oblivious_trees(std::string model_filename,
   }
   source_code << std::endl << "};" << std::endl << std::endl;
 
-  // Features ids
+// Features ids
   source_code << "unsigned int fs[N][M] = { " << std::endl;
   for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); p_tree++) {
     if (p_tree != ensemble.begin())
@@ -366,8 +371,10 @@ void Xml::generate_c_code_oblivious_trees(std::string model_filename,
   }
   source_code << std::endl << "};" << std::endl << std::endl;
 
-  // Thresholds values
+// Thresholds values
   source_code << "float ts[N][M] = { " << std::endl;
+  source_code << std::setprecision(std::numeric_limits<Feature>::digits10);
+
   for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); p_tree++) {
     if (p_tree != ensemble.begin())
       source_code << "," << std::endl;
@@ -376,7 +383,7 @@ void Xml::generate_c_code_oblivious_trees(std::string model_filename,
     auto p_split = p_tree->second.get_child("split");
     std::string separator = "";
     while (p_split.size() != 2) {
-      source_code << separator << p_split.get<float>("threshold");
+      source_code << separator << p_split.get < Feature > ("threshold");
       p_split = p_split.get_child("split");
       separator = ", ";
     }
@@ -389,8 +396,8 @@ void Xml::generate_c_code_oblivious_trees(std::string model_filename,
   source_code
       << "unsigned int leaf_id(float *v, unsigned int const *fids, float const *thresholds, const unsigned int m) {"
       << std::endl << "  unsigned int leafidx = 0;" << std::endl
-      << "  for (unsigned int i = 0; i<M && i < m; ++i)" << std::endl
-      << "    leafidx |= SHL( v[fids[i]-1]>thresholds[i], M-1-i);" << std::endl
+      << "  for (unsigned int i=0; i<m; ++i)" << std::endl
+      << "    leafidx |= SHL( v[fids[i]-1]>thresholds[i], m-1-i);" << std::endl
       << "  return leafidx;" << std::endl << "}" << std::endl << std::endl;
 
   source_code << "double ranker(float *v) {" << std::endl
