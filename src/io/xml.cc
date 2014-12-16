@@ -17,6 +17,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/iterator/zip_iterator.hpp>
 #include <boost/range.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <string>
 #include <memory>
@@ -85,12 +86,14 @@ void model_node_to_c_baseline(const boost::property_tree::ptree &split_xml,
   BOOST_FOREACH(const boost::property_tree::ptree::value_type& split_child, split_xml ){
   if (split_child.first == "output") {
     prediction = split_child.second.get_value<std::string>();
+    boost::algorithm::trim(prediction);
     is_leaf = true;
     break;
   } else if (split_child.first == "feature") {
     feature_id = split_child.second.get_value<unsigned int>();
   } else if (split_child.first == "threshold") {
     threshold = split_child.second.get_value<std::string>();
+    boost::algorithm::trim(threshold);
   } else if (split_child.first == "split") {
     std::string pos = split_child.second.get<std::string>("<xmlattr>.pos");
     if (pos == "left")
@@ -104,7 +107,8 @@ void model_node_to_c_baseline(const boost::property_tree::ptree &split_xml,
     os << prediction;
   else {
     /// \todo TODO: this should be changed with item mapping
-    os << "( v[" << feature_id - 1 << "] <= " << threshold;
+    os << "( v[" << feature_id - 1 << "] <= ";
+    os << threshold << "f";
     os << " ? ";
     model_node_to_c_baseline(*left, os);
     os << " : ";
