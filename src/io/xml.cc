@@ -383,7 +383,9 @@ void Xml::generate_c_code_oblivious_trees(std::string model_filename,
     auto p_split = p_tree->second.get_child("split");
     std::string separator = "";
     while (p_split.size() != 2) {
-      source_code << separator << p_split.get < Feature > ("threshold");
+      std::string threshold = p_split.get<std::string>("threshold");
+      boost::algorithm::trim(threshold);
+      source_code << separator << threshold << "f";
       p_split = p_split.get_child("split");
       separator = ", ";
     }
