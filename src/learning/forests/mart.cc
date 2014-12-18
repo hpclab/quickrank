@@ -25,8 +25,6 @@
 #include "data/rankedresults.h"
 #include "io/xml.h"
 #include "utils/radix.h"
-#include "utils/qsort.h"
-#include "utils/mergesorter.h"
 
 namespace quickrank {
 namespace learning {
@@ -77,10 +75,10 @@ Mart::Mart(const boost::property_tree::ptree &info_ptree,
 }
 
 std::ostream& Mart::put(std::ostream& os) const {
-  os << "# Ranker: "<< name() << std::endl << "# max no. of trees = " << ntrees_
-     << std::endl << "# no. of tree leaves = " << nleaves_ << std::endl
-     << "# shrinkage = " << shrinkage_ << std::endl << "# min leaf support = "
-     << minleafsupport_ << std::endl;
+  os << "# Ranker: " << name() << std::endl << "# max no. of trees = "
+     << ntrees_ << std::endl << "# no. of tree leaves = " << nleaves_
+     << std::endl << "# shrinkage = " << shrinkage_ << std::endl
+     << "# min leaf support = " << minleafsupport_ << std::endl;
   if (nthresholds_)
     os << "# no. of thresholds = " << nthresholds_ << std::endl;
   else
@@ -220,7 +218,7 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
             && m > validation_bestmodel_ + valid_iterations_))
       break;
 
-      compute_pseudoresponses(training_dataset, scorer.get());
+    compute_pseudoresponses(training_dataset, scorer.get());
 
     //update the histogram with these training_seting labels (the feature histogram will be used to find the best tree rtnode)
     hist_->update(pseudoresponses_, training_dataset->num_instances());
@@ -340,14 +338,16 @@ void Mart::update_modelscores(std::shared_ptr<data::Dataset> dataset,
 
 std::ofstream& Mart::save_model_to_file(std::ofstream& os) const {
   // write ranker description
-  os << "\t<info>" << std::endl << "\t\t<type>" << name() << "</type>"
-     << std::endl << "\t\t<trees>" << ntrees_ << "</trees>" << std::endl
-     << "\t\t<leaves>" << nleaves_ << "</leaves>" << std::endl
-     << "\t\t<shrinkage>" << shrinkage_ << "</shrinkage>" << std::endl
-     << "\t\t<leafsupport>" << minleafsupport_ << "</leafsupport>" << std::endl
-     << "\t\t<discretization>" << nthresholds_ << "</discretization>"
-     << std::endl << "\t\t<estop>" << valid_iterations_ << "</estop>"
-     << std::endl << "\t</info>" << std::endl;
+  os << "\t<info>" << std::endl;
+  os << "\t\t<type>" << name() << "</type>" << std::endl;
+  os << "\t\t<trees>" << ntrees_ << "</trees>" << std::endl;
+  os << "\t\t<leaves>" << nleaves_ << "</leaves>" << std::endl;
+  os << "\t\t<shrinkage>" << shrinkage_ << "</shrinkage>" << std::endl;
+  os << "\t\t<leafsupport>" << minleafsupport_ << "</leafsupport>" << std::endl;
+  os << "\t\t<discretization>" << nthresholds_ << "</discretization>"
+     << std::endl;
+  os << "\t\t<estop>" << valid_iterations_ << "</estop>" << std::endl;
+  os << "\t</info>" << std::endl;
 
   // save xml model
   ensemble_model_.save_model_to_file(os);

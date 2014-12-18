@@ -15,8 +15,6 @@
 
 #include "metric/ir/ndcg.h"
 
-#include "utils/qsort.h" // quick sort (for small input)
-#include "utils/mergesorter.h" // quick sort (for small input)
 
 namespace quickrank {
 namespace metric {
@@ -25,21 +23,16 @@ namespace ir {
 const std::string Ndcg::NAME_ = "NDCG";
 
 MetricScore Ndcg::compute_idcg(const quickrank::data::QueryResults* rl) const {
-  //make a copy of lables
+  //make a copy of labels
   Label* copyoflabels = new Label[rl->num_results()];
   memcpy(copyoflabels, rl->labels(), sizeof(Label) * rl->num_results());
   //sort the copy
   std::sort(copyoflabels, copyoflabels + rl->num_results(),
             std::greater<int>());
   //compute dcg
-  data::QueryResults* sorted_results = new data::QueryResults(rl->num_results(),
-                                                              copyoflabels,
-                                                              NULL);
-  MetricScore dcg = compute_dcg(sorted_results);
-  //free mem
-  delete sorted_results;
+  MetricScore dcg = compute_dcg(copyoflabels,rl->num_results());
+
   delete[] copyoflabels;
-  //return dcg
   return dcg;
 }
 

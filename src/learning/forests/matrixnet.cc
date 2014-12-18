@@ -19,7 +19,6 @@
 #include <cmath>
 #include <boost/foreach.hpp>
 
-#include "utils/qsort.h"
 #include "io/xml.h"
 
 namespace quickrank {

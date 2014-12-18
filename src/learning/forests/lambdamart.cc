@@ -19,9 +19,6 @@
 #include <cmath>
 #include <boost/foreach.hpp>
 
-#include "utils/radix.h"
-#include "utils/qsort.h"
-#include "utils/mergesorter.h"
 #include "data/rankedresults.h"
 #include "io/xml.h"
 
@@ -171,74 +168,6 @@ void LambdaMart::compute_pseudoresponses(
   }
 }
 
-// Changes by Cla:
-// - added processing of ranked list in ranked order
-// - added cut-off in measure changes matrix
-/*
- void LambdaMart::compute_pseudoresponses(std::shared_ptr<quickrank::data::Dataset> training_dataset, quickrank::metric::ir::Metric* scorer) {
- const unsigned int cutoff = scorer->cutoff();
-
- const unsigned int nrankedlists = training_dataset->num_queries();
- //const unsigned int *rloffsets = training_set->get_rloffsets();
- #pragma omp parallel for
- for (unsigned int i = 0; i < nrankedlists; ++i) {
- std::shared_ptr<data::QueryResults> qr = training_dataset->getQueryResults(i);
-
- const unsigned int offset = training_dataset->offset(i);
- double *lambdas = pseudoresponses + offset;
- double *weights = cachedweights + offset;
- for (unsigned int j = 0; j < qr->num_results(); ++j)
- lambdas[j] = weights[j] = 0.0;
-
- // CLA: line below uses the old sort and not mergesort as in ranklib
- // unsigned int *idx = idxdouble_qsort(trainingmodelscores+offset, ql.size);
- unsigned int *idx = idxdouble_mergesort<Score>(
- trainingmodelscores + offset, qr->num_results());
-
- Label* sortedlabels = new Label[qr->num_results()];
- for (unsigned int i = 0; i < qr->num_results(); ++i)
- sortedlabels[i] = qr->labels()[idx[i]];
-
- std::shared_ptr<data::QueryResults> ranked_list = std::shared_ptr<data::QueryResults>(
- new data::QueryResults(qr->num_results(), sortedlabels, NULL) );
-
- std::unique_ptr<Jacobian> changes = scorer->get_jacobian(ranked_list);
-
- // \todo TODO: rank by label one and for all ?
- // \todo TODO: look at the top score or at the top labelled ?
- for (unsigned int j = 0; j < ranked_list->num_results(); ++j) {
- float jthlabel = ranked_list->labels()[j];
- for (unsigned int k = 0; k < ranked_list->num_results(); ++k)
- if (k != j) {
- // skip if we are beyond the top-K results
- if (j >= cutoff && k >= cutoff)
- break;
-
- float kthlabel = ranked_list->labels()[k];
- if (jthlabel > kthlabel) {
- int i_max = j >= k ? j : k;
- int i_min = j >= k ? k : j;
- double deltandcg = fabs(changes->at(i_min, i_max));
-
- double rho = 1.0 / (1.0 + exp(
- trainingmodelscores[offset + idx[j]] -
- trainingmodelscores[offset + idx[k]] ));
- double lambda = rho * deltandcg;
- double delta = rho * (1.0 - rho) * deltandcg;
- lambdas[idx[j]] += lambda;
- lambdas[idx[k]] -= lambda;
- weights[idx[j]] += delta;
- weights[idx[k]] += delta;
- }
- }
- }
-
- delete[] idx;
- delete[] sortedlabels;
-
- }
- }
- */
 
 std::ofstream& LambdaMart::save_model_to_file(std::ofstream& os) const {
   // write ranker description

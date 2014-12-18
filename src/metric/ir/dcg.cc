@@ -15,22 +15,17 @@
 
 #include "metric/ir/dcg.h"
 
-#include "utils/qsort.h" // quick sort (for small input)
-#include "utils/mergesorter.h" // quick sort (for small input)
-
 namespace quickrank {
 namespace metric {
 namespace ir {
 
 const std::string Dcg::NAME_ = "DCG";
 
-MetricScore Dcg::compute_dcg(
-    const quickrank::data::QueryResults* results) const {
-  const unsigned int size = std::min(cutoff(), results->num_results());
+MetricScore Dcg::compute_dcg(const Label* labels, unsigned int len) const {
+  const unsigned int size = std::min(cutoff(), len);
   double dcg = 0.0;
-//#pragma omp parallel for reduction(+:dcg)
   for (unsigned int i = 0; i < size; ++i)
-    dcg += (pow(2.0, results->labels()[i]) - 1.0f) / log2(i + 2.0f);
+    dcg += (pow(2.0, labels[i]) - 1.0f) / log2(i + 2.0f);
   return (MetricScore) dcg;
 }
 
@@ -38,16 +33,13 @@ MetricScore Dcg::evaluate_result_list(const quickrank::data::QueryResults* rl,
                                       const Score* scores) const {
   if (rl->num_results() == 0)
     return 0.0;
-  // sort candidadate labels
-  //std::unique_ptr<Label[]> sorted_labels = qsort_ext<Label, Score>(rl->labels(), scores, rl->num_results());
-  std::unique_ptr<Label[]> sorted_labels =
-      copyextdouble_mergesort<Label, Score>(rl->labels(), scores,
-                                            rl->num_results());
 
-  data::QueryResults* sorted_results = new data::QueryResults(
-      rl->num_results(), sorted_labels.get(), NULL);
-  MetricScore dcg = compute_dcg(sorted_results);
-  delete sorted_results;
+  Label* sorted_l = new Label [cutoff()];
+  rl->sorted_labels(scores, sorted_l, cutoff());
+
+  MetricScore dcg = compute_dcg(sorted_l, cutoff());
+
+  delete [] sorted_l;
 
   return dcg;
 }

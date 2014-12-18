@@ -10,15 +10,11 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#define BOOST_TEST_XML_LOAD
+#define BOOST_TEST_OPENMP_DOT_PRODUCT
 #include <boost/test/unit_test.hpp>
 
 #include <iostream>
 #include <fstream>
-
-#include "utils/radix.h"
-#include "utils/qsort.h"
-#include "utils/mergesorter.h"
 
 #include "omp.h"
 #include <chrono>

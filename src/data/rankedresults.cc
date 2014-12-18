@@ -11,7 +11,6 @@
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
 #include "data/rankedresults.h"
-#include "utils/mergesorter.h"
 
 namespace quickrank {
 namespace data {
@@ -19,9 +18,9 @@ namespace data {
 RankedResults::RankedResults(std::shared_ptr<QueryResults> results,
                              Score* scores) {
 
-  // unsigned int *idx = idxdouble_qsort(trainingmodelscores+offset, ql.size);
   num_results_ = results->num_results();
-  unmap_ = idxdouble_mergesort<Score>(scores, num_results_);
+  unmap_ = new unsigned int [num_results_];
+  results->indexing_of_sorted_labels(scores, unmap_);
 
   labels_ = new Label[num_results_];
   scores_ = new Score[num_results_];
