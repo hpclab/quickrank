@@ -14,7 +14,6 @@
 #include <algorithm>
 
 #include "metric/ir/map.h"
-#include "utils/qsort.h"
 
 namespace quickrank {
 namespace metric {
@@ -27,10 +26,6 @@ MetricScore Map::evaluate_result_list(const quickrank::data::QueryResults* rl,
   unsigned int size = std::min(cutoff(), rl->num_results());
   if (size == 0)
     return 0.0;
-
-  // sort candidadate labels
-  std::unique_ptr<Label[]> sorted_labels = qsort_ext<Label, Score>(
-      rl->labels(), scores, rl->num_results());
 
   MetricScore ap = 0.0f;
   MetricScore count = 0.0f;

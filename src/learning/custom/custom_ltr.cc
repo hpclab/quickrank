@@ -18,10 +18,6 @@
 #include <cfloat>
 #include <cmath>
 
-#include "utils/radix.h"
-#include "utils/qsort.h"
-#include "utils/mergesorter.h"
-
 namespace quickrank {
 namespace learning {
 
