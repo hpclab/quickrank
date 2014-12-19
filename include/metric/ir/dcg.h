@@ -48,10 +48,10 @@ class Dcg : public Metric {
       std::shared_ptr<data::RankedResults> ranked) const;
 
  protected:
-  /// Computes the DCG\@K of a given list of labels.
-  /// \param rl The given results list. Only labels are actually used.
+  /// Computes the DCG\@K of a given array of labels.
+  /// \param rl The given array of labels.
   /// \return DCG\@K for computed on the given labels.
-  MetricScore compute_dcg(const quickrank::data::QueryResults* rl) const;
+  MetricScore compute_dcg(const Label* labels, unsigned int len) const;
 
  private:
   friend std::ostream& operator<<(std::ostream& os, const Dcg& ndcg) {

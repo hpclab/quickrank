@@ -35,27 +35,40 @@ class QueryResults : private boost::noncopyable {
   /// related to a specific query.
   /// \param n_instances The number of training instances (lines) in the dataset.
   /// \param n_features The number of features.
-  QueryResults(unsigned int n_results, quickrank::Label* new_labels,
-               quickrank::Feature* new_features);
+  QueryResults(unsigned int n_results, Label* new_labels,
+               Feature* new_features);
   virtual ~QueryResults();
 
-  // get i,j?
-  // get doc-vector
-  // get fx-vector
-
-  quickrank::Feature* features() const {
+  Feature* features() const {
     return features_;
   }
-  quickrank::Label* labels() const {
+  Label* labels() const {
     return labels_;
   }
   unsigned int num_results() const {
     return num_results_;
   }
 
+  /// Sorts the element of the current result list
+  /// in descending order of the given \a scores vector
+  /// and stores in \a dest the positions of the sorted labels.
+  ///
+  /// \param scores vector of scores used for reverse sorting.
+  /// \param dest output of the sorting indexing.
+  void indexing_of_sorted_labels(const Score* scores, unsigned int* dest) const;
+
+  /// Sorts the element of the current result list
+  /// in descending order of the given \a scores vector
+  /// and stores the resulting sorted labels in \a dest.
+  ///
+  /// \param scores vector of scores used for reverse sorting.
+  /// \param dest output of the labels sorting.
+  /// \param cutoff number of labels of interest, i.e., length of \a dest.
+  void sorted_labels(const Score* scores, Label* dest, const unsigned int cutoff) const;
+
  private:
-  quickrank::Label* labels_;
-  quickrank::Feature* features_;
+  Label* labels_;
+  Feature* features_;
   unsigned int num_results_;
 };
 

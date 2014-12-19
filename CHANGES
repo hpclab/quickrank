@@ -1,0 +1,3 @@
+2014 Dec. 18.
+ - Quick-sort and Merge-Sort Implementation are always slower than std::sort.
+   These have been removed. Only radix sort is maintained for the initial large input.

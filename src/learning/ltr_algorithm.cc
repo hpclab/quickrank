@@ -16,7 +16,6 @@
 #include <boost/foreach.hpp>
 
 #include "learning/ltr_algorithm.h"
-#include "utils/mergesorter.h"
 
 #include "learning/forests/mart.h"
 #include "learning/forests/lambdamart.h"

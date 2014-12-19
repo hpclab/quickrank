@@ -16,6 +16,50 @@ static_assert(sizeof(float)==4,"sizeof(float) exception!");
 static_assert(sizeof(int)==4,"sizeof(int) exception!");
 static_assert(sizeof(unsigned int)==4,"sizeof(unsigned int) exception!");
 
+
+inline unsigned int flip(unsigned int x) {
+  return x ^ (-int(x >> 31) | 0x80000000);
+}  //!<flip a float for sorting: if it's negative, it flips all bits otherwise flips the sign only
+inline unsigned int iflip(unsigned int x) {
+  return x ^ (((x >> 31) - 1) | 0x80000000);
+}  //!<flip a float back (invert flip)
+
+std::unique_ptr<unsigned int[]> idx_radixsort(float const* fvalues,
+                                              const unsigned int nvalues) {
+  unsigned int *ivalues = new unsigned int[nvalues];
+  unsigned int* lbucket = new unsigned int[65536]();
+  unsigned int* hbucket = new unsigned int[65536]();
+  for (unsigned int i = 0; i < nvalues; ++i) {
+    //feature values are flipped so at to be possible to apply radix sort
+    unsigned int flippedvalue = flip(*(unsigned int*) (fvalues + i));
+    ivalues[i] = flippedvalue;
+    ++lbucket[flippedvalue & 0xFFFF];
+    ++hbucket[flippedvalue >> 16];
+  }
+  // prefixsum on histograms
+  for (unsigned int ltmp, htmp, lsum = -1, hsum = -1, i = 0; i < 65536; ++i) {
+    ltmp = lbucket[i];
+    htmp = hbucket[i];
+    lbucket[i] = lsum;
+    hbucket[i] = hsum;
+    lsum += ltmp;
+    hsum += htmp;
+  }
+  // final pass
+  struct pair_t {
+    unsigned int value, id;
+  }*aux = new pair_t[nvalues];
+  for (unsigned int i = 0; i < nvalues; ++i)
+    aux[++lbucket[ivalues[i]&0xFFFF]] = {ivalues[i], i};
+  for (unsigned int i = 0; i < nvalues; ++i)
+    ivalues[++hbucket[aux[i].value >> 16]] = aux[i].id;
+  delete[] aux;
+  delete[] lbucket;
+  delete[] hbucket;
+  return std::unique_ptr<unsigned int[]>(ivalues);
+}
+
+
 /*! sort an array of float values without modifing the input array and returning permuted indexes of the sorted items
  *  @param fvalues input float array
  *  @param nvalues length of \a fvalues

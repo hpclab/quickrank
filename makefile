@@ -52,8 +52,7 @@ quickscore: $(OBJS)
 
 # creates the documentation
 doc:
-	cd $(DOCDIR);
-	doxygen quickrank.doxygen
+	cd $(DOCDIR); doxygen quickrank.doxygen
 
 # runs all the unit tests
 # to run a single test use make unit-tests TEST=dcg_test

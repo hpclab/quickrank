@@ -15,9 +15,6 @@
 
 #include "metric/ir/tndcg.h"
 
-#include "utils/qsort.h" // quick sort (for small input)
-#include "utils/mergesorter.h" // quick sort (for small input)
-
 namespace quickrank {
 namespace metric {
 namespace ir {
@@ -30,7 +27,8 @@ MetricScore Tndcg::compute_tndcg(const quickrank::data::QueryResults* rl,
   if (idcg <= 0.0)
     return 0;
 
-  unsigned int* idx = idxdouble_mergesort(scores, rl->num_results());
+  unsigned int* idx = new unsigned int [rl->num_results()];
+  rl->indexing_of_sorted_labels(scores, idx);
 
   const unsigned int size = std::min(cutoff(), rl->num_results());
   double tndcg = 0.0;
