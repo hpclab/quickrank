@@ -125,7 +125,7 @@ void generate_opt_trees_input(const std::string& ensemble_file, const std::strin
 					std::cout << "node"
 					    	  << " " << node.id
 						  << " " << node.pid
-						  << " " << node.feature
+						  << " " << (std::stoi(node.feature) - 1)
 						  << " " << node.left
 						  << " " << node.leaf << std::endl;
 				}
@@ -133,13 +133,13 @@ void generate_opt_trees_input(const std::string& ensemble_file, const std::strin
 				if (node.id == 0) {
 					std::cout << "root"
 							  << " " << node.id
-							  << " " << node.feature
+							  << " " << (std::stoi(node.feature) - 1)
 							  << " " << node.theta << std::endl; // print the root info
 				} else {
 					std::cout << "node"
 					    	  << " " << node.id
 							  << " " << node.pid
-							  << " " << node.feature
+							  << " " << (std::stoi(node.feature) - 1)
 							  << " " << node.left
 							  << " " << node.theta << std::endl;
 				}
