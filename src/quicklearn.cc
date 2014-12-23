@@ -78,6 +78,7 @@
 #include "metric/ir/ndcg.h"
 #include "metric/ir/map.h"
 #include "io/xml.h"
+#include "scoring/opt/converter.h"
 
 namespace po = boost::program_options;
 
@@ -246,7 +247,7 @@ int main(int argc, char *argv[]) {
       "set C code file path")(
       "dump-type",
       po::value<std::string>(&model_code_type)->default_value("baseline"),
-      "set C code generation strategy. Allowed options are: \"baseline\" and \"oblivious\".");
+      "set C code generation strategy. Allowed options are: \"baseline\", \"oblivious\". \"opt\".");
 
   po::options_description all_desc("Allowed options");
   all_desc.add(learning_options).add(tree_model_options).add(testing_options)
@@ -350,12 +351,14 @@ int main(int argc, char *argv[]) {
       std::cout << "applying baseline strategy for C code generation to: "
                 << xml_filename << std::endl;
       xml.generate_c_code_baseline(xml_filename, c_filename);
-      std::cout << "done.";
-    } else {
+    } else if (model_code_type == "oblivious") {
       std::cout << "applying oblivious strategy for C code generation to: "
                 << xml_filename << std::endl;
       xml.generate_c_code_oblivious_trees(xml_filename, c_filename);
-      std::cout << "done.";
+    } else if (model_code_type == "opt") {
+      std::cout << "generating opt_trees input file to: "
+		<< "stdout." << std::endl;
+      quickrank::scoring::generate_opt_trees_input(xml_filename, c_filename);
     }
   }
 
