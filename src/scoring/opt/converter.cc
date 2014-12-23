@@ -93,11 +93,12 @@ void generate_opt_trees_input(const std::string& ensemble_file, const std::strin
 	boost::property_tree::read_xml(is, xml_tree);
 	is.close();
 
+	double learning_rate = xml_tree.get_child("ranker.info").get<double>("shrinkage");
 	uint32_t num_trees = xml_tree.get_child("ranker.ensemble").count("tree");
 
 	std::cout << num_trees << std::endl; // print number of trees in the ensemble
 
-        // for each tree
+    // for each tree
 	for (const auto& tree_it: xml_tree.get_child("ranker.ensemble")) {
 
 		uint32_t depth = find_depth(tree_it.second.get_child("split")) - 1;
@@ -120,14 +121,14 @@ void generate_opt_trees_input(const std::string& ensemble_file, const std::strin
 						  << " " << node.id
 						  << " " << node.pid
 						  << " " << node.left
-						  << " " << node.leaf << std::endl;
+						  << " " << (learning_rate * std::stod(node.leaf)) << std::endl;
 				} else {
 					std::cout << "node"
 					    	  << " " << node.id
 						  << " " << node.pid
 						  << " " << (std::stoi(node.feature) - 1)
 						  << " " << node.left
-						  << " " << node.leaf << std::endl;
+						  << " " << (learning_rate * std::stod(node.leaf)) << std::endl;
 				}
 			} else {
 				if (node.id == 0) {
