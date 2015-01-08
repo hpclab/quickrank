@@ -16,6 +16,8 @@
 
 #include "learning/tree/rtnode.h"
 
+unsigned long long RTNode::_internal_nodes_traversed = 0;
+
 void RTNode::save_leaves(RTNode **&leaves, unsigned int &nleaves,
                          unsigned int &capacity) {
   if (featureidx == uint_max) {

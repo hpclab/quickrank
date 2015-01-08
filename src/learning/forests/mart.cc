@@ -355,6 +355,12 @@ std::ofstream& Mart::save_model_to_file(std::ofstream& os) const {
   return os;
 }
 
+void Mart::print_additional_stats(void) const {
+  std::cout << "#" << std::endl;
+  std::cout << "# Internal Nodes Traversed: " << RTNode::internal_nodes_traversed() << std::endl;
+}
+
+
 }  // namespace forests
 }  // namespace learning
 }  // namespace quickrank

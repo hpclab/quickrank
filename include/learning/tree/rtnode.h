@@ -19,6 +19,7 @@
 static const unsigned int uint_max = (unsigned int) -1;
 
 class RTNode {
+
  public:
   unsigned int *sampleids = NULL;
   unsigned int nsampleids = 0;
@@ -28,9 +29,14 @@ class RTNode {
   RTNode *left = NULL;
   RTNode *right = NULL;
   RTNodeHistogram *hist = NULL;
+
  private:
   unsigned int featureidx = uint_max;  //refer the index in the feature matrix
   unsigned int featureid = uint_max;  //refer to the id occurring in the dataset file
+
+  // number of internal nodes traversed
+  static unsigned long long _internal_nodes_traversed;
+
  public:
   // new leaf
   RTNode(double prediction) {
@@ -108,16 +114,26 @@ class RTNode {
   quickrank::Score score_instance(const quickrank::Feature* d,
                                   const unsigned int offset) const {
     /*if (featureidx == uint_max)
-      std::cout << avglabel << std::endl;
-    else
-      std::cout << d[featureidx * offset] << "<=" << threshold << std::endl;
-      */
-    return
+     std::cout << avglabel << std::endl;
+     else
+     std::cout << d[featureidx * offset] << "<=" << threshold << std::endl;
+     */
+    quickrank::Score score =
         featureidx == uint_max ?
             avglabel :
             (d[featureidx * offset] <= threshold ?
                 left->score_instance(d, offset) :
                 right->score_instance(d, offset));
+    _internal_nodes_traversed += (featureidx == uint_max ? 0 : 1);
+    return score;
+  }
+
+  static void clean_stats() {
+    _internal_nodes_traversed = 0;
+  }
+
+  static unsigned long long internal_nodes_traversed() {
+    return _internal_nodes_traversed;
   }
 
   void write_outputtofile(FILE *f, const int indentsize);

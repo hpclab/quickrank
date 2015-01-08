@@ -108,6 +108,8 @@ void Evaluator::testing_phase(std::shared_ptr<learning::LTR_Algorithm> algo,
 
     delete[] test_scores;
   }
+
+  algo->print_additional_stats();
 }
 
 }  // namespace metric

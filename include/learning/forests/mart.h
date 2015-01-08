@@ -67,6 +67,11 @@ class Mart : public LTR_Algorithm {
     return ensemble_model_.score_instance(d, offset);
   }
 
+  /// Print additional statistics.
+  ///
+  /// At the moment this include only number of comparisons for tree-based algorithms.
+  virtual void print_additional_stats(void) const;
+
   /// Returns the name of the ranker.
   virtual std::string name() const {
     return NAME_;

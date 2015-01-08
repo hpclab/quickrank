@@ -1,3 +1,14 @@
+
+2015 Jan. 8.
+  - Instrumented code: counting number of traversed node during test.
+
+2014 Dec. 18.
+ - Trying to review OpenMP use.
+ Standard Experiment:
+ time ./bin/quicklearn --train tests/data/msn1.fold1.train.5k.txt --valid tests/data/msn1.fold1.vali.5k.txt --test tests/data/msn1.fold1.test.5k.txt --num-trees 100
+  NDCG@10 on test data = 0.3449
+  10.81s user 0.86s system 121% cpu 9.621 total 
+
 2014 Dec. 18.
  - Quick-sort and Merge-Sort Implementation are always slower than std::sort.
    These have been removed. Only radix sort is maintained for the initial large input.

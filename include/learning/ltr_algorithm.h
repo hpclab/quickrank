@@ -88,6 +88,12 @@ class LTR_Algorithm : private boost::noncopyable {
   /// Save the current model in the given output file stream.
   virtual std::ofstream& save_model_to_file(std::ofstream& of) const = 0;
 
+  /// Print additional statistics.
+  ///
+  /// At the moment this include only number of comparisons for tree-based algorithms.
+  virtual void print_additional_stats(void) const {
+  }
+
  protected:
 
   /// Prepare the dataset before training or scoring takes place.
