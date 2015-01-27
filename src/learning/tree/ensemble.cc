@@ -50,7 +50,7 @@ float Ensemble::eval(float * const * const features, unsigned int idx) const {
 quickrank::Score Ensemble::score_instance(const quickrank::Feature* d,
                                           const unsigned int offset) const {
   double sum = 0.0f;
-#pragma omp parallel for reduction(+:sum)
+// #pragma omp parallel for reduction(+:sum)
   for (unsigned int i = 0; i < size; ++i)
     sum += arr[i].root->score_instance(d, offset) * arr[i].weight;
   return sum;
