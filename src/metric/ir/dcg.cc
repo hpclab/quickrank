@@ -34,10 +34,11 @@ MetricScore Dcg::evaluate_result_list(const quickrank::data::QueryResults* rl,
   if (rl->num_results() == 0)
     return 0.0;
 
+  // we have at most cutoff to be evaluated
   Label* sorted_l = new Label [cutoff()];
   rl->sorted_labels(scores, sorted_l, cutoff());
 
-  MetricScore dcg = compute_dcg(sorted_l, cutoff());
+  MetricScore dcg = compute_dcg(sorted_l, rl->num_results());
 
   delete [] sorted_l;
 

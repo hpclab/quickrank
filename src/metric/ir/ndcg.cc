@@ -40,7 +40,7 @@ MetricScore Ndcg::evaluate_result_list(const quickrank::data::QueryResults* rl,
                                        const Score* scores) const {
   if (rl->num_results() == 0)
     return 0.0;
-  const double idcg = Ndcg::compute_idcg(rl);
+  const MetricScore idcg = Ndcg::compute_idcg(rl);
   if (idcg > 0)
     return Dcg::evaluate_result_list(rl, scores) / idcg;
   else
