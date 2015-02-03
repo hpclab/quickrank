@@ -38,7 +38,7 @@
  *   - Gabriele Capannini (v0.0. June 2014 - Sept. 2014)
  *
  * \subsection download Get QuickRank
- * QuickRank is available here: \todo: put URL.
+ * QuickRank is available here: <a href="http://quickrank.isti.cnr.it">http://quickrank.isti.cnr.it</a>.
  *
  * \section Usage
  *
@@ -57,7 +57,7 @@
  */
 
 /// \todo TODO: (by cla) Decide on outpuformat, logging and similar.
-/// \todo TODO: (by cla) Find fastest sorting.
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -73,6 +73,7 @@
 #include "learning/forests/mart.h"
 #include "learning/forests/lambdamart.h"
 #include "learning/forests/matrixnet.h"
+#include "learning/linear/coordinate_ascent.h"
 #include "learning/custom/custom_ltr.h"
 #include "metric/ir/tndcg.h"
 #include "metric/ir/ndcg.h"
@@ -149,6 +150,7 @@ int main(int argc, char *argv[]) {
       ("LtR algorithm [" + quickrank::learning::forests::Mart::NAME_ + "|"
           + quickrank::learning::forests::LambdaMart::NAME_ + "|"
           + quickrank::learning::forests::MatrixNet::NAME_ + "|"
+          + quickrank::learning::linear::CoordinateAscent::NAME_ + "|"
           + quickrank::learning::CustomLTR::NAME_ + "]").c_str());
   learning_options.add_options()(
       "train-metric",
@@ -284,6 +286,9 @@ int main(int argc, char *argv[]) {
           new quickrank::learning::forests::MatrixNet(ntrees, shrinkage,
                                                       nthresholds, treedepth,
                                                       minleafsupport, esr));
+    else if (algorithm_string == quickrank::learning::linear::CoordinateAscent::NAME_)
+      ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
+          new quickrank::learning::linear::CoordinateAscent());
     else if (algorithm_string == quickrank::learning::CustomLTR::NAME_)
       ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
           new quickrank::learning::CustomLTR());
