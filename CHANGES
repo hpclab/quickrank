@@ -1,20 +1,27 @@
-2015 Feb 10
+2015 Feb. 10
  - Removed histagrams of labels squares
- Standard Experiment:
- time ./bin/quicklearn --train tests/data/msn1.fold1.train.5k.txt --valid tests/data/msn1.fold1.vali.5k.txt --test tests/data/msn1.fold1.test.5k.txt --num-trees 500 --end-after-rounds 0
-  NDCG@10 on test data = 0.3449
-  8.94s user 0.31s system 130% cpu 7.088 total
+  Standard Experiment:
+  time ./bin/quicklearn --train tests/data/msn1.fold1.train.5k.txt --valid tests/data/msn1.fold1.vali.5k.txt --test tests/data/msn1.fold1.test.5k.txt --num-trees 500 --end-after-rounds 0
 
-2015 Jan. 8.
+  # NEW  
+  Training Time: 26.66 s.
+  NDCG@10 on test data = 0.3353
+
+  # OLD
+  Training Time: 38.70 s.
+  NDCG@10 on test data = 0.3353
+
+
+2015 Jan. 8
   - Instrumented code: counting number of traversed node during test.
 
-2014 Dec. 18.
+2014 Dec. 18
  - Trying to review OpenMP use.
  Standard Experiment:
  time ./bin/quicklearn --train tests/data/msn1.fold1.train.5k.txt --valid tests/data/msn1.fold1.vali.5k.txt --test tests/data/msn1.fold1.test.5k.txt --num-trees 100
   NDCG@10 on test data = 0.3449
   10.81s user 0.86s system 121% cpu 9.621 total 
 
-2014 Dec. 18.
+2014 Dec. 18
  - Quick-sort and Merge-Sort Implementation are always slower than std::sort.
    These have been removed. Only radix sort is maintained for the initial large input.
