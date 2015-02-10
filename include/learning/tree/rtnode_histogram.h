@@ -22,8 +22,8 @@ class RTNodeHistogram {
   unsigned int **stmap = NULL;  //[0..nfeatures-1]x[0..nthresholds-1]
   const unsigned int nfeatures = 0;
   double **sumlbl = NULL;  //[0..nfeatures-1]x[0..nthresholds-1]
-  double **sqsumlbl = NULL;  //[0..nfeatures-1]x[0..nthresholds-1]
   unsigned int **count = NULL;  //[0..nfeatures-1]x[0..nthresholds-1]
+  double squares_sum_ = 0.0;
  public:
   RTNodeHistogram(float **thresholds, unsigned int const *thresholds_size,
                   unsigned int nfeatures);
@@ -44,7 +44,7 @@ class RTNodeHistogram {
 
 class RTRootHistogram : public RTNodeHistogram {
  public:
-  RTRootHistogram(quickrank::data::Dataset *dps, double *labels,
+  RTRootHistogram(quickrank::data::Dataset *dps,
                   unsigned int **sortedidx, unsigned int sortedidxsize,
                   float **thresholds, unsigned int const *thresholds_size);
 

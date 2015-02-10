@@ -26,11 +26,11 @@ void ObliviousRT::fit(RTNodeHistogram *hist) {
   //histarray and nodearray store histograms and treenodes used in the entire procedure (i.e. the entire tree)
   RTNode **nodearray = new RTNode*[POWTWO(treedepth + 1)]();  //initialized NULL
   //init tree root
-  nodearray[0] = root = new RTNode(sampleids, nsampleids, DBL_MAX, 0.0, hist);
+  nodearray[0] = root = new RTNode(sampleids, hist);
   //allocate a matrix for each (feature,threshold)
-  double **sumvar = new double*[nfeaturesamples];
+  double **sum_scores = new double*[nfeaturesamples];
   for (unsigned int i = 0; i < nfeaturesamples; ++i)
-    sumvar[i] = new double[hist->thresholds_size[i]];
+    sum_scores[i] = new double[hist->thresholds_size[i]];
   //tree computation
   for (unsigned int depth = 0; depth < treedepth; ++depth) {
     const unsigned int lbegin = POWTWO(depth) - 1;  //index of first histogram belonging to the current level
@@ -40,39 +40,46 @@ void ObliviousRT::fit(RTNodeHistogram *hist) {
     for (unsigned int i = 0; i < nfeaturesamples; ++i) {
       const unsigned int thresholds_size = hist->thresholds_size[i];
       for (unsigned int j = 0; j < thresholds_size; ++j)
-        sumvar[i][j] = 0.0;
+        sum_scores[i][j] = 0.0;
     }
     //for each histogram on the current depth (i.e. fringe) add variance of each (feature,threshold) in sumvar matrix
     for (unsigned int i = lbegin; i < lend; ++i)
-      fill(sumvar, nfeaturesamples, nodearray[i]->hist);
+      fill(sum_scores, nfeaturesamples, nodearray[i]->hist);
     //find best split in the matrix
     const int nth = omp_get_num_procs();
-    double* thread_minvar = new double[nth];  // double thread_minvar[nth];
+    double* thread_maxscore = new double[nth];  // double thread_minvar[nth];
     unsigned int* thread_best_featureidx = new unsigned int[nth];  // unsigned int thread_best_featureidx[nth];
     unsigned int* thread_best_thresholdid = new unsigned int[nth];  // unsigned int thread_best_thresholdid[nth];
-    for (int i = 0; i < nth; ++i)
-      thread_minvar[i] = DBL_MAX, thread_best_featureidx[i] = uint_max, thread_best_thresholdid[i] =
-          uint_max;
+    for (int i = 0; i < nth; ++i) {
+      thread_maxscore[i] = 0.0;
+      thread_best_featureidx[i] = uint_max;
+      thread_best_thresholdid[i] = uint_max;
+    }
 #pragma omp parallel for
     for (unsigned int f = 0; f < nfeaturesamples; ++f) {
       const int ith = omp_get_thread_num();
       const unsigned int threshold_size = hist->thresholds_size[f];
       for (unsigned int t = 0; t < threshold_size; ++t)
-        if (sumvar[f][t] != invalid && sumvar[f][t] < thread_minvar[ith])
-          thread_minvar[ith] = sumvar[f][t], thread_best_featureidx[ith] = f, thread_best_thresholdid[ith] =
-              t;
+        if (sum_scores[f][t] != invalid
+            && sum_scores[f][t] > thread_maxscore[ith]) {
+          thread_maxscore[ith] = sum_scores[f][t];
+          thread_best_featureidx[ith] = f;
+          thread_best_thresholdid[ith] = t;
+        }
     }
-    double minvar = thread_minvar[0];
+    double max_score = thread_maxscore[0];
     unsigned int best_featureidx = thread_best_featureidx[0];
     unsigned int best_thresholdid = thread_best_thresholdid[0];
     for (int i = 1; i < nth; ++i)
-      if (thread_minvar[i] < minvar)
-        minvar = thread_minvar[i], best_featureidx = thread_best_featureidx[i], best_thresholdid =
-            thread_best_thresholdid[i];
-    delete[] thread_minvar;
+      if (thread_maxscore[i] > max_score) {
+        max_score = thread_maxscore[i];
+        best_featureidx = thread_best_featureidx[i];
+        best_thresholdid = thread_best_thresholdid[i];
+      }
+    delete[] thread_maxscore;
     delete[] thread_best_featureidx;
     delete[] thread_best_thresholdid;
-    if (minvar == invalid || minvar == DBL_MAX)
+    if (max_score == invalid || max_score == 0.0)
       break;  //node is unsplittable
     //init next depth
 #pragma omp parallel for
@@ -85,15 +92,6 @@ void ObliviousRT::fit(RTNodeHistogram *hist) {
           node->hist->count[best_featureidx][best_thresholdid];
       const unsigned int rcount =
           node->hist->count[best_featureidx][last_thresholdid] - lcount;
-      const double lsum = node->hist->sumlbl[best_featureidx][best_thresholdid];
-      const double lsqsum =
-          node->hist->sqsumlbl[best_featureidx][best_thresholdid];
-      const double best_lvar = fabs(lsqsum - lsum * lsum / lcount);
-      const double rsum = node->hist->sumlbl[best_featureidx][last_thresholdid]
-          - lsum;
-      const double rsqsum =
-          node->hist->sqsumlbl[best_featureidx][last_thresholdid] - lsqsum;
-      const double best_rvar = fabs(rsqsum - rsum * rsum / rcount);
       const float best_threshold =
           node->hist->thresholds[best_featureidx][best_thresholdid];
       //split samples between left and right child
@@ -118,20 +116,26 @@ void ObliviousRT::fit(RTNodeHistogram *hist) {
           rhist = new RTNodeHistogram(node->hist, lhist);
         else {
           //save some new/delete by converting parent histogram into the right-child one
-          node->hist->transform_intorightchild(lhist), rhist = node->hist;
+          node->hist->transform_intorightchild(lhist);
+          rhist = node->hist;
           node->hist = NULL;
         }
+        //update current node
+        node->left = nodearray[2 * i + 1] = new RTNode(lsamples, lhist);
+        node->right = nodearray[2 * i + 2] = new RTNode(rsamples, rhist);
+      } else {
+        const double lsum =
+            node->hist->sumlbl[best_featureidx][best_thresholdid];
+        const double rsum =
+            node->hist->sumlbl[best_featureidx][last_thresholdid] - lsum;
+        node->left = nodearray[2 * i + 1] = new RTNode(lsamples, lsize, lsum/lsize);
+        node->right = nodearray[2 * i + 2] = new RTNode(rsamples, rsize, rsum/rsize);
       }
-      //update current node
-      node->left = nodearray[2 * i + 1] = new RTNode(lsamples, lsize, best_lvar,
-                                                     lsum, lhist);
-      node->right = nodearray[2 * i + 2] = new RTNode(rsamples, rsize,
-                                                      best_rvar, rsum, rhist);
       node->set_feature(
           best_featureidx,
           best_featureidx + 1 /*training_set->get_featureid(best_featureidx)*/);
       node->threshold = best_threshold;
-      node->deviance = minvar;
+      // node->deviance = minvar;
       //free mem
       if (depth) {
         delete node->hist, delete[] node->sampleids;
@@ -146,8 +150,8 @@ void ObliviousRT::fit(RTNodeHistogram *hist) {
   root->save_leaves(leaves, nleaves, capacity);
   //free mem allocated for sumvar[][]
   for (unsigned int i = 0; i < nfeaturesamples; ++i)
-    delete[] sumvar[i];
-  delete[] sumvar,
+    delete[] sum_scores[i];
+  delete[] sum_scores,
   //delete temp data
   delete[] nodearray;
 }
@@ -158,12 +162,10 @@ void ObliviousRT::fill(double **sumvar, const unsigned int nfeaturesamples,
   for (unsigned int f = 0; f < nfeaturesamples; ++f) {
     //define pointer shortcuts
     double *sumlabels = hist->sumlbl[f];
-    double *sqsumlabels = hist->sqsumlbl[f];
     unsigned int *samplecount = hist->count[f];
     //get last elements
     unsigned int threshold_size = hist->thresholds_size[f];
     double s = sumlabels[threshold_size - 1];
-    double sq = sqsumlabels[threshold_size - 1];
     unsigned int c = samplecount[threshold_size - 1];
     //looking for the feature that minimizes sum of lvar+rvar
     for (unsigned int t = 0; t < threshold_size; ++t)
@@ -172,11 +174,8 @@ void ObliviousRT::fill(double **sumvar, const unsigned int nfeaturesamples,
         unsigned int rcount = c - lcount;
         if (lcount >= minls && rcount >= minls) {
           double lsum = sumlabels[t];
-          double lsqsum = sqsumlabels[t];
           double rsum = s - lsum;
-          double rsqsum = sq - lsqsum;
-          sumvar[f][t] += fabs(lsqsum - lsum * lsum / lcount)
-              + fabs(rsqsum - rsum * rsum / rcount);
+          sumvar[f][t] += lsum * lsum / lcount + rsum * rsum / rcount;
         } else
           sumvar[f][t] = invalid;
       }

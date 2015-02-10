@@ -1,3 +1,9 @@
+2015 Feb 10
+ - Removed histagrams of labels squares
+ Standard Experiment:
+ time ./bin/quicklearn --train tests/data/msn1.fold1.train.5k.txt --valid tests/data/msn1.fold1.vali.5k.txt --test tests/data/msn1.fold1.test.5k.txt --num-trees 500 --end-after-rounds 0
+  NDCG@10 on test data = 0.3449
+  8.94s user 0.31s system 130% cpu 7.088 total
 
 2015 Jan. 8.
   - Instrumented code: counting number of traversed node during test.

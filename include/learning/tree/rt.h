@@ -43,7 +43,6 @@ class RegressionTree {
  protected:
   const unsigned int nrequiredleaves;  //0 for unlimited number of nodes (the size of the tree will then be controlled only by minls)
   const unsigned int minls;  //minls>0
-  // LTR_VerticalDataset *training_set = NULL;
   quickrank::data::Dataset* training_dataset = NULL;
   double *training_labels = NULL;
   RTNode **leaves = NULL;

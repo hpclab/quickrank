@@ -16,7 +16,9 @@
 
 #include "learning/tree/rtnode.h"
 
-unsigned long long RTNode::_internal_nodes_traversed = 0;
+#ifdef QUICKRANK_PERF_STATS
+std::atomic<std::uint_fast64_t>RTNode::_internal_nodes_traversed = {0};
+#endif
 
 void RTNode::save_leaves(RTNode **&leaves, unsigned int &nleaves,
                          unsigned int &capacity) {

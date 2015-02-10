@@ -149,7 +149,8 @@ void Mart::init(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     preprocess_dataset(validation_dataset);
     scores_on_validation_ = new Score[validation_dataset->num_instances()]();
   }
-  hist_ = new RTRootHistogram(training_dataset.get(), pseudoresponses_,
+  // here, pseudo responses is empty !
+  hist_ = new RTRootHistogram(training_dataset.get(),
                               sortedsid_, sortedsize_, thresholds_,
                               thresholds_size_);
 }
@@ -356,8 +357,10 @@ std::ofstream& Mart::save_model_to_file(std::ofstream& os) const {
 }
 
 void Mart::print_additional_stats(void) const {
+#ifdef QUICKRANK_PERF_STATS
   std::cout << "#" << std::endl;
   std::cout << "# Internal Nodes Traversed: " << RTNode::internal_nodes_traversed() << std::endl;
+#endif
 }
 
 

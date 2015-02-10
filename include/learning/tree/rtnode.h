@@ -16,6 +16,10 @@
 #include "learning/tree/rtnode_histogram.h"
 #include "types.h"
 
+#ifdef QUICKRANK_PERF_STATS
+#include <atomic>
+#endif
+
 static const unsigned int uint_max = (unsigned int) -1;
 
 class RTNode {
@@ -34,8 +38,10 @@ class RTNode {
   unsigned int featureidx = uint_max;  //refer the index in the feature matrix
   unsigned int featureid = uint_max;  //refer to the id occurring in the dataset file
 
+#ifdef QUICKRANK_PERF_STATS
   // number of internal nodes traversed
-  static unsigned long long _internal_nodes_traversed;
+  static std::atomic<std::uint_fast64_t> _internal_nodes_traversed;
+#endif
 
  public:
   // new leaf
@@ -51,6 +57,12 @@ class RTNode {
      left = NULL;
      right = NULL;
      */
+  }
+
+  RTNode(unsigned int *new_sampleids, unsigned int new_nsampleids, double prediction) {
+    sampleids = new_sampleids;
+    nsampleids = new_nsampleids;
+    avglabel = prediction;
   }
 
   // new node
@@ -70,13 +82,16 @@ class RTNode {
      */
   }
 
-  RTNode(unsigned int *new_sampleids, unsigned int new_nsampleids,
-         double new_deviance, double sumlabel, RTNodeHistogram* new_hist) {
-    sampleids = new_sampleids;
-    nsampleids = new_nsampleids;
-    deviance = new_deviance;
+  RTNode(unsigned int *new_sampleids, RTNodeHistogram* new_hist) {
     hist = new_hist;
-    avglabel = nsampleids ? sumlabel / nsampleids : 0.0;
+    sampleids = new_sampleids;
+    nsampleids = hist->count[0][hist->thresholds_size[0] - 1];
+    double sumlabel = hist->sumlbl[0][hist->thresholds_size[0] - 1];
+    avglabel = nsampleids ? sumlabel / (double) nsampleids : 0.0;
+    deviance = hist->squares_sum_
+        - hist->sumlbl[0][hist->thresholds_size[0] - 1]
+            * hist->sumlbl[0][hist->thresholds_size[0] - 1]
+            / (double) hist->count[0][hist->thresholds_size[0] - 1];
   }
 
   ~RTNode() {
@@ -124,10 +139,14 @@ class RTNode {
             (d[featureidx * offset] <= threshold ?
                 left->score_instance(d, offset) :
                 right->score_instance(d, offset));
-    _internal_nodes_traversed += (featureidx == uint_max ? 0 : 1);
+#ifdef QUICKRANK_PERF_STATS
+    if (featureidx != uint_max)
+    _internal_nodes_traversed.fetch_add(1, std::memory_order_relaxed);
+#endif
     return score;
   }
 
+#ifdef QUICKRANK_PERF_STATS
   static void clean_stats() {
     _internal_nodes_traversed = 0;
   }
@@ -135,6 +154,7 @@ class RTNode {
   static unsigned long long internal_nodes_traversed() {
     return _internal_nodes_traversed;
   }
+#endif
 
   void write_outputtofile(FILE *f, const int indentsize);
   std::ofstream& save_model_to_file(std::ofstream&, const int);

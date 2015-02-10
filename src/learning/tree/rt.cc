@@ -47,7 +47,8 @@ void RegressionTree::fit(RTNodeHistogram *hist) {
 #pragma omp parallel for
   for (unsigned int i = 0; i < nsampleids; ++i)
     sampleids[i] = i;
-  root = new RTNode(sampleids, nsampleids, DBL_MAX, 0.0, hist);
+
+  root = new RTNode(sampleids, hist);
   if (split(root, 1.0f, false))
     heap.push_chidrenof(root);
   while (heap.is_notempty()
@@ -113,6 +114,8 @@ double RegressionTree::update_output(double const *pseudoresponses,
     if (leaves[i]->avglabel > maxlabel)
       maxlabel = leaves[i]->avglabel;
   }
+
+
   return maxlabel;
 }
 
@@ -141,7 +144,8 @@ bool RegressionTree::split(RTNode *node, const float featuresamplingrate,
         featuresamples[i] = featuresamples[--nfeaturesamples];
       }
     }
-    //find best split
+    // ---------------------------
+    // find best split
     const int nth = omp_get_num_procs();
     double* thread_best_score = new double[nth];  // double thread_minvar[nth];
     unsigned int* thread_best_featureidx = new unsigned int[nth];  // unsigned int thread_best_featureidx[nth];
@@ -149,6 +153,7 @@ bool RegressionTree::split(RTNode *node, const float featuresamplingrate,
     for (int i = 0; i < nth; ++i)
       thread_best_score[i] = initvar, thread_best_featureidx[i] = uint_max, thread_best_thresholdid[i] =
           uint_max;
+
 #pragma omp parallel for
     for (unsigned int i = 0; i < nfeaturesamples; ++i) {
       //get feature idx
@@ -163,9 +168,6 @@ bool RegressionTree::split(RTNode *node, const float featuresamplingrate,
       double s = sumlabels[threshold_size - 1];
       unsigned int c = samplecount[threshold_size - 1];
 
-      //					if (f==25)
-      //						printf("### threshold size: %d\n", threshold_size);
-
       //looking for the feature that minimizes sumvar
       for (unsigned int t = 0; t < threshold_size; ++t) {
         unsigned int lcount = samplecount[t];
@@ -175,14 +177,12 @@ bool RegressionTree::split(RTNode *node, const float featuresamplingrate,
           double rsum = s - lsum;
           double score = lsum * lsum / (double) lcount
               + rsum * rsum / (double) rcount;
-
-          //							if (c==4992 && ( training_set->get_featureid(f)==51 || training_set->get_featureid(f)==128) )
-          //								printf("### fx:%d \t t:%d  \t lc:%d \t rc:%d \t sum:%f \t S:%f\n",
-          //										training_set->get_featureid(f), t, lcount, rcount, sumlabels[t], score);
-          if (score > thread_best_score[ith])
-            thread_best_score[ith] = score, thread_best_featureidx[ith] = f, thread_best_thresholdid[ith] =
-                t;
-        }  // else { if (f==25) printf("### stop because of too few elements\n"); }
+          if (score > thread_best_score[ith]) {
+            thread_best_score[ith] = score;
+            thread_best_featureidx[ith] = f;
+            thread_best_thresholdid[ith] = t;
+          }
+        }
       }
     }
     //free feature samples
@@ -212,16 +212,8 @@ bool RegressionTree::split(RTNode *node, const float featuresamplingrate,
         h->thresholds[best_featureidx][best_thresholdid];
 
     const unsigned int count = h->count[best_featureidx][last_thresholdidx];
-    const double sum = h->sumlbl[best_featureidx][last_thresholdidx];
-    const double sqsum = h->sqsumlbl[best_featureidx][last_thresholdidx];
-
     const unsigned int lcount = h->count[best_featureidx][best_thresholdid];
-    const double lsum = h->sumlbl[best_featureidx][best_thresholdid];
-    const double lsqsum = h->sqsumlbl[best_featureidx][best_thresholdid];
-
     const unsigned int rcount = count - lcount;
-    const double rsum = sum - lsum;
-    const double rsqsum = sqsum - lsqsum;
 
     //split samples between left and right child
     unsigned int *lsamples = new unsigned int[lcount], lsize = 0;
@@ -234,9 +226,6 @@ bool RegressionTree::split(RTNode *node, const float featuresamplingrate,
         lsamples[lsize++] = k;
       else
         rsamples[rsize++] = k;
-      //					if (k<=20)
-      //						if(features[k]<=best_threshold) printf("### %d goes left\n", k);
-      //						else printf("### %d goes right\n", k);
     }
     //create histograms for children
     RTNodeHistogram *lhist = new RTNodeHistogram(node->hist, lsamples, lsize,
@@ -250,25 +239,15 @@ bool RegressionTree::split(RTNode *node, const float featuresamplingrate,
       node->hist = NULL;
     }
 
-    // deviances or variances
-    double deviance = sqsum - sum * sum / (double) count;
-    double ldeviance = lsqsum - lsum * lsum / (double) lcount;
-    double rdeviance = rsqsum - rsum * rsum / (double) rcount;
-
     //update current node
     node->set_feature(
         best_featureidx,
-        best_featureidx + 1/*training_set->get_featureid(best_featureidx)*/), node
-        ->threshold = best_threshold, node->deviance = deviance,
-    //create children
-    node->left = new RTNode(lsamples, lsize, ldeviance, lsum, lhist), node
-        ->right = new RTNode(rsamples, rsize, rdeviance, rsum, rhist);
+        best_featureidx + 1/*training_set->get_featureid(best_featureidx)*/);
+    node->threshold = best_threshold;
 
-    //				printf("### Best Feature fx:%d \t t:%d \t s:%f\n", node->get_feature_id(), best_thresholdid, best_score);
-    //
-    //				printf("### Current node sum: %.15f sqsum: %.15f\n", sum, sqsum);
-    //				printf("### Right subtree size:%d\tdev:%.6f\tsum:%.6f\tsqsum:%.6f\n", rsize, rdeviance, rsum, rsqsum);
-    //				printf("### Left  subtree size:%d\tdev:%.6f\tsum:%.6f\tsqsum_%.6f\n", lsize, ldeviance, lsum, lsqsum);
+    //create children
+    node->left = new RTNode(lsamples, lhist);
+    node->right = new RTNode(rsamples, rhist);
 
     // rhist->quick_dump(128,10);
     // lhist->quick_dump(25,10);
