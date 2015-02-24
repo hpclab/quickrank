@@ -57,7 +57,6 @@
  */
 
 /// \todo TODO: (by cla) Decide on outpuformat, logging and similar.
-
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -88,34 +87,34 @@ std::shared_ptr<quickrank::metric::ir::Metric> metric_factory(
     std::string metric, unsigned int cutoff) {
   boost::to_upper(metric);
   if (metric == quickrank::metric::ir::Dcg::NAME_)
-    return std::shared_ptr<quickrank::metric::ir::Metric>(
-        new quickrank::metric::ir::Dcg(cutoff));
+    return std::shared_ptr < quickrank::metric::ir::Metric
+        > (new quickrank::metric::ir::Dcg(cutoff));
   else if (metric == quickrank::metric::ir::Ndcg::NAME_)
-    return std::shared_ptr<quickrank::metric::ir::Metric>(
-        new quickrank::metric::ir::Ndcg(cutoff));
+    return std::shared_ptr < quickrank::metric::ir::Metric
+        > (new quickrank::metric::ir::Ndcg(cutoff));
   else if (metric == quickrank::metric::ir::Tndcg::NAME_)
-    return std::shared_ptr<quickrank::metric::ir::Metric>(
-        new quickrank::metric::ir::Tndcg(cutoff));
+    return std::shared_ptr < quickrank::metric::ir::Metric
+        > (new quickrank::metric::ir::Tndcg(cutoff));
   else if (metric == quickrank::metric::ir::Map::NAME_)
-    return std::shared_ptr<quickrank::metric::ir::Metric>(
-        new quickrank::metric::ir::Map(cutoff));
+    return std::shared_ptr < quickrank::metric::ir::Metric
+        > (new quickrank::metric::ir::Map(cutoff));
   else
     return std::shared_ptr<quickrank::metric::ir::Metric>();
 }
 
 int main(int argc, char *argv[]) {
   std::cout << "# ## ================================== ## #" << std::endl
-            << "# ##              QuickRank             ## #" << std::endl
-            << "# ## ---------------------------------- ## #" << std::endl
-            << "# ##     developed by the HPC. Lab.     ## #" << std::endl
-            << "# ##      http://hpc.isti.cnr.it/       ## #" << std::endl
-            << "# ##      quickrank@.isti.cnr.it        ## #" << std::endl
-            << "# ## ================================== ## #" << std::endl;
+      << "# ##              QuickRank             ## #" << std::endl
+      << "# ## ---------------------------------- ## #" << std::endl
+      << "# ##     developed by the HPC. Lab.     ## #" << std::endl
+      << "# ##      http://hpc.isti.cnr.it/       ## #" << std::endl
+      << "# ##      quickrank@.isti.cnr.it        ## #" << std::endl
+      << "# ## ================================== ## #" << std::endl;
   std::cout << std::fixed;
-  srand(time(NULL));
+  srand (time(NULL));
 
   // default parameters
-  std::string algorithm_string = quickrank::learning::forests::LambdaMart::NAME_;
+std  ::string algorithm_string = quickrank::learning::forests::LambdaMart::NAME_;
   unsigned int ntrees = 1000;
   float shrinkage = 0.10f;
   unsigned int nthresholds = 0;
@@ -138,6 +137,13 @@ int main(int argc, char *argv[]) {
   std::string c_filename;
   std::string model_code_type;
 
+  //Coordinate ascent add by Chiara Pierucci
+
+  unsigned int num_points = 11;
+  unsigned int num_max_iterations = 20;
+  double window_size = 0.1;
+  double reduction_factor = 0.9;
+
   // data structures
   std::shared_ptr<quickrank::learning::LTR_Algorithm> ranking_algorithm;
 
@@ -145,8 +151,8 @@ int main(int argc, char *argv[]) {
   po::options_description learning_options("Training options");
   learning_options.add_options()(
       "algo",
-      po::value<std::string>(&algorithm_string)->default_value(
-          algorithm_string),
+      po::value < std::string
+          > (&algorithm_string)->default_value(algorithm_string),
       ("LtR algorithm [" + quickrank::learning::forests::Mart::NAME_ + "|"
           + quickrank::learning::forests::LambdaMart::NAME_ + "|"
           + quickrank::learning::forests::MatrixNet::NAME_ + "|"
@@ -154,8 +160,8 @@ int main(int argc, char *argv[]) {
           + quickrank::learning::CustomLTR::NAME_ + "]").c_str());
   learning_options.add_options()(
       "train-metric",
-      po::value<std::string>(&train_metric_string)->default_value(
-          train_metric_string),
+      po::value < std::string
+          > (&train_metric_string)->default_value(train_metric_string),
       ("set train metric [" + quickrank::metric::ir::Dcg::NAME_ + "|"
           + quickrank::metric::ir::Ndcg::NAME_ + "|"
           + quickrank::metric::ir::Tndcg::NAME_ + "|"
@@ -170,22 +176,23 @@ int main(int argc, char *argv[]) {
       "set partial file save frequency");
   learning_options.add_options()(
       "train",
-      po::value<std::string>(&training_filename)->default_value(
-          training_filename),
+      po::value < std::string
+          > (&training_filename)->default_value(training_filename),
       "set training file");
   learning_options.add_options()(
       "valid",
-      po::value<std::string>(&validation_filename)->default_value(
-          validation_filename),
+      po::value < std::string
+          > (&validation_filename)->default_value(validation_filename),
       "set validation file");
   learning_options.add_options()(
       "features",
-      po::value<std::string>(&features_filename)->default_value(
-          features_filename),
+      po::value < std::string
+          > (&features_filename)->default_value(features_filename),
       "set features file");
   learning_options.add_options()(
       "model",
-      po::value<std::string>(&model_filename)->default_value(model_filename),
+      po::value < std::string
+          > (&model_filename)->default_value(model_filename),
       "set output model file for training or input model file for testing");
 
   po::options_description tree_model_options(
@@ -220,8 +227,8 @@ int main(int argc, char *argv[]) {
   po::options_description testing_options("Testing options");
   testing_options.add_options()(
       "test-metric",
-      po::value<std::string>(&test_metric_string)->default_value(
-          test_metric_string),
+      po::value < std::string
+          > (&test_metric_string)->default_value(test_metric_string),
       ("set test metric [" + quickrank::metric::ir::Dcg::NAME_ + "|"
           + quickrank::metric::ir::Ndcg::NAME_ + "|"
           + quickrank::metric::ir::Tndcg::NAME_ + "|"
@@ -232,28 +239,49 @@ int main(int argc, char *argv[]) {
       "set test metric cutoff");
   testing_options.add_options()(
       "test",
-      po::value<std::string>(&test_filename)->default_value(test_filename),
+      po::value < std::string > (&test_filename)->default_value(test_filename),
       "set testing file");
   testing_options.add_options()(
       "scores",
-      po::value<std::string>(&scores_filename)->default_value(scores_filename),
+      po::value < std::string
+          > (&scores_filename)->default_value(scores_filename),
       "set output scores file");
 
   po::options_description fast_scoring_options("Fast Scoring options");
   fast_scoring_options.add_options()(
       "dump-model",
-      po::value<std::string>(&xml_filename)->default_value(xml_filename),
+      po::value < std::string > (&xml_filename)->default_value(xml_filename),
       "set XML model file path")(
       "dump-code",
-      po::value<std::string>(&c_filename)->default_value(c_filename),
+      po::value < std::string > (&c_filename)->default_value(c_filename),
       "set C code file path")(
       "dump-type",
-      po::value<std::string>(&model_code_type)->default_value("baseline"),
+      po::value < std::string > (&model_code_type)->default_value("baseline"),
       "set C code generation strategy. Allowed options are: \"baseline\", \"oblivious\". \"opt\".");
 
+//CoordinateAscent options add by Chiara Pierucci
+  po::options_description coordasc_options("Training options for coordasc");
+  coordasc_options.add_options()(
+      "num-points",
+      po::value<unsigned int>(&num_points)->default_value(num_points),
+      "set number of points");
+  coordasc_options.add_options()(
+      "window-size",
+      po::value<double>(&window_size)->default_value(window_size),
+      "set window size");
+  coordasc_options.add_options()(
+      "reduction-factor",
+      po::value<double>(&reduction_factor)->default_value(reduction_factor),
+      "set reduction factor");
+  coordasc_options.add_options()(
+      "max-iterations",
+      po::value<unsigned int>(&num_max_iterations)->default_value(
+          num_max_iterations),
+      "set number of max iterations");
+
   po::options_description all_desc("Allowed options");
-  all_desc.add(learning_options).add(tree_model_options).add(testing_options)
-      .add(fast_scoring_options);
+  all_desc.add(learning_options).add(tree_model_options).add(coordasc_options)
+      .add(testing_options).add(fast_scoring_options);
   all_desc.add_options()("help,h", "produce help message");
 
   po::variables_map vm;
@@ -272,29 +300,32 @@ int main(int argc, char *argv[]) {
     // Create model
     boost::to_upper(algorithm_string);
     if (algorithm_string == quickrank::learning::forests::LambdaMart::NAME_)
-      ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
-          new quickrank::learning::forests::LambdaMart(ntrees, shrinkage,
-                                                       nthresholds, ntreeleaves,
-                                                       minleafsupport, esr));
+      ranking_algorithm = std::shared_ptr < quickrank::learning::LTR_Algorithm
+          > (new quickrank::learning::forests::LambdaMart(ntrees, shrinkage,
+                                                          nthresholds,
+                                                          ntreeleaves,
+                                                          minleafsupport, esr));
     else if (algorithm_string == quickrank::learning::forests::Mart::NAME_)
-      ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
-          new quickrank::learning::forests::Mart(ntrees, shrinkage, nthresholds,
-                                                 ntreeleaves, minleafsupport,
-                                                 esr));
+      ranking_algorithm = std::shared_ptr < quickrank::learning::LTR_Algorithm
+          > (new quickrank::learning::forests::Mart(ntrees, shrinkage,
+                                                    nthresholds, ntreeleaves,
+                                                    minleafsupport, esr));
     else if (algorithm_string == quickrank::learning::forests::MatrixNet::NAME_)
-      ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
-          new quickrank::learning::forests::MatrixNet(ntrees, shrinkage,
-                                                      nthresholds, treedepth,
-                                                      minleafsupport, esr));
-    else if (algorithm_string == quickrank::learning::linear::CoordinateAscent::NAME_)
-      ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
-          new quickrank::learning::linear::CoordinateAscent());
+      ranking_algorithm = std::shared_ptr < quickrank::learning::LTR_Algorithm
+          > (new quickrank::learning::forests::MatrixNet(ntrees, shrinkage,
+                                                         nthresholds, treedepth,
+                                                         minleafsupport, esr));
+    else if (algorithm_string
+        == quickrank::learning::linear::CoordinateAscent::NAME_)
+      ranking_algorithm = std::shared_ptr < quickrank::learning::LTR_Algorithm
+          > (new quickrank::learning::linear::CoordinateAscent(
+              num_points, window_size, reduction_factor, num_max_iterations));
     else if (algorithm_string == quickrank::learning::CustomLTR::NAME_)
-      ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
-          new quickrank::learning::CustomLTR());
+      ranking_algorithm = std::shared_ptr < quickrank::learning::LTR_Algorithm
+          > (new quickrank::learning::CustomLTR());
     else {
       std::cout << " !! Train Algorithm was not set properly" << std::endl;
-      exit(EXIT_FAILURE);
+      exit (EXIT_FAILURE);
     }
 
     // METRIC STUFF
@@ -303,13 +334,13 @@ int main(int argc, char *argv[]) {
         metric_factory(train_metric_string, train_cutoff);
     if (!training_metric) {
       std::cout << " !! Train Metric was not set properly" << std::endl;
-      exit(EXIT_FAILURE);
+      exit (EXIT_FAILURE);
     }
 
     //show ranker parameters
     std::cout << "#" << std::endl << *ranking_algorithm;
     std::cout << "#" << std::endl << "# training scorer: " << *training_metric
-              << std::endl;
+        << std::endl;
 
     quickrank::metric::Evaluator::training_phase(ranking_algorithm,
                                                  training_metric,
@@ -328,7 +359,7 @@ int main(int argc, char *argv[]) {
       std::cout << "#" << std::endl << *ranking_algorithm;
       if (!ranking_algorithm) {
         std::cout << " !! Unable to load model from file." << std::endl;
-        exit(EXIT_FAILURE);
+        exit (EXIT_FAILURE);
       }
     }
 
@@ -337,11 +368,11 @@ int main(int argc, char *argv[]) {
         metric_factory(test_metric_string, test_cutoff);
     if (!testing_metric) {
       std::cout << " !! Test Metric was not set properly" << std::endl;
-      exit(EXIT_FAILURE);
+      exit (EXIT_FAILURE);
     }
 
     std::cout << "# test scorer: " << *testing_metric << std::endl << "#"
-              << std::endl;
+        << std::endl;
     quickrank::metric::Evaluator::testing_phase(ranking_algorithm,
                                                 testing_metric, test_filename,
                                                 scores_filename);
@@ -354,15 +385,15 @@ int main(int argc, char *argv[]) {
     quickrank::io::Xml xml;
     if (model_code_type == "baseline") {
       std::cout << "applying baseline strategy for C code generation to: "
-                << xml_filename << std::endl;
+          << xml_filename << std::endl;
       xml.generate_c_code_baseline(xml_filename, c_filename);
     } else if (model_code_type == "oblivious") {
       std::cout << "applying oblivious strategy for C code generation to: "
-                << xml_filename << std::endl;
+          << xml_filename << std::endl;
       xml.generate_c_code_oblivious_trees(xml_filename, c_filename);
     } else if (model_code_type == "opt") {
-      std::cout << "generating opt_trees input file to: "
-		<< "stdout." << std::endl;
+      std::cout << "generating opt_trees input file to: " << "stdout."
+          << std::endl;
       quickrank::scoring::generate_opt_trees_input(xml_filename, c_filename);
     }
   }

@@ -29,7 +29,12 @@ namespace linear {
 class CoordinateAscent : public LTR_Algorithm {
 
  public:
-  CoordinateAscent();
+   CoordinateAscent(unsigned int num_points, double window_size, double reduction_factor,unsigned int num_max_iterations)
+   : num_points_(num_points),
+     window_size_(window_size),
+     reduction_factor_(reduction_factor),
+     num_max_iterations_(num_max_iterations){
+   }
 
   CoordinateAscent(const boost::property_tree::ptree &info_ptree,
                    const boost::property_tree::ptree &model_ptree) {
@@ -90,7 +95,14 @@ class CoordinateAscent : public LTR_Algorithm {
   virtual void preprocess_dataset(std::shared_ptr<data::Dataset> dataset) const;
 
  private:
+ double* pesiBest=NULL;
+ 
+ //Per il costruttore
 
+ unsigned int num_points_;
+ double window_size_;
+ double reduction_factor_;
+ unsigned int num_max_iterations_;
   /// The output stream operator.
   friend std::ostream& operator<<(std::ostream& os, const CoordinateAscent& a) {
     return a.put(os);
