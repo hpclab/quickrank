@@ -8,8 +8,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
  * Contributors:
- *  - Andrea Battistini (email...)
- *  - Chiara Pierucci (email...)
+ *  - Andrea Battistini (andreabattistini@hotmail.com)
+ *  - Chiara Pierucci (chiarapierucci14@gmail.com)
  */
 #ifndef QUICKRANK_LEARNING_COORDINATE_ASCENT_H_
 #define QUICKRANK_LEARNING_COORDINATE_ASCENT_H_
@@ -29,16 +29,16 @@ namespace linear {
 class CoordinateAscent : public LTR_Algorithm {
 
  public:
-   CoordinateAscent(unsigned int num_points, double window_size, double reduction_factor,unsigned int num_max_iterations)
+   CoordinateAscent(unsigned int num_points, double window_size, double reduction_factor,unsigned int max_iterations)
    : num_points_(num_points),
      window_size_(window_size),
      reduction_factor_(reduction_factor),
-     num_max_iterations_(num_max_iterations){
+     max_iterations_(max_iterations){
    }
 
   CoordinateAscent(const boost::property_tree::ptree &info_ptree,
-                   const boost::property_tree::ptree &model_ptree) {
-  }
+                   const boost::property_tree::ptree &model_ptree); 
+  
 
   virtual ~CoordinateAscent();
 
@@ -95,14 +95,15 @@ class CoordinateAscent : public LTR_Algorithm {
   virtual void preprocess_dataset(std::shared_ptr<data::Dataset> dataset) const;
 
  private:
- double* pesiBest=NULL;
+ double* best_weights_=NULL;
+ unsigned int best_weights_size_=-1;
  
  //Per il costruttore
 
  unsigned int num_points_;
  double window_size_;
  double reduction_factor_;
- unsigned int num_max_iterations_;
+ unsigned int max_iterations_;
   /// The output stream operator.
   friend std::ostream& operator<<(std::ostream& os, const CoordinateAscent& a) {
     return a.put(os);

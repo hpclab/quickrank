@@ -140,7 +140,7 @@ std  ::string algorithm_string = quickrank::learning::forests::LambdaMart::NAME_
   //Coordinate ascent add by Chiara Pierucci
 
   unsigned int num_points = 11;
-  unsigned int num_max_iterations = 20;
+  unsigned int max_iterations = 20;
   double window_size = 0.1;
   double reduction_factor = 0.9;
 
@@ -275,8 +275,8 @@ std  ::string algorithm_string = quickrank::learning::forests::LambdaMart::NAME_
       "set reduction factor");
   coordasc_options.add_options()(
       "max-iterations",
-      po::value<unsigned int>(&num_max_iterations)->default_value(
-          num_max_iterations),
+      po::value<unsigned int>(&max_iterations)->default_value(
+          max_iterations),
       "set number of max iterations");
 
   po::options_description all_desc("Allowed options");
@@ -319,7 +319,7 @@ std  ::string algorithm_string = quickrank::learning::forests::LambdaMart::NAME_
         == quickrank::learning::linear::CoordinateAscent::NAME_)
       ranking_algorithm = std::shared_ptr < quickrank::learning::LTR_Algorithm
           > (new quickrank::learning::linear::CoordinateAscent(
-              num_points, window_size, reduction_factor, num_max_iterations));
+              num_points, window_size, reduction_factor, max_iterations));
     else if (algorithm_string == quickrank::learning::CustomLTR::NAME_)
       ranking_algorithm = std::shared_ptr < quickrank::learning::LTR_Algorithm
           > (new quickrank::learning::CustomLTR());
