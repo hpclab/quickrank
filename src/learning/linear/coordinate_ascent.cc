@@ -49,7 +49,6 @@ const std::string CoordinateAscent::NAME_ = "COORDASC";
 
 CoordinateAscent::CoordinateAscent(const boost::property_tree::ptree &info_ptree,
                    const boost::property_tree::ptree &model_ptree){
-  std::cout <<"Entrati!"<<std::endl;
                    
 	num_points_=0;
 	window_size_=0.0;
@@ -87,11 +86,7 @@ CoordinateAscent::CoordinateAscent(const boost::property_tree::ptree &info_ptree
 			best_weights_[num_feature-1]=weight; 
 			//std::cout<<num_feature<<" "<<weight<<std::endl;
 		}
-	}
-		
-		
-	std::cout <<"Usciti!"<<std::endl;
-                   
+	}                
                    }
 
 CoordinateAscent::~CoordinateAscent() {
@@ -155,8 +150,11 @@ void CoordinateAscent::learn(
   Score* PreSum = new Score[training_dataset->num_instances()];
   Score* MyTrainingScore = new Score[training_dataset->num_instances()
       * (num_points_ + 1)];
-  Score* MyValidationScore = new Score[validation_dataset->num_instances()];
-
+      
+  Score* MyValidationScore = NULL;
+  if (validation_dataset){
+  	MyValidationScore = new Score[validation_dataset->num_instances()];
+	}
   //calcola lo score per ogni documento del training set come combinazione lineare dei pesi.Faccio il ciclo per tutti i documenti del dataset
   for (unsigned int b = 0; b < max_iterations_; b++) {
 
@@ -221,7 +219,7 @@ void CoordinateAscent::learn(
           MyTrainingScore[j] += pesi[k] * training_dataset->at(j, k)[0];
         }
       }
-     
+   if(validation_dataset){  
       for (unsigned int j = 0; j < validation_dataset->num_instances(); j++) {
         //loop per assegnare lo score ai documenti in base al pesi per validation
         MyValidationScore[j] = 0;
@@ -229,7 +227,7 @@ void CoordinateAscent::learn(
           MyValidationScore[j] += pesi[k] * validation_dataset->at(j, k)[0];
         }
       }
-    
+    }
     //NDCG calcolato con i pesi best trovati sul train e validation
     MetricScore metric_on_training = scorer->evaluate_dataset(training_dataset,
                                                               MyTrainingScore);
@@ -256,9 +254,12 @@ void CoordinateAscent::learn(
 		std::cout <<std::endl;	 
     window_size_ *= reduction_factor_;
   }
-
+	
+	if (MyValidationScore!=NULL){
+		delete[] MyValidationScore;
+		}
+  
   delete[] MyTrainingScore;
-  delete[] MyValidationScore;
   delete[] pesi;
   delete[] PreSum;
   delete[] punti;
