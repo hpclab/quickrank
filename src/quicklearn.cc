@@ -143,6 +143,7 @@ std  ::string algorithm_string = quickrank::learning::forests::LambdaMart::NAME_
   unsigned int max_iterations = 20;
   double window_size = 0.1;
   double reduction_factor = 0.9;
+  unsigned int max_failed_vali=3;
 
   // data structures
   std::shared_ptr<quickrank::learning::LTR_Algorithm> ranking_algorithm;
@@ -278,6 +279,11 @@ std  ::string algorithm_string = quickrank::learning::forests::LambdaMart::NAME_
       po::value<unsigned int>(&max_iterations)->default_value(
           max_iterations),
       "set number of max iterations");
+  coordasc_options.add_options()(
+      "max-failed-vali",
+      po::value<unsigned int>(&max_failed_vali)->default_value(
+          max_failed_vali),
+      "set number of fails on validation before exit");    
 
   po::options_description all_desc("Allowed options");
   all_desc.add(learning_options).add(tree_model_options).add(coordasc_options)
@@ -319,7 +325,7 @@ std  ::string algorithm_string = quickrank::learning::forests::LambdaMart::NAME_
         == quickrank::learning::linear::CoordinateAscent::NAME_)
       ranking_algorithm = std::shared_ptr < quickrank::learning::LTR_Algorithm
           > (new quickrank::learning::linear::CoordinateAscent(
-              num_points, window_size, reduction_factor, max_iterations));
+              num_points, window_size, reduction_factor, max_iterations,max_failed_vali));
     else if (algorithm_string == quickrank::learning::CustomLTR::NAME_)
       ranking_algorithm = std::shared_ptr < quickrank::learning::LTR_Algorithm
           > (new quickrank::learning::CustomLTR());

@@ -29,11 +29,12 @@ namespace linear {
 class CoordinateAscent : public LTR_Algorithm {
 
  public:
-   CoordinateAscent(unsigned int num_points, double window_size, double reduction_factor,unsigned int max_iterations)
+   CoordinateAscent(unsigned int num_points, double window_size, double reduction_factor,unsigned int max_iterations, unsigned int max_failed_vali)
    : num_points_(num_points),
      window_size_(window_size),
      reduction_factor_(reduction_factor),
-     max_iterations_(max_iterations){
+     max_iterations_(max_iterations),
+     max_failed_vali_(max_failed_vali){
    }
 
   CoordinateAscent(const boost::property_tree::ptree &info_ptree,
@@ -83,8 +84,6 @@ class CoordinateAscent : public LTR_Algorithm {
   virtual Score score_document(const Feature* d,
                                const unsigned int offset = 1) const;
 
-  const Score FIXED_SCORE = 666.0;
-
  protected:
 
   /// Prepare the dataset before training or scoring takes place.
@@ -104,6 +103,8 @@ class CoordinateAscent : public LTR_Algorithm {
  double window_size_;
  double reduction_factor_;
  unsigned int max_iterations_;
+ unsigned int max_failed_vali_;
+ 
   /// The output stream operator.
   friend std::ostream& operator<<(std::ostream& os, const CoordinateAscent& a) {
     return a.put(os);
