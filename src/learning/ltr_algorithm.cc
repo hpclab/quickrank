@@ -20,7 +20,7 @@
 #include "learning/forests/mart.h"
 #include "learning/forests/lambdamart.h"
 #include "learning/forests/matrixnet.h"
-// Add by Chiara Pierucci Andrea Battistini
+// Added by Chiara Pierucci Andrea Battistini
 #include "learning/linear/coordinate_ascent.h"
 
 #ifdef _OPENMP
@@ -64,7 +64,7 @@ void LTR_Algorithm::save(std::string output_basename, int iteration) const {
   if (!output_basename.empty()) {
     std::string filename(output_basename);
     if (iteration != -1)
-      filename += ".T"+std::to_string(iteration) + ".xml";
+      filename += ".T" + std::to_string(iteration) + ".xml";
     std::ofstream output_stream;
     output_stream.open(filename);
     // Wrap actual model
@@ -98,12 +98,12 @@ std::shared_ptr<LTR_Algorithm> LTR_Algorithm::load_model_from_file(
   boost::property_tree::ptree info_ptree;
   boost::property_tree::ptree ensemble_ptree;
 
-  BOOST_FOREACH(const boost::property_tree::ptree::value_type& node, xml_tree.get_child("ranker")) {
-    if (node.first == "info")
-      info_ptree = node.second;
-    else if (node.first == "ensemble")
-      ensemble_ptree = node.second;
-  }
+  BOOST_FOREACH(const boost::property_tree::ptree::value_type& node, xml_tree.get_child("ranker")){
+  if (node.first == "info")
+  info_ptree = node.second;
+  else if (node.first == "ensemble")
+  ensemble_ptree = node.second;
+}
 
   std::string ranker_type = info_ptree.get<std::string>("type");
   if (ranker_type == forests::Mart::NAME_)
@@ -115,10 +115,10 @@ std::shared_ptr<LTR_Algorithm> LTR_Algorithm::load_model_from_file(
   if (ranker_type == forests::MatrixNet::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
         new forests::MatrixNet(info_ptree, ensemble_ptree));
-  //Coordinate Ascent add by Chiara Pierucci Andrea Battistini      
+  //Coordinate Ascent added by Chiara Pierucci Andrea Battistini
   if (ranker_type == linear::CoordinateAscent::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
-        new linear::CoordinateAscent(info_ptree, ensemble_ptree));      
+        new linear::CoordinateAscent(info_ptree, ensemble_ptree));
 
   return NULL;
 }
