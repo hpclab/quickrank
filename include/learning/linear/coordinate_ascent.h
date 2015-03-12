@@ -26,20 +26,25 @@ namespace quickrank {
 namespace learning {
 namespace linear {
 
+/// This implements the Coordinate Ascent algorithm.
+///
+/// Metzler, D., Croft, W.B.: Linear feature-based models for information retrieval.
+/// Information Retrieval 10(3), 257–274 (2007)
 class CoordinateAscent : public LTR_Algorithm {
 
  public:
-   CoordinateAscent(unsigned int num_points, double window_size, double reduction_factor,unsigned int max_iterations, unsigned int max_failed_vali)
-   : num_points_(num_points),
-     window_size_(window_size),
-     reduction_factor_(reduction_factor),
-     max_iterations_(max_iterations),
-     max_failed_vali_(max_failed_vali){
-   }
+  CoordinateAscent(unsigned int num_points, double window_size,
+                   double reduction_factor, unsigned int max_iterations,
+                   unsigned int max_failed_vali)
+      : num_samples_(num_points),
+        window_size_(window_size),
+        reduction_factor_(reduction_factor),
+        max_iterations_(max_iterations),
+        max_failed_vali_(max_failed_vali) {
+  }
 
   CoordinateAscent(const boost::property_tree::ptree &info_ptree,
-                   const boost::property_tree::ptree &model_ptree); 
-  
+                   const boost::property_tree::ptree &model_ptree);
 
   virtual ~CoordinateAscent();
 
@@ -94,17 +99,17 @@ class CoordinateAscent : public LTR_Algorithm {
   virtual void preprocess_dataset(std::shared_ptr<data::Dataset> dataset) const;
 
  private:
- double* best_weights_=NULL;
- unsigned int best_weights_size_=-1;
- 
- //Per il costruttore
+  double* best_weights_ = NULL;
+  unsigned int best_weights_size_ = -1;
 
- unsigned int num_points_;
- double window_size_;
- double reduction_factor_;
- unsigned int max_iterations_;
- unsigned int max_failed_vali_;
- 
+  //Per il costruttore
+
+  unsigned int num_samples_;
+  double window_size_;
+  double reduction_factor_;
+  unsigned int max_iterations_;
+  unsigned int max_failed_vali_;
+
   /// The output stream operator.
   friend std::ostream& operator<<(std::ostream& os, const CoordinateAscent& a) {
     return a.put(os);

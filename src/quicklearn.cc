@@ -28,6 +28,8 @@
  *   Information Retrieval, 2010.
  *   - \b MatrixNet: I. Segalovich. Machine learning in search quality at yandex.
  *   Invited Talk, SIGIR, 2010.
+ *   - \b CoordinateAscent: Metzler, D., Croft, W.B.: Linear feature-based models for information retrieval.
+ *   Information Retrieval 10(3), 257–274 (2007)
  *
  * \subsection authors Authors and Contributors
  *
@@ -36,6 +38,8 @@
  *   - Franco Maria Nardini (since Sept. 2014)
  *   - Nicola Tonellotto (since Sept. 2014)
  *   - Gabriele Capannini (v0.0. June 2014 - Sept. 2014)
+ *   - Andrea Battistini and Chiara Pierucci (Implementation of CoordinateAscent - March 2015)
+ *
  *
  * \subsection download Get QuickRank
  * QuickRank is available here: <a href="http://quickrank.isti.cnr.it">http://quickrank.isti.cnr.it</a>.
@@ -114,7 +118,7 @@ int main(int argc, char *argv[]) {
   srand (time(NULL));
 
   // default parameters
-std  ::string algorithm_string = quickrank::learning::forests::LambdaMart::NAME_;
+  std::string algorithm_string = quickrank::learning::forests::LambdaMart::NAME_;
   unsigned int ntrees = 1000;
   float shrinkage = 0.10f;
   unsigned int nthresholds = 0;
@@ -137,13 +141,13 @@ std  ::string algorithm_string = quickrank::learning::forests::LambdaMart::NAME_
   std::string c_filename;
   std::string model_code_type;
 
-  //Coordinate ascent add by Chiara Pierucci
-
+  // ------------------------------------------
+  // Coordinate ascent added by Chiara Pierucci
   unsigned int num_points = 11;
-  unsigned int max_iterations = 20;
-  double window_size = 0.1;
-  double reduction_factor = 0.9;
-  unsigned int max_failed_vali=3;
+  unsigned int max_iterations = 100;
+  float window_size = 0.1;
+  float reduction_factor = 0.95;
+  unsigned int max_failed_vali = 20;
 
   // data structures
   std::shared_ptr<quickrank::learning::LTR_Algorithm> ranking_algorithm;
@@ -260,30 +264,28 @@ std  ::string algorithm_string = quickrank::learning::forests::LambdaMart::NAME_
       po::value < std::string > (&model_code_type)->default_value("baseline"),
       "set C code generation strategy. Allowed options are: \"baseline\", \"oblivious\". \"opt\".");
 
-//CoordinateAscent options add by Chiara Pierucci
-  po::options_description coordasc_options("Training options for coordasc");
+  // CoordinateAscent options add by Chiara Pierucci
+  po::options_description coordasc_options(
+      "Training options for Coordinate Ascent");
   coordasc_options.add_options()(
-      "num-points",
+      "num-samples",
       po::value<unsigned int>(&num_points)->default_value(num_points),
-      "set number of points");
+      "set number of samples in search window");
   coordasc_options.add_options()(
-      "window-size",
-      po::value<double>(&window_size)->default_value(window_size),
-      "set window size");
+      "window-size", po::value<float>(&window_size)->default_value(window_size),
+      "set search window size");
   coordasc_options.add_options()(
       "reduction-factor",
-      po::value<double>(&reduction_factor)->default_value(reduction_factor),
-      "set reduction factor");
+      po::value<float>(&reduction_factor)->default_value(reduction_factor),
+      "set window reduction factor");
   coordasc_options.add_options()(
       "max-iterations",
-      po::value<unsigned int>(&max_iterations)->default_value(
-          max_iterations),
+      po::value<unsigned int>(&max_iterations)->default_value(max_iterations),
       "set number of max iterations");
   coordasc_options.add_options()(
-      "max-failed-vali",
-      po::value<unsigned int>(&max_failed_vali)->default_value(
-          max_failed_vali),
-      "set number of fails on validation before exit");    
+      "max-failed-valid",
+      po::value<unsigned int>(&max_failed_vali)->default_value(max_failed_vali),
+      "set number of fails on validation before exit");
 
   po::options_description all_desc("Allowed options");
   all_desc.add(learning_options).add(tree_model_options).add(coordasc_options)
@@ -323,9 +325,11 @@ std  ::string algorithm_string = quickrank::learning::forests::LambdaMart::NAME_
                                                          minleafsupport, esr));
     else if (algorithm_string
         == quickrank::learning::linear::CoordinateAscent::NAME_)
-      ranking_algorithm = std::shared_ptr < quickrank::learning::LTR_Algorithm
-          > (new quickrank::learning::linear::CoordinateAscent(
-              num_points, window_size, reduction_factor, max_iterations,max_failed_vali));
+      ranking_algorithm =
+          std::shared_ptr < quickrank::learning::LTR_Algorithm
+              > (new quickrank::learning::linear::CoordinateAscent(
+                  num_points, window_size, reduction_factor, max_iterations,
+                  max_failed_vali));
     else if (algorithm_string == quickrank::learning::CustomLTR::NAME_)
       ranking_algorithm = std::shared_ptr < quickrank::learning::LTR_Algorithm
           > (new quickrank::learning::CustomLTR());

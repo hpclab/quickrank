@@ -1,3 +1,7 @@
+2015 Mar 12.
+ - Implementation of CoordinateAscent 
+    Metzler, D., Croft, W.B.: Linear feature-based models for information retrieval.
+    Information Retrieval 10(3), 257–274 (2007)
 
 2015 Jan. 8.
   - Instrumented code: counting number of traversed node during test.

@@ -50,14 +50,14 @@ const std::string CoordinateAscent::NAME_ = "COORDASC";
 CoordinateAscent::CoordinateAscent(const boost::property_tree::ptree &info_ptree,
                    const boost::property_tree::ptree &model_ptree){
                    
-	num_points_=0;
+	num_samples_=0;
 	window_size_=0.0;
 	reduction_factor_=0.0;
 	max_iterations_=0;
 	max_failed_vali_=0;
 	
 	//read (training) info  
-	num_points_=info_ptree.get<unsigned int>("num-points");
+  num_samples_ = info_ptree.get<unsigned int>("num-samples");
 	window_size_=info_ptree.get<double>("window-size");
 	reduction_factor_=info_ptree.get<double>("reduction-factor");
 	max_iterations_=info_ptree.get<unsigned int>("max-iterations");
@@ -81,12 +81,10 @@ CoordinateAscent::CoordinateAscent(const boost::property_tree::ptree &info_ptree
 	}
 	
 	BOOST_FOREACH(const boost::property_tree::ptree::value_type &couple, model_ptree){
-		
 		if (couple.first =="couple"){
 			int feature=couple.second.get<int>("feature");
 			double weight=couple.second.get<double>("weight");
 			best_weights_[feature-1]=weight; 
-			//std::cout<<feature<<" "<<weight<<std::endl;
 		}
 	}                
 }
@@ -100,13 +98,11 @@ CoordinateAscent::~CoordinateAscent() {
 std::ostream& CoordinateAscent::put(std::ostream& os) const {
   os 
 		<< "# Ranker: " << name() << std::endl
-		<< "# number of points = " << num_points_ << std::endl
+		<< "# number of samples = " << num_samples_ << std::endl
 		<< "# window size = " << window_size_ << std::endl
-		<< "# reduction factor = " << reduction_factor_ << std::endl
+		<< "# window reduction factor = " << reduction_factor_ << std::endl
 		<< "# number of max iterations = " << max_iterations_ << std::endl
 		<< "# number of fails on validation before exit = " << max_failed_vali_ << std::endl;
-
-	
   return os;
 }
 
@@ -138,7 +134,6 @@ void CoordinateAscent::learn(
   std::cout << "# --------------------------" << std::endl;
 
   // initialize weights and best_weights a 1/n
-
   double* weights = new double[training_dataset->num_features()];
   best_weights_ = new double[training_dataset->num_features()];
   best_weights_size_=training_dataset->num_features();
@@ -148,12 +143,12 @@ void CoordinateAscent::learn(
   }
 
   // array of points in the window to be used to compute NDCG 
-  double* points = new double[num_points_ + 1];
-  MetricScore* MyNDCGs = new MetricScore[num_points_ + 1];
+  double* points = new double[num_samples_ + 1];
+  MetricScore* MyNDCGs = new MetricScore[num_samples_ + 1];
   MetricScore Bestmetric_on_validation = 0;
   Score* PreSum = new Score[training_dataset->num_instances()];
   Score* MyTrainingScore = new Score[training_dataset->num_instances()
-      * (num_points_ + 1)];
+      * (num_samples_ + 1)];
       
   Score* MyValidationScore = NULL;
   if (validation_dataset){
@@ -164,7 +159,7 @@ void CoordinateAscent::learn(
   // loop for max_iterations_
   for (unsigned int b = 0; b < max_iterations_; b++) {
 
-    double step = 2 * window_size / num_points_;  // step to select points in the window
+    double step = 2 * window_size / num_samples_;  // step to select points in the window
     for (unsigned int i = 0; i < training_dataset->num_features(); i++) {
       double lower_bound = weights[i] - window_size;  // lower and upper bounds of the window
       double upper_bound = weights[i] + window_size;
@@ -212,12 +207,10 @@ void CoordinateAscent::learn(
 
       if (dirty == true) {  // normalize if needed
         double normalized_sum = 0;
-        for (unsigned int h = 0; h < training_dataset->num_features(); h++) {
+        for (unsigned int h = 0; h < training_dataset->num_features(); h++)
           normalized_sum += weights[h];
-        }
-        for (unsigned int h = 0; h < training_dataset->num_features(); h++) {
+        for (unsigned int h = 0; h < training_dataset->num_features(); h++)
           weights[h] /= normalized_sum;
-        }
       }
       
     }// end for i
@@ -308,8 +301,6 @@ void CoordinateAscent::score_dataset(std::shared_ptr<data::Dataset> dataset,
   }
 }
 
-// assumes vertical dataset
-// offset to next feature of the same instance
 void CoordinateAscent::score_query_results(
     std::shared_ptr<data::QueryResults> results, Score* scores,
     unsigned int offset) const {
@@ -335,7 +326,7 @@ std::ofstream& CoordinateAscent::save_model_to_file(std::ofstream& os) const {
   // write ranker description
 	os <<"\t<info>" <<std::endl;
   os <<"\t\t<type>" <<name() <<"</type>"<<std::endl;
-	os <<"\t\t<num-points>" <<num_points_ <<"</num-points>"<<std::endl;
+	os <<"\t\t<num-samples>" <<num_samples_ <<"</num-samples>"<<std::endl;
   os <<"\t\t<window-size>" <<window_size_ <<"</window-size>"<<std::endl;
   os <<"\t\t<reduction-factor>" <<reduction_factor_ <<"</reduction-factor>"<<std::endl;
   os <<"\t\t<max-iterations>" <<max_iterations_ <<"</max-iterations>"<<std::endl;
@@ -346,17 +337,15 @@ std::ofstream& CoordinateAscent::save_model_to_file(std::ofstream& os) const {
 	auto old_precision = os.precision();
 	os.setf(std::ios::floatfield, std::ios::fixed);
 	for (unsigned int i=0; i<best_weights_size_; i++){
-	//10 seems to be a "good" precision
-		os << std::setprecision(10);
 		os <<"\t\t<couple>" <<std::endl;
+    os << std::setprecision(3);
 		os <<"\t\t\t<feature>" <<i+1<<"</feature>"<<std::endl;
+    os << std::setprecision(std::numeric_limits<quickrank::Score>::digits10);
 		os <<"\t\t\t<weight>" <<best_weights_[i]<<"</weight>"<<std::endl;
 		os <<"\t\t</couple>" <<std::endl;
 	}
 	os <<"\t</ensemble>" <<std::endl;
   os << std::setprecision(old_precision);
-  // save xml model
-  // TODO: Save model to file
   return os;
 }
 
