@@ -20,6 +20,8 @@
 #include "learning/forests/mart.h"
 #include "learning/forests/lambdamart.h"
 #include "learning/forests/matrixnet.h"
+// Add by Chiara Pierucci Andrea Battistini
+#include "learning/linear/coordinate_ascent.h"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -113,6 +115,10 @@ std::shared_ptr<LTR_Algorithm> LTR_Algorithm::load_model_from_file(
   if (ranker_type == forests::MatrixNet::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
         new forests::MatrixNet(info_ptree, ensemble_ptree));
+  //Coordinate Ascent add by Chiara Pierucci Andrea Battistini      
+  if (ranker_type == linear::CoordinateAscent::NAME_)
+    return std::shared_ptr<LTR_Algorithm>(
+        new linear::CoordinateAscent(info_ptree, ensemble_ptree));      
 
   return NULL;
 }
