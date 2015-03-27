@@ -28,7 +28,7 @@
 
 #include "learning/forests/mart.h"
 #include "learning/forests/lambdamart.h"
-#include "learning/forests/matrixnet.h"
+#include "learning/forests/obliviouslambdamart.h"
 // Added by Chiara Pierucci Andrea Battistini
 #include "learning/linear/coordinate_ascent.h"
 
@@ -121,9 +121,9 @@ std::shared_ptr<LTR_Algorithm> LTR_Algorithm::load_model_from_file(
   if (ranker_type == forests::LambdaMart::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
         new forests::LambdaMart(info_ptree, ensemble_ptree));
-  if (ranker_type == forests::MatrixNet::NAME_)
+  if (ranker_type == forests::ObliviousLambdaMart::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
-        new forests::MatrixNet(info_ptree, ensemble_ptree));
+        new forests::ObliviousLambdaMart(info_ptree, ensemble_ptree));
   //Coordinate Ascent added by Chiara Pierucci Andrea Battistini
   if (ranker_type == linear::CoordinateAscent::NAME_)
     return std::shared_ptr<LTR_Algorithm>(

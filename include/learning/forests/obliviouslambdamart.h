@@ -19,8 +19,8 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_LEARNING_FORESTS_MATRIXNET_H_
-#define QUICKRANK_LEARNING_FORESTS_MATRIXNET_H_
+#ifndef QUICKRANK_LEARNING_FORESTS_OBLIVIOUSLAMBDAMART_H_
+#define QUICKRANK_LEARNING_FORESTS_OBLIVIOUSLAMBDAMART_H_
 
 #include "types.h"
 #include "learning/forests/lambdamart.h"
@@ -31,9 +31,9 @@ namespace quickrank {
 namespace learning {
 namespace forests {
 
-class MatrixNet : public LambdaMart {
+class ObliviousLambdaMart : public LambdaMart {
  public:
-  /// Initializes a new MatrixNet instance with the given learning parameters.
+  /// Initializes a new ObliviousLambdaMart instance with the given learning parameters.
   ///
   /// \param ntrees Maximum number of trees.
   /// \param shrinkage Learning rate.
@@ -42,7 +42,7 @@ class MatrixNet : public LambdaMart {
   /// \param minleafsupport Minimum number of instances in each leaf.
   /// \param esr Early stopping if no improvement after \esr iterations
   /// on the validation set.
-  MatrixNet(unsigned int ntrees, float shrinkage, unsigned int nthresholds,
+  ObliviousLambdaMart(unsigned int ntrees, float shrinkage, unsigned int nthresholds,
             unsigned int treedepth, unsigned int minleafsupport,
             unsigned int esr)
       : LambdaMart(ntrees, shrinkage, nthresholds, 1 << treedepth,
@@ -50,10 +50,10 @@ class MatrixNet : public LambdaMart {
         treedepth_(treedepth) {
   }
 
-  MatrixNet(const boost::property_tree::ptree &info_ptree,
+  ObliviousLambdaMart(const boost::property_tree::ptree &info_ptree,
             const boost::property_tree::ptree &model_ptree);
 
-  virtual ~MatrixNet() {
+  virtual ~ObliviousLambdaMart() {
   }
 
   /// Returns the name of the ranker.
@@ -76,7 +76,7 @@ class MatrixNet : public LambdaMart {
 
  private:
   /// The output stream operator.
-  friend std::ostream& operator<<(std::ostream& os, const MatrixNet& a) {
+  friend std::ostream& operator<<(std::ostream& os, const ObliviousLambdaMart& a) {
     return a.put(os);
   }
 

@@ -39,7 +39,7 @@
 
 #include "learning/forests/mart.h"
 #include "learning/forests/lambdamart.h"
-#include "learning/forests/matrixnet.h"
+#include "learning/forests/obliviouslambdamart.h"
 
 namespace quickrank {
 namespace io {
@@ -460,7 +460,7 @@ std::shared_ptr<learning::LTR_Algorithm> Xml::load_model_from_file(
         new learning::forests::LambdaMart(info_ptree, ensemble_ptree));
   if (ranker_type == "MATRIXNET")
     return std::shared_ptr<learning::LTR_Algorithm>(
-        new learning::forests::MatrixNet(info_ptree, ensemble_ptree));
+        new learning::forests::ObliviousLambdaMart(info_ptree, ensemble_ptree));
 
   return NULL;
 }

@@ -35,7 +35,7 @@
  *   - \b LamdaMART: Q. Wu, C. Burges, K. Svore, and J. Gao.
  *   Adapting boosting for information retrieval measures.
  *   Information Retrieval, 2010.
- *   - \b MatrixNet: I. Segalovich. Machine learning in search quality at yandex.
+ *   - \b Oblivious LambdaMart: Indpired to I. Segalovich. Machine learning in search quality at yandex.
  *   Invited Talk, SIGIR, 2010.
  *   - \b CoordinateAscent: Metzler, D., Croft, W.B.: Linear feature-based models for information retrieval.
  *   Information Retrieval 10(3), 257–274 (2007)
@@ -86,7 +86,7 @@
 #include "metric/evaluator.h"
 #include "learning/forests/mart.h"
 #include "learning/forests/lambdamart.h"
-#include "learning/forests/matrixnet.h"
+#include "learning/forests/obliviouslambdamart.h"
 #include "learning/linear/coordinate_ascent.h"
 #include "learning/custom/custom_ltr.h"
 #include "metric/ir/tndcg.h"
@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
           algorithm_string),
       ("LtR algorithm [" + quickrank::learning::forests::Mart::NAME_ + "|"
           + quickrank::learning::forests::LambdaMart::NAME_ + "|"
-          + quickrank::learning::forests::MatrixNet::NAME_ + "|"
+          + quickrank::learning::forests::ObliviousLambdaMart::NAME_ + "|"
           + quickrank::learning::linear::CoordinateAscent::NAME_ + "|"
           + quickrank::learning::CustomLTR::NAME_ + "]").c_str());
   learning_options.add_options()(
@@ -343,9 +343,9 @@ int main(int argc, char *argv[]) {
           new quickrank::learning::forests::Mart(ntrees, shrinkage, nthresholds,
                                                  ntreeleaves, minleafsupport,
                                                  esr));
-    else if (algorithm_string == quickrank::learning::forests::MatrixNet::NAME_)
+    else if (algorithm_string == quickrank::learning::forests::ObliviousLambdaMart::NAME_)
       ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
-          new quickrank::learning::forests::MatrixNet(ntrees, shrinkage,
+          new quickrank::learning::forests::ObliviousLambdaMart(ntrees, shrinkage,
                                                       nthresholds, treedepth,
                                                       minleafsupport, esr));
     else if (algorithm_string

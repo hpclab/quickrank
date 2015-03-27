@@ -19,7 +19,7 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#include "learning/forests/matrixnet.h"
+#include "learning/forests/obliviouslambdamart.h"
 
 #include <iostream>
 #include <fstream>
@@ -34,10 +34,10 @@ namespace quickrank {
 namespace learning {
 namespace forests {
 
-const std::string MatrixNet::NAME_ = "MATRIXNET";
+const std::string ObliviousLambdaMart::NAME_ = "OBVLAMBDAMART";
 
 
-MatrixNet::MatrixNet(const boost::property_tree::ptree &info_ptree,
+ObliviousLambdaMart::ObliviousLambdaMart(const boost::property_tree::ptree &info_ptree,
                      const boost::property_tree::ptree &model_ptree)
     : LambdaMart(info_ptree, model_ptree) {
   ntrees_ = 0;
@@ -81,8 +81,8 @@ MatrixNet::MatrixNet(const boost::property_tree::ptree &info_ptree,
   }
 }
 
-std::ostream& MatrixNet::put(std::ostream& os) const {
-  os << "# Ranker: MatrixNet" << std::endl << "# max no. of trees = " << ntrees_
+std::ostream& ObliviousLambdaMart::put(std::ostream& os) const {
+  os << "# Ranker: Oblivious LambdaMart" << std::endl << "# max no. of trees = " << ntrees_
      << std::endl << "# max tree depth = " << treedepth_ << std::endl
      << "# shrinkage = " << shrinkage_ << std::endl << "# min leaf support = "
      << minleafsupport_ << std::endl;
@@ -96,7 +96,7 @@ std::ostream& MatrixNet::put(std::ostream& os) const {
   return os;
 }
 
-std::unique_ptr<RegressionTree> MatrixNet::fit_regressor_on_gradient(
+std::unique_ptr<RegressionTree> ObliviousLambdaMart::fit_regressor_on_gradient(
     std::shared_ptr<data::Dataset> training_dataset) {
   ObliviousRT* tree = new ObliviousRT(nleaves_, training_dataset.get(),
                                       pseudoresponses_, minleafsupport_,
@@ -107,7 +107,7 @@ std::unique_ptr<RegressionTree> MatrixNet::fit_regressor_on_gradient(
   return std::unique_ptr<RegressionTree>(tree);
 }
 
-std::ofstream& MatrixNet::save_model_to_file(std::ofstream& os) const {
+std::ofstream& ObliviousLambdaMart::save_model_to_file(std::ofstream& os) const {
   // write ranker description
   os << "\t<info>" << std::endl << "\t\t<type>" << name() << "</type>"
      << std::endl << "\t\t<trees>" << ntrees_ << "</trees>" << std::endl
