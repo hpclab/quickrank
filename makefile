@@ -28,6 +28,7 @@ INCDIRS:=-Iinclude
 OBJSDIR:=_build
 DEPSDIR:=_deps
 DOCDIR:=documentation
+TESTDATA:=quickranktestdata
 
 # all sources
 SRCS:=$(wildcard $(SRCDIR)/*.cc) $(wildcard $(SRCDIR)/*/*.cc) $(wildcard $(SRCDIR)/*/*/*.cc)
@@ -77,7 +78,7 @@ doc:
 
 # runs all the unit tests
 # to run a single test use make unit-tests TEST=dcg_test
-unit-tests: $(BINDIR)/unit-tests
+unit-tests:  $(TESTDATA) $(BINDIR)/unit-tests
 	$(BINDIR)/unit-tests --log_level=test_suite --run_test=$(TEST)
 
 # removes intermediate files
@@ -100,8 +101,12 @@ $(OBJSDIR)/%.o: %.cc
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) $(INCDIRS) -c -o $@ $<
 
+# get sample data for unit-testing
+$(TESTDATA):
+	git clone http://git.hpc.isti.cnr.it/quickrank/quickranktestdata.git $(TESTDATA)
+	
 # linking
-$(BINDIR)/unit-tests: $(OBJS) $(UTESTSOBJS)
+$(BINDIR)/unit-tests:$(OBJS) $(UTESTSOBJS)
 	$(CXX) \
 	$(filter-out $(OBJSDIR)/$(SRCDIR)/$(QUICKLEARN).o $(OBJSDIR)/$(SRCDIR)/$(QUICKSCORE).o,$(OBJS)) \
 	$(UTESTSOBJS) \

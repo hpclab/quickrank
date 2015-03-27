@@ -10,6 +10,7 @@ documentation/html
 *.d
 *.o
 
+quickranktestdata
 
 # OS generated files #
 ######################
