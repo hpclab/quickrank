@@ -3,9 +3,18 @@
  * Webpage: http://quickrank.isti.cnr.it/
  * Contact: quickrank@isti.cnr.it
  *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * Unless explicitly acquired and licensed from Licensor under another
+ * license, the contents of this file are subject to the Reciprocal Public
+ * License ("RPL") Version 1.5, or subsequent versions as allowed by the RPL,
+ * and You may not copy or use this file in either source code or executable
+ * form, except in compliance with the terms and conditions of the RPL.
+ *
+ * All software distributed under the RPL is provided strictly on an "AS
+ * IS" basis, WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, AND
+ * LICENSOR HEREBY DISCLAIMS ALL SUCH WARRANTIES, INCLUDING WITHOUT
+ * LIMITATION, ANY WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE, QUIET ENJOYMENT, OR NON-INFRINGEMENT. See the RPL for specific
+ * language governing rights and limitations under the RPL.
  *
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
@@ -68,6 +77,8 @@
 #include <iostream>
 #include <iomanip>
 #include <memory>
+#include <stdio.h>
+#include <unistd.h>
 
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
@@ -106,14 +117,31 @@ std::shared_ptr<quickrank::metric::ir::Metric> metric_factory(
     return std::shared_ptr<quickrank::metric::ir::Metric>();
 }
 
+
+void print_logo() {
+  if ( isatty(fileno(stdout)) ) {
+    std::string color_reset = "\033[0m";
+    std::string color_logo = "\033[1m\033[32m";
+    std::cout << color_logo << std::endl
+              << "      _____  _____" << std::endl
+              << "     /    / /____/"  << std::endl
+              << "    /____\\ /    \\          QuickRank has been developed by hpc.isti.cnr.it" << std::endl
+              << "    ::Quick:Rank::                                   quickrank@isti.cnr.it" << std::endl
+              << color_reset << std::endl;
+  } else {
+    std::cout << std::endl
+              << "      _____  _____" << std::endl
+              << "     /    / /____/" << std::endl
+              << "    /____\\ /    \\          QuickRank has been developed by hpc.isti.cnr.it" << std::endl
+              << "    ::Quick:Rank::                                   quickrank@isti.cnr.it" << std::endl
+              << std::endl;
+  }
+}
+
 int main(int argc, char *argv[]) {
-  std::cout << "# ## ================================== ## #" << std::endl
-            << "# ##              QuickRank             ## #" << std::endl
-            << "# ## ---------------------------------- ## #" << std::endl
-            << "# ##     developed by the HPC. Lab.     ## #" << std::endl
-            << "# ##      http://hpc.isti.cnr.it/       ## #" << std::endl
-            << "# ##      quickrank@.isti.cnr.it        ## #" << std::endl
-            << "# ## ================================== ## #" << std::endl;
+
+  print_logo();
+
   std::cout << std::fixed;
   srand(time(NULL));
 
