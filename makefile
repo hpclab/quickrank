@@ -78,6 +78,7 @@ doc:
 
 # runs all the unit tests
 # to run a single test use make unit-tests TEST=dcg_test
+.PHONY: unit-tests
 unit-tests:  $(TESTDATA) $(BINDIR)/unit-tests
 	$(BINDIR)/unit-tests --log_level=test_suite --run_test=$(TEST)
 

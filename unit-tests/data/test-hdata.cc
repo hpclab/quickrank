@@ -30,12 +30,12 @@
 #include <cmath>
 #include <iomanip>
 
-BOOST_AUTO_TEST_CASE( Horizontal_Dataset_Test ) {
+BOOST_AUTO_TEST_CASE( Dataset_IO_Test ) {
 
   // read and check dataset
   quickrank::io::Svml reader;
   std::unique_ptr<quickrank::data::Dataset> dataset = reader.read_horizontal(
-      "tests/data/msn1.fold1.train.5k.txt");
+      "quickranktestdata/msn1/msn1.fold1.train.5k.txt");
 
   // 226244459
   // std::cout << std::setprecision(16) << *(dataset->at(4329, 127)) << std::endl;

@@ -33,8 +33,9 @@
 BOOST_AUTO_TEST_CASE( test_xml_io ) {
 
   quickrank::io::Xml xml;
+  /// \todo TODO: To be rewritten or removed
 
-  xml.generate_c_code_baseline("tests/model.tree.1", "tests/prova_baseline.cc");
+  // xml.generate_c_code_baseline("tests/model.tree.1", "tests/prova_baseline.cc");
 
   // xml.generate_c_code_oblivious_trees("tests/msn.fold1.quickrank.matrixnet.xml", "tests/matrixnet.cc");
 
