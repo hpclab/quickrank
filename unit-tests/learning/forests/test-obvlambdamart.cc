@@ -113,9 +113,9 @@ BOOST_AUTO_TEST_CASE( ObvLambdaMart_Test ) {
             << test_score << std::endl;
 
   // ------- QuickRank L-Mart Performance ---------
-  // NDCG@10 on training data: 0.4368
-  // NDCG@10 on validation data: 0.3468
-  // NDCG@10 on test data: 0.2819
+  // NDCG@10 on training data: 0.7321
+  // NDCG@10 on validation data: 0.4136
+  // NDCG@10 on test data: 0.3230
 
   BOOST_CHECK (training_score >= 0.4368);
   BOOST_CHECK (validation_score >= 0.3468);
