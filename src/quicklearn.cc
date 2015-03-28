@@ -86,6 +86,7 @@
 #include "metric/evaluator.h"
 #include "learning/forests/mart.h"
 #include "learning/forests/lambdamart.h"
+#include "learning/forests/obliviousmart.h"
 #include "learning/forests/obliviouslambdamart.h"
 #include "learning/linear/coordinate_ascent.h"
 #include "learning/custom/custom_ltr.h"
@@ -188,6 +189,7 @@ int main(int argc, char *argv[]) {
           algorithm_string),
       ("LtR algorithm [" + quickrank::learning::forests::Mart::NAME_ + "|"
           + quickrank::learning::forests::LambdaMart::NAME_ + "|"
+          + quickrank::learning::forests::ObliviousMart::NAME_ + "|"
           + quickrank::learning::forests::ObliviousLambdaMart::NAME_ + "|"
           + quickrank::learning::linear::CoordinateAscent::NAME_ + "|"
           + quickrank::learning::CustomLTR::NAME_ + "]").c_str());
@@ -254,7 +256,7 @@ int main(int argc, char *argv[]) {
   tree_model_options.add_options()(
       "tree-depth",
       po::value<unsigned int>(&treedepth)->default_value(treedepth),
-      "set tree depth [applies only to MatrixNet]");
+      "set tree depth [applies only to Oblivious Mart/LambdaMart]");
 
   po::options_description testing_options("Testing options");
   testing_options.add_options()(
@@ -343,6 +345,11 @@ int main(int argc, char *argv[]) {
           new quickrank::learning::forests::Mart(ntrees, shrinkage, nthresholds,
                                                  ntreeleaves, minleafsupport,
                                                  esr));
+    else if (algorithm_string == quickrank::learning::forests::ObliviousMart::NAME_)
+      ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
+          new quickrank::learning::forests::ObliviousMart(ntrees, shrinkage,
+                                                      nthresholds, treedepth,
+                                                      minleafsupport, esr));
     else if (algorithm_string == quickrank::learning::forests::ObliviousLambdaMart::NAME_)
       ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
           new quickrank::learning::forests::ObliviousLambdaMart(ntrees, shrinkage,

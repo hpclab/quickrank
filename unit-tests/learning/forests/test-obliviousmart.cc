@@ -19,11 +19,11 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#define BOOST_TEST_MART_LINK
+#define BOOST_TEST_OBVMART_LINK
 #include <boost/test/unit_test.hpp>
 
 #include "metric/evaluator.h"
-#include "learning/forests/mart.h"
+#include "learning/forests/obliviousmart.h"
 #include "metric/ir/ndcg.h"
 
 #include "metric/ir/dcg.h"
@@ -34,28 +34,27 @@
 #include <cmath>
 #include <iomanip>
 
-BOOST_AUTO_TEST_CASE( Mart_Test ) {
+BOOST_AUTO_TEST_CASE( ObliviousMart_Test ) {
 
   std::string training_filename =
       "quickranktestdata/msn1/msn1.fold1.train.5k.txt";
   std::string validation_filename =
       "quickranktestdata/msn1/msn1.fold1.vali.5k.txt";
   std::string test_filename = "quickranktestdata/msn1/msn1.fold1.test.5k.txt";
-  std::string features_filename;
-  std::string model_filename = "test-mart-model.xml";
+  std::string features_filename, model_filename;
 
   unsigned int ntrees = 100;
   float shrinkage = 0.1;
   unsigned int nthresholds = 0;
-  unsigned int ntreeleaves = 16;
+  unsigned int treedepth = 4;
   unsigned int minleafsupport = 1;
   unsigned int esr = 100;
   unsigned int partial_save = -1;
   unsigned int ndcg_cutoff = 10;
 
   auto ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
-      new quickrank::learning::forests::Mart(ntrees, shrinkage, nthresholds,
-                                             ntreeleaves, minleafsupport, esr));
+      new quickrank::learning::forests::ObliviousMart(ntrees, shrinkage, nthresholds,
+                                             treedepth, minleafsupport, esr));
 
   auto training_metric = std::shared_ptr<quickrank::metric::ir::Metric>(
       new quickrank::metric::ir::Ndcg(ndcg_cutoff));
@@ -112,27 +111,12 @@ BOOST_AUTO_TEST_CASE( Mart_Test ) {
   std::cout << *testing_metric << " on test data = " << std::setprecision(4)
             << test_score << std::endl;
 
-  // write model on disk
-  ranking_algorithm->save(model_filename);
-
-  auto model_reloaded = quickrank::learning::LTR_Algorithm::load_model_from_file(model_filename);
-  model_reloaded->score_dataset(test_dataset, &test_scores[0]);
-  quickrank::MetricScore test_score_reloaded = testing_metric->evaluate_dataset(
-      test_dataset, &test_scores[0]);
-
-  std::cout << *testing_metric << " on test data = " << std::setprecision(4)
-            << test_score_reloaded << std::endl;
-
-
-  BOOST_CHECK_EQUAL(test_score, test_score_reloaded);
-
-
-  // ------- RANKKLIB++ Performance ---------
-  // NDCG@10 on training data: 0.7154
-  // NDCG@10 on validation data: 0.4548
+  // ------- QuickRank Mart ---------
+  // NDCG@10 on training data: 0.7153
+  // NDCG@10 on validation data: 0.4580
   // NDCG@10 on test data: 0.3706
 
-  BOOST_CHECK (training_score >= 0.7153);
-  BOOST_CHECK (validation_score >= 0.4580);
-  BOOST_CHECK (test_score >= 0.3706);
+  BOOST_CHECK (training_score >= 0.69);
+  BOOST_CHECK (validation_score >= 0.436);
+  BOOST_CHECK (test_score >= 0.3491);
 }
