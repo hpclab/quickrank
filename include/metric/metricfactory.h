@@ -19,25 +19,45 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#define BOOST_TEST_XML_LOAD
-#include <boost/test/unit_test.hpp>
+#ifndef QUICKRANK_METRIC_IR_METRIC_FACTORY_H_
+#define QUICKRANK_METRIC_IR_METRIC_FACTORY_H_
 
 #include <iostream>
-#include <fstream>
+#include <climits>
+#include <memory>
+#include <boost/noncopyable.hpp>
 
-#include "learning/ltr_algorithm.h"
+#include "types.h"
 
-#include <cmath>
+#include <boost/algorithm/string/case_conv.hpp>
 
-BOOST_AUTO_TEST_CASE( test_xml_load ) {
-  /// \todo TODO: to be rewritten or removed
-  // read model
-  /*
-  auto model = quickrank::learning::LTR_Algorithm::load_model_from_file("tests/msn.fold1.quickrank.lmart.xml");
+#include "metric/ir/tndcg.h"
+#include "metric/ir/ndcg.h"
+#include "metric/ir/dcg.h"
+#include "metric/ir/map.h"
 
-  std::ofstream out;
-  out.open("tests/prova.out.xml", std::ofstream::out);
-  model->save_model_to_file(out);
 
-  out.close();*/
+namespace quickrank {
+namespace metric {
+namespace ir {
+
+std::shared_ptr<Metric> ir_metric_factory(
+    std::string metric, unsigned int cutoff) {
+  boost::to_upper(metric);
+  if (metric == Dcg::NAME_)
+    return std::shared_ptr<Metric>( new Dcg(cutoff) );
+  else if (metric == Ndcg::NAME_)
+    return std::shared_ptr<Metric>( new Ndcg(cutoff) );
+  else if (metric == Tndcg::NAME_)
+    return std::shared_ptr<Metric>( new Tndcg(cutoff) );
+  else if (metric == Map::NAME_)
+    return std::shared_ptr<Metric>( new Map(cutoff) );
+  else
+    return std::shared_ptr<Metric>();
 }
+
+}  // namespace ir
+}  // namespace metric
+}  // namespace quickrank
+
+#endif

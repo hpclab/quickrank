@@ -90,33 +90,12 @@
 #include "learning/forests/obliviouslambdamart.h"
 #include "learning/linear/coordinate_ascent.h"
 #include "learning/custom/custom_ltr.h"
-#include "metric/ir/tndcg.h"
-#include "metric/ir/ndcg.h"
-#include "metric/ir/map.h"
+#include "metric/metricfactory.h"
 #include "io/xml.h"
 #include "scoring/opt/converter.h"
 
 namespace po = boost::program_options;
 
-/// \todo TODO: To be moved elsewhere
-std::shared_ptr<quickrank::metric::ir::Metric> metric_factory(
-    std::string metric, unsigned int cutoff) {
-  boost::to_upper(metric);
-  if (metric == quickrank::metric::ir::Dcg::NAME_)
-    return std::shared_ptr<quickrank::metric::ir::Metric>(
-        new quickrank::metric::ir::Dcg(cutoff));
-  else if (metric == quickrank::metric::ir::Ndcg::NAME_)
-    return std::shared_ptr<quickrank::metric::ir::Metric>(
-        new quickrank::metric::ir::Ndcg(cutoff));
-  else if (metric == quickrank::metric::ir::Tndcg::NAME_)
-    return std::shared_ptr<quickrank::metric::ir::Metric>(
-        new quickrank::metric::ir::Tndcg(cutoff));
-  else if (metric == quickrank::metric::ir::Map::NAME_)
-    return std::shared_ptr<quickrank::metric::ir::Metric>(
-        new quickrank::metric::ir::Map(cutoff));
-  else
-    return std::shared_ptr<quickrank::metric::ir::Metric>();
-}
 
 
 void print_logo() {
@@ -372,9 +351,8 @@ int main(int argc, char *argv[]) {
     }
 
     // METRIC STUFF
-    boost::to_upper(train_metric_string);
     std::shared_ptr<quickrank::metric::ir::Metric> training_metric =
-        metric_factory(train_metric_string, train_cutoff);
+        quickrank::metric::ir::ir_metric_factory(train_metric_string, train_cutoff);
     if (!training_metric) {
       std::cout << " !! Train Metric was not set properly" << std::endl;
       exit(EXIT_FAILURE);
@@ -406,9 +384,8 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    boost::to_upper(test_metric_string);
     std::shared_ptr<quickrank::metric::ir::Metric> testing_metric =
-        metric_factory(test_metric_string, test_cutoff);
+        quickrank::metric::ir::ir_metric_factory(train_metric_string, train_cutoff);
     if (!testing_metric) {
       std::cout << " !! Test Metric was not set properly" << std::endl;
       exit(EXIT_FAILURE);

@@ -50,7 +50,9 @@ class LambdaMart : public Mart {
 
   /// Generates a LTR_Algorithm instance from a previously saved XML model.
   LambdaMart(const boost::property_tree::ptree &info_ptree,
-             const boost::property_tree::ptree &model_ptree);
+             const boost::property_tree::ptree &model_ptree)
+      : Mart(info_ptree, model_ptree) {
+  }
 
   virtual ~LambdaMart() {
   }
@@ -83,17 +85,6 @@ class LambdaMart : public Mart {
   /// \param training_dataset The dataset used for training
   virtual std::unique_ptr<RegressionTree> fit_regressor_on_gradient(
       std::shared_ptr<data::Dataset> training_dataset);
-
-  virtual std::ofstream& save_model_to_file(std::ofstream& os) const;
-
- private:
-  /// The output stream operator.
-  friend std::ostream& operator<<(std::ostream& os, const LambdaMart& a) {
-    return a.put(os);
-  }
-
-  /// Prints the description of Algorithm, including its parameters.
-  virtual std::ostream& put(std::ostream& os) const;
 
  protected:
   double* instance_weights_ = NULL;  //corresponds to datapoint.cache

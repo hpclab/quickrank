@@ -115,6 +115,7 @@ BOOST_AUTO_TEST_CASE( Mart_Test ) {
   // write model on disk
   ranking_algorithm->save(model_filename);
 
+  // reload model from disk
   auto model_reloaded = quickrank::learning::LTR_Algorithm::load_model_from_file(model_filename);
   model_reloaded->score_dataset(test_dataset, &test_scores[0]);
   quickrank::MetricScore test_score_reloaded = testing_metric->evaluate_dataset(
@@ -123,6 +124,7 @@ BOOST_AUTO_TEST_CASE( Mart_Test ) {
   std::cout << *testing_metric << " on test data = " << std::setprecision(4)
             << test_score_reloaded << std::endl;
 
+  std::remove(model_filename.c_str());
 
   BOOST_CHECK_EQUAL(test_score, test_score_reloaded);
 

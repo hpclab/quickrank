@@ -40,49 +40,11 @@ const std::string ObliviousMart::NAME_ = "OBVMART";
 ObliviousMart::ObliviousMart(const boost::property_tree::ptree &info_ptree,
                      const boost::property_tree::ptree &model_ptree)
     : Mart(info_ptree, model_ptree) {
-  ntrees_ = 0;
-  shrinkage_ = 0;
-  nthresholds_ = 0;
-  nleaves_ = 0;
-  minleafsupport_ = 0;
-  valid_iterations_ = 0;
-  treedepth_ = 0;
-
-  // read (training) info
-  ntrees_ = info_ptree.get<unsigned int>("trees");
-  minleafsupport_ = info_ptree.get<unsigned int>("leafsupport");
-  nthresholds_ = info_ptree.get<unsigned int>("discretization");
-  valid_iterations_ = info_ptree.get<unsigned int>("estop");
-  shrinkage_ = info_ptree.get<double>("shrinkage");
   treedepth_ = info_ptree.get<double>("depth");
-
-  // read ensemble
-  ensemble_model_.set_capacity(ntrees_);
-
-  // loop over trees
-  BOOST_FOREACH(const boost::property_tree::ptree::value_type& tree, model_ptree) {
-    RTNode* root = NULL;
-    float tree_weight = tree.second.get<double>("<xmlattr>.weight", shrinkage_);
-
-    // find the root of the tree
-    BOOST_FOREACH(const boost::property_tree::ptree::value_type& node, tree.second ) {
-      if (node.first == "split") {
-        root = io::RTNode_parse_xml(node.second);
-        break;
-      }
-    }
-
-    if (root == NULL) {
-      std::cerr << "!!! Unable to parse tree from XML model." << std::endl;
-      exit(EXIT_FAILURE);
-    }
-
-    ensemble_model_.push(root, tree_weight, -1);
-  }
 }
 
 std::ostream& ObliviousMart::put(std::ostream& os) const {
-  os << "# Ranker: Oblivious Mart" << std::endl << "# max no. of trees = " << ntrees_
+  os << "# Ranker: " << name() << std::endl << "# max no. of trees = " << ntrees_
      << std::endl << "# max tree depth = " << treedepth_ << std::endl
      << "# shrinkage = " << shrinkage_ << std::endl << "# min leaf support = "
      << minleafsupport_ << std::endl;
