@@ -19,7 +19,7 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#include "learning/forests/obliviouslambdamart.h"
+#include "learning/forests/obliviousmart.h"
 
 #include <iostream>
 #include <fstream>
@@ -34,17 +34,17 @@ namespace quickrank {
 namespace learning {
 namespace forests {
 
-const std::string ObliviousLambdaMart::NAME_ = "OBVLAMBDAMART";
+const std::string ObliviousMart::NAME_ = "OBVMART";
 
 
-ObliviousLambdaMart::ObliviousLambdaMart(const boost::property_tree::ptree &info_ptree,
+ObliviousMart::ObliviousMart(const boost::property_tree::ptree &info_ptree,
                      const boost::property_tree::ptree &model_ptree)
-    : LambdaMart(info_ptree, model_ptree) {
+    : Mart(info_ptree, model_ptree) {
   treedepth_ = info_ptree.get<double>("depth");
 }
 
-std::ostream& ObliviousLambdaMart::put(std::ostream& os) const {
-  os << "# Ranker: "<< name() << std::endl << "# max no. of trees = " << ntrees_
+std::ostream& ObliviousMart::put(std::ostream& os) const {
+  os << "# Ranker: " << name() << std::endl << "# max no. of trees = " << ntrees_
      << std::endl << "# max tree depth = " << treedepth_ << std::endl
      << "# shrinkage = " << shrinkage_ << std::endl << "# min leaf support = "
      << minleafsupport_ << std::endl;
@@ -58,18 +58,18 @@ std::ostream& ObliviousLambdaMart::put(std::ostream& os) const {
   return os;
 }
 
-std::unique_ptr<RegressionTree> ObliviousLambdaMart::fit_regressor_on_gradient(
+std::unique_ptr<RegressionTree> ObliviousMart::fit_regressor_on_gradient(
     std::shared_ptr<data::Dataset> training_dataset) {
   ObliviousRT* tree = new ObliviousRT(nleaves_, training_dataset.get(),
                                       pseudoresponses_, minleafsupport_,
                                       treedepth_);
   tree->fit(hist_);
   //update the outputs of the tree (with gamma computed using the Newton-Raphson method)
-  tree->update_output(pseudoresponses_, instance_weights_);
+  tree->update_output(pseudoresponses_);
   return std::unique_ptr<RegressionTree>(tree);
 }
 
-std::ofstream& ObliviousLambdaMart::save_model_to_file(std::ofstream& os) const {
+std::ofstream& ObliviousMart::save_model_to_file(std::ofstream& os) const {
   // write ranker description
   os << "\t<info>" << std::endl << "\t\t<type>" << name() << "</type>"
      << std::endl << "\t\t<trees>" << ntrees_ << "</trees>" << std::endl

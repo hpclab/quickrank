@@ -86,36 +86,16 @@
 #include "metric/evaluator.h"
 #include "learning/forests/mart.h"
 #include "learning/forests/lambdamart.h"
+#include "learning/forests/obliviousmart.h"
 #include "learning/forests/obliviouslambdamart.h"
 #include "learning/linear/coordinate_ascent.h"
 #include "learning/custom/custom_ltr.h"
-#include "metric/ir/tndcg.h"
-#include "metric/ir/ndcg.h"
-#include "metric/ir/map.h"
+#include "metric/metricfactory.h"
 #include "io/xml.h"
 #include "scoring/opt/converter.h"
 
 namespace po = boost::program_options;
 
-/// \todo TODO: To be moved elsewhere
-std::shared_ptr<quickrank::metric::ir::Metric> metric_factory(
-    std::string metric, unsigned int cutoff) {
-  boost::to_upper(metric);
-  if (metric == quickrank::metric::ir::Dcg::NAME_)
-    return std::shared_ptr<quickrank::metric::ir::Metric>(
-        new quickrank::metric::ir::Dcg(cutoff));
-  else if (metric == quickrank::metric::ir::Ndcg::NAME_)
-    return std::shared_ptr<quickrank::metric::ir::Metric>(
-        new quickrank::metric::ir::Ndcg(cutoff));
-  else if (metric == quickrank::metric::ir::Tndcg::NAME_)
-    return std::shared_ptr<quickrank::metric::ir::Metric>(
-        new quickrank::metric::ir::Tndcg(cutoff));
-  else if (metric == quickrank::metric::ir::Map::NAME_)
-    return std::shared_ptr<quickrank::metric::ir::Metric>(
-        new quickrank::metric::ir::Map(cutoff));
-  else
-    return std::shared_ptr<quickrank::metric::ir::Metric>();
-}
 
 
 void print_logo() {
@@ -188,6 +168,7 @@ int main(int argc, char *argv[]) {
           algorithm_string),
       ("LtR algorithm [" + quickrank::learning::forests::Mart::NAME_ + "|"
           + quickrank::learning::forests::LambdaMart::NAME_ + "|"
+          + quickrank::learning::forests::ObliviousMart::NAME_ + "|"
           + quickrank::learning::forests::ObliviousLambdaMart::NAME_ + "|"
           + quickrank::learning::linear::CoordinateAscent::NAME_ + "|"
           + quickrank::learning::CustomLTR::NAME_ + "]").c_str());
@@ -254,7 +235,7 @@ int main(int argc, char *argv[]) {
   tree_model_options.add_options()(
       "tree-depth",
       po::value<unsigned int>(&treedepth)->default_value(treedepth),
-      "set tree depth [applies only to MatrixNet]");
+      "set tree depth [applies only to Oblivious Mart/LambdaMart]");
 
   po::options_description testing_options("Testing options");
   testing_options.add_options()(
@@ -343,6 +324,11 @@ int main(int argc, char *argv[]) {
           new quickrank::learning::forests::Mart(ntrees, shrinkage, nthresholds,
                                                  ntreeleaves, minleafsupport,
                                                  esr));
+    else if (algorithm_string == quickrank::learning::forests::ObliviousMart::NAME_)
+      ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
+          new quickrank::learning::forests::ObliviousMart(ntrees, shrinkage,
+                                                      nthresholds, treedepth,
+                                                      minleafsupport, esr));
     else if (algorithm_string == quickrank::learning::forests::ObliviousLambdaMart::NAME_)
       ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
           new quickrank::learning::forests::ObliviousLambdaMart(ntrees, shrinkage,
@@ -365,9 +351,8 @@ int main(int argc, char *argv[]) {
     }
 
     // METRIC STUFF
-    boost::to_upper(train_metric_string);
     std::shared_ptr<quickrank::metric::ir::Metric> training_metric =
-        metric_factory(train_metric_string, train_cutoff);
+        quickrank::metric::ir::ir_metric_factory(train_metric_string, train_cutoff);
     if (!training_metric) {
       std::cout << " !! Train Metric was not set properly" << std::endl;
       exit(EXIT_FAILURE);
@@ -399,9 +384,8 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    boost::to_upper(test_metric_string);
     std::shared_ptr<quickrank::metric::ir::Metric> testing_metric =
-        metric_factory(test_metric_string, test_cutoff);
+        quickrank::metric::ir::ir_metric_factory(train_metric_string, train_cutoff);
     if (!testing_metric) {
       std::cout << " !! Test Metric was not set properly" << std::endl;
       exit(EXIT_FAILURE);

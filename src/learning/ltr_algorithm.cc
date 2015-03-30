@@ -29,6 +29,7 @@
 #include "learning/forests/mart.h"
 #include "learning/forests/lambdamart.h"
 #include "learning/forests/obliviouslambdamart.h"
+#include "learning/forests/obliviousmart.h"
 // Added by Chiara Pierucci Andrea Battistini
 #include "learning/linear/coordinate_ascent.h"
 
@@ -121,6 +122,9 @@ std::shared_ptr<LTR_Algorithm> LTR_Algorithm::load_model_from_file(
   if (ranker_type == forests::LambdaMart::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
         new forests::LambdaMart(info_ptree, ensemble_ptree));
+  if (ranker_type == forests::ObliviousMart::NAME_)
+    return std::shared_ptr<LTR_Algorithm>(
+        new forests::ObliviousMart(info_ptree, ensemble_ptree));
   if (ranker_type == forests::ObliviousLambdaMart::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
         new forests::ObliviousLambdaMart(info_ptree, ensemble_ptree));
