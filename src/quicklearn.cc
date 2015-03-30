@@ -35,7 +35,7 @@
  *   - \b LamdaMART: Q. Wu, C. Burges, K. Svore, and J. Gao.
  *   Adapting boosting for information retrieval measures.
  *   Information Retrieval, 2010.
- *   - \b Oblivious LambdaMart: Indpired to I. Segalovich. Machine learning in search quality at yandex.
+ *   - \b Oblivious GBRT / LambdaMart: Indpired to I. Segalovich. Machine learning in search quality at yandex.
  *   Invited Talk, SIGIR, 2010.
  *   - \b CoordinateAscent: Metzler, D., Croft, W.B.: Linear feature-based models for information retrieval.
  *   Information Retrieval 10(3), 257–274 (2007)
