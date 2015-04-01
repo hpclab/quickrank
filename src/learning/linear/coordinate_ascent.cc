@@ -19,6 +19,7 @@
  * Contributors:
  *  - Andrea Battistini (andreabattistini@hotmail.com)
  *  - Chiara Pierucci (chiarapierucci14@gmail.com)
+ *  - Claudio Lucchese (claudio.lucchese@isti.cnr.it)
  */
 #include "learning/linear/coordinate_ascent.h"
 
@@ -85,11 +86,7 @@ CoordinateAscent::CoordinateAscent(
   }
 }
 
-  best_weights_ = new double[max_feature];
-  best_weights_size_ = max_feature;
-  for (unsigned int i = 0; i < max_feature; i++) {
-    best_weights_[i] = 0.0;
-  }
+  std::vector<double>(max_feature, 0.0).swap(best_weights_);
 
   BOOST_FOREACH(const boost::property_tree::ptree::value_type &couple, model_ptree){
   if (couple.first =="couple") {
@@ -101,9 +98,6 @@ CoordinateAscent::CoordinateAscent(
 }
 
 CoordinateAscent::~CoordinateAscent() {
-  if (best_weights_ != NULL) {
-    delete[] best_weights_;
-  }
 }
 
 std::ostream& CoordinateAscent::put(std::ostream& os) const {
@@ -120,7 +114,6 @@ void CoordinateAscent::preprocess_dataset(
     std::shared_ptr<data::Dataset> dataset) const {
   if (dataset->format() != data::Dataset::HORIZ)
     dataset->transpose();
-
 }
 
 void CoordinateAscent::learn(
@@ -132,7 +125,7 @@ void CoordinateAscent::learn(
   auto begin = std::chrono::steady_clock::now();
   double window_size = window_size_ / training_dataset->num_features();  //preserve original value of the window
 
-  // Do some initialization
+      // Do some initialization
   preprocess_dataset(training_dataset);
   if (validation_dataset)
     preprocess_dataset(validation_dataset);
@@ -144,25 +137,21 @@ void CoordinateAscent::learn(
   std::cout << "# --------------------------" << std::endl;
 
   // initialize weights and best_weights a 1/n
-  std::vector<double> weights ( training_dataset->num_features() );
-  best_weights_ = new double[training_dataset->num_features()];
-  best_weights_size_ = training_dataset->num_features();
-  for (unsigned int i = 0; i < training_dataset->num_features(); i++) {
-    weights[i] = 1.0 / training_dataset->num_features();
-    best_weights_[i] = weights[i];
-  }
+  const auto num_features = training_dataset->num_features();
+  const auto n_train_instances = training_dataset->num_instances();
+  std::vector<double> weights( num_features, 1.0 / num_features );
+  std::vector<double>( num_features, 1.0 / num_features ).swap(best_weights_);
 
   // array of points in the window to be used to compute NDCG 
   std::vector<double> points(num_samples_ + 1);
   std::vector<MetricScore> MyNDCGs(num_samples_ + 1);
   MetricScore Bestmetric_on_validation = 0;
-  std::vector<Score> PreSum(training_dataset->num_instances());
-  std::vector<Score> MyTrainingScore (training_dataset->num_instances()
-      * (num_samples_ + 1) );
+  std::vector<Score> PreSum(n_train_instances);
+  std::vector<Score> MyTrainingScore(n_train_instances * (num_samples_ + 1));
 
   std::vector<Score> MyValidationScore;
   if (validation_dataset)
-    MyValidationScore.resize(validation_dataset->num_instances());
+    MyValidationScore.resize(n_train_instances);
 
   // counter of sequential iterations without improvement on validation
   unsigned int count_failed_vali = 0;
@@ -170,13 +159,13 @@ void CoordinateAscent::learn(
   for (unsigned int b = 0; b < max_iterations_; b++) {
 
     double step = 2 * window_size / num_samples_;  // step to select points in the window
-    for (unsigned int i = 0; i < training_dataset->num_features(); i++) {
+    for (unsigned int i = 0; i < num_features; i++) {
       double lower_bound = weights[i] - window_size;  // lower and upper bounds of the window
       double upper_bound = weights[i] + window_size;
       // compute feature*weight for all the feature different from i
 
-      preCompute(training_dataset->at(0, 0), training_dataset->num_instances(),
-                 training_dataset->num_features(), &PreSum[0], &weights[0],
+      preCompute(training_dataset->at(0, 0), n_train_instances,
+                 num_features, &PreSum[0], &weights[0],
                  &MyTrainingScore[0], i);
       MetricScore MyBestNDCG = scorer->evaluate_dataset(training_dataset,
                                                         &MyTrainingScore[0]);
@@ -190,11 +179,11 @@ void CoordinateAscent::learn(
         }
         lower_bound += step;
       }
-#pragma omp parallel for default(none) shared(effective_len,training_dataset,PreSum,MyNDCGs,scorer,i,points,std::cout,MyTrainingScore) 
+#pragma omp parallel for
       for (unsigned int p = 0; p < effective_len; p++) {
         //loop to add partial scores to the total score of the feature i
-        for (unsigned int j = 0; j < training_dataset->num_instances(); j++) {
-          MyTrainingScore[j + (training_dataset->num_instances() * p)] =
+        for (unsigned int j = 0; j < n_train_instances; j++) {
+          MyTrainingScore[j + (n_train_instances * p)] =
               points[p] * training_dataset->at(j, i)[0] + PreSum[j];
         }
         // each thread computes NDCG on some points of the window
@@ -202,7 +191,7 @@ void CoordinateAscent::learn(
         // Operator & is used to obtain the first position of the sub-array
         MyNDCGs[p] = scorer->evaluate_dataset(
             training_dataset,
-            &MyTrainingScore[training_dataset->num_instances() * p]);
+            &MyTrainingScore[n_train_instances * p]);
       }
       // End parallel
 
@@ -217,25 +206,25 @@ void CoordinateAscent::learn(
 
       if (dirty == true) {  // normalize if needed
         double normalized_sum = 0;
-        for (unsigned int h = 0; h < training_dataset->num_features(); h++)
+        for (unsigned int h = 0; h < num_features; h++)
           normalized_sum += weights[h];
-        for (unsigned int h = 0; h < training_dataset->num_features(); h++)
+        for (unsigned int h = 0; h < num_features; h++)
           weights[h] /= normalized_sum;
       }
 
     }  // end for i
 
-    for (unsigned int j = 0; j < training_dataset->num_instances(); j++) {
+    for (unsigned int j = 0; j < n_train_instances; j++) {
       //compute scores of training documents
       MyTrainingScore[j] = 0;
-      for (unsigned int k = 0; k < training_dataset->num_features(); k++) {
+      for (unsigned int k = 0; k < num_features; k++) {
         MyTrainingScore[j] += weights[k] * training_dataset->at(j, k)[0];
       }
     }
 
     // compute NDCG using best_weights
-    MetricScore metric_on_training = scorer->evaluate_dataset(training_dataset,
-                                                              &MyTrainingScore[0]);
+    MetricScore metric_on_training = scorer->evaluate_dataset(
+        training_dataset, &MyTrainingScore[0]);
 
     std::cout << std::setw(7) << b + 1 << std::setw(9) << metric_on_training;
 
@@ -244,7 +233,7 @@ void CoordinateAscent::learn(
       for (unsigned int j = 0; j < validation_dataset->num_instances(); j++) {
         //compute scores of validation documents
         MyValidationScore[j] = 0;
-        for (unsigned int k = 0; k < validation_dataset->num_features(); k++) {
+        for (unsigned int k = 0; k < num_features; k++) {
           MyValidationScore[j] += weights[k] * validation_dataset->at(j, k)[0];
         }
       }
@@ -255,7 +244,7 @@ void CoordinateAscent::learn(
       if (metric_on_validation > Bestmetric_on_validation) {
         count_failed_vali = 0;  //reset to zero when validation improves
         Bestmetric_on_validation = metric_on_validation;
-        for (unsigned int h = 0; h < training_dataset->num_features(); h++) {
+        for (unsigned int h = 0; h < num_features; h++) {
           best_weights_[h] = weights[h];
         }
         std::cout << " *";
@@ -275,11 +264,10 @@ void CoordinateAscent::learn(
 
   //if there is no validation dataset get the weights of training as best_weights 
   if (validation_dataset == NULL) {
-    for (unsigned int i = 0; i < best_weights_size_; i++) {
+    for (unsigned int i = 0; i < num_features; i++) {
       best_weights_[i] = weights[i];
     }
   }
-
 
   auto end = std::chrono::steady_clock::now();
   std::chrono::duration<double> elapsed = std::chrono::duration_cast<
@@ -339,7 +327,7 @@ std::ofstream& CoordinateAscent::save_model_to_file(std::ofstream& os) const {
   os << "\t<ensemble>" << std::endl;
   auto old_precision = os.precision();
   os.setf(std::ios::floatfield, std::ios::fixed);
-  for (unsigned int i = 0; i < best_weights_size_; i++) {
+  for (unsigned int i = 0; i < best_weights_.size(); i++) {
     os << "\t\t<couple>" << std::endl;
     os << std::setprecision(3);
     os << "\t\t\t<feature>" << i + 1 << "</feature>" << std::endl;

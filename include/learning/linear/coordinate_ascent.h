@@ -19,6 +19,7 @@
  * Contributors:
  *  - Andrea Battistini (andreabattistini@hotmail.com)
  *  - Chiara Pierucci (chiarapierucci14@gmail.com)
+ *  - Claudio Lucchese (claudio.lucchese@isti.cnr.it)
  */
 #ifndef QUICKRANK_LEARNING_COORDINATE_ASCENT_H_
 #define QUICKRANK_LEARNING_COORDINATE_ASCENT_H_
@@ -108,8 +109,7 @@ class CoordinateAscent : public LTR_Algorithm {
   virtual void preprocess_dataset(std::shared_ptr<data::Dataset> dataset) const;
 
  private:
-  double* best_weights_;
-  unsigned int best_weights_size_ = -1;
+  std::vector<double> best_weights_;
 
   unsigned int num_samples_;
   double window_size_;
