@@ -28,6 +28,7 @@
 #include <cfloat>
 #include <cmath>
 #include <chrono>
+#include <vector>
 
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/foreach.hpp>
@@ -129,7 +130,7 @@ void CoordinateAscent::learn(
     unsigned int partial_save, const std::string output_basename) {
 
   auto begin = std::chrono::steady_clock::now();
-  double window_size = window_size_;  //preserve original value of the window
+  double window_size = window_size_ / training_dataset->num_features();  //preserve original value of the window
 
   // Do some initialization
   preprocess_dataset(training_dataset);
@@ -143,7 +144,7 @@ void CoordinateAscent::learn(
   std::cout << "# --------------------------" << std::endl;
 
   // initialize weights and best_weights a 1/n
-  double* weights = new double[training_dataset->num_features()];
+  std::vector<double> weights ( training_dataset->num_features() );
   best_weights_ = new double[training_dataset->num_features()];
   best_weights_size_ = training_dataset->num_features();
   for (unsigned int i = 0; i < training_dataset->num_features(); i++) {
@@ -175,7 +176,7 @@ void CoordinateAscent::learn(
       // compute feature*weight for all the feature different from i
 
       preCompute(training_dataset->at(0, 0), training_dataset->num_instances(),
-                 training_dataset->num_features(), PreSum, weights,
+                 training_dataset->num_features(), PreSum, &weights[0],
                  MyTrainingScore, i);
       MetricScore MyBestNDCG = scorer->evaluate_dataset(training_dataset,
                                                         MyTrainingScore);
@@ -284,7 +285,6 @@ void CoordinateAscent::learn(
   }
 
   delete[] MyTrainingScore;
-  delete[] weights;
   delete[] PreSum;
   delete[] points;
   delete[] MyNDCGs;

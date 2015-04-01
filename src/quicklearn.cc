@@ -35,7 +35,7 @@
  *   - \b LamdaMART: Q. Wu, C. Burges, K. Svore, and J. Gao.
  *   Adapting boosting for information retrieval measures.
  *   Information Retrieval, 2010.
- *   - \b Oblivious GBRT / LambdaMart: Indpired to I. Segalovich. Machine learning in search quality at yandex.
+ *   - \b Oblivious GBRT / LambdaMart: Inspired to I. Segalovich. Machine learning in search quality at yandex.
  *   Invited Talk, SIGIR, 2010.
  *   - \b CoordinateAscent: Metzler, D., Croft, W.B.: Linear feature-based models for information retrieval.
  *   Information Retrieval 10(3), 257–274 (2007)
@@ -151,9 +151,9 @@ int main(int argc, char *argv[]) {
 
   // ------------------------------------------
   // Coordinate ascent added by Chiara Pierucci
-  unsigned int num_points = 11;
+  unsigned int num_points = 21;
   unsigned int max_iterations = 100;
-  float window_size = 0.1;
+  float window_size = 10.0;
   float reduction_factor = 0.95;
   unsigned int max_failed_vali = 20;
 
