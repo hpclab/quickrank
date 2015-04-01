@@ -108,7 +108,7 @@ class CoordinateAscent : public LTR_Algorithm {
   virtual void preprocess_dataset(std::shared_ptr<data::Dataset> dataset) const;
 
  private:
-  double* best_weights_ = NULL;
+  double* best_weights_;
   unsigned int best_weights_size_ = -1;
 
   //Per il costruttore

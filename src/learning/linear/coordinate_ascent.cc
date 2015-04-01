@@ -154,16 +154,16 @@ void CoordinateAscent::learn(
 
   // array of points in the window to be used to compute NDCG 
   std::vector<double> points(num_samples_ + 1);
-  MetricScore* MyNDCGs = new MetricScore[num_samples_ + 1];
+  std::vector<MetricScore> MyNDCGs(num_samples_ + 1);
   MetricScore Bestmetric_on_validation = 0;
-  Score* PreSum = new Score[training_dataset->num_instances()];
-  Score* MyTrainingScore = new Score[training_dataset->num_instances()
-      * (num_samples_ + 1)];
+  std::vector<Score> PreSum(training_dataset->num_instances());
+  std::vector<Score> MyTrainingScore (training_dataset->num_instances()
+      * (num_samples_ + 1) );
 
-  Score* MyValidationScore = NULL;
-  if (validation_dataset) {
-    MyValidationScore = new Score[validation_dataset->num_instances()];
-  }
+  std::vector<Score> MyValidationScore;
+  if (validation_dataset)
+    MyValidationScore.resize(validation_dataset->num_instances());
+
   // counter of sequential iterations without improvement on validation
   unsigned int count_failed_vali = 0;
   // loop for max_iterations_
@@ -176,10 +176,10 @@ void CoordinateAscent::learn(
       // compute feature*weight for all the feature different from i
 
       preCompute(training_dataset->at(0, 0), training_dataset->num_instances(),
-                 training_dataset->num_features(), PreSum, &weights[0],
-                 MyTrainingScore, i);
+                 training_dataset->num_features(), &PreSum[0], &weights[0],
+                 &MyTrainingScore[0], i);
       MetricScore MyBestNDCG = scorer->evaluate_dataset(training_dataset,
-                                                        MyTrainingScore);
+                                                        &MyTrainingScore[0]);
       bool dirty = false;		// flag to remind if weights were changed or not  
       unsigned int effective_len = 0;  // len of array of only positive points
 
@@ -235,7 +235,7 @@ void CoordinateAscent::learn(
 
     // compute NDCG using best_weights
     MetricScore metric_on_training = scorer->evaluate_dataset(training_dataset,
-                                                              MyTrainingScore);
+                                                              &MyTrainingScore[0]);
 
     std::cout << std::setw(7) << b + 1 << std::setw(9) << metric_on_training;
 
@@ -249,7 +249,7 @@ void CoordinateAscent::learn(
         }
       }
       MetricScore metric_on_validation = scorer->evaluate_dataset(
-          validation_dataset, MyValidationScore);
+          validation_dataset, &MyValidationScore[0]);
 
       std::cout << std::setw(9) << metric_on_validation;
       if (metric_on_validation > Bestmetric_on_validation) {
@@ -280,13 +280,6 @@ void CoordinateAscent::learn(
     }
   }
 
-  if (MyValidationScore != NULL) {
-    delete[] MyValidationScore;
-  }
-
-  delete[] MyTrainingScore;
-  delete[] PreSum;
-  delete[] MyNDCGs;
 
   auto end = std::chrono::steady_clock::now();
   std::chrono::duration<double> elapsed = std::chrono::duration_cast<
