@@ -111,8 +111,6 @@ class CoordinateAscent : public LTR_Algorithm {
   double* best_weights_;
   unsigned int best_weights_size_ = -1;
 
-  //Per il costruttore
-
   unsigned int num_samples_;
   double window_size_;
   double reduction_factor_;
