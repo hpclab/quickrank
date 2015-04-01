@@ -153,7 +153,7 @@ void CoordinateAscent::learn(
   }
 
   // array of points in the window to be used to compute NDCG 
-  double* points = new double[num_samples_ + 1];
+  std::vector<double> points(num_samples_ + 1);
   MetricScore* MyNDCGs = new MetricScore[num_samples_ + 1];
   MetricScore Bestmetric_on_validation = 0;
   Score* PreSum = new Score[training_dataset->num_instances()];
@@ -286,7 +286,6 @@ void CoordinateAscent::learn(
 
   delete[] MyTrainingScore;
   delete[] PreSum;
-  delete[] points;
   delete[] MyNDCGs;
 
   auto end = std::chrono::steady_clock::now();
