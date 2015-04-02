@@ -30,6 +30,8 @@
 #include <cmath>
 #include <chrono>
 #include <vector>
+#include <numeric>
+#include <algorithm>
 
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/foreach.hpp>
@@ -53,10 +55,20 @@ void preCompute(Feature* training_dataset, unsigned int num_docs,
     PreSum[j] = MyTrainingScore[j]
         - (weights[i] * training_dataset[j * num_fx + i]);
   }
-
 }
 
 const std::string CoordinateAscent::NAME_ = "COORDASC";
+
+CoordinateAscent::CoordinateAscent(unsigned int num_points, double window_size,
+                                   double reduction_factor,
+                                   unsigned int max_iterations,
+                                   unsigned int max_failed_vali)
+    : num_samples_(num_points),
+      window_size_(window_size),
+      reduction_factor_(reduction_factor),
+      max_iterations_(max_iterations),
+      max_failed_vali_(max_failed_vali) {
+}
 
 CoordinateAscent::CoordinateAscent(
     const boost::property_tree::ptree &info_ptree,
@@ -139,11 +151,11 @@ void CoordinateAscent::learn(
   // initialize weights and best_weights a 1/n
   const auto num_features = training_dataset->num_features();
   const auto n_train_instances = training_dataset->num_instances();
-  std::vector<double> weights( num_features, 1.0 / num_features );
-  std::vector<double>( num_features, 1.0 / num_features ).swap(best_weights_);
+
+  std::vector<double> weights(num_features, 1.0 / num_features);
+  std::vector<double>(num_features, 1.0 / num_features).swap(best_weights_);
 
   // array of points in the window to be used to compute NDCG 
-  std::vector<double> points(num_samples_ + 1);
   std::vector<MetricScore> MyNDCGs(num_samples_ + 1);
   MetricScore Bestmetric_on_validation = 0;
   std::vector<Score> PreSum(n_train_instances);
@@ -157,86 +169,66 @@ void CoordinateAscent::learn(
   unsigned int count_failed_vali = 0;
   // loop for max_iterations_
   for (unsigned int b = 0; b < max_iterations_; b++) {
+    MetricScore metric_on_training = 0;
 
     double step = 2 * window_size / num_samples_;  // step to select points in the window
     for (unsigned int i = 0; i < num_features; i++) {
-      double lower_bound = weights[i] - window_size;  // lower and upper bounds of the window
-      double upper_bound = weights[i] + window_size;
       // compute feature*weight for all the feature different from i
+      preCompute(training_dataset->at(0, 0), n_train_instances, num_features,
+                 &PreSum[0], &weights[0], &MyTrainingScore[0], i);
 
-      preCompute(training_dataset->at(0, 0), n_train_instances,
-                 num_features, &PreSum[0], &weights[0],
-                 &MyTrainingScore[0], i);
-      MetricScore MyBestNDCG = scorer->evaluate_dataset(training_dataset,
-                                                        &MyTrainingScore[0]);
-      bool dirty = false;		// flag to remind if weights were changed or not  
-      unsigned int effective_len = 0;  // len of array of only positive points
+      metric_on_training = scorer->evaluate_dataset(training_dataset,
+                                                    &MyTrainingScore[0]);
 
-      while (lower_bound <= upper_bound) {
-        if (lower_bound >= 0) {
-          points[effective_len] = lower_bound;
-          effective_len++;
-        }
-        lower_bound += step;
+      std::vector<double> points;
+      points.reserve(num_samples_ + 1);
+      for (double lower_bound = weights[i] - window_size;
+          lower_bound <= weights[i] + window_size; lower_bound += step) {
+        if (lower_bound >= 0)
+          points.push_back(lower_bound);
       }
+
 #pragma omp parallel for
-      for (unsigned int p = 0; p < effective_len; p++) {
+      for (unsigned int p = 0; p < points.size(); p++) {
         //loop to add partial scores to the total score of the feature i
         for (unsigned int j = 0; j < n_train_instances; j++) {
-          MyTrainingScore[j + (n_train_instances * p)] =
-              points[p] * training_dataset->at(j, i)[0] + PreSum[j];
+          MyTrainingScore[j + (n_train_instances * p)] = points[p]
+              * training_dataset->at(j, i)[0] + PreSum[j];
         }
         // each thread computes NDCG on some points of the window
         // scorer gets a part of array MyTrainingScore for the thread p-th
         // Operator & is used to obtain the first position of the sub-array
         MyNDCGs[p] = scorer->evaluate_dataset(
-            training_dataset,
-            &MyTrainingScore[n_train_instances * p]);
+            training_dataset, &MyTrainingScore[n_train_instances * p]);
       }
       // End parallel
 
-      // Find the best NDCG (not in parallel)
-      for (unsigned int p = 0; p < effective_len; p++) {
-        if (MyBestNDCG < MyNDCGs[p]) {
-          MyBestNDCG = MyNDCGs[p];
-          weights[i] = points[p];
-          dirty = true;
-        }
-      }
-
-      if (dirty == true) {  // normalize if needed
-        double normalized_sum = 0;
-        for (unsigned int h = 0; h < num_features; h++)
-          normalized_sum += weights[h];
-        for (unsigned int h = 0; h < num_features; h++)
-          weights[h] /= normalized_sum;
+      // Find the best NDCG
+      auto i_max_ndcg = std::max_element(MyNDCGs.cbegin(), MyNDCGs.cend());
+      if (*i_max_ndcg > metric_on_training) {
+        auto p = std::distance(MyNDCGs.cbegin(), i_max_ndcg);
+        weights[i] = points[p];
+        metric_on_training = *i_max_ndcg;
+        // normalize
+        double normalized_sum = std::accumulate(weights.cbegin(),
+                                                weights.cend(), 0.0);
+        std::for_each(weights.begin(), weights.end(),
+                      [normalized_sum](double &x) {x/=normalized_sum;});
       }
 
     }  // end for i
-
-    for (unsigned int j = 0; j < n_train_instances; j++) {
-      //compute scores of training documents
-      MyTrainingScore[j] = 0;
-      for (unsigned int k = 0; k < num_features; k++) {
-        MyTrainingScore[j] += weights[k] * training_dataset->at(j, k)[0];
-      }
-    }
-
-    // compute NDCG using best_weights
-    MetricScore metric_on_training = scorer->evaluate_dataset(
-        training_dataset, &MyTrainingScore[0]);
 
     std::cout << std::setw(7) << b + 1 << std::setw(9) << metric_on_training;
 
     // check if there is validation_dataset
     if (validation_dataset) {
-      for (unsigned int j = 0; j < validation_dataset->num_instances(); j++) {
-        //compute scores of validation documents
-        MyValidationScore[j] = 0;
-        for (unsigned int k = 0; k < num_features; k++) {
-          MyValidationScore[j] += weights[k] * validation_dataset->at(j, k)[0];
-        }
-      }
+      //compute scores of validation documents
+      for (unsigned int j = 0; j < validation_dataset->num_instances(); j++)
+        MyValidationScore[j] = std::inner_product(weights.cbegin(),
+                                                  weights.cend(),
+                                                  validation_dataset->at(j, 0),
+                                                  (Score) 0.0);
+
       MetricScore metric_on_validation = scorer->evaluate_dataset(
           validation_dataset, &MyValidationScore[0]);
 
@@ -244,9 +236,7 @@ void CoordinateAscent::learn(
       if (metric_on_validation > Bestmetric_on_validation) {
         count_failed_vali = 0;  //reset to zero when validation improves
         Bestmetric_on_validation = metric_on_validation;
-        for (unsigned int h = 0; h < num_features; h++) {
-          best_weights_[h] = weights[h];
-        }
+        best_weights_ = weights;
         std::cout << " *";
       } else {
         count_failed_vali++;
@@ -263,11 +253,8 @@ void CoordinateAscent::learn(
   //end iterations
 
   //if there is no validation dataset get the weights of training as best_weights 
-  if (validation_dataset == NULL) {
-    for (unsigned int i = 0; i < num_features; i++) {
-      best_weights_[i] = weights[i];
-    }
-  }
+  if (validation_dataset == NULL)
+    best_weights_ = weights;
 
   auto end = std::chrono::steady_clock::now();
   std::chrono::duration<double> elapsed = std::chrono::duration_cast<

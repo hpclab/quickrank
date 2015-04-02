@@ -45,13 +45,7 @@ class CoordinateAscent : public LTR_Algorithm {
  public:
   CoordinateAscent(unsigned int num_points, double window_size,
                    double reduction_factor, unsigned int max_iterations,
-                   unsigned int max_failed_vali)
-      : num_samples_(num_points),
-        window_size_(window_size),
-        reduction_factor_(reduction_factor),
-        max_iterations_(max_iterations),
-        max_failed_vali_(max_failed_vali) {
-  }
+                   unsigned int max_failed_vali);
 
   CoordinateAscent(const boost::property_tree::ptree &info_ptree,
                    const boost::property_tree::ptree &model_ptree);
