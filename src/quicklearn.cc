@@ -385,7 +385,7 @@ int main(int argc, char *argv[]) {
     }
 
     std::shared_ptr<quickrank::metric::ir::Metric> testing_metric =
-        quickrank::metric::ir::ir_metric_factory(train_metric_string, train_cutoff);
+        quickrank::metric::ir::ir_metric_factory(test_metric_string, test_cutoff);
     if (!testing_metric) {
       std::cout << " !! Test Metric was not set properly" << std::endl;
       exit(EXIT_FAILURE);

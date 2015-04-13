@@ -64,7 +64,6 @@ class RankedResults : private boost::noncopyable {
   const unsigned int pos_of_rank(const unsigned int rank) const {
     return unmap_[rank];
   }
-  ;
 
   const unsigned int num_results() const {
     return num_results_;
