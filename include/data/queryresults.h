@@ -22,6 +22,7 @@
 #ifndef QUICKRANK_DATA_QUERYRESULTS_H_
 #define QUICKRANK_DATA_QUERYRESULTS_H_
 
+#include <algorithm>
 #include <boost/noncopyable.hpp>
 #include <boost/container/vector.hpp>
 

@@ -23,6 +23,7 @@
 #define QUICKRANK_DATA_DATASET_H_
 
 #include <iostream>
+#include <memory>
 #include <boost/noncopyable.hpp>
 #include <boost/container/vector.hpp>
 

@@ -22,6 +22,7 @@
 #ifndef QUICKRANK_DATA_RANKEDRESULTS_H_
 #define QUICKRANK_DATA_RANKEDRESULTS_H_
 
+#include <memory>
 #include <boost/noncopyable.hpp>
 #include <boost/container/vector.hpp>
 
