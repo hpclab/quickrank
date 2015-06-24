@@ -24,7 +24,7 @@ QUICKSCORE:=quickscore
 SRCDIR:=src
 UTESTSDIR:=unit-tests
 BINDIR:=bin
-INCDIRS:=-Iinclude -I/usr/local/Cellar/boost/1.58.0/include
+INCDIRS:=-Iinclude 
 OBJSDIR:=_build
 DEPSDIR:=_deps
 DOCDIR:=documentation
@@ -41,7 +41,7 @@ UTESTSOBJS:=$(subst $(UTESTSDIR),$(OBJSDIR)/$(UTESTSDIR),$(UTESTS:.cc=.o))
 
 CXX=
 CXXFLAGS:=-std=c++11 -Wall -pedantic -march=native -Ofast -fopenmp
-LDLIBS:=-lboost_program_options -lboost_system -lboost_filesystem -fopenmp -L/usr/local/Cellar/boost/1.58.0/lib
+LDLIBS:=-lboost_program_options -lboost_system -lboost_filesystem -fopenmp
 
 # find the compiler
 ifneq ($(shell whereis g++-4.9),)
