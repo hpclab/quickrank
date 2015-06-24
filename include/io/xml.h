@@ -23,6 +23,7 @@
 #define QUICKRANK_IO_XML_H_
 
 #include <boost/property_tree/ptree.hpp>
+
 #include <memory>
 #include <string>
 
