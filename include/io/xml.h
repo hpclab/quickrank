@@ -65,6 +65,10 @@ class Xml : private boost::noncopyable {
   void generate_c_code_oblivious_trees(std::string model_filename,
                                        std::string code_filename);
 
+  // TODO (FM) adding documentation and (when working) discard previous implementation.
+  void generate_c_code_oblivious_trees_optimized(std::string model_filename,
+                                       std::string code_filename);
+
   /// Loads a LTR algorithm from a previously saved XML file
   ///
   /// \param model_filename The file name of the xml model.

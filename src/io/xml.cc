@@ -160,6 +160,41 @@ void model_node_to_c_oblivious_trees(
   }
 }
 
+void model_node_to_c_oblivious_trees_optimized(
+    const boost::property_tree::ptree &split_xml, std::stringstream &os) {
+
+  std::string prediction;
+  bool is_leaf = false;
+  const boost::property_tree::ptree* left = NULL;
+  const boost::property_tree::ptree* right = NULL;
+
+  BOOST_FOREACH(const boost::property_tree::ptree::value_type& split_child, split_xml ){
+  if (split_child.first == "output") {
+    prediction = split_child.second.get_value<std::string>();
+    is_leaf = true;
+    break;
+  } else if (split_child.first == "split") {
+    std::string pos = split_child.second.get<std::string>("<xmlattr>.pos");
+    if (pos == "left")
+    left = &(split_child.second);
+    else
+    right = &(split_child.second);
+  }
+}
+
+  if (is_leaf)
+    os << prediction;
+  else {
+    /// \todo TODO: this should be changed with item mapping
+    //os << " ";
+    model_node_to_c_oblivious_trees(*left, os);
+    os << ", ";
+    model_node_to_c_oblivious_trees(*right, os);
+    //os << " ";
+  }
+}
+
+
 void model_tree_get_tests(const boost::property_tree::ptree &tree_xml,
                           boost::container::list<unsigned int> &features,
                           boost::container::list<float> &thresholds) {
