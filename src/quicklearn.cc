@@ -418,7 +418,7 @@ int main(int argc, char *argv[]) {
     } else if (model_code_type == "oblFM") {
       std::cout << "applying optimized oblivious strategy for C code generation to: "
                 << xml_filename << std::endl;
-      xml.generate_c_code_oblivious_trees_optimized2(xml_filename, c_filename);
+      xml.generate_c_code_oblivious_trees_optimized3(xml_filename, c_filename);
     }
   }
 
