@@ -635,6 +635,184 @@ void Xml::generate_c_code_oblivious_trees_optimized(std::string model_filename,
   output.close();
 }
 
+void Xml::generate_c_code_oblivious_trees_optimized2(std::string model_filename,
+                                                    std::string code_filename) {
+  if (model_filename.empty()) {
+    std::cerr << "!!! Model filename is empty." << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+// parse XML
+  boost::property_tree::ptree xml_tree;
+  std::ifstream is;
+  is.open(model_filename, std::ifstream::in);
+  boost::property_tree::read_xml(is, xml_tree);
+  is.close();
+
+// create output stream
+  std::stringstream source_code;
+
+  auto ensemble = xml_tree.get_child("ranker.ensemble");
+  unsigned int trees = ensemble.size();
+  unsigned int depth = xml_tree.get<unsigned int>("ranker.info.depth");
+  unsigned int max_leaves = 1 << depth;
+
+// forests info
+  source_code << "#define N " << trees << " // no. of trees" << std::endl;
+  source_code << "#define M " << depth << " // max tree depth" << std::endl;
+  source_code << "#define F " << max_leaves << " // max number of leaves" << std::endl;
+  source_code << std::endl;
+
+// tree weights
+  source_code.setf(std::ios::floatfield, std::ios::fixed);
+  source_code << "const float tree_weights[N] = { ";
+  for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); p_tree++) {
+    if (p_tree != ensemble.begin())
+      source_code << ", ";
+    float tree_weight = p_tree->second.get("<xmlattr>.weight", 1.0f);
+    source_code << tree_weight << "f";
+  }
+  source_code << " };" << std::endl << std::endl;
+
+// tree depths
+  int counter;
+  source_code << "const unsigned int tree_depths[N] = { ";
+  for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); p_tree++) {
+    if (p_tree != ensemble.begin())
+      source_code << ", ";
+
+    counter = 0;
+    auto p_split = p_tree->second.get_child("split");
+    while (p_split.size() != 2) {
+      counter++;
+      p_split = p_split.get_child("split");
+    }
+    source_code << counter;
+  }
+  source_code << " };" << std::endl << std::endl;
+
+// leaf outputs
+  source_code << "const double leaf_outputs[N * F] = { " << std::endl << '\t';
+  for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); p_tree++) {
+
+    // computing current depth
+    /*counter = 0;
+    auto p_split = p_tree->second.get_child("split");
+    while (p_split.size() != 2) {
+      counter++;
+      p_split = p_split.get_child("split");
+    }*/
+
+    if (p_tree != ensemble.begin())
+      source_code << "," << std::endl << '\t';
+
+    auto root_split = p_tree->second.get_child("split");
+
+    // filling with zeroes...
+    //for (unsigned int i = 0; i < (max_leaves - (1 << counter)); i++)
+    //  source_code << "0, ";
+
+    model_node_to_c_oblivious_trees_optimized(root_split, source_code);
+  }
+  source_code << std::endl << "};" << std::endl << std::endl;
+
+// features ids
+  source_code << "const unsigned int features_ids[N * M] = { " << std::endl << '\t';
+  for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); p_tree++) {
+
+    // computing current depth
+    /*counter = 0;
+    auto p_split = p_tree->second.get_child("split");
+    while (p_split.size() != 2) {
+      counter++;
+      p_split = p_split.get_child("split");
+    }*/
+
+    if (p_tree != ensemble.begin())
+      source_code << "," << std::endl << '\t';
+
+    auto p_split = p_tree->second.get_child("split");
+
+    // filling with zeroes...
+    //for (unsigned int i = 0; i < (depth - counter); i++)
+    //  source_code << "0, ";
+
+    std::string separator = "";
+    while (p_split.size() != 2) {
+      source_code << separator << p_split.get<unsigned int>("feature");
+      p_split = p_split.get_child("split");
+      separator = ", ";
+    }
+  }
+  source_code << std::endl << "};" << std::endl << std::endl;
+
+// thresholds values
+  source_code << "const float thresholds[N * M] = { " << std::endl << '\t';
+  source_code << std::setprecision(std::numeric_limits<Feature>::digits10);
+
+  for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); p_tree++) {
+
+    // computing current depth
+    /*counter = 0;
+    auto p_split = p_tree->second.get_child("split");
+    while (p_split.size() != 2) {
+      counter++;
+      p_split = p_split.get_child("split");
+    }*/
+
+    if (p_tree != ensemble.begin())
+      source_code << "," << std::endl << '\t';
+
+    auto p_split = p_tree->second.get_child("split");
+
+    // filling with zeroes...
+    //for (unsigned int i = 0; i < (depth - counter); i++)
+    //  source_code << "0, ";
+
+    std::string separator = "";
+    while (p_split.size() != 2) {
+      std::string threshold = p_split.get<std::string>("threshold");
+      boost::algorithm::trim(threshold);
+      source_code << separator << threshold << "f";
+      p_split = p_split.get_child("split");
+      separator = ", ";
+    }
+  }
+  source_code << std::endl << "};" << std::endl << std::endl;
+
+  source_code << "#define SHL(n,p) ((n)<<(p))" << std::endl << std::endl;
+
+  source_code
+      << "unsigned int leaf_id(const float *v, const unsigned int *fids, const float *thresholds, const unsigned int m) {"
+      << std::endl
+      << "  unsigned int leafidx = 0;" << std::endl
+      << "  for (unsigned int i = 0; i < m; ++i)" << std::endl
+      << "    leafidx |= SHL( v[fids[i]-1] > thresholds[i], m - 1 - i);"
+      << std::endl
+      << "  return leafidx;" << std::endl
+      << "}" << std::endl << std::endl;
+
+  source_code
+      << "double ranker(float *v) {" << std::endl
+      << "  double score = 0.0;" << std::endl
+      << "  unsigned int leaf_index = 0;" << std::endl
+      << "  unsigned int feature_index = 0;" << std::endl
+      << "  for (int i = 0; i < N; ++i) {" << std::endl
+      << "    score += tree_weights[i] * leaf_outputs[leaf_index + leaf_id(v, &(features_ids[feature_index]), &(thresholds[feature_index]), tree_depths[i])];" << std::endl
+      << "    leaf_index += 1 << tree_depths[i];" << std::endl
+      << "    feature_index += tree_depths[i];" << std::endl
+      << "  }" << std::endl
+      << std::endl
+      << "  return score;" << std::endl
+      << "}" << std::endl
+      << std::endl;
+
+  std::ofstream output;
+  output.open(code_filename, std::ofstream::out);
+  output << source_code.str();
+  output.close();
+}
+
 std::shared_ptr<learning::LTR_Algorithm> Xml::load_model_from_file(
     std::string model_filename) {
   if (model_filename.empty()) {
