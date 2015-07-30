@@ -269,7 +269,7 @@ int main(int argc, char *argv[]) {
       "set C code file path")(
       "dump-type",
       po::value<std::string>(&model_code_type)->default_value("baseline"),
-      "set C code generation strategy. Allowed options are: \"baseline\", \"oblivious\". \"opt\".");
+      "set C code generation strategy. Allowed options are: \"baseline\", \"oblivious\". \"vpred\".");
 
   // CoordinateAscent options add by Chiara Pierucci
   po::options_description coordasc_options(
@@ -404,15 +404,15 @@ int main(int argc, char *argv[]) {
   if (xml_filename != "" && c_filename != "") {
     quickrank::io::Xml xml;
     if (model_code_type == "baseline") {
-      std::cout << "applying baseline strategy for C code generation to: "
+      std::cout << "applying baseline strategy (conditional operators) for C code generation to: "
                 << xml_filename << std::endl;
       xml.generate_c_code_baseline(xml_filename, c_filename);
     } else if (model_code_type == "oblivious") {
       std::cout << "applying oblivious strategy for C code generation to: "
                 << xml_filename << std::endl;
       xml.generate_c_code_oblivious_trees(xml_filename, c_filename);
-    } else if (model_code_type == "opt") {
-      std::cout << "generating opt_trees input file to: " << "stdout."
+    } else if (model_code_type == "vpred") {
+      std::cout << "generating VPred input file to: " << "stdout."
                 << std::endl;
       quickrank::scoring::generate_opt_trees_input(xml_filename, c_filename);
     }
