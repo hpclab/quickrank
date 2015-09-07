@@ -40,7 +40,7 @@ UTESTS:=$(wildcard $(UTESTSDIR)/*.cc) $(wildcard $(UTESTSDIR)/*/*.cc) $(wildcard
 UTESTSOBJS:=$(subst $(UTESTSDIR),$(OBJSDIR)/$(UTESTSDIR),$(UTESTS:.cc=.o))
 
 CXX=
-CXXFLAGS:=-std=c++11 -Wall -pedantic -march=native -Ofast -fopenmp
+CXXFLAGS:=-std=c++11 -Wall -pedantic -march=native -O3 -fopenmp
 LDLIBS:=-lboost_program_options -lboost_system -lboost_filesystem -fopenmp -L/usr/local/Cellar/boost/1.58.0/lib
 
 # find the compiler

@@ -196,6 +196,37 @@ void model_node_to_c_oblivious_trees_optimized(
   }
 }
 
+
+void model_tree_get_leaves(const boost::property_tree::ptree &split_xml, std::vector<std::string> &leaves) {
+  std::string prediction;
+  bool is_leaf = false;
+  const boost::property_tree::ptree* left = NULL;
+  const boost::property_tree::ptree* right = NULL;
+
+  BOOST_FOREACH(const boost::property_tree::ptree::value_type& split_child, split_xml ) {
+    if (split_child.first == "output") {
+      prediction = split_child.second.get_value<std::string>();
+      boost::algorithm::trim(prediction);
+      is_leaf = true;
+      break;
+    } else if (split_child.first == "split") {
+      std::string pos = split_child.second.get<std::string>("<xmlattr>.pos");
+      if (pos == "left")
+        left = &(split_child.second);
+      else
+        right = &(split_child.second);
+    }
+  }
+
+  if (is_leaf)
+    leaves.push_back( prediction );
+  else {
+    model_tree_get_leaves(*left, leaves);
+    model_tree_get_leaves(*right, leaves);
+  }
+}
+
+
 void model_tree_get_tests(const boost::property_tree::ptree &tree_xml,
                           boost::container::list<unsigned int> &features,
                           boost::container::list<float> &thresholds) {
@@ -848,91 +879,116 @@ void Xml::generate_c_code_oblivious_trees_optimized3(std::string model_filename,
   source_code << "#define F " << max_leaves << " // max number of leaves" << std::endl;
   source_code << std::endl;
 
-// tree weights
-  source_code.setf(std::ios::floatfield, std::ios::fixed);
-  source_code << "const float tree_weights[N] = { ";
-  for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); p_tree++) {
-    if (p_tree != ensemble.begin())
-      source_code << ", ";
-    float tree_weight = p_tree->second.get("<xmlattr>.weight", 1.0f);
-    source_code << tree_weight << "f";
-  }
-  source_code << " };" << std::endl << std::endl;
+  // load tree weights
+  std::vector<float> tree_weights;
+  for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); p_tree++)
+     tree_weights.push_back( p_tree->second.get("<xmlattr>.weight", 1.0f) );
 
-// tree depths
-  int counter;
-  source_code << "const unsigned int tree_depths[N] = { ";
+  // load tree depths
+  std::vector<int> tree_depths;
   for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); p_tree++) {
-    if (p_tree != ensemble.begin())
-      source_code << ", ";
-
-    counter = 0;
+    int curr_depth = 0;
     auto p_split = p_tree->second.get_child("split");
     while (p_split.size() != 2) {
-      counter++;
+      curr_depth++;
       p_split = p_split.get_child("split");
     }
-    source_code << counter;
+    tree_depths.push_back(curr_depth);
   }
-  source_code << " };" << std::endl << std::endl;
 
-// leaf outputs
-  source_code << "const double leaf_outputs[N][F] = { " << std::endl << '\t';
+  // load leaf outputs
+  std::vector< std::vector<std::string> > tree_outputs (trees);
+  size_t curr_tree=0;
   for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); p_tree++) {
-
-    if (p_tree != ensemble.begin())
-      source_code << "," << std::endl << '\t';
-
     auto root_split = p_tree->second.get_child("split");
-    source_code << "\t{ ";
-    model_node_to_c_oblivious_trees_optimized(root_split, source_code);
-    source_code << " }";
+    model_tree_get_leaves(root_split, tree_outputs[curr_tree++] );
   }
-  source_code << std::endl << "};" << std::endl << std::endl;
 
-// features ids
-  source_code << "const unsigned int features_ids[N][M] = { " << std::endl << '\t';
+  // load features ids
+  std::vector< std::vector<unsigned int> > feature_ids (trees);
+  curr_tree=0;
   for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); p_tree++) {
-
-    if (p_tree != ensemble.begin())
-      source_code << "," << std::endl << '\t';
-
     auto p_split = p_tree->second.get_child("split");
-
-    std::string separator = "";
-    source_code << "\t{ ";
     while (p_split.size() != 2) {
-      source_code << separator << p_split.get<unsigned int>("feature") -1;
+      feature_ids[curr_tree].push_back( p_split.get<unsigned int>("feature") -1 );
       p_split = p_split.get_child("split");
-      separator = ", ";
     }
-    source_code << " }";
+    curr_tree++;
   }
-  source_code << std::endl << "};" << std::endl << std::endl;
 
-// thresholds values
-  source_code << "const float thresholds[N][M] = { " << std::endl << '\t';
-  source_code << std::setprecision(std::numeric_limits<Feature>::digits10);
-
+  // load thresholds values
+  std::vector< std::vector<std::string> > thresholds (trees);
+  curr_tree=0;
   for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); p_tree++) {
-
-    if (p_tree != ensemble.begin())
-      source_code << "," << std::endl << '\t';
-
     auto p_split = p_tree->second.get_child("split");
-
-    std::string separator = "";
-    source_code << "\t{ ";
     while (p_split.size() != 2) {
       std::string threshold = p_split.get<std::string>("threshold");
       boost::algorithm::trim(threshold);
-      source_code << separator << threshold << "f";
+      thresholds[curr_tree].push_back( threshold );
       p_split = p_split.get_child("split");
-      separator = ", ";
+    }
+    curr_tree++;
+  }
+
+
+  // print tree weights
+  source_code.setf(std::ios::floatfield, std::ios::fixed);
+  source_code << "const float tree_weights[N] = { ";
+  for (size_t i = 0; i<tree_weights.size(); i++) {
+    if (i!=0) source_code << ", ";
+    source_code << tree_weights[i] << "f";
+  }
+  source_code << " };" << std::endl << std::endl;
+
+  // print tree depths
+  source_code << "const unsigned int tree_depths[N] = { ";
+  for (size_t i = 0; i<tree_depths.size(); i++) {
+    if (i!=0) source_code << ", ";
+    source_code << tree_depths[i];
+  }
+  source_code << " };" << std::endl << std::endl;
+
+  // print leaf outputs
+  source_code << "const double leaf_outputs[N][F] = { " << std::endl << '\t';
+  for (size_t i = 0; i<tree_outputs.size(); i++) {
+    if (i!=0) source_code << "," << std::endl << '\t';
+    source_code << "\t{ ";
+    for (size_t j = 0; j<tree_outputs[i].size(); j++) {
+      if (j!=0) source_code << ", ";
+      source_code << tree_outputs[i][j];
     }
     source_code << " }";
   }
   source_code << std::endl << "};" << std::endl << std::endl;
+
+  // pint features ids
+  source_code << "const unsigned int features_ids[N][M] = { " << std::endl << '\t';
+  for (size_t i = 0; i<feature_ids.size(); i++) {
+    if (i!=0) source_code << "," << std::endl << '\t';
+    source_code << "\t{ ";
+    for (size_t j = 0; j<feature_ids[i].size(); j++) {
+      if (j!=0) source_code << ", ";
+      source_code << feature_ids[i][j];
+    }
+    source_code << " }";
+  }
+  source_code << std::endl << "};" << std::endl << std::endl;
+
+
+  // print thresholds values
+  source_code << "const float thresholds[N][M] = { " << std::endl << '\t';
+  source_code << std::setprecision(std::numeric_limits<Feature>::digits10);
+  for (size_t i = 0; i<thresholds.size(); i++) {
+    if (i!=0) source_code << "," << std::endl << '\t';
+    source_code << "\t{ ";
+    for (size_t j = 0; j<thresholds[i].size(); j++) {
+      if (j!=0) source_code << ", ";
+      source_code << thresholds[i][j] << "f";
+    }
+    source_code << " }";
+  }
+  source_code << std::endl << "};" << std::endl << std::endl;
+
 
   source_code << "#define SHL(n,p) ((n)<<(p))" << std::endl << std::endl;
 
