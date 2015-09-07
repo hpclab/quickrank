@@ -902,7 +902,7 @@ void Xml::generate_c_code_oblivious_trees_optimized3(std::string model_filename,
     std::string separator = "";
     source_code << "\t{ ";
     while (p_split.size() != 2) {
-      source_code << separator << p_split.get<unsigned int>("feature");
+      source_code << separator << p_split.get<unsigned int>("feature") -1;
       p_split = p_split.get_child("split");
       separator = ", ";
     }
@@ -939,7 +939,7 @@ void Xml::generate_c_code_oblivious_trees_optimized3(std::string model_filename,
   source_code
     << "unsigned int leaf_id1(const float *v, const unsigned int *fids, const float *thresholds) {" << std::endl
     << "  unsigned int leafidx = 0;" << std::endl
-    << "  leafidx |= SHL(v[fids[0] - 1] > thresholds[0], 0);" << std::endl
+    << "  leafidx |= SHL(v[fids[0]] > thresholds[0], 0);" << std::endl
     << "  return leafidx;" << std::endl
     << "}"  << std::endl
     << std::endl;
@@ -947,8 +947,8 @@ void Xml::generate_c_code_oblivious_trees_optimized3(std::string model_filename,
   source_code
     << "unsigned int leaf_id2(const float *v, const unsigned int *fids, const float *thresholds) {" << std::endl
     << "  unsigned int leafidx = 0;" << std::endl
-    << "  leafidx |= SHL(v[fids[0] - 1] > thresholds[0], 1);" << std::endl
-    << "  leafidx |= SHL(v[fids[1] - 1] > thresholds[1], 0);" << std::endl
+    << "  leafidx |= SHL(v[fids[0]] > thresholds[0], 1);" << std::endl
+    << "  leafidx |= SHL(v[fids[1]] > thresholds[1], 0);" << std::endl
     << "  return leafidx;" << std::endl
     << "}"  << std::endl
     << std::endl;
@@ -956,9 +956,9 @@ void Xml::generate_c_code_oblivious_trees_optimized3(std::string model_filename,
   source_code
     << "unsigned int leaf_id3(const float *v, const unsigned int *fids, const float *thresholds) {" << std::endl
     << "  unsigned int leafidx = 0;" << std::endl
-    << "  leafidx |= SHL(v[fids[0] - 1] > thresholds[0], 2);" << std::endl
-    << "  leafidx |= SHL(v[fids[1] - 1] > thresholds[1], 1);" << std::endl
-    << "  leafidx |= SHL(v[fids[2] - 1] > thresholds[2], 0);" << std::endl
+    << "  leafidx |= SHL(v[fids[0]] > thresholds[0], 2);" << std::endl
+    << "  leafidx |= SHL(v[fids[1]] > thresholds[1], 1);" << std::endl
+    << "  leafidx |= SHL(v[fids[2]] > thresholds[2], 0);" << std::endl
     << "  return leafidx;" << std::endl
     << "}"  << std::endl
     << std::endl;
@@ -966,10 +966,10 @@ void Xml::generate_c_code_oblivious_trees_optimized3(std::string model_filename,
   source_code
     << "unsigned int leaf_id4(const float *v, const unsigned int *fids, const float *thresholds) {" << std::endl
     << "  unsigned int leafidx = 0;" << std::endl
-    << "  leafidx |= SHL(v[fids[0] - 1] > thresholds[0], 3);" << std::endl
-    << "  leafidx |= SHL(v[fids[1] - 1] > thresholds[1], 2);" << std::endl
-    << "  leafidx |= SHL(v[fids[2] - 1] > thresholds[2], 1);" << std::endl
-    << "  leafidx |= SHL(v[fids[3] - 1] > thresholds[3], 0);" << std::endl
+    << "  leafidx |= SHL(v[fids[0]] > thresholds[0], 3);" << std::endl
+    << "  leafidx |= SHL(v[fids[1]] > thresholds[1], 2);" << std::endl
+    << "  leafidx |= SHL(v[fids[2]] > thresholds[2], 1);" << std::endl
+    << "  leafidx |= SHL(v[fids[3]] > thresholds[3], 0);" << std::endl
     << "  return leafidx;" << std::endl
     << "}"  << std::endl
     << std::endl;
@@ -977,11 +977,11 @@ void Xml::generate_c_code_oblivious_trees_optimized3(std::string model_filename,
   source_code
     << "unsigned int leaf_id5(const float *v, const unsigned int *fids, const float *thresholds) {" << std::endl
     << "  unsigned int leafidx = 0;" << std::endl
-    << "  leafidx |= SHL(v[fids[0] - 1] > thresholds[0], 4);" << std::endl
-    << "  leafidx |= SHL(v[fids[1] - 1] > thresholds[1], 3);" << std::endl
-    << "  leafidx |= SHL(v[fids[2] - 1] > thresholds[2], 2);" << std::endl
-    << "  leafidx |= SHL(v[fids[3] - 1] > thresholds[3], 1);" << std::endl
-    << "  leafidx |= SHL(v[fids[4] - 1] > thresholds[4], 0);" << std::endl
+    << "  leafidx |= SHL(v[fids[0]] > thresholds[0], 4);" << std::endl
+    << "  leafidx |= SHL(v[fids[1]] > thresholds[1], 3);" << std::endl
+    << "  leafidx |= SHL(v[fids[2]] > thresholds[2], 2);" << std::endl
+    << "  leafidx |= SHL(v[fids[3]] > thresholds[3], 1);" << std::endl
+    << "  leafidx |= SHL(v[fids[4]] > thresholds[4], 0);" << std::endl
     << "  return leafidx;" << std::endl
     << "}"  << std::endl
     << std::endl;
