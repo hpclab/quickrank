@@ -68,8 +68,8 @@ quicklearn: $(OBJS)
 # builds QuickScore
 # make quickscore RANKER=modelfile
 quickscore: $(OBJS)
-	$(CXX) -ggdb $(CXXFLAGS) $(INCDIRS) -c $(RANKER) -o $(RANKER).o 
-	$(CXX) -ggdb $(filter-out $(OBJSDIR)/$(SRCDIR)/$(QUICKLEARN).o,$(OBJS)) $(RANKER).o $(LDLIBS) -o $(BINDIR)/$(QUICKSCORE)
+	$(CXX) $(CXXFLAGS) $(INCDIRS) -c $(RANKER) -o $(RANKER).o 
+	$(CXX) $(filter-out $(OBJSDIR)/$(SRCDIR)/$(QUICKLEARN).o,$(OBJS)) $(RANKER).o $(LDLIBS) -o $(BINDIR)/$(QUICKSCORE)
 
 
 # creates the documentation

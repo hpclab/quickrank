@@ -415,10 +415,6 @@ int main(int argc, char *argv[]) {
       std::cout << "generating opt_trees input file to: " << "stdout."
                 << std::endl;
       quickrank::scoring::generate_opt_trees_input(xml_filename, c_filename);
-    } else if (model_code_type == "oblFM") {
-      std::cout << "applying optimized oblivious strategy for C code generation to: "
-                << xml_filename << std::endl;
-      xml.generate_c_code_oblivious_trees_optimized3(xml_filename, c_filename);
     }
   }
 
