@@ -23,6 +23,7 @@
 #define QUICKRANK_IO_XML_H_
 
 #include <boost/property_tree/ptree.hpp>
+
 #include <memory>
 #include <string>
 
@@ -63,6 +64,18 @@ class Xml : private boost::noncopyable {
   /// \param model_filename Previously saved xml ranker model.
   /// \param code_filename Output source code file name.
   void generate_c_code_oblivious_trees(std::string model_filename,
+                                       std::string code_filename);
+
+  // TODO (FM) adding documentation and (when working) discard previous implementation.
+  void generate_c_code_oblivious_trees_optimized(std::string model_filename,
+                                       std::string code_filename);
+
+  // TODO (FM) adding documentation and (when working) discard previous implementation.
+  void generate_c_code_oblivious_trees_optimized2(std::string model_filename,
+                                       std::string code_filename);
+
+  // TODO (FM) adding documentation and (when working) discard previous implementation.
+  void generate_c_code_oblivious_trees_optimized3(std::string model_filename,
                                        std::string code_filename);
 
   /// Loads a LTR algorithm from a previously saved XML file
