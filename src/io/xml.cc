@@ -931,12 +931,20 @@ void Xml::generate_c_code_oblivious_trees_optimized3(std::string model_filename,
   }
 
 
+  std::vector<size_t> tree_mapping (trees);
+  std::iota(tree_mapping.begin(), tree_mapping.end(), 0);
+  std::sort( tree_mapping.begin(), tree_mapping.end(),
+            [&tree_depths](int a, int b) {
+                    return tree_depths[a] < tree_depths[b];
+                }
+  );
+
   // print tree weights
   source_code.setf(std::ios::floatfield, std::ios::fixed);
   source_code << "const float tree_weights[N] = { ";
   for (size_t i = 0; i<tree_weights.size(); i++) {
     if (i!=0) source_code << ", ";
-    source_code << tree_weights[i] << "f";
+    source_code << tree_weights[ tree_mapping[i] ] << "f";
   }
   source_code << " };" << std::endl << std::endl;
 
@@ -944,7 +952,7 @@ void Xml::generate_c_code_oblivious_trees_optimized3(std::string model_filename,
   source_code << "const unsigned int tree_depths[N] = { ";
   for (size_t i = 0; i<tree_depths.size(); i++) {
     if (i!=0) source_code << ", ";
-    source_code << tree_depths[i];
+    source_code << tree_depths[ tree_mapping[i] ];
   }
   source_code << " };" << std::endl << std::endl;
 
@@ -953,9 +961,9 @@ void Xml::generate_c_code_oblivious_trees_optimized3(std::string model_filename,
   for (size_t i = 0; i<tree_outputs.size(); i++) {
     if (i!=0) source_code << "," << std::endl << '\t';
     source_code << "\t{ ";
-    for (size_t j = 0; j<tree_outputs[i].size(); j++) {
+    for (size_t j = 0; j<tree_outputs[ tree_mapping[i] ].size(); j++) {
       if (j!=0) source_code << ", ";
-      source_code << tree_outputs[i][j];
+      source_code << tree_outputs[ tree_mapping[i] ][j];
     }
     source_code << " }";
   }
@@ -966,9 +974,9 @@ void Xml::generate_c_code_oblivious_trees_optimized3(std::string model_filename,
   for (size_t i = 0; i<feature_ids.size(); i++) {
     if (i!=0) source_code << "," << std::endl << '\t';
     source_code << "\t{ ";
-    for (size_t j = 0; j<feature_ids[i].size(); j++) {
+    for (size_t j = 0; j<feature_ids[ tree_mapping[i] ].size(); j++) {
       if (j!=0) source_code << ", ";
-      source_code << feature_ids[i][j];
+      source_code << feature_ids[ tree_mapping[i] ][j];
     }
     source_code << " }";
   }
@@ -981,9 +989,9 @@ void Xml::generate_c_code_oblivious_trees_optimized3(std::string model_filename,
   for (size_t i = 0; i<thresholds.size(); i++) {
     if (i!=0) source_code << "," << std::endl << '\t';
     source_code << "\t{ ";
-    for (size_t j = 0; j<thresholds[i].size(); j++) {
+    for (size_t j = 0; j<thresholds[ tree_mapping[i] ].size(); j++) {
       if (j!=0) source_code << ", ";
-      source_code << thresholds[i][j] << "f";
+      source_code << thresholds[ tree_mapping[i] ][j] << "f";
     }
     source_code << " }";
   }
@@ -1047,13 +1055,29 @@ void Xml::generate_c_code_oblivious_trees_optimized3(std::string model_filename,
     << std::endl << std::endl;
 
   source_code
-      << "double ranker(float *v) {" << std::endl
+      << "/*double ranker0(float *v) {" << std::endl
       << "  double score = 0.0;" << std::endl
       << "  for (int i = 0; i < N; ++i)" << std::endl
       << "    score += tree_weights[i] * leaf_outputs[i][pointer[tree_depths[i]-1](v, features_ids[i], thresholds[i])];" << std::endl
       << "  return score;" << std::endl
-      << "}" << std::endl
+      << "}*/" << std::endl
       << std::endl;
+
+
+  source_code
+      << "unsigned int leaf_id(float *v, unsigned int const *fids, float const *thresh, const unsigned int m) {"
+      << std::endl << "  unsigned int leafidx = 0;" << std::endl
+      << "  for (unsigned int i=0; i<m; ++i)" << std::endl
+      << "    leafidx |= SHL( v[fids[i]]>thresh[i], m-1-i);" << std::endl
+      << "  return leafidx;" << std::endl << "}" << std::endl << std::endl;
+
+  source_code << "double ranker(float *v) {" << std::endl
+              << "  double score = 0.0;" << std::endl
+              << "  //#pragma omp parallel for reduction(+:score)" << std::endl
+              << "  for (int i = 0; i < N; ++i)" << std::endl
+              << "    score += tree_weights[i] * leaf_outputs[i][leaf_id(v, features_ids[i], thresholds[i], tree_depths[i])];"
+              << std::endl << "  return score;" << std::endl << "}" << std::endl
+              << std::endl;
 
   std::ofstream output;
   output.open(code_filename, std::ofstream::out);
