@@ -80,6 +80,7 @@ class QueryResults : private boost::noncopyable {
   Label* labels_;
   Feature* features_;
   unsigned int num_results_;
+
 };
 
 }  // namespace data

@@ -126,17 +126,9 @@ class RTNode {
   bool is_leaf() const {
     return featureidx == uint_max;
   }
-  double eval(float const* const * featurematrix,
-              const unsigned int idx) const {
-    return
-        featureidx == uint_max ?
-            avglabel :
-            (featurematrix[featureidx][idx] <= threshold ?
-                left->eval(featurematrix, idx) : right->eval(featurematrix, idx));
-  }
 
   quickrank::Score score_instance(const quickrank::Feature* d,
-                                  const unsigned int offset) const {
+                                  const unsigned int next_fx_offset) const {
     /*if (featureidx == uint_max)
      std::cout << avglabel << std::endl;
      else
@@ -145,9 +137,9 @@ class RTNode {
     quickrank::Score score =
         featureidx == uint_max ?
             avglabel :
-            (d[featureidx * offset] <= threshold ?
-                left->score_instance(d, offset) :
-                right->score_instance(d, offset));
+            (d[featureidx * next_fx_offset] <= threshold ?
+                left->score_instance(d, next_fx_offset) :
+                right->score_instance(d, next_fx_offset));
 #ifdef QUICKRANK_PERF_STATS
     if (featureidx != uint_max)
     _internal_nodes_traversed.fetch_add(1, std::memory_order_relaxed);

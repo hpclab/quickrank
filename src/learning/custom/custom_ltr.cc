@@ -90,26 +90,6 @@ void CustomLTR::learn(
   delete[] validation_scores;
 }
 
-void CustomLTR::score_dataset(std::shared_ptr<data::Dataset> dataset,
-                              Score* scores) const {
-  preprocess_dataset(dataset);
-  for (unsigned int q = 0; q < dataset->num_queries(); q++) {
-    std::shared_ptr<data::QueryResults> r = dataset->getQueryResults(q);
-    score_query_results(r, scores, 1);
-    scores += r->num_results();
-  }
-}
-
-// assumes vertical dataset
-// offset to next feature of the same instance
-void CustomLTR::score_query_results(std::shared_ptr<data::QueryResults> results,
-                                    Score* scores, unsigned int offset) const {
-  const quickrank::Feature* d = results->features();
-  for (unsigned int i = 0; i < results->num_results(); i++) {
-    scores[i] = score_document(d, 1);
-    d++;
-  }
-}
 
 // assumes vertical dataset
 Score CustomLTR::score_document(const quickrank::Feature* d,

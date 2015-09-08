@@ -137,7 +137,7 @@ void CoordinateAscent::learn(
   auto begin = std::chrono::steady_clock::now();
   double window_size = window_size_ / training_dataset->num_features();  //preserve original value of the window
 
-      // Do some initialization
+  // Do some initialization
   preprocess_dataset(training_dataset);
   if (validation_dataset)
     preprocess_dataset(validation_dataset);
@@ -265,36 +265,14 @@ void CoordinateAscent::learn(
 
 }
 
-void CoordinateAscent::score_dataset(std::shared_ptr<data::Dataset> dataset,
-                                     Score* scores) const {
-  preprocess_dataset(dataset);
-
-  for (unsigned int q = 0; q < dataset->num_queries(); q++) {
-    std::shared_ptr<data::QueryResults> r = dataset->getQueryResults(q);
-    score_query_results(r, scores, dataset->num_features());
-    scores += r->num_results();
-  }
-}
-
-void CoordinateAscent::score_query_results(
-    std::shared_ptr<data::QueryResults> results, Score* scores,
-    unsigned int offset) const {
-  const quickrank::Feature* d = results->features();
-  for (unsigned int i = 0; i < results->num_results(); i++) {
-    scores[i] = score_document(d, offset);
-    d += offset;
-  }
-}
-
-// assumes vertical dataset
-Score CoordinateAscent::score_document(const quickrank::Feature* d,
-                                       const unsigned int offset) const {
+Score CoordinateAscent::score_document(const Feature* d,
+                                       const unsigned int next_fx_offset) const {
+  // next_fx_offset is ignored as it is equal to 1 for horizontal dataset
   Score score = 0;
-  for (unsigned int k = 0; k < offset; k++) {
+  for (unsigned int k = 0; k < best_weights_.size(); k++) {
     score += best_weights_[k] * d[k];
   }
   return score;
-
 }
 
 std::ofstream& CoordinateAscent::save_model_to_file(std::ofstream& os) const {

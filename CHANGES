@@ -1,3 +1,6 @@
+2015 Sep. 8.
+ - Cleaning up of part of the code related to document scoring
+
 2015 Mar. 12.
  - Implementation of CoordinateAscent 
     Metzler, D., Croft, W.B.: Linear feature-based models for information retrieval.
