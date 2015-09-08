@@ -42,7 +42,7 @@ namespace data {
  * of size \a num_instances() x \a num_features().
  * (A training instance is indeed a document.)
  * We allow to directly
- * access the internal representation throuhh the functinon \a at()
+ * access the internal representation through the function \a at()
  * to support fast access and custom high performance implementations.
  * Both horizontal (instances x features) and vertical (features x instances)
  * representations are supported.

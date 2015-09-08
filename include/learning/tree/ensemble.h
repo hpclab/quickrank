@@ -40,8 +40,6 @@ class Ensemble {
     return size > 0;
   }
 
-  float eval(float * const * const features, unsigned int idx) const;
-
   // assumes vertical dataset
   virtual quickrank::Score score_instance(const quickrank::Feature* d,
                                           const unsigned int offset = 1) const;

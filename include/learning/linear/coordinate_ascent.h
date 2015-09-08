@@ -72,6 +72,7 @@ class CoordinateAscent : public LTR_Algorithm {
                      unsigned int partial_save,
                      const std::string model_filename);
 
+  /*
   /// Given and input \a dateset, the current ranker generates
   /// scores for each instance and store the in the \a scores vector.
   ///
@@ -88,11 +89,10 @@ class CoordinateAscent : public LTR_Algorithm {
   /// \param offset The offset to the next feature in the data representation.
   virtual void score_query_results(std::shared_ptr<data::QueryResults> results,
                                    Score* scores, unsigned int offset) const;
-
+*/
   /// Returns the score of a given document.
   virtual Score score_document(const Feature* d,
-                               const unsigned int offset = 1) const;
-
+                                 const unsigned int next_fx_offset) const;
  protected:
 
   /// Prepare the dataset before training or scoring takes place.

@@ -66,7 +66,8 @@ class LTR_Algorithm : private boost::noncopyable {
   ///
   /// \param dataset The dataset to be scored.
   /// \param scores The vector where scores are stored.
-  /// \note Before scoring it transposes the dataset in vertical format
+  /// \note Before scoring it invokes the function \a preprocess_dataset.
+  ///       Usually this does not need to be overridden.
   virtual void score_dataset(std::shared_ptr<data::Dataset> dataset,
                              Score* scores) const;
 
@@ -74,13 +75,20 @@ class LTR_Algorithm : private boost::noncopyable {
   ///
   /// \param results The results list to be evaluated
   /// \param scores The vector where scores are stored.
-  /// \param offset The offset to the next feature in the data representation.
+  /// \param next_fx_offset The offset to the next feature in the data representation.
+  /// \param next_d_offset The offset to the next document in the data representation.
+  /// \note  Usually this does not need to be overridden.
   virtual void score_query_results(std::shared_ptr<data::QueryResults> results,
-                                   Score* scores, unsigned int offset) const;
+                                   Score* scores,
+                                   unsigned int next_fx_offset,
+                                   unsigned int next_d_offset) const;
 
   /// Returns the score of a given document.
+  /// \param d is a pointer to the document to be evaluated
+  /// \param next_fx_offset The offset to the next feature in the data representation.
+  /// \note   Each algorithm has a different implementation.
   virtual Score score_document(const Feature* d,
-                               const unsigned int offset = 1) const;
+                               const unsigned int next_fx_offset) const = 0;
 
   /// Save the current model to the output_file.
   ///

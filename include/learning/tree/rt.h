@@ -74,11 +74,6 @@ class RegressionTree {
   double update_output(double const *pseudoresponses,
                        double const *cachedweights);
 
-  double eval(float const* const * featurematrix,
-              const unsigned int idx) const {
-    return root->eval(featurematrix, idx);
-  }
-
   RTNode *get_proot() const {
     return root;
   }

@@ -70,10 +70,10 @@ class Mart : public LTR_Algorithm {
   /// Returns the score by the current ranker
   ///
   /// \param d Document to be scored.
-  /// \param offset Offset to the next feature from \a d.
+  /// \param next_fx_offset Offset to the next feature from \a d.
   virtual Score score_document(const Feature* d,
-                               const unsigned int offset = 1) const {
-    return ensemble_model_.score_instance(d, offset);
+                               const unsigned int next_fx_offset) const {
+    return ensemble_model_.score_instance(d, next_fx_offset);
   }
 
   /// Print additional statistics.
