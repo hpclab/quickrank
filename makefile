@@ -24,7 +24,7 @@ QUICKSCORE:=quickscore
 SRCDIR:=src
 UTESTSDIR:=unit-tests
 BINDIR:=bin
-INCDIRS:=-Iinclude 
+INCDIRS:=-Iinclude
 OBJSDIR:=_build
 DEPSDIR:=_deps
 DOCDIR:=documentation
@@ -70,7 +70,6 @@ quicklearn: $(OBJS)
 quickscore: $(OBJS)
 	$(CXX) $(CXXFLAGS) $(INCDIRS) -c $(RANKER) -o $(RANKER).o 
 	$(CXX) $(filter-out $(OBJSDIR)/$(SRCDIR)/$(QUICKLEARN).o,$(OBJS)) $(RANKER).o $(LDLIBS) -o $(BINDIR)/$(QUICKSCORE)
-
 
 # creates the documentation
 doc:
