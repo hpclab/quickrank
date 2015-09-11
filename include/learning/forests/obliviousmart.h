@@ -43,15 +43,15 @@ class ObliviousMart : public Mart {
   /// \param esr Early stopping if no improvement after \esr iterations
   /// on the validation set.
   ObliviousMart(unsigned int ntrees, float shrinkage, unsigned int nthresholds,
-            unsigned int treedepth, unsigned int minleafsupport,
-            unsigned int esr)
-      : Mart(ntrees, shrinkage, nthresholds, 1 << treedepth,
-                   minleafsupport, esr),
+                unsigned int treedepth, unsigned int minleafsupport,
+                unsigned int esr)
+      : Mart(ntrees, shrinkage, nthresholds, 1 << treedepth, minleafsupport,
+             esr),
         treedepth_(treedepth) {
   }
 
   ObliviousMart(const boost::property_tree::ptree &info_ptree,
-            const boost::property_tree::ptree &model_ptree);
+                const boost::property_tree::ptree &model_ptree);
 
   virtual ~ObliviousMart() {
   }

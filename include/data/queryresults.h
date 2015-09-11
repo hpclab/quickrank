@@ -74,7 +74,8 @@ class QueryResults : private boost::noncopyable {
   /// \param scores vector of scores used for reverse sorting.
   /// \param dest output of the labels sorting.
   /// \param cutoff number of labels of interest, i.e., length of \a dest.
-  void sorted_labels(const Score* scores, Label* dest, const unsigned int cutoff) const;
+  void sorted_labels(const Score* scores, Label* dest,
+                     const unsigned int cutoff) const;
 
  private:
   Label* labels_;

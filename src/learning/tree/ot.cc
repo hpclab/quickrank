@@ -137,8 +137,10 @@ void ObliviousRT::fit(RTNodeHistogram *hist) {
             node->hist->sumlbl[best_featureidx][best_thresholdid];
         const double rsum =
             node->hist->sumlbl[best_featureidx][last_thresholdid] - lsum;
-        node->left = nodearray[2 * i + 1] = new RTNode(lsamples, lsize, lsum/lsize);
-        node->right = nodearray[2 * i + 2] = new RTNode(rsamples, rsize, rsum/rsize);
+        node->left = nodearray[2 * i + 1] = new RTNode(lsamples, lsize,
+                                                       lsum / lsize);
+        node->right = nodearray[2 * i + 2] = new RTNode(rsamples, rsize,
+                                                        rsum / rsize);
       }
       node->set_feature(
           best_featureidx,

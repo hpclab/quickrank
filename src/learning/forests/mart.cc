@@ -62,25 +62,25 @@ Mart::Mart(const boost::property_tree::ptree &info_ptree,
   ensemble_model_.set_capacity(ntrees_);
 
   // loop over trees
-  BOOST_FOREACH(const boost::property_tree::ptree::value_type& tree, model_ptree){
-  RTNode* root = NULL;
-  float tree_weight = tree.second.get<double>("<xmlattr>.weight", shrinkage_);
+  BOOST_FOREACH(const boost::property_tree::ptree::value_type& tree, model_ptree) {
+    RTNode* root = NULL;
+    float tree_weight = tree.second.get<double>("<xmlattr>.weight", shrinkage_);
 
-  // find the root of the tree
-  BOOST_FOREACH(const boost::property_tree::ptree::value_type& node, tree.second ) {
-    if (node.first == "split") {
-      root = io::RTNode_parse_xml(node.second);
-      break;
+    // find the root of the tree
+    BOOST_FOREACH(const boost::property_tree::ptree::value_type& node, tree.second ) {
+      if (node.first == "split") {
+        root = io::RTNode_parse_xml(node.second);
+        break;
+      }
     }
-  }
 
-  if (root == NULL) {
-    std::cerr << "!!! Unable to parse tree from XML model." << std::endl;
-    exit(EXIT_FAILURE);
-  }
+    if (root == NULL) {
+      std::cerr << "!!! Unable to parse tree from XML model." << std::endl;
+      exit(EXIT_FAILURE);
+    }
 
-  ensemble_model_.push(root, tree_weight, -1);
-}
+    ensemble_model_.push(root, tree_weight, -1);
+  }
 }
 
 std::ostream& Mart::put(std::ostream& os) const {
@@ -159,9 +159,8 @@ void Mart::init(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     scores_on_validation_ = new Score[validation_dataset->num_instances()]();
   }
   // here, pseudo responses is empty !
-  hist_ = new RTRootHistogram(training_dataset.get(),
-                              sortedsid_, sortedsize_, thresholds_,
-                              thresholds_size_);
+  hist_ = new RTRootHistogram(training_dataset.get(), sortedsid_, sortedsize_,
+                              thresholds_, thresholds_size_);
 }
 
 void Mart::clear(std::shared_ptr<data::Dataset> training_dataset) {
@@ -371,7 +370,6 @@ void Mart::print_additional_stats(void) const {
   std::cout << "# Internal Nodes Traversed: " << RTNode::internal_nodes_traversed() << std::endl;
 #endif
 }
-
 
 }  // namespace forests
 }  // namespace learning

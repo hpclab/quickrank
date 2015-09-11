@@ -119,7 +119,6 @@ void LambdaMart::compute_pseudoresponses(
   }
 }
 
-
 }  // namespace forests
 }  // namespace learning
 }  // namespace quickrank

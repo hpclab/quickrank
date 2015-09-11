@@ -36,16 +36,15 @@ namespace forests {
 
 const std::string ObliviousMart::NAME_ = "OBVMART";
 
-
 ObliviousMart::ObliviousMart(const boost::property_tree::ptree &info_ptree,
-                     const boost::property_tree::ptree &model_ptree)
+                             const boost::property_tree::ptree &model_ptree)
     : Mart(info_ptree, model_ptree) {
   treedepth_ = info_ptree.get<double>("depth");
 }
 
 std::ostream& ObliviousMart::put(std::ostream& os) const {
-  os << "# Ranker: " << name() << std::endl << "# max no. of trees = " << ntrees_
-     << std::endl << "# max tree depth = " << treedepth_ << std::endl
+  os << "# Ranker: " << name() << std::endl << "# max no. of trees = "
+     << ntrees_ << std::endl << "# max tree depth = " << treedepth_ << std::endl
      << "# shrinkage = " << shrinkage_ << std::endl << "# min leaf support = "
      << minleafsupport_ << std::endl;
   if (nthresholds_)

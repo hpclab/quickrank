@@ -68,7 +68,8 @@ class RTNode {
      */
   }
 
-  RTNode(unsigned int *new_sampleids, unsigned int new_nsampleids, double prediction) {
+  RTNode(unsigned int *new_sampleids, unsigned int new_nsampleids,
+         double prediction) {
     sampleids = new_sampleids;
     nsampleids = new_nsampleids;
     avglabel = prediction;

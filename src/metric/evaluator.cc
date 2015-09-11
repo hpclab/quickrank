@@ -95,8 +95,7 @@ void Evaluator::testing_phase(std::shared_ptr<learning::LTR_Algorithm> algo,
     std::shared_ptr<quickrank::data::Dataset> test_dataset = reader
         .read_horizontal(test_filename);
     std::cout << reader << *test_dataset;
-    Score* test_scores = new Score[test_dataset
-        ->num_instances()];
+    Score* test_scores = new Score[test_dataset->num_instances()];
     algo->score_dataset(test_dataset, test_scores);
     quickrank::MetricScore test_score = test_metric->evaluate_dataset(
         test_dataset, test_scores);

@@ -73,26 +73,26 @@ class CoordinateAscent : public LTR_Algorithm {
                      const std::string model_filename);
 
   /*
-  /// Given and input \a dateset, the current ranker generates
-  /// scores for each instance and store the in the \a scores vector.
-  ///
-  /// \param dataset The dataset to be scored.
-  /// \param scores The vector where scores are stored.
-  /// \note Before scoring it transposes the dataset in vertical format
-  virtual void score_dataset(std::shared_ptr<data::Dataset> dataset,
-                             Score* scores) const;
+   /// Given and input \a dateset, the current ranker generates
+   /// scores for each instance and store the in the \a scores vector.
+   ///
+   /// \param dataset The dataset to be scored.
+   /// \param scores The vector where scores are stored.
+   /// \note Before scoring it transposes the dataset in vertical format
+   virtual void score_dataset(std::shared_ptr<data::Dataset> dataset,
+   Score* scores) const;
 
-  /// Computes \a scores for a given set of documents.
-  ///
-  /// \param results The results list to be evaluated
-  /// \param scores The vector where scores are stored.
-  /// \param offset The offset to the next feature in the data representation.
-  virtual void score_query_results(std::shared_ptr<data::QueryResults> results,
-                                   Score* scores, unsigned int offset) const;
-*/
+   /// Computes \a scores for a given set of documents.
+   ///
+   /// \param results The results list to be evaluated
+   /// \param scores The vector where scores are stored.
+   /// \param offset The offset to the next feature in the data representation.
+   virtual void score_query_results(std::shared_ptr<data::QueryResults> results,
+   Score* scores, unsigned int offset) const;
+   */
   /// Returns the score of a given document.
   virtual Score score_document(const Feature* d,
-                                 const unsigned int next_fx_offset) const;
+                               const unsigned int next_fx_offset) const;
  protected:
 
   /// Prepare the dataset before training or scoring takes place.

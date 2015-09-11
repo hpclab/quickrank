@@ -79,8 +79,7 @@ class LTR_Algorithm : private boost::noncopyable {
   /// \param next_d_offset The offset to the next document in the data representation.
   /// \note  Usually this does not need to be overridden.
   virtual void score_query_results(std::shared_ptr<data::QueryResults> results,
-                                   Score* scores,
-                                   unsigned int next_fx_offset,
+                                   Score* scores, unsigned int next_fx_offset,
                                    unsigned int next_d_offset) const;
 
   /// Returns the score of a given document.

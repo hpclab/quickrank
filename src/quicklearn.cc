@@ -92,29 +92,36 @@
 #include "learning/custom/custom_ltr.h"
 #include "metric/metricfactory.h"
 #include "io/xml.h"
-#include "scoring/opt/converter.h"
+#include "io/vpred.h"
 
 namespace po = boost::program_options;
 
-
-
 void print_logo() {
-  if ( isatty(fileno(stdout)) ) {
+  if (isatty(fileno(stdout))) {
     std::string color_reset = "\033[0m";
     std::string color_logo = "\033[1m\033[32m";
-    std::cout << color_logo << std::endl
-              << "      _____  _____" << std::endl
-              << "     /    / /____/"  << std::endl
-              << "    /____\\ /    \\          QuickRank has been developed by hpc.isti.cnr.it" << std::endl
-              << "    ::Quick:Rank::                                   quickrank@isti.cnr.it" << std::endl
-              << color_reset << std::endl;
+    std::cout
+        << color_logo
+        << std::endl
+        << "      _____  _____"
+        << std::endl
+        << "     /    / /____/"
+        << std::endl
+        << "    /____\\ /    \\          QuickRank has been developed by hpc.isti.cnr.it"
+        << std::endl
+        << "    ::Quick:Rank::                                   quickrank@isti.cnr.it"
+        << std::endl << color_reset << std::endl;
   } else {
-    std::cout << std::endl
-              << "      _____  _____" << std::endl
-              << "     /    / /____/" << std::endl
-              << "    /____\\ /    \\          QuickRank has been developed by hpc.isti.cnr.it" << std::endl
-              << "    ::Quick:Rank::                                   quickrank@isti.cnr.it" << std::endl
-              << std::endl;
+    std::cout
+        << std::endl
+        << "      _____  _____"
+        << std::endl
+        << "     /    / /____/"
+        << std::endl
+        << "    /____\\ /    \\          QuickRank has been developed by hpc.isti.cnr.it"
+        << std::endl
+        << "    ::Quick:Rank::                                   quickrank@isti.cnr.it"
+        << std::endl << std::endl;
   }
 }
 
@@ -324,16 +331,22 @@ int main(int argc, char *argv[]) {
           new quickrank::learning::forests::Mart(ntrees, shrinkage, nthresholds,
                                                  ntreeleaves, minleafsupport,
                                                  esr));
-    else if (algorithm_string == quickrank::learning::forests::ObliviousMart::NAME_)
+    else if (algorithm_string
+        == quickrank::learning::forests::ObliviousMart::NAME_)
       ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
           new quickrank::learning::forests::ObliviousMart(ntrees, shrinkage,
-                                                      nthresholds, treedepth,
-                                                      minleafsupport, esr));
-    else if (algorithm_string == quickrank::learning::forests::ObliviousLambdaMart::NAME_)
+                                                          nthresholds,
+                                                          treedepth,
+                                                          minleafsupport, esr));
+    else if (algorithm_string
+        == quickrank::learning::forests::ObliviousLambdaMart::NAME_)
       ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
-          new quickrank::learning::forests::ObliviousLambdaMart(ntrees, shrinkage,
-                                                      nthresholds, treedepth,
-                                                      minleafsupport, esr));
+          new quickrank::learning::forests::ObliviousLambdaMart(ntrees,
+                                                                shrinkage,
+                                                                nthresholds,
+                                                                treedepth,
+                                                                minleafsupport,
+                                                                esr));
     else if (algorithm_string
         == quickrank::learning::linear::CoordinateAscent::NAME_)
       ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
@@ -352,7 +365,8 @@ int main(int argc, char *argv[]) {
 
     // METRIC STUFF
     std::shared_ptr<quickrank::metric::ir::Metric> training_metric =
-        quickrank::metric::ir::ir_metric_factory(train_metric_string, train_cutoff);
+        quickrank::metric::ir::ir_metric_factory(train_metric_string,
+                                                 train_cutoff);
     if (!training_metric) {
       std::cout << " !! Train Metric was not set properly" << std::endl;
       exit(EXIT_FAILURE);
@@ -385,7 +399,8 @@ int main(int argc, char *argv[]) {
     }
 
     std::shared_ptr<quickrank::metric::ir::Metric> testing_metric =
-        quickrank::metric::ir::ir_metric_factory(test_metric_string, test_cutoff);
+        quickrank::metric::ir::ir_metric_factory(test_metric_string,
+                                                 test_cutoff);
     if (!testing_metric) {
       std::cout << " !! Test Metric was not set properly" << std::endl;
       exit(EXIT_FAILURE);
@@ -404,17 +419,18 @@ int main(int argc, char *argv[]) {
   if (xml_filename != "" && c_filename != "") {
     quickrank::io::Xml xml;
     if (model_code_type == "baseline") {
-      std::cout << "applying baseline strategy (conditional operators) for C code generation to: "
-                << xml_filename << std::endl;
+      std::cout
+          << "applying baseline strategy (conditional operators) for C code generation to: "
+          << xml_filename << std::endl;
       xml.generate_c_code_baseline(xml_filename, c_filename);
     } else if (model_code_type == "oblivious") {
       std::cout << "applying oblivious strategy for C code generation to: "
                 << xml_filename << std::endl;
       xml.generate_c_code_oblivious_trees(xml_filename, c_filename);
     } else if (model_code_type == "vpred") {
-      std::cout << "generating VPred input file to: " << "stdout."
+      std::cout << "generating VPred input file from: " << xml_filename
                 << std::endl;
-      quickrank::scoring::generate_opt_trees_input(xml_filename, c_filename);
+      quickrank::io::generate_vpred_input(xml_filename, c_filename);
     }
   }
 

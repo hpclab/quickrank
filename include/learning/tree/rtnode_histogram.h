@@ -53,9 +53,9 @@ class RTNodeHistogram {
 
 class RTRootHistogram : public RTNodeHistogram {
  public:
-  RTRootHistogram(quickrank::data::Dataset *dps,
-                  unsigned int **sortedidx, unsigned int sortedidxsize,
-                  float **thresholds, unsigned int const *thresholds_size);
+  RTRootHistogram(quickrank::data::Dataset *dps, unsigned int **sortedidx,
+                  unsigned int sortedidxsize, float **thresholds,
+                  unsigned int const *thresholds_size);
 
   ~RTRootHistogram();
 };

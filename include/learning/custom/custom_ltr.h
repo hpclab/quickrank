@@ -73,7 +73,6 @@ class CustomLTR : public LTR_Algorithm {
                      unsigned int partial_save,
                      const std::string model_filename);
 
-
   /// Returns the score of a given document.
   virtual Score score_document(const Feature* d,
                                const unsigned int offset = 1) const;

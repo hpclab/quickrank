@@ -44,12 +44,12 @@ MetricScore Dcg::evaluate_result_list(const quickrank::data::QueryResults* rl,
     return 0.0;
 
   // we have at most cutoff to be evaluated
-  Label* sorted_l = new Label [cutoff()];
+  Label* sorted_l = new Label[cutoff()];
   rl->sorted_labels(scores, sorted_l, cutoff());
 
   MetricScore dcg = compute_dcg(sorted_l, rl->num_results());
 
-  delete [] sorted_l;
+  delete[] sorted_l;
 
   return dcg;
 }

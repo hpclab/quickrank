@@ -30,24 +30,32 @@
 #include "data/dataset.h"
 #include "io/svml.h"
 
-
 void print_logo() {
-  if ( isatty(fileno(stdout)) ) {
+  if (isatty(fileno(stdout))) {
     std::string color_reset = "\033[0m";
     std::string color_logo = "\033[1m\033[32m";
-    std::cout << color_logo << std::endl
-              << "      _____  _____" << std::endl
-              << "     /    / /____/"  << std::endl
-              << "    /____\\ /    \\          QuickRank has been developed by hpc.isti.cnr.it" << std::endl
-              << "    ::Quick:Rank::                                   quickrank@isti.cnr.it" << std::endl
-              << color_reset << std::endl;
+    std::cout
+        << color_logo
+        << std::endl
+        << "      _____  _____"
+        << std::endl
+        << "     /    / /____/"
+        << std::endl
+        << "    /____\\ /    \\          QuickRank has been developed by hpc.isti.cnr.it"
+        << std::endl
+        << "    ::Quick:Rank::                                   quickrank@isti.cnr.it"
+        << std::endl << color_reset << std::endl;
   } else {
-    std::cout << std::endl
-              << "      _____  _____" << std::endl
-              << "     /    / /____/" << std::endl
-              << "    /____\\ /    \\          QuickRank has been developed by hpc.isti.cnr.it" << std::endl
-              << "    ::Quick:Rank::                                   quickrank@isti.cnr.it" << std::endl
-              << std::endl;
+    std::cout
+        << std::endl
+        << "      _____  _____"
+        << std::endl
+        << "     /    / /____/"
+        << std::endl
+        << "    /____\\ /    \\          QuickRank has been developed by hpc.isti.cnr.it"
+        << std::endl
+        << "    ::Quick:Rank::                                   quickrank@isti.cnr.it"
+        << std::endl << std::endl;
   }
 }
 

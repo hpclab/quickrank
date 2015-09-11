@@ -42,16 +42,16 @@ class ObliviousLambdaMart : public LambdaMart {
   /// \param minleafsupport Minimum number of instances in each leaf.
   /// \param esr Early stopping if no improvement after \esr iterations
   /// on the validation set.
-  ObliviousLambdaMart(unsigned int ntrees, float shrinkage, unsigned int nthresholds,
-            unsigned int treedepth, unsigned int minleafsupport,
-            unsigned int esr)
+  ObliviousLambdaMart(unsigned int ntrees, float shrinkage,
+                      unsigned int nthresholds, unsigned int treedepth,
+                      unsigned int minleafsupport, unsigned int esr)
       : LambdaMart(ntrees, shrinkage, nthresholds, 1 << treedepth,
                    minleafsupport, esr),
         treedepth_(treedepth) {
   }
 
   ObliviousLambdaMart(const boost::property_tree::ptree &info_ptree,
-            const boost::property_tree::ptree &model_ptree);
+                      const boost::property_tree::ptree &model_ptree);
 
   virtual ~ObliviousLambdaMart() {
   }
@@ -76,7 +76,8 @@ class ObliviousLambdaMart : public LambdaMart {
 
  private:
   /// The output stream operator.
-  friend std::ostream& operator<<(std::ostream& os, const ObliviousLambdaMart& a) {
+  friend std::ostream& operator<<(std::ostream& os,
+                                  const ObliviousLambdaMart& a) {
     return a.put(os);
   }
 

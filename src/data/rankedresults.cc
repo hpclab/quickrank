@@ -28,7 +28,7 @@ RankedResults::RankedResults(std::shared_ptr<QueryResults> results,
                              Score* scores) {
 
   num_results_ = results->num_results();
-  unmap_ = new unsigned int [num_results_];
+  unmap_ = new unsigned int[num_results_];
   results->indexing_of_sorted_labels(scores, unmap_);
 
   labels_ = new Label[num_results_];

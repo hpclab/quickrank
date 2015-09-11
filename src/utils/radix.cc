@@ -25,7 +25,6 @@ static_assert(sizeof(float)==4,"sizeof(float) exception!");
 static_assert(sizeof(int)==4,"sizeof(int) exception!");
 static_assert(sizeof(unsigned int)==4,"sizeof(unsigned int) exception!");
 
-
 inline unsigned int flip(unsigned int x) {
   return x ^ (-int(x >> 31) | 0x80000000);
 }  //!<flip a float for sorting: if it's negative, it flips all bits otherwise flips the sign only
@@ -67,7 +66,6 @@ std::unique_ptr<unsigned int[]> idx_radixsort(float const* fvalues,
   delete[] hbucket;
   return std::unique_ptr<unsigned int[]>(ivalues);
 }
-
 
 /*! sort an array of float values without modifing the input array and returning permuted indexes of the sorted items
  *  @param fvalues input float array

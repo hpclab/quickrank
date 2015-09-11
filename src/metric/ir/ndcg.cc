@@ -24,7 +24,6 @@
 
 #include "metric/ir/ndcg.h"
 
-
 namespace quickrank {
 namespace metric {
 namespace ir {
@@ -39,7 +38,7 @@ MetricScore Ndcg::compute_idcg(const quickrank::data::QueryResults* rl) const {
   std::sort(copyoflabels, copyoflabels + rl->num_results(),
             std::greater<int>());
   //compute dcg
-  MetricScore dcg = compute_dcg(copyoflabels,rl->num_results());
+  MetricScore dcg = compute_dcg(copyoflabels, rl->num_results());
 
   delete[] copyoflabels;
   return dcg;

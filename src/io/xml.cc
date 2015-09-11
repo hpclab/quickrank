@@ -126,9 +126,8 @@ void model_node_to_c_baseline(const boost::property_tree::ptree &split_xml,
   }
 }
 
-
-
-void model_tree_get_leaves(const boost::property_tree::ptree &split_xml, std::vector<std::string> &leaves) {
+void model_tree_get_leaves(const boost::property_tree::ptree &split_xml,
+                           std::vector<std::string> &leaves) {
   std::string prediction;
   bool is_leaf = false;
   const boost::property_tree::ptree* left = NULL;
@@ -150,13 +149,12 @@ void model_tree_get_leaves(const boost::property_tree::ptree &split_xml, std::ve
   }
 
   if (is_leaf)
-    leaves.push_back( prediction );
+    leaves.push_back(prediction);
   else {
     model_tree_get_leaves(*left, leaves);
     model_tree_get_leaves(*right, leaves);
   }
 }
-
 
 void model_tree_get_tests(const boost::property_tree::ptree &tree_xml,
                           boost::container::list<unsigned int> &features,
@@ -295,7 +293,7 @@ void Xml::generate_c_code_baseline(std::string model_filename,
 }
 
 void Xml::generate_c_code_oblivious_trees(std::string model_filename,
-                                                    std::string code_filename) {
+                                          std::string code_filename) {
   if (model_filename.empty()) {
     std::cerr << "!!! Model filename is empty." << std::endl;
     exit(EXIT_FAILURE);
@@ -319,13 +317,14 @@ void Xml::generate_c_code_oblivious_trees(std::string model_filename,
 // forests info
   source_code << "#define N " << trees << " // no. of trees" << std::endl;
   source_code << "#define M " << depth << " // max tree depth" << std::endl;
-  source_code << "#define F " << max_leaves << " // max number of leaves" << std::endl;
+  source_code << "#define F " << max_leaves << " // max number of leaves"
+              << std::endl;
   source_code << std::endl;
 
   // load tree weights
   std::vector<float> tree_weights;
   for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); p_tree++)
-     tree_weights.push_back( p_tree->second.get("<xmlattr>.weight", 1.0f) );
+    tree_weights.push_back(p_tree->second.get("<xmlattr>.weight", 1.0f));
 
   // load tree depths
   std::vector<int> tree_depths;
@@ -340,128 +339,133 @@ void Xml::generate_c_code_oblivious_trees(std::string model_filename,
   }
 
   // load leaf outputs
-  std::vector< std::vector<std::string> > tree_outputs (trees);
-  size_t curr_tree=0;
+  std::vector<std::vector<std::string> > tree_outputs(trees);
+  size_t curr_tree = 0;
   for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); p_tree++) {
     auto root_split = p_tree->second.get_child("split");
-    model_tree_get_leaves(root_split, tree_outputs[curr_tree++] );
+    model_tree_get_leaves(root_split, tree_outputs[curr_tree++]);
   }
 
   // load features ids
-  std::vector< std::vector<unsigned int> > feature_ids (trees);
-  curr_tree=0;
+  std::vector<std::vector<unsigned int> > feature_ids(trees);
+  curr_tree = 0;
   for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); p_tree++) {
     auto p_split = p_tree->second.get_child("split");
     while (p_split.size() != 2) {
-      feature_ids[curr_tree].push_back( p_split.get<unsigned int>("feature") -1 );
+      feature_ids[curr_tree].push_back(
+          p_split.get<unsigned int>("feature") - 1);
       p_split = p_split.get_child("split");
     }
     curr_tree++;
   }
 
   // load thresholds values
-  std::vector< std::vector<std::string> > thresholds (trees);
-  curr_tree=0;
+  std::vector<std::vector<std::string> > thresholds(trees);
+  curr_tree = 0;
   for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); p_tree++) {
     auto p_split = p_tree->second.get_child("split");
     while (p_split.size() != 2) {
       std::string threshold = p_split.get<std::string>("threshold");
       boost::algorithm::trim(threshold);
-      thresholds[curr_tree].push_back( threshold );
+      thresholds[curr_tree].push_back(threshold);
       p_split = p_split.get_child("split");
     }
     curr_tree++;
   }
 
   // mapping of trees in sorted order by depths
-  std::vector<size_t> tree_mapping (trees);
+  std::vector<size_t> tree_mapping(trees);
   std::iota(tree_mapping.begin(), tree_mapping.end(), 0);
-  std::sort( tree_mapping.begin(), tree_mapping.end(),
+  std::sort(tree_mapping.begin(), tree_mapping.end(),
             [&tree_depths](int a, int b) {
-                    return tree_depths[a] < tree_depths[b];
-                }
-  );
+              return tree_depths[a] < tree_depths[b];
+            });
 
   // number of trees for each depth
   std::vector<size_t> depths_pupolation;
-  int max_depth = tree_depths[ tree_mapping.back() ];
+  int max_depth = tree_depths[tree_mapping.back()];
 
   int curr_depth = 1;
   size_t start_position = 0;
-  for (size_t i=0; i<tree_mapping.size(); i++) {
-    while ( tree_depths[ tree_mapping[i] ] > curr_depth ) {
-      depths_pupolation.push_back( i-start_position );
+  for (size_t i = 0; i < tree_mapping.size(); i++) {
+    while (tree_depths[tree_mapping[i]] > curr_depth) {
+      depths_pupolation.push_back(i - start_position);
       curr_depth++;
       start_position = i;
     }
-    if (curr_depth==max_depth) break;
+    if (curr_depth == max_depth)
+      break;
   }
-  depths_pupolation.push_back( tree_mapping.size()-start_position );
-
+  depths_pupolation.push_back(tree_mapping.size() - start_position);
 
   // print tree weights
   source_code.setf(std::ios::floatfield, std::ios::fixed);
   source_code << "const float tree_weights[N] = { ";
-  for (size_t i = 0; i<tree_weights.size(); i++) {
-    if (i!=0) source_code << ", ";
-    source_code << tree_weights[ tree_mapping[i] ] << "f";
+  for (size_t i = 0; i < tree_weights.size(); i++) {
+    if (i != 0)
+      source_code << ", ";
+    source_code << tree_weights[tree_mapping[i]] << "f";
   }
   source_code << " };" << std::endl << std::endl;
 
   /*
-  // print tree depths
-  source_code << "const unsigned int tree_depths[N] = { ";
-  for (size_t i = 0; i<tree_depths.size(); i++) {
-    if (i!=0) source_code << ", ";
-    source_code << tree_depths[ tree_mapping[i] ];
-  }
-  source_code << " };" << std::endl << std::endl;
+   // print tree depths
+   source_code << "const unsigned int tree_depths[N] = { ";
+   for (size_t i = 0; i<tree_depths.size(); i++) {
+   if (i!=0) source_code << ", ";
+   source_code << tree_depths[ tree_mapping[i] ];
+   }
+   source_code << " };" << std::endl << std::endl;
    */
 
   // print leaf outputs
   source_code << "const double leaf_outputs[N][F] = { " << std::endl << '\t';
-  for (size_t i = 0; i<tree_outputs.size(); i++) {
-    if (i!=0) source_code << "," << std::endl << '\t';
+  for (size_t i = 0; i < tree_outputs.size(); i++) {
+    if (i != 0)
+      source_code << "," << std::endl << '\t';
     source_code << "\t{ ";
-    for (size_t j = 0; j<tree_outputs[ tree_mapping[i] ].size(); j++) {
-      if (j!=0) source_code << ", ";
-      source_code << tree_outputs[ tree_mapping[i] ][j];
+    for (size_t j = 0; j < tree_outputs[tree_mapping[i]].size(); j++) {
+      if (j != 0)
+        source_code << ", ";
+      source_code << tree_outputs[tree_mapping[i]][j];
     }
     source_code << " }";
   }
   source_code << std::endl << "};" << std::endl << std::endl;
 
   // pint features ids
-  source_code << "const unsigned int features_ids[N][M] = { " << std::endl << '\t';
-  for (size_t i = 0; i<feature_ids.size(); i++) {
-    if (i!=0) source_code << "," << std::endl << '\t';
+  source_code << "const unsigned int features_ids[N][M] = { " << std::endl
+              << '\t';
+  for (size_t i = 0; i < feature_ids.size(); i++) {
+    if (i != 0)
+      source_code << "," << std::endl << '\t';
     source_code << "\t{ ";
-    for (size_t j = 0; j<feature_ids[ tree_mapping[i] ].size(); j++) {
-      if (j!=0) source_code << ", ";
-      source_code << feature_ids[ tree_mapping[i] ][j];
+    for (size_t j = 0; j < feature_ids[tree_mapping[i]].size(); j++) {
+      if (j != 0)
+        source_code << ", ";
+      source_code << feature_ids[tree_mapping[i]][j];
     }
     source_code << " }";
   }
   source_code << std::endl << "};" << std::endl << std::endl;
-
 
   // print thresholds values
   source_code << "const float thresholds[N][M] = { " << std::endl << '\t';
   source_code << std::setprecision(std::numeric_limits<Feature>::digits10);
-  for (size_t i = 0; i<thresholds.size(); i++) {
-    if (i!=0) source_code << "," << std::endl << '\t';
+  for (size_t i = 0; i < thresholds.size(); i++) {
+    if (i != 0)
+      source_code << "," << std::endl << '\t';
     source_code << "\t{ ";
-    for (size_t j = 0; j<thresholds[ tree_mapping[i] ].size(); j++) {
-      if (j!=0) source_code << ", ";
-      source_code << thresholds[ tree_mapping[i] ][j] << "f";
+    for (size_t j = 0; j < thresholds[tree_mapping[i]].size(); j++) {
+      if (j != 0)
+        source_code << ", ";
+      source_code << thresholds[tree_mapping[i]][j] << "f";
     }
     source_code << " }";
   }
   source_code << std::endl << "};" << std::endl << std::endl;
 
-
   source_code << "#define SHL(n,p) ((n)<<(p))" << std::endl << std::endl;
-
 
   source_code
       << "unsigned int leaf_id(float *v, unsigned int const *fids, float const *thresh, const unsigned int m) {"
@@ -471,11 +475,14 @@ void Xml::generate_c_code_oblivious_trees(std::string model_filename,
       << "  return leafidx;" << std::endl << "}" << std::endl << std::endl;
 
   source_code << "double ranker(float *v) {" << std::endl
-              << "  double score = 0.0;" << std::endl
-              << "  int i = 0;" << std::endl;
-  for (int d=0; d<max_depth; d++) {
-    source_code << "  for (int j = 0; j < "<< depths_pupolation[d] <<"; ++j) {" << std::endl;
-    source_code << "    score += tree_weights[i] * leaf_outputs[i][leaf_id(v, features_ids[i], thresholds[i], " << d+1 <<")];" << std::endl;
+              << "  double score = 0.0;" << std::endl << "  int i = 0;"
+              << std::endl;
+  for (int d = 0; d < max_depth; d++) {
+    source_code << "  for (int j = 0; j < " << depths_pupolation[d]
+                << "; ++j) {" << std::endl;
+    source_code
+        << "    score += tree_weights[i] * leaf_outputs[i][leaf_id(v, features_ids[i], thresholds[i], "
+        << d + 1 << ")];" << std::endl;
     source_code << "    i++;" << std::endl;
     source_code << "  }" << std::endl;
   }
@@ -486,7 +493,6 @@ void Xml::generate_c_code_oblivious_trees(std::string model_filename,
   output << source_code.str();
   output.close();
 }
-
 
 std::shared_ptr<learning::LTR_Algorithm> Xml::load_model_from_file(
     std::string model_filename) {

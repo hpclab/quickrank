@@ -36,22 +36,21 @@
 #include "metric/ir/dcg.h"
 #include "metric/ir/map.h"
 
-
 namespace quickrank {
 namespace metric {
 namespace ir {
 
-std::shared_ptr<Metric> ir_metric_factory(
-    std::string metric, unsigned int cutoff) {
+std::shared_ptr<Metric> ir_metric_factory(std::string metric,
+                                          unsigned int cutoff) {
   boost::to_upper(metric);
   if (metric == Dcg::NAME_)
-    return std::shared_ptr<Metric>( new Dcg(cutoff) );
+    return std::shared_ptr<Metric>(new Dcg(cutoff));
   else if (metric == Ndcg::NAME_)
-    return std::shared_ptr<Metric>( new Ndcg(cutoff) );
+    return std::shared_ptr<Metric>(new Ndcg(cutoff));
   else if (metric == Tndcg::NAME_)
-    return std::shared_ptr<Metric>( new Tndcg(cutoff) );
+    return std::shared_ptr<Metric>(new Tndcg(cutoff));
   else if (metric == Map::NAME_)
-    return std::shared_ptr<Metric>( new Map(cutoff) );
+    return std::shared_ptr<Metric>(new Map(cutoff));
   else
     return std::shared_ptr<Metric>();
 }

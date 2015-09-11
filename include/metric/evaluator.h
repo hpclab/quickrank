@@ -48,12 +48,12 @@ class Evaluator : private boost::noncopyable {
   /// If empty, no output file is written.
   /// \param npartialsave Allows to save a partial model every given number of iterations.
   static void training_phase(std::shared_ptr<learning::LTR_Algorithm> algo,
-                       std::shared_ptr<ir::Metric> train_metric,
-                       const std::string training_filename,
-                       const std::string validation_filename,
-                       const std::string feature_filename,
-                       const std::string output_filename,
-                       const unsigned int npartialsave);
+                             std::shared_ptr<ir::Metric> train_metric,
+                             const std::string training_filename,
+                             const std::string validation_filename,
+                             const std::string feature_filename,
+                             const std::string output_filename,
+                             const unsigned int npartialsave);
 
   /// Runs the learned or loaded model on the test data
   /// and then measures \a test_metric on the test data.
@@ -65,9 +65,9 @@ class Evaluator : private boost::noncopyable {
   /// \param scores_filename The output scores file.
   /// If set save the scores computed for the test set.
   static void testing_phase(std::shared_ptr<learning::LTR_Algorithm> algo,
-                       std::shared_ptr<ir::Metric> test_metric,
-                       const std::string test_filename,
-                       const std::string scores_filename);
+                            std::shared_ptr<ir::Metric> test_metric,
+                            const std::string test_filename,
+                            const std::string scores_filename);
 };
 
 }  // namespace metric

@@ -124,7 +124,6 @@ double RegressionTree::update_output(double const *pseudoresponses,
       maxlabel = leaves[i]->avglabel;
   }
 
-
   return maxlabel;
 }
 

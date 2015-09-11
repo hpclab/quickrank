@@ -36,7 +36,7 @@ MetricScore Tndcg::compute_tndcg(const quickrank::data::QueryResults* rl,
   if (idcg <= 0.0)
     return 0;
 
-  unsigned int* idx = new unsigned int [rl->num_results()];
+  unsigned int* idx = new unsigned int[rl->num_results()];
   rl->indexing_of_sorted_labels(scores, idx);
 
   const unsigned int size = std::min(cutoff(), rl->num_results());
