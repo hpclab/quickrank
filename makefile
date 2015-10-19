@@ -44,15 +44,19 @@ CXXFLAGS:=-std=c++11 -Wall -march=native -mtune=native -O3 -fopenmp
 LDLIBS:=-lboost_program_options -lboost_system -lboost_filesystem -fopenmp
 
 # find the compiler
-ifneq ($(shell whereis g++-4.9),)
-	CXX=g++-4.9
+ifneq ($(shell whereis g++-5),)
+  CXX=g++-5
 else 
-  ifneq ($(shell whereis g++-4.8),)
-	CXX=g++-4.8
-  else
-    ifneq ($(shell /usr/local/bin/g++-4.9 --version),)
-      CXX=/usr/local/bin/g++-4.9
-      CXXFLAGS+=-Wa,-q
+  ifneq ($(shell whereis g++-4.9),)
+    CXX=g++-4.9
+  else 
+    ifneq ($(shell whereis g++-4.8),)
+	  CXX=g++-4.8
+    else
+      ifneq ($(shell /usr/local/bin/g++-4.9 --version),)
+        CXX=/usr/local/bin/g++-4.9
+        CXXFLAGS+=-Wa,-q
+      endif
     endif
   endif
 endif
