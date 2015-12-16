@@ -5,6 +5,8 @@ _build
 .cproject
 .project
 .settings
+.idea/
+CMakeLists.txt
 documentation/html
 *~
 *.d
