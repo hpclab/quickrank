@@ -53,8 +53,8 @@ else
     ifneq ($(shell whereis g++-4.8),)
 	  CXX=g++-4.8
     else
-      ifneq ($(shell /usr/local/bin/g++-4.9 --version),)
-        CXX=/usr/local/bin/g++-4.9
+      ifneq ($(shell /usr/local/bin/g++-5 --version),)
+        CXX=/usr/local/bin/g++-5
         CXXFLAGS+=-Wa,-q
       endif
     endif
