@@ -24,7 +24,7 @@ QUICKSCORE:=quickscore
 SRCDIR:=src
 UTESTSDIR:=unit-tests
 BINDIR:=bin
-INCDIRS:=-Iinclude 
+INCDIRS:=-Iinclude
 OBJSDIR:=_build
 DEPSDIR:=_deps
 DOCDIR:=documentation
@@ -40,19 +40,23 @@ UTESTS:=$(wildcard $(UTESTSDIR)/*.cc) $(wildcard $(UTESTSDIR)/*/*.cc) $(wildcard
 UTESTSOBJS:=$(subst $(UTESTSDIR),$(OBJSDIR)/$(UTESTSDIR),$(UTESTS:.cc=.o))
 
 CXX=
-CXXFLAGS:=-std=c++11 -Wall -pedantic -march=native -O3 -fopenmp
+CXXFLAGS:=-std=c++11 -Wall -march=native -mtune=native -O3 -fopenmp
 LDLIBS:=-lboost_program_options -lboost_system -lboost_filesystem -fopenmp
 
 # find the compiler
-ifneq ($(shell whereis g++-4.9),)
-	CXX=g++-4.9
+ifneq ($(shell whereis g++-5),)
+  CXX=g++-5
 else 
-  ifneq ($(shell whereis g++-4.8),)
-	CXX=g++-4.8
-  else
-    ifneq ($(shell /usr/local/bin/g++-4.9 --version),)
-      CXX=/usr/local/bin/g++-4.9
-      CXXFLAGS+=-Wa,-q
+  ifneq ($(shell whereis g++-4.9),)
+    CXX=g++-4.9
+  else 
+    ifneq ($(shell whereis g++-4.8),)
+	  CXX=g++-4.8
+    else
+      ifneq ($(shell /usr/local/bin/g++-5 --version),)
+        CXX=/usr/local/bin/g++-5
+        CXXFLAGS+=-Wa,-q
+      endif
     endif
   endif
 endif
@@ -70,7 +74,6 @@ quicklearn: $(OBJS)
 quickscore: $(OBJS)
 	$(CXX) $(CXXFLAGS) $(INCDIRS) -c $(RANKER) -o $(RANKER).o 
 	$(CXX) $(filter-out $(OBJSDIR)/$(SRCDIR)/$(QUICKLEARN).o,$(OBJS)) $(RANKER).o $(LDLIBS) -o $(BINDIR)/$(QUICKSCORE)
-
 
 # creates the documentation
 doc:
