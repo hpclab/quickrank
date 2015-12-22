@@ -56,9 +56,16 @@ class Svml : private boost::noncopyable {
   }
 
   /// Reads the input dataset and returns in horizontal format.
-  /// \param filename the input filename.
+  /// \param file the input filename.
   /// \return The svml dataset in horizontal format.
   virtual std::unique_ptr<data::Dataset> read_horizontal(
+      const std::string &file);
+
+  /// Write the dataset to an output file.
+  /// \param file the output filename.
+  /// \return The svml dataset in horizontal format.
+  virtual void write(
+      std::shared_ptr<data::Dataset>,
       const std::string &file);
 
  private:

@@ -22,6 +22,7 @@
 #include <iostream>
 #include <iomanip>
 #include <chrono>
+#include <fstream>
 
 #include <boost/container/list.hpp>
 #include <boost/container/vector.hpp>
@@ -157,6 +158,39 @@ std::unique_ptr<data::Dataset> Svml::read_horizontal(
 
   return std::unique_ptr<data::Dataset>(dataset);
 }
+
+  void Svml::write(std::shared_ptr<data::Dataset> dataset,
+                   const std::string &file) {
+
+    std::ofstream outFile(file, std::ofstream::out | std::ofstream::trunc);
+
+    if (dataset->format() == dataset->VERT)
+      dataset->transpose();
+
+    for (unsigned int q = 0; q < dataset->num_queries(); q++) {
+      std::shared_ptr<data::QueryResults> results = dataset->getQueryResults(q);
+      const Feature* features = results->features();
+      const Label* labels = results->labels();
+
+      for (unsigned int r = 0; r < results->num_results(); r++) {
+        outFile << labels[r] << " qid:" << q+1;
+        for (unsigned int f = 0; f < dataset->num_features(); f++) {
+          outFile << " " << std::setprecision(7) << f+1 << ":" << features[f];
+        }
+        outFile << std::endl;
+      }
+    }
+
+//    for (unsigned int i = 0; i < dataset->num_instances(); i++) {
+//      Label* l = dataset->getLabel(i);
+//      for (unsigned int f = 0; f < dataset->num_features(); f++) {
+//        Feature* f = dataset->at(i, f);
+//        // Miss the qid
+//      }
+//    }
+
+    outFile.close();
+  }
 
 std::ostream& Svml::put(std::ostream& os) const {
   // num threads is not reported here.
