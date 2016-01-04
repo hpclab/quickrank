@@ -55,9 +55,9 @@ std::unique_ptr<data::Dataset> Svml::read_horizontal(
   unsigned int maxfid = 0;
 
   // temporary copy of data
-  boost::container::list<unsigned int> data_qids;
-  boost::container::list<quickrank::Label> data_labels;
-  boost::container::list<boost::container::vector<quickrank::Feature> > data_instances;
+  std::list<unsigned int> data_qids;
+  std::list<quickrank::Label> data_labels;
+  std::list<std::vector<quickrank::Feature>> data_instances;
 
   while (not feof(f)) {
     //#pragma omp parallel for ordered reduction(max:maxfid) num_threads(4) schedule(static,1)
@@ -95,7 +95,7 @@ std::unique_ptr<data::Dataset> Svml::read_horizontal(
     unsigned int qid = atou(read_token(pch), "qid:");
 
     // allocate feature vector and read instance
-    boost::container::vector<quickrank::Feature> curr_instance(maxfid);
+    std::vector<quickrank::Feature> curr_instance(maxfid);
 
     //read a sequence of features, namely (fid,fval) pairs, then the ending description
     while (!ISEMPTY(token = read_token(pch, '#'))) {
@@ -124,7 +124,8 @@ std::unique_ptr<data::Dataset> Svml::read_horizontal(
     {
       data_qids.push_back(qid);
       data_labels.push_back(relevance);
-      data_instances.push_back(boost::move(curr_instance));  // move should avoid copies
+      data_instances.push_back(std::move(curr_instance));  // move should avoid
+      // copies
     }
     //free mem
     free(line);
@@ -141,7 +142,7 @@ std::unique_ptr<data::Dataset> Svml::read_horizontal(
   auto i_l = data_labels.begin();
   auto i_x = data_instances.begin();
   while (i_q != data_qids.end()) {
-    dataset->addInstance(*i_q, *i_l, boost::move(*i_x));
+    dataset->addInstance(*i_q, *i_l, std::move(*i_x));
     i_q++;
     i_l++;
     i_x++;
@@ -173,11 +174,13 @@ std::unique_ptr<data::Dataset> Svml::read_horizontal(
       const Label* labels = results->labels();
 
       for (unsigned int r = 0; r < results->num_results(); r++) {
-        outFile << labels[r] << " qid:" << q+1;
+        outFile << std::setprecision(0) << labels[r] << " qid:" << q+1;
         for (unsigned int f = 0; f < dataset->num_features(); f++) {
-          outFile << " " << std::setprecision(7) << f+1 << ":" << features[f];
+          outFile << " " << f+1 << ":" <<
+              std::fixed << std::setprecision(8) << features[f];
         }
         outFile << std::endl;
+        features += dataset->num_features();
       }
     }
 

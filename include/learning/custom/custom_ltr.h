@@ -78,6 +78,11 @@ class CustomLTR : public LTR_Algorithm {
   virtual Score score_document(const Feature* d,
                                const unsigned int offset = 1) const;
 
+  virtual std::shared_ptr<std::vector<Score>> detailed_scores_document(const Feature* d,
+                                                                       const unsigned int next_fx_offset) const {
+    return nullptr;
+  }
+
   /// \todo TODO: add load_model();
 
   const Score FIXED_SCORE = 666.0;

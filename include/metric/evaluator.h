@@ -64,10 +64,13 @@ class Evaluator : private boost::noncopyable {
   /// If empty, no performance is measured on the test set.
   /// \param scores_filename The output scores file.
   /// If set save the scores computed for the test set.
+  /// \param verbose If True saves an SVML-like file with the score of each ranker in the ensemble.
+  /// NB. Works only for ensembles.
   static void testing_phase(std::shared_ptr<learning::LTR_Algorithm> algo,
                        std::shared_ptr<ir::Metric> test_metric,
                        const std::string test_filename,
-                       const std::string scores_filename);
+                       const std::string scores_filename,
+                       const bool verbose);
 };
 
 }  // namespace metric

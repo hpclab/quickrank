@@ -76,6 +76,15 @@ class Mart : public LTR_Algorithm {
     return ensemble_model_.score_instance(d, next_fx_offset);
   }
 
+  /// Returns the partial scores of a given document, tree.
+  /// \param d is a pointer to the document to be evaluated
+  /// \param next_fx_offset The offset to the next feature in the data representation.
+  /// \note   Each algorithm has a different implementation.
+  virtual std::shared_ptr<std::vector<Score>> detailed_scores_document(const Feature* d,
+                                                         const unsigned int next_fx_offset) const {
+    return ensemble_model_.detailed_scores_instance(d, next_fx_offset);
+  }
+
   /// Print additional statistics.
   ///
   /// At the moment this include only number of comparisons for tree-based algorithms.

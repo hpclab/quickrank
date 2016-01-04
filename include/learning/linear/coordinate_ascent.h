@@ -93,6 +93,11 @@ class CoordinateAscent : public LTR_Algorithm {
   /// Returns the score of a given document.
   virtual Score score_document(const Feature* d,
                                  const unsigned int next_fx_offset) const;
+  virtual std::shared_ptr<std::vector<Score>> detailed_scores_document(const Feature* d,
+                                                                      const unsigned int next_fx_offset) const {
+    return nullptr;
+  }
+
  protected:
 
   /// Prepare the dataset before training or scoring takes place.

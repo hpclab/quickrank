@@ -139,6 +139,7 @@ int main(int argc, char *argv[]) {
   std::string test_metric_string = "NDCG";
   unsigned int test_cutoff = 10;
   unsigned int partial_save = 100;
+  bool verbose_testing = false;
   std::string training_filename;
   std::string validation_filename;
   std::string test_filename;
@@ -258,6 +259,10 @@ int main(int argc, char *argv[]) {
       "scores",
       po::value<std::string>(&scores_filename)->default_value(scores_filename),
       "set output scores file");
+  testing_options.add_options()(
+      "verbose",
+      po::bool_switch(&verbose_testing),
+      "set verbose testing");
 
   po::options_description fast_scoring_options("Fast Scoring options");
   fast_scoring_options.add_options()(
@@ -395,7 +400,8 @@ int main(int argc, char *argv[]) {
               << std::endl;
     quickrank::metric::Evaluator::testing_phase(ranking_algorithm,
                                                 testing_metric, test_filename,
-                                                scores_filename);
+                                                scores_filename,
+                                                verbose_testing);
   }
 
   // Fast Scoring

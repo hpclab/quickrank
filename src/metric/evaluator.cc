@@ -84,38 +84,90 @@ void Evaluator::training_phase(std::shared_ptr<learning::LTR_Algorithm> algo,
 void Evaluator::testing_phase(std::shared_ptr<learning::LTR_Algorithm> algo,
                               std::shared_ptr<ir::Metric> test_metric,
                               const std::string test_filename,
-                              const std::string scores_filename) {
+                              const std::string scores_filename,
+                              const bool verbose) {
   if (test_metric and !test_filename.empty()) {
 
-    // create reader: assum svml as ltr format
-    quickrank::io::Svml reader;
+    // create reader: assume svml as ltr format
+    quickrank::io::Svml svml;
 
     std::cout << "# Reading test dataset: " << test_filename << std::endl;
 
-    std::shared_ptr<quickrank::data::Dataset> test_dataset = reader
-        .read_horizontal(test_filename);
-    std::cout << reader << *test_dataset;
-    Score* test_scores = new Score[test_dataset
-        ->num_instances()];
-    algo->score_dataset(test_dataset, test_scores);
-    quickrank::MetricScore test_score = test_metric->evaluate_dataset(
-        test_dataset, test_scores);
+    std::shared_ptr<data::Dataset> test_dataset =
+        svml.read_horizontal(test_filename);
+    std::cout << svml << *test_dataset << std::endl;
 
-    std::cout << std::endl;
-    std::cout << *test_metric << " on test data = " << std::setprecision(4)
-              << test_score << std::endl << std::endl;
+    std::vector<Score> scores(test_dataset->num_instances());
+    if (verbose) {
+      unsigned int idx_query_scores = 0;
+      std::shared_ptr<data::Dataset> datasetPartScores = nullptr;
 
-    if (!scores_filename.empty()) {
-      std::ofstream os;
-      os << std::setprecision(std::numeric_limits<Score>::digits10);
-      os.open(scores_filename, std::fstream::out);
-      for (unsigned int i = 0; i < test_dataset->num_instances(); ++i)
-        os << test_scores[i] << std::endl;
-      os.close();
-      std::cout << "# Scores written to file: " << scores_filename << std::endl;
+      for (unsigned int q = 0; q < test_dataset->num_queries(); q++) {
+        std::shared_ptr<data::QueryResults> results =
+            test_dataset->getQueryResults(q);
+        if (test_dataset->format() == data::Dataset::VERT) {
+          std::cerr << "# ## ERROR!! Dataset should be in horiz format" <<
+              std::endl;
+          return;
+        }
+        // score_query_results(r, scores, 1, test_dataset->num_features());
+        const Feature* features = results->features();
+        const Label* labels = results->labels();
+        for (unsigned int i = 0; i < results->num_results(); i++) {
+          std::shared_ptr<std::vector<Score>> detailed_scores =
+              algo->detailed_scores_document(features, 1);
+
+          if (detailed_scores == nullptr) {
+            std::cerr << "# ## ERROR!! Only Ensemble methods support the " <<
+                "export of detailed score tree by tree" << std::endl;
+            return;
+          }
+
+          // Initilized on iterating the first instance in the dataset
+          if (datasetPartScores == nullptr)
+            datasetPartScores = std::shared_ptr<data::Dataset>(
+                new data::Dataset(test_dataset->num_instances(),
+                                  detailed_scores->size()));
+          // It performs a copy for casting Score to Feature (double to float)
+          std::vector<Feature> featuresScore(detailed_scores->begin(),
+                                             detailed_scores->end());
+          datasetPartScores->addInstance(q, labels[i], featuresScore);
+
+          scores[idx_query_scores + i] = std::accumulate(
+              detailed_scores->begin(), detailed_scores->end(), 0.0);
+          features += test_dataset->num_features();
+        }
+        idx_query_scores += results->num_results();
+      }
+
+      quickrank::MetricScore test_score = test_metric->evaluate_dataset(
+              test_dataset, &scores[0]);
+
+      std::cout << *test_metric << " on test data = " << std::setprecision(4)
+        << test_score << std::endl << std::endl;
+
+
+      svml.write(datasetPartScores, scores_filename);
+
+    } else {
+      algo->score_dataset(test_dataset, &scores[0]);
+      quickrank::MetricScore test_score = test_metric->evaluate_dataset(
+              test_dataset, &scores[0]);
+
+      std::cout << std::endl;
+      std::cout << *test_metric << " on test data = " << std::setprecision(4)
+      << test_score << std::endl << std::endl;
+
+      if (!scores_filename.empty()) {
+        std::ofstream os;
+        os << std::setprecision(std::numeric_limits<Score>::digits10);
+        os.open(scores_filename, std::fstream::out);
+        for (unsigned int i = 0; i < test_dataset->num_instances(); ++i)
+          os << scores[i] << std::endl;
+        os.close();
+        std::cout << "# Scores written to file: " << scores_filename << std::endl;
+      }
     }
-
-    delete[] test_scores;
   }
 
   algo->print_additional_stats();

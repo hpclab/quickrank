@@ -90,6 +90,14 @@ class LTR_Algorithm : private boost::noncopyable {
   virtual Score score_document(const Feature* d,
                                const unsigned int next_fx_offset) const = 0;
 
+  /// Returns the partial score of a given document, tree by tree.
+  /// \param d is a pointer to the document to be evaluated
+  /// \param next_fx_offset The offset to the next feature in the data representation.
+  /// \note   Each algorithm has a different implementation.
+  virtual std::shared_ptr<std::vector<Score>> detailed_scores_document(
+      const Feature* d,
+      const unsigned int next_fx_offset) const = 0;
+
   /// Save the current model to the output_file.
   ///
   /// \param model_filename The output file name.
