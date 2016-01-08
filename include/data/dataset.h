@@ -132,15 +132,15 @@ class Dataset : private boost::noncopyable {
 
  private:
 
-  unsigned int num_features_;
-  unsigned int num_queries_;
-  unsigned int num_instances_;
+  size_t num_features_;
+  size_t num_queries_;
+  size_t num_instances_;
 
   Format format_;
 
   quickrank::Feature* data_ = NULL;
   quickrank::Label* labels_ = NULL;
-  boost::container::vector<unsigned int> offsets_;
+  boost::container::vector<size_t> offsets_;
 
   unsigned int last_instance_id_;
   unsigned int max_instances_;
