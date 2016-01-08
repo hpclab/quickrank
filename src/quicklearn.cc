@@ -89,6 +89,7 @@
 #include "learning/forests/obliviousmart.h"
 #include "learning/forests/obliviouslambdamart.h"
 #include "learning/linear/coordinate_ascent.h"
+#include "learning/linear/line_search.h"
 #include "learning/custom/custom_ltr.h"
 #include "metric/metricfactory.h"
 #include "io/xml.h"
@@ -167,12 +168,15 @@ int main(int argc, char *argv[]) {
       "algo",
       po::value<std::string>(&algorithm_string)->default_value(
           algorithm_string),
-      ("LtR algorithm [" + quickrank::learning::forests::Mart::NAME_ + "|"
+      ("LtR algorithm ["
+          + quickrank::learning::forests::Mart::NAME_ + "|"
           + quickrank::learning::forests::LambdaMart::NAME_ + "|"
           + quickrank::learning::forests::ObliviousMart::NAME_ + "|"
           + quickrank::learning::forests::ObliviousLambdaMart::NAME_ + "|"
           + quickrank::learning::linear::CoordinateAscent::NAME_ + "|"
-          + quickrank::learning::CustomLTR::NAME_ + "]").c_str());
+          + quickrank::learning::linear::LineSearch::NAME_ + "|"
+          + quickrank::learning::CustomLTR::NAME_ + "]")
+          .c_str());
   learning_options.add_options()(
       "train-metric",
       po::value<std::string>(&train_metric_string)->default_value(
@@ -262,7 +266,7 @@ int main(int argc, char *argv[]) {
   testing_options.add_options()(
       "verbose",
       po::bool_switch(&verbose_testing),
-      "set verbose testing");
+      "set verbose testing [applies only to ensemble models]");
 
   po::options_description fast_scoring_options("Fast Scoring options");
   fast_scoring_options.add_options()(
@@ -278,7 +282,7 @@ int main(int argc, char *argv[]) {
 
   // CoordinateAscent options add by Chiara Pierucci
   po::options_description coordasc_options(
-      "Training options for Coordinate Ascent");
+      "Training options for Coordinate Ascent and Line Search");
   coordasc_options.add_options()(
       "num-samples",
       po::value<unsigned int>(&num_points)->default_value(num_points),
@@ -300,8 +304,11 @@ int main(int argc, char *argv[]) {
       "set number of fails on validation before exit");
 
   po::options_description all_desc("Allowed options");
-  all_desc.add(learning_options).add(tree_model_options).add(coordasc_options)
-      .add(testing_options).add(fast_scoring_options);
+  all_desc.add(learning_options)
+      .add(tree_model_options)
+      .add(coordasc_options)
+      .add(testing_options)
+      .add(fast_scoring_options);
   all_desc.add_options()("help,h", "produce help message");
 
   po::variables_map vm;
@@ -339,14 +346,20 @@ int main(int argc, char *argv[]) {
           new quickrank::learning::forests::ObliviousLambdaMart(ntrees, shrinkage,
                                                       nthresholds, treedepth,
                                                       minleafsupport, esr));
-    else if (algorithm_string
-        == quickrank::learning::linear::CoordinateAscent::NAME_)
+    else if (algorithm_string == quickrank::learning::linear::CoordinateAscent::NAME_)
       ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
           new quickrank::learning::linear::CoordinateAscent(num_points,
                                                             window_size,
                                                             reduction_factor,
                                                             max_iterations,
                                                             max_failed_vali));
+    else if (algorithm_string == quickrank::learning::linear::LineSearch::NAME_)
+      ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
+          new quickrank::learning::linear::LineSearch(num_points,
+                                                      window_size,
+                                                      reduction_factor,
+                                                      max_iterations,
+                                                      max_failed_vali));
     else if (algorithm_string == quickrank::learning::CustomLTR::NAME_)
       ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
           new quickrank::learning::CustomLTR());
