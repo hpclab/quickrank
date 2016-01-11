@@ -21,19 +21,11 @@
  */
 #include "learning/linear/line_search.h"
 
-#include <iostream>
 #include <fstream>
 #include <iomanip>
-#include <cfloat>
-#include <cmath>
 #include <chrono>
-#include <vector>
-#include <numeric>
-#include <algorithm>
 
 #include <boost/property_tree/xml_parser.hpp>
-
-#define DEBUG false
 
 namespace quickrank {
 namespace learning {
@@ -226,7 +218,7 @@ void LineSearch::learn(
 
     // if step2 is a 0-vector, no way to improve in step2
     bool zeros = std::all_of(step2.begin(), step2.end(),
-                             [](double s) { return s==0; });
+                             [] (double s) { return s == 0; });
     if (!zeros) {
 
       #pragma omp parallel for
@@ -263,7 +255,7 @@ void LineSearch::learn(
         // Set weights_prev to current weights for the next iteration
         weights_prev = weights;
       }
-    } // end if zeros step1 vector
+    } // end if zeros step2 vector
 
     std::cout << std::setw(7) << i+1 << std::setw(9) << best_metric_on_training;
 
