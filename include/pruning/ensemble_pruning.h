@@ -21,41 +21,69 @@
  *  - Chiara Pierucci (chiarapierucci14@gmail.com)
  *  - Claudio Lucchese (claudio.lucchese@isti.cnr.it)
  */
-#ifndef QUICKRANK_LEARNING_LINE_SEARCH_H_
-#define QUICKRANK_LEARNING_LINE_SEARCH_H_
+#ifndef QUICKRANK_LEARNING_ENSEMBLE_PRUNING_H_
+#define QUICKRANK_LEARNING_ENSEMBLE_PRUNING_H_
 
 #include <boost/noncopyable.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <memory>
+#include <learning/linear/line_search.h>
 
 #include "data/dataset.h"
 #include "metric/ir/metric.h"
 #include "learning/ltr_algorithm.h"
 
 namespace quickrank {
-namespace learning {
-namespace linear {
+namespace pruning {
 
-/// This implements the Line Search algorithm.
-class LineSearch : public LTR_Algorithm {
+/// This implements various strategies for pruning ensembles.
+class EnsemblePruning : public quickrank::learning::LTR_Algorithm {
 
  public:
 
-  LineSearch(unsigned int num_points, double window_size,
-             double reduction_factor, unsigned int max_iterations,
-             unsigned int max_failed_vali);
+  enum class PruningMethod {
+    RANDOM, LOW_WEIGHTS, SKIP, LAST, QUALITY_LOSS, AGGR_SCORE
+  };
 
-  LineSearch(const boost::property_tree::ptree &info_ptree,
-             const boost::property_tree::ptree &model_ptree);
+  EnsemblePruning(PruningMethod pruning_method, double pruning_rate);
 
-  virtual ~LineSearch();
+  EnsemblePruning(std::string pruning_method, double pruning_rate);
+
+  EnsemblePruning(std::string pruning_method, double pruning_rate,
+                  std::shared_ptr<learning::linear::LineSearch> lineSearch);
+
+  EnsemblePruning(const boost::property_tree::ptree &info_ptree,
+                  const boost::property_tree::ptree &model_ptree);
+
+  virtual ~EnsemblePruning();
+
+  static PruningMethod getPruningMethod(std::string name) {
+    auto i_item = std::find(pruningMethodName.cbegin(),
+                            pruningMethodName.cend(),
+                            name);
+    if (i_item != pruningMethodName.cend()) {
+
+      return PruningMethod(std::distance(pruningMethodName.cbegin(), i_item));
+    }
+
+    throw std::invalid_argument("pruning method name is not valid");
+  }
+
+  static std::string getPruningMethod(PruningMethod pruningMethod) {
+    return pruningMethodName[static_cast<int>(pruningMethod)];
+  }
+
+  static const std::string NAME_;
 
   /// Returns the name of the ranker.
   virtual std::string name() const {
     return NAME_;
   }
 
-  static const std::string NAME_;
+  /// Returns the pruning method of the algorithm.
+  virtual PruningMethod type() const {
+    return pruning_method_;
+  }
 
   /// Executes the learning process.
   ///
@@ -98,6 +126,10 @@ class LineSearch : public LTR_Algorithm {
     return nullptr;
   }
 
+  /// Process the dataset filtering out features with 0-weight
+  virtual std::shared_ptr<data::Dataset> filter_dataset(
+      std::shared_ptr<data::Dataset> dataset) const;
+
  protected:
 
   /// Prepare the dataset before training or scoring takes place.
@@ -108,16 +140,17 @@ class LineSearch : public LTR_Algorithm {
   virtual void preprocess_dataset(std::shared_ptr<data::Dataset> dataset) const;
 
  private:
-  unsigned int num_points_;
-  double window_size_;
-  double reduction_factor_;
-  unsigned int max_iterations_;
-  unsigned int max_failed_vali_;
+  double pruning_rate_;
+  PruningMethod pruning_method_;
+  unsigned int estimators_to_select_;
+  std::shared_ptr<learning::linear::LineSearch> lineSearch_;
 
-  std::vector<double> best_weights_;
+  std::vector<double> weights_;
+
+  static const std::vector<std::string> pruningMethodName;
 
   /// The output stream operator.
-  friend std::ostream& operator<<(std::ostream& os, const LineSearch& a) {
+  friend std::ostream& operator<<(std::ostream& os, const EnsemblePruning& a) {
     return a.put(os);
   }
 
@@ -127,16 +160,13 @@ class LineSearch : public LTR_Algorithm {
   /// Save the current model in the given output file stream.
   virtual std::ofstream& save_model_to_file(std::ofstream& of) const;
 
-  virtual void preCompute(Feature *training_dataset, unsigned int num_samples,
-                          unsigned int num_features, Score *pre_sum, double *weights,
-                          Score *training_score, unsigned int feature_exclude);
+  virtual void score(data::Dataset *dataset, Score *scores) const;
 
-  virtual void score(Feature *dataset, unsigned int num_samples,
-             unsigned int num_features, double *weights, Score *scores);
+  /// The various pruning strategies
+  virtual void random_pruning(std::shared_ptr<data::Dataset> dataset);
 };
 
-}  // namespace linear
-}  // namespace learning
+}  // namespace pruning
 }  // namespace quickrank
 
 #endif
