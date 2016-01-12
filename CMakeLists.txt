@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.4)
-project(quickrank)
+project(quicklearn)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -march=native -mtune=native -O3 -Wa,-q")
 
@@ -21,8 +21,8 @@ file(GLOB_RECURSE all_tests ${CMAKE_SOURCE_DIR}/unit-tests/*.cc)
 
 list(REMOVE_ITEM all_sources "${CMAKE_SOURCE_DIR}/src/quickscore.cc")
 
-add_executable(quickrank ${all_headers} ${all_sources})
-target_link_libraries(quickrank ${Boost_LIBRARIES})
+add_executable(quicklearn ${all_headers} ${all_sources})
+target_link_libraries(quicklearn ${Boost_LIBRARIES})
 
 list(REMOVE_ITEM all_sources "${CMAKE_SOURCE_DIR}/src/quicklearn.cc")
 

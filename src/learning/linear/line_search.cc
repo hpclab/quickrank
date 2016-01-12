@@ -242,7 +242,7 @@ void LineSearch::learn(
       }
       // End parallel loop
 
-      // Find the best metric score
+      // Find the best metric scoreé
       auto i_max_metric_score = std::max_element(metric_scores.cbegin(),
                                                  metric_scores.cend());
       if (*i_max_metric_score > best_metric_on_training) {

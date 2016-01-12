@@ -90,6 +90,7 @@
 #include "learning/forests/obliviouslambdamart.h"
 #include "learning/linear/coordinate_ascent.h"
 #include "learning/linear/line_search.h"
+#include "pruning/ensemble_pruning.h"
 #include "learning/custom/custom_ltr.h"
 #include "metric/metricfactory.h"
 #include "io/xml.h"
@@ -141,6 +142,7 @@ int main(int argc, char *argv[]) {
   unsigned int test_cutoff = 10;
   unsigned int partial_save = 100;
   bool verbose_testing = false;
+  bool ensemble_pruning_with_line_search = false;
   std::string training_filename;
   std::string validation_filename;
   std::string test_filename;
@@ -159,6 +161,11 @@ int main(int argc, char *argv[]) {
   float reduction_factor = 0.95;
   unsigned int max_failed_vali = 20;
 
+  // ------------------------------------------
+  // Ensemble Pruning added by Salvatore Trani
+  double epruning_rate = 0.5;
+  std::string epruning_method = "RANDOM";
+
   // data structures
   std::shared_ptr<quickrank::learning::LTR_Algorithm> ranking_algorithm;
 
@@ -175,6 +182,7 @@ int main(int argc, char *argv[]) {
           + quickrank::learning::forests::ObliviousLambdaMart::NAME_ + "|"
           + quickrank::learning::linear::CoordinateAscent::NAME_ + "|"
           + quickrank::learning::linear::LineSearch::NAME_ + "|"
+          + quickrank::pruning::EnsemblePruning::NAME_ + "|"
           + quickrank::learning::CustomLTR::NAME_ + "]")
           .c_str());
   learning_options.add_options()(
@@ -303,10 +311,29 @@ int main(int argc, char *argv[]) {
       po::value<unsigned int>(&max_failed_vali)->default_value(max_failed_vali),
       "set number of fails on validation before exit");
 
+  // Ensemble Pruning options add by Salvatore Trani
+  po::options_description epruning_options(
+      "Training options for Ensemble Pruning");
+  epruning_options.add_options()(
+      "pruning-rate",
+      po::value<double>(&epruning_rate)->default_value(epruning_rate),
+      "final ensemble size (either as a ratio with respect to ensemble size or "
+          "as an absolute number of estimators to select)");
+  epruning_options.add_options()(
+      "pruning-method",
+      po::value<std::string>(&epruning_method)->default_value(epruning_method),
+      "method for pruning the ensemble");
+  epruning_options.add_options()(
+      "with-line-search",
+      po::bool_switch(&ensemble_pruning_with_line_search),
+      "ensemble pruning is made in conjunction with line search "
+          "[related parameters accepted]");
+
   po::options_description all_desc("Allowed options");
   all_desc.add(learning_options)
       .add(tree_model_options)
       .add(coordasc_options)
+      .add(epruning_options)
       .add(testing_options)
       .add(fast_scoring_options);
   all_desc.add_options()("help,h", "produce help message");
@@ -360,7 +387,22 @@ int main(int argc, char *argv[]) {
                                                       reduction_factor,
                                                       max_iterations,
                                                       max_failed_vali));
-    else if (algorithm_string == quickrank::learning::CustomLTR::NAME_)
+    else if (algorithm_string == quickrank::pruning::EnsemblePruning::NAME_) {
+      if (!ensemble_pruning_with_line_search)
+        ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
+          new quickrank::pruning::EnsemblePruning(epruning_method,
+                                                  epruning_rate));
+      else {
+        std::shared_ptr<quickrank::learning::linear::LineSearch> lineSearch =
+            std::shared_ptr<quickrank::learning::linear::LineSearch>(
+                new quickrank::learning::linear::LineSearch(
+                    num_points, window_size, reduction_factor, max_iterations,
+                    max_failed_vali));
+        ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
+            new quickrank::pruning::EnsemblePruning(epruning_method,
+                                                    epruning_rate, lineSearch));
+      }
+    } else if (algorithm_string == quickrank::learning::CustomLTR::NAME_)
       ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
           new quickrank::learning::CustomLTR());
     else {
