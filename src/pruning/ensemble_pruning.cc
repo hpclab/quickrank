@@ -27,7 +27,6 @@
 
 #include <boost/property_tree/xml_parser.hpp>
 #include <io/svml.h>
-#include <plotcompat.h>
 
 namespace quickrank {
 namespace pruning {
