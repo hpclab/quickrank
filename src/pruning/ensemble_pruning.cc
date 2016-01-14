@@ -24,6 +24,7 @@
 #include <fstream>
 #include <iomanip>
 #include <chrono>
+#include <set>
 
 #include <boost/property_tree/xml_parser.hpp>
 #include <io/svml.h>
@@ -34,7 +35,7 @@ namespace pruning {
 const std::string EnsemblePruning::NAME_ = "EPRUNING";
 
 const std::vector<std::string> EnsemblePruning::pruningMethodName = {
-  "RANDOM", "LOW_WEIGHTS", "SKIP", "LAST", "QUALITY_LOSS", "AGGR_SCORE"
+  "RANDOM", "LOW_WEIGHTS", "SKIP", "LAST", "QUALITY_LOSS"
 };
 
 EnsemblePruning::EnsemblePruning(PruningMethod pruning_method,
@@ -97,8 +98,7 @@ std::ostream& EnsemblePruning::put(std::ostream &os) const {
     << "# pruning rate = " << pruning_rate_ << std::endl
     << "# pruning method = " << getPruningMethod(pruning_method_) << std::endl;
   if (lineSearch_)
-    os << "# Line Search Parameters: " << std::endl << *lineSearch_ <<
-        std::endl;
+    os << "# Line Search Parameters: " << std::endl << *lineSearch_;
   else
     os << "# No Line Search" << std::endl;
   return os << std::endl;
@@ -127,45 +127,77 @@ void EnsemblePruning::learn(
   if (pruning_rate_ < 1)
     estimators_to_select_ = pruning_rate_ * training_dataset->num_features();
   else {
-    if (estimators_to_select_ > training_dataset->num_features())
-      return; // nothing to do
+    if (estimators_to_select_ > training_dataset->num_features()) {
+      std::cout << "Nothing to prune. Quit!" << std::endl;
+      return;
+    }
     estimators_to_select_ = pruning_rate_;
   }
+
+  // Set all the weights to 1
   std::vector<double>(training_dataset->num_features(), 1.0).swap(weights_);
 
   // compute training and validation scores using starting weights
-
   std::vector<Score> training_score(training_dataset->num_instances());
   score(training_dataset.get(), &training_score[0]);
-
   auto init_metric_on_training = scorer->evaluate_dataset(training_dataset,
                                                      &training_score[0]);
 
   std::cout << std::endl;
-  std::cout << "# Initial metric without pruning:" << std::endl;
+  std::cout << "# Without pruning:" << std::endl;
   std::cout << std::fixed << std::setprecision(4);
   std::cout << "# --------------------------" << std::endl;
   std::cout << "#       training validation" << std::endl;
   std::cout << "# --------------------------" << std::endl;
-  std::cout << std::setw(7) << " " << std::setw(9) << init_metric_on_training;
+  std::cout << std::setw(16) << init_metric_on_training;
   if (validation_dataset) {
     std::vector<Score> validation_score(validation_dataset->num_instances());
     score(validation_dataset.get(), &validation_score[0]);
     auto init_metric_on_validation = scorer->evaluate_dataset(
         validation_dataset, &validation_score[0]);
-    std::cout << std::setw(9) << init_metric_on_validation
-      << std::endl << std::endl;
+    std::cout << std::setw(9) << init_metric_on_validation << std::endl;
+  }
+  std::cout << std::endl;
+
+  // Some pruning methods needs to perform line search before the pruning
+  if (pruning_method_ == PruningMethod::LOW_WEIGHTS ||
+      pruning_method_ == PruningMethod::QUALITY_LOSS) {
+
+    if (!lineSearch_) {
+      throw std::invalid_argument(std::string(
+          "This pruning method requires line search"));
+    }
+
+    std::cout << "# LineSearch pre-pruning:" << std::endl;
+    std::cout << "# --------------------------" << std::endl;
+    lineSearch_->learn(training_dataset, validation_dataset, scorer,
+                       partial_save, output_basename);
+    std::cout << std::endl;
   }
 
-  // TODO: Implement remainings ensemble pruning strategies
   switch (pruning_method_) {
     case PruningMethod::RANDOM: {
       random_pruning(training_dataset);
       break;
     }
+    case PruningMethod::LOW_WEIGHTS: {
+      low_weights_pruning(training_dataset);
+      break;
+    }
+    case PruningMethod::LAST: {
+      last_pruning(training_dataset);
+      break;
+    }
+    case PruningMethod::QUALITY_LOSS: {
+      quality_loss_pruning(training_dataset, scorer);
+      break;
+    }
+    case PruningMethod::SKIP: {
+      skip_pruning(training_dataset);
+      break;
+    }
     default:
       throw std::invalid_argument("pruning method still not implemented");
-      break;
   }
 
   if (lineSearch_) {
@@ -178,17 +210,41 @@ void EnsemblePruning::learn(
       filtered_validation_dataset = filter_dataset(validation_dataset);
 
     // Run the line search algorithm
+    std::cout << "# LineSearch post-pruning:" << std::endl;
+    std::cout << "# --------------------------" << std::endl;
     lineSearch_->learn(filtered_training_dataset, filtered_validation_dataset,
                        scorer, partial_save, output_basename);
+    std::cout << std::endl;
+
+    // Needs to import the line search learned weights into this model
+    import_weights_from_line_search();
+
+  }
+
+  score(training_dataset.get(), &training_score[0]);
+  init_metric_on_training = scorer->evaluate_dataset(training_dataset,
+                                                     &training_score[0]);
+
+  std::cout << "# With pruning:" << std::endl;
+  std::cout << std::fixed << std::setprecision(4);
+  std::cout << "# --------------------------" << std::endl;
+  std::cout << "#       training validation" << std::endl;
+  std::cout << "# --------------------------" << std::endl;
+  std::cout << std::setw(16) << init_metric_on_training;
+  if (validation_dataset) {
+    std::vector<Score> validation_score(validation_dataset->num_instances());
+    score(validation_dataset.get(), &validation_score[0]);
+    auto init_metric_on_validation = scorer->evaluate_dataset(
+        validation_dataset, &validation_score[0]);
+    std::cout << std::setw(9) << init_metric_on_validation << std::endl;
   }
 
   auto end = std::chrono::steady_clock::now();
   std::chrono::duration<double> elapsed = std::chrono::duration_cast<
       std::chrono::duration<double>>(end - begin);
   std::cout << std::endl;
-  std::cout << "# \t Training time: " << std::setprecision(2) <<
+  std::cout << "# \t Total training time: " << std::setprecision(2) <<
       elapsed.count() << " seconds" << std::endl;
-
 }
 
 Score EnsemblePruning::score_document(const Feature *d,
@@ -236,31 +292,23 @@ void EnsemblePruning::score(data::Dataset *dataset, Score *scores) const {
     scores[s] = 0;
     // compute feature * weight for all the feature different from f
     for (unsigned int f = 0; f < dataset->num_features(); f++) {
-      scores[s] += features[offset_feature + f];
+      scores[s] += weights_[f] * features[offset_feature + f];
     }
   }
 }
 
-void EnsemblePruning::random_pruning(std::shared_ptr<data::Dataset> dataset) {
+void EnsemblePruning::import_weights_from_line_search() {
 
-  unsigned int num_features = dataset->num_features();
+  auto i_ls_w = lineSearch_->get_weigths().begin();
 
-  /* initialize random seed: */
-  srand (time(NULL));
-
-  unsigned int selected = 0;
-  while (selected < estimators_to_select_) {
-    unsigned int index = rand() % num_features;
-    if (weights_[index] > 0) {
-      selected++;
-      weights_[index] = 0;
-    }
+  for (auto i_w = weights_.begin(); i_w != weights_.end(); ++i_w) {
+    if (*i_w == 0) continue; // skip the weights-0 features (pruned by ls)
+    *i_w = *i_ls_w++;
   }
 }
 
 std::shared_ptr<data::Dataset> EnsemblePruning::filter_dataset(
       std::shared_ptr<data::Dataset> dataset) const {
-
 
   data::Dataset* filt_dataset = new data::Dataset(dataset->num_instances(),
                                                   estimators_to_select_);
@@ -293,6 +341,102 @@ std::shared_ptr<data::Dataset> EnsemblePruning::filter_dataset(
   }
 
   return std::shared_ptr<data::Dataset>(filt_dataset);
+}
+
+void EnsemblePruning::random_pruning(std::shared_ptr<data::Dataset> dataset) {
+
+  unsigned int num_features = dataset->num_features();
+  unsigned int estimators_to_clean = num_features - estimators_to_select_;
+
+  /* initialize random seed: */
+  srand (time(NULL));
+
+  unsigned int cleaned = 0;
+  while (cleaned < estimators_to_clean) {
+    unsigned int index = rand() % num_features;
+    if (weights_[index] > 0) {
+      cleaned++;
+      weights_[index] = 0;
+    }
+  }
+}
+
+void EnsemblePruning::skip_pruning(std::shared_ptr<data::Dataset> dataset) {
+
+  unsigned int num_features = dataset->num_features();
+  double step = (double)num_features / estimators_to_select_;
+
+  std::set<unsigned int> selected_estimators;
+  for (unsigned int i=0; i<estimators_to_select_; i++) {
+    selected_estimators.insert( (unsigned int) ceil(i * step) );
+  }
+
+  for (unsigned int i=0; i<num_features; i++) {
+    if (!selected_estimators.count(i))
+      weights_[i] = 0;
+  }
+}
+
+void EnsemblePruning::last_pruning(std::shared_ptr<data::Dataset> dataset) {
+
+  unsigned int num_features = dataset->num_features();
+
+  for (unsigned int i=1; i <= estimators_to_select_; i++) {
+    weights_[num_features - i] = 0;
+  }
+}
+
+void EnsemblePruning::low_weights_pruning(
+    std::shared_ptr<data::Dataset> dataset) {
+
+  unsigned int estimators_to_clean =
+      dataset->num_features() - estimators_to_select_;
+
+  std::vector<unsigned int> idx (weights_.size());
+  std::iota(idx.begin(), idx.end(), 0);
+  std::sort(idx.begin(), idx.end(),
+            [this] (const unsigned int& a, const unsigned int& b) {
+              return this->weights_[a] < this->weights_[b];
+            });
+
+  for (unsigned int f = 0; f < estimators_to_clean; f++) {
+    weights_[idx[f]] = 0;
+  }
+}
+
+void EnsemblePruning::quality_loss_pruning(
+    std::shared_ptr<data::Dataset> dataset,
+    std::shared_ptr<metric::ir::Metric> scorer) {
+
+  unsigned int num_features = dataset->num_features();
+  unsigned int estimators_to_clean = num_features - estimators_to_select_;
+
+  std::vector<MetricScore> metric_scores(num_features);
+  std::vector<Score> dataset_score(dataset->num_instances());
+
+  for (unsigned int f = 0; f < num_features; f++) {
+    // set the weight of the feature to 0 to simulate its deletion
+    double weight_bkp = weights_[f];
+    weights_[f] = 0;
+
+    score(dataset.get(), &dataset_score[0]);
+    metric_scores[f] = scorer->evaluate_dataset(dataset, &dataset_score[0]);
+
+    // Reset the original weight to the feature
+    weights_[f] = weight_bkp;
+  }
+
+  // Find the last metric scores and set the weights of the related features = 0
+  std::vector<unsigned int> idx (num_features);
+  std::iota(idx.begin(), idx.end(), 0);
+  std::sort(idx.begin(), idx.end(),
+            [&metric_scores] (const unsigned int& a, const unsigned int& b) {
+              return metric_scores[a] > metric_scores[b];
+            });
+
+  for (unsigned int f = 0; f < estimators_to_clean; f++) {
+    weights_[idx[f]] = 0;
+  }
 }
 
 }  // namespace pruning

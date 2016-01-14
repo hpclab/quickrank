@@ -98,6 +98,11 @@ class LineSearch : public LTR_Algorithm {
     return nullptr;
   }
 
+  /// Returns the learned weights
+  virtual std::vector<double> get_weigths() {
+    return best_weights_;
+  }
+
  protected:
 
   /// Prepare the dataset before training or scoring takes place.
