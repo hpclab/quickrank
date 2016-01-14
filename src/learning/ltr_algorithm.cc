@@ -36,6 +36,8 @@
 
 #ifdef _OPENMP
 #include <omp.h>
+#include <pruning/ensemble_pruning.h>
+
 #else
 #include "utils/omp-stubs.h"
 #endif
@@ -117,25 +119,29 @@ std::shared_ptr<LTR_Algorithm> LTR_Algorithm::load_model_from_file(
   if (ranker_type == forests::Mart::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
         new forests::Mart(info_ptree, ensemble_ptree));
-  if (ranker_type == forests::LambdaMart::NAME_)
+  else if (ranker_type == forests::LambdaMart::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
         new forests::LambdaMart(info_ptree, ensemble_ptree));
-  if (ranker_type == forests::ObliviousMart::NAME_)
+  else if (ranker_type == forests::ObliviousMart::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
         new forests::ObliviousMart(info_ptree, ensemble_ptree));
-  if (ranker_type == forests::ObliviousLambdaMart::NAME_)
+  else if (ranker_type == forests::ObliviousLambdaMart::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
         new forests::ObliviousLambdaMart(info_ptree, ensemble_ptree));
-  // Coordinate Ascent added by Chiara Pierucci Andrea Battistini
-  if (ranker_type == linear::CoordinateAscent::NAME_)
+    // Coordinate Ascent added by Chiara Pierucci Andrea Battistini
+  else if (ranker_type == linear::CoordinateAscent::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
         new linear::CoordinateAscent(info_ptree, ensemble_ptree));
-  // Line Search added by Salvatore Trani
-  if (ranker_type == linear::LineSearch::NAME_)
+    // Line Search added by Salvatore Trani
+  else if (ranker_type == linear::LineSearch::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
         new linear::LineSearch(info_ptree, ensemble_ptree));
-
-  return NULL;
+    // Ensemble Pruning added by Salvatore Trani
+  else if (ranker_type == pruning::EnsemblePruning::NAME_)
+    return std::shared_ptr<LTR_Algorithm>(
+        new pruning::EnsemblePruning(info_ptree, ensemble_ptree));
+  else
+    throw std::invalid_argument("Model type not supported for loading");
 }
 
 }  // namespace learning
