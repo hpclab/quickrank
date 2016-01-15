@@ -125,13 +125,14 @@ void EnsemblePruning::learn(
     preprocess_dataset(validation_dataset);
 
   if (pruning_rate_ < 1)
-    estimators_to_select_ = pruning_rate_ * training_dataset->num_features();
+    estimators_to_select_ = (unsigned int) round(
+        pruning_rate_ * training_dataset->num_features() );
   else {
-    if (estimators_to_select_ > training_dataset->num_features()) {
+    estimators_to_select_ = pruning_rate_;
+    if (estimators_to_select_ >= training_dataset->num_features()) {
       std::cout << "Nothing to prune. Quit!" << std::endl;
       return;
     }
-    estimators_to_select_ = pruning_rate_;
   }
 
   // Set all the weights to 1
@@ -389,8 +390,8 @@ void EnsemblePruning::last_pruning(std::shared_ptr<data::Dataset> dataset) {
 void EnsemblePruning::low_weights_pruning(
     std::shared_ptr<data::Dataset> dataset) {
 
-  unsigned int estimators_to_clean =
-      dataset->num_features() - estimators_to_select_;
+  unsigned int num_features = dataset->num_features();
+  unsigned int estimators_to_clean = num_features - estimators_to_select_;
 
   std::vector<unsigned int> idx (weights_.size());
   std::iota(idx.begin(), idx.end(), 0);
