@@ -317,8 +317,8 @@ int main(int argc, char *argv[]) {
   epruning_options.add_options()(
       "pruning-rate",
       po::value<double>(&epruning_rate)->default_value(epruning_rate),
-      "final ensemble size (either as a ratio with respect to ensemble size or "
-          "as an absolute number of estimators to select)");
+      "ensemble to prune (either as a ratio with respect to ensemble size or "
+          "as an absolute number of estimators to prune)");
   epruning_options.add_options()(
       "pruning-method",
       po::value<std::string>(&epruning_method)->default_value(epruning_method),

@@ -28,6 +28,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <memory>
 #include <learning/linear/line_search.h>
+#include <set>
 
 #include "data/dataset.h"
 #include "metric/ir/metric.h"
@@ -128,7 +129,8 @@ class EnsemblePruning : public quickrank::learning::LTR_Algorithm {
 
   /// Process the dataset filtering out features with 0-weight
   virtual std::shared_ptr<data::Dataset> filter_dataset(
-      std::shared_ptr<data::Dataset> dataset) const;
+      std::shared_ptr<data::Dataset> dataset,
+      std::set<unsigned int>& pruned_estimators) const;
 
  protected:
 
@@ -142,6 +144,7 @@ class EnsemblePruning : public quickrank::learning::LTR_Algorithm {
  private:
   double pruning_rate_;
   PruningMethod pruning_method_;
+  unsigned int estimators_to_prune_;
   unsigned int estimators_to_select_;
   std::shared_ptr<learning::linear::LineSearch> lineSearch_;
 
@@ -162,18 +165,20 @@ class EnsemblePruning : public quickrank::learning::LTR_Algorithm {
 
   virtual void score(data::Dataset *dataset, Score *scores) const;
 
-  virtual void import_weights_from_line_search();
+  virtual void import_weights_from_line_search(
+      std::set<unsigned int>& pruned_estimators);
 
   /// The various pruning strategies
-  virtual void random_pruning(std::shared_ptr<data::Dataset> dataset);
+  virtual void random_pruning(std::set<unsigned int>& pruned_estimators);
 
-  virtual void low_weights_pruning(std::shared_ptr<data::Dataset> dataset);
+  virtual void low_weights_pruning(std::set<unsigned int>& pruned_estimators);
 
-  virtual void skip_pruning(std::shared_ptr<data::Dataset> dataset);
+  virtual void skip_pruning(std::set<unsigned int>& pruned_estimators);
 
-  virtual void last_pruning(std::shared_ptr<data::Dataset> dataset);
+  virtual void last_pruning(std::set<unsigned int>& pruned_estimators);
 
-  virtual void quality_loss_pruning(std::shared_ptr<data::Dataset> dataset,
+  virtual void quality_loss_pruning(std::set<unsigned int>& pruned_estimators,
+                                    std::shared_ptr<data::Dataset> dataset,
                                     std::shared_ptr<metric::ir::Metric> scorer);
 };
 

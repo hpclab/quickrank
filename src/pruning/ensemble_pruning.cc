@@ -77,7 +77,7 @@ EnsemblePruning::EnsemblePruning(const boost::property_tree::ptree &info_ptree,
     }
   }
 
-  estimators_to_select_ = 0;
+  estimators_to_prune_ = 0;
   std::vector<double>(max_feature, 0.0).swap(weights_);
   for (const boost::property_tree::ptree::value_type& tree: model_ptree) {
     if (tree.first == "tree") {
@@ -85,7 +85,7 @@ EnsemblePruning::EnsemblePruning(const boost::property_tree::ptree &info_ptree,
       double weight = tree.second.get<double>("weight");
       weights_[feature - 1] = weight;
       if (weight > 0)
-        estimators_to_select_++;
+        estimators_to_prune_++;
     }
   }
 }
@@ -125,15 +125,18 @@ void EnsemblePruning::learn(
     preprocess_dataset(validation_dataset);
 
   if (pruning_rate_ < 1)
-    estimators_to_select_ = (unsigned int) round(
+    estimators_to_prune_ = (unsigned int) round(
         pruning_rate_ * training_dataset->num_features() );
   else {
-    estimators_to_select_ = pruning_rate_;
-    if (estimators_to_select_ >= training_dataset->num_features()) {
-      std::cout << "Nothing to prune. Quit!" << std::endl;
+    estimators_to_prune_ = pruning_rate_;
+    if (estimators_to_prune_ >= training_dataset->num_features()) {
+      std::cout << "Impossible to prune everything. Quit!" << std::endl;
       return;
     }
   }
+
+  estimators_to_select_ =
+      training_dataset->num_features() - estimators_to_prune_;
 
   // Set all the weights to 1
   std::vector<double>(training_dataset->num_features(), 1.0).swap(weights_);
@@ -176,29 +179,38 @@ void EnsemblePruning::learn(
     std::cout << std::endl;
   }
 
+  std::cout << "estimators_to_prune " << estimators_to_prune_ << std::endl;
+  std::cout << "estimators_to_select " << estimators_to_select_ << std::endl;
+
+  std::set<unsigned int> pruned_estimators;
   switch (pruning_method_) {
     case PruningMethod::RANDOM: {
-      random_pruning(training_dataset);
+      random_pruning(pruned_estimators);
       break;
     }
     case PruningMethod::LOW_WEIGHTS: {
-      low_weights_pruning(training_dataset);
+      low_weights_pruning(pruned_estimators);
       break;
     }
     case PruningMethod::LAST: {
-      last_pruning(training_dataset);
+      last_pruning(pruned_estimators);
       break;
     }
     case PruningMethod::QUALITY_LOSS: {
-      quality_loss_pruning(training_dataset, scorer);
+      quality_loss_pruning(pruned_estimators, training_dataset, scorer);
       break;
     }
     case PruningMethod::SKIP: {
-      skip_pruning(training_dataset);
+      skip_pruning(pruned_estimators);
       break;
     }
     default:
       throw std::invalid_argument("pruning method still not implemented");
+  }
+
+  // Set the weights of the pruned features to 0
+  for (unsigned int f: pruned_estimators) {
+    weights_[f] = 0;
   }
 
   if (lineSearch_) {
@@ -206,9 +218,11 @@ void EnsemblePruning::learn(
     std::shared_ptr<data::Dataset> filtered_training_dataset;
     std::shared_ptr<data::Dataset> filtered_validation_dataset;
 
-    filtered_training_dataset = filter_dataset(training_dataset);
+    filtered_training_dataset = filter_dataset(training_dataset,
+                                               pruned_estimators);
     if (validation_dataset)
-      filtered_validation_dataset = filter_dataset(validation_dataset);
+      filtered_validation_dataset = filter_dataset(validation_dataset,
+                                                   pruned_estimators);
 
     // Run the line search algorithm
     std::cout << "# LineSearch post-pruning:" << std::endl;
@@ -218,7 +232,7 @@ void EnsemblePruning::learn(
     std::cout << std::endl;
 
     // Needs to import the line search learned weights into this model
-    import_weights_from_line_search();
+    import_weights_from_line_search(pruned_estimators);
 
   }
 
@@ -298,24 +312,29 @@ void EnsemblePruning::score(data::Dataset *dataset, Score *scores) const {
   }
 }
 
-void EnsemblePruning::import_weights_from_line_search() {
+void EnsemblePruning::import_weights_from_line_search(
+    std::set<unsigned int>& pruned_estimators) {
 
-  auto i_ls_w = lineSearch_->get_weigths().begin();
+  std::vector<double> ls_weights = lineSearch_->get_weigths();
 
-  for (auto i_w = weights_.begin(); i_w != weights_.end(); ++i_w) {
-    if (*i_w == 0) continue; // skip the weights-0 features (pruned by ls)
-    *i_w = *i_ls_w++;
+  unsigned int ls_f = 0;
+  for (unsigned int f = 0; f < weights_.size(); f++) {
+    if (!pruned_estimators.count(f)) // skip weights-0 features (pruned by ls)
+      weights_[f] = ls_weights[ls_f++];
   }
+
+  assert(ls_f == ls_weights.size());
 }
 
 std::shared_ptr<data::Dataset> EnsemblePruning::filter_dataset(
-      std::shared_ptr<data::Dataset> dataset) const {
+      std::shared_ptr<data::Dataset> dataset,
+      std::set<unsigned int>& pruned_estimators) const {
 
   data::Dataset* filt_dataset = new data::Dataset(dataset->num_instances(),
                                                   estimators_to_select_);
 
   // allocate feature vector
-  std::vector<Feature> featureCleaned(estimators_to_select_);
+  std::vector<Feature> featureSelected(estimators_to_select_);
   unsigned int skipped;
 
   if (dataset->format() == dataset->VERT)
@@ -329,69 +348,62 @@ std::shared_ptr<data::Dataset> EnsemblePruning::filter_dataset(
     for (unsigned int r = 0; r < results->num_results(); r++) {
       skipped = 0;
       for (unsigned int f = 0; f < dataset->num_features(); f++) {
-        if (weights_[f] == 0) {
+        if (pruned_estimators.count(f)) {
           skipped++;
-          continue;
         } else {
-          featureCleaned[f - skipped] = features[f];
+          featureSelected[f - skipped] = features[f];
         }
       }
       features += dataset->num_features();
-      filt_dataset->addInstance(q, labels[r], featureCleaned);
+      filt_dataset->addInstance(q, labels[r], featureSelected);
     }
   }
 
   return std::shared_ptr<data::Dataset>(filt_dataset);
 }
 
-void EnsemblePruning::random_pruning(std::shared_ptr<data::Dataset> dataset) {
+void EnsemblePruning::random_pruning(
+    std::set<unsigned int>& pruned_estimators) {
 
-  unsigned int num_features = dataset->num_features();
-  unsigned int estimators_to_clean = num_features - estimators_to_select_;
+  unsigned int num_features = (unsigned int) weights_.size();
 
   /* initialize random seed: */
   srand (time(NULL));
 
-  unsigned int cleaned = 0;
-  while (cleaned < estimators_to_clean) {
+  while (pruned_estimators.size() < estimators_to_prune_) {
     unsigned int index = rand() % num_features;
-    if (weights_[index] > 0) {
-      cleaned++;
-      weights_[index] = 0;
-    }
+    if (!pruned_estimators.count(index))
+      pruned_estimators.insert(index);
   }
 }
 
-void EnsemblePruning::skip_pruning(std::shared_ptr<data::Dataset> dataset) {
+void EnsemblePruning::skip_pruning(std::set<unsigned int>& pruned_estimators) {
 
-  unsigned int num_features = dataset->num_features();
+  unsigned int num_features = (unsigned int) weights_.size();
   double step = (double)num_features / estimators_to_select_;
 
   std::set<unsigned int> selected_estimators;
-  for (unsigned int i=0; i<estimators_to_select_; i++) {
+  for (unsigned int i = 0; i < estimators_to_select_; i++) {
     selected_estimators.insert( (unsigned int) ceil(i * step) );
   }
 
-  for (unsigned int i=0; i<num_features; i++) {
-    if (!selected_estimators.count(i))
-      weights_[i] = 0;
+  for (unsigned int f = 0; f < num_features; f++) {
+    if (!selected_estimators.count(f))
+      pruned_estimators.insert(f);
   }
 }
 
-void EnsemblePruning::last_pruning(std::shared_ptr<data::Dataset> dataset) {
+void EnsemblePruning::last_pruning(std::set<unsigned int>& pruned_estimators) {
 
-  unsigned int num_features = dataset->num_features();
+  unsigned int num_features = (unsigned int) weights_.size();
 
-  for (unsigned int i=1; i <= estimators_to_select_; i++) {
-    weights_[num_features - i] = 0;
+  for (unsigned int i=1; i <= estimators_to_prune_; i++) {
+    pruned_estimators.insert(num_features - i);
   }
 }
 
 void EnsemblePruning::low_weights_pruning(
-    std::shared_ptr<data::Dataset> dataset) {
-
-  unsigned int num_features = dataset->num_features();
-  unsigned int estimators_to_clean = num_features - estimators_to_select_;
+    std::set<unsigned int>& pruned_estimators) {
 
   std::vector<unsigned int> idx (weights_.size());
   std::iota(idx.begin(), idx.end(), 0);
@@ -400,17 +412,17 @@ void EnsemblePruning::low_weights_pruning(
               return this->weights_[a] < this->weights_[b];
             });
 
-  for (unsigned int f = 0; f < estimators_to_clean; f++) {
-    weights_[idx[f]] = 0;
+  for (unsigned int f = 0; f < estimators_to_prune_; f++) {
+    pruned_estimators.insert(idx[f]);
   }
 }
 
 void EnsemblePruning::quality_loss_pruning(
+    std::set<unsigned int>& pruned_estimators,
     std::shared_ptr<data::Dataset> dataset,
     std::shared_ptr<metric::ir::Metric> scorer) {
 
   unsigned int num_features = dataset->num_features();
-  unsigned int estimators_to_clean = num_features - estimators_to_select_;
 
   std::vector<MetricScore> metric_scores(num_features);
   std::vector<Score> dataset_score(dataset->num_instances());
@@ -435,8 +447,8 @@ void EnsemblePruning::quality_loss_pruning(
               return metric_scores[a] > metric_scores[b];
             });
 
-  for (unsigned int f = 0; f < estimators_to_clean; f++) {
-    weights_[idx[f]] = 0;
+  for (unsigned int f = 0; f < estimators_to_prune_; f++) {
+    pruned_estimators.insert(idx[f]);
   }
 }
 
