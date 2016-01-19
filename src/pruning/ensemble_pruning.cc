@@ -179,9 +179,6 @@ void EnsemblePruning::learn(
     std::cout << std::endl;
   }
 
-  std::cout << "estimators_to_prune " << estimators_to_prune_ << std::endl;
-  std::cout << "estimators_to_select " << estimators_to_select_ << std::endl;
-
   std::set<unsigned int> pruned_estimators;
   switch (pruning_method_) {
     case PruningMethod::RANDOM: {
