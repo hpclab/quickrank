@@ -41,7 +41,7 @@ void LambdaMart::init(
     std::shared_ptr<quickrank::data::Dataset> training_dataset,
     std::shared_ptr<quickrank::data::Dataset> validation_dataset) {
   Mart::init(training_dataset, validation_dataset);
-  const unsigned int nentries = training_dataset->num_instances();
+  const size_t nentries = training_dataset->num_instances();
   instance_weights_ = new double[nentries]();  //0.0f initialized
 }
 
@@ -68,18 +68,18 @@ std::unique_ptr<RegressionTree> LambdaMart::fit_regressor_on_gradient(
 void LambdaMart::compute_pseudoresponses(
     std::shared_ptr<quickrank::data::Dataset> training_dataset,
     quickrank::metric::ir::Metric* scorer) {
-  const unsigned int cutoff = scorer->cutoff();
+  const size_t cutoff = scorer->cutoff();
 
-  const unsigned int nrankedlists = training_dataset->num_queries();
+  const size_t nrankedlists = training_dataset->num_queries();
 #pragma omp parallel for
-  for (unsigned int i = 0; i < nrankedlists; ++i) {
+  for (size_t i = 0; i < nrankedlists; ++i) {
     std::shared_ptr<data::QueryResults> qr = training_dataset->getQueryResults(
         i);
 
-    const unsigned int offset = training_dataset->offset(i);
+    const size_t offset = training_dataset->offset(i);
     double *lambdas = pseudoresponses_ + offset;
     double *weights = instance_weights_ + offset;
-    for (unsigned int j = 0; j < qr->num_results(); ++j)
+    for (size_t j = 0; j < qr->num_results(); ++j)
       lambdas[j] = weights[j] = 0.0;
 
     auto ranked = std::shared_ptr<data::RankedResults>(
@@ -89,9 +89,9 @@ void LambdaMart::compute_pseudoresponses(
 
     // \todo TODO: rank by label once and for all ?
     // \todo TODO: avoid n^2 loop ?
-    for (unsigned int j = 0; j < ranked->num_results(); j++) {
+    for (size_t j = 0; j < ranked->num_results(); j++) {
       Label jthlabel = ranked->sorted_labels()[j];
-      for (unsigned int k = 0; k < ranked->num_results(); k++)
+      for (size_t k = 0; k < ranked->num_results(); k++)
         if (k != j) {
           // skip if we are beyond the top-K results
           if (j >= cutoff && k >= cutoff)

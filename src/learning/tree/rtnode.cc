@@ -29,8 +29,8 @@
 std::atomic<std::uint_fast64_t>RTNode::_internal_nodes_traversed = {0};
 #endif
 
-void RTNode::save_leaves(RTNode **&leaves, unsigned int &nleaves,
-                         unsigned int &capacity) {
+void RTNode::save_leaves(RTNode **&leaves, size_t &nleaves,
+                         size_t &capacity) {
   if (featureidx == uint_max) {
     if (nleaves == capacity) {
       capacity = 2 * capacity + 1;
@@ -49,10 +49,10 @@ void RTNode::write_outputtofile(FILE *f, const int indentsize) {
   for (int i = 0; i < indentsize; indent[i++] = '\t')
     ;
   indent[indentsize] = '\0';
-  if (featureid == uint_max)
+  if (featureid == SIZE_MAX)
     fprintf(f, "%s\t<output> %.15f </output>\n", indent, avglabel);
   else {
-    fprintf(f, "%s\t<feature> %u </feature>\n", indent, featureid);
+    fprintf(f, "%s\t<feature> %zu </feature>\n", indent, featureid);
     fprintf(f, "%s\t<threshold> %.8f </threshold>\n", indent, threshold);
     fprintf(f, "%s\t<split pos=\"left\">\n", indent);
     left->write_outputtofile(f, indentsize + 1);

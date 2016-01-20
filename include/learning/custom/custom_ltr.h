@@ -70,12 +70,12 @@ class CustomLTR : public LTR_Algorithm {
   virtual void learn(std::shared_ptr<data::Dataset> training_dataset,
                      std::shared_ptr<data::Dataset> validation_dataset,
                      std::shared_ptr<metric::ir::Metric> metric,
-                     unsigned int partial_save,
+                     size_t partial_save,
                      const std::string model_filename);
 
   /// Returns the score of a given document.
   virtual Score score_document(const Feature* d,
-                               const unsigned int offset = 1) const;
+                               const size_t offset = 1) const;
 
   /// \todo TODO: add load_model();
 

@@ -43,9 +43,9 @@ namespace linear {
 class CoordinateAscent : public LTR_Algorithm {
 
  public:
-  CoordinateAscent(unsigned int num_points, double window_size,
-                   double reduction_factor, unsigned int max_iterations,
-                   unsigned int max_failed_vali);
+  CoordinateAscent(size_t num_points, double window_size,
+                   double reduction_factor, size_t max_iterations,
+                   size_t max_failed_vali);
 
   CoordinateAscent(const boost::property_tree::ptree &info_ptree,
                    const boost::property_tree::ptree &model_ptree);
@@ -69,7 +69,7 @@ class CoordinateAscent : public LTR_Algorithm {
   virtual void learn(std::shared_ptr<data::Dataset> training_dataset,
                      std::shared_ptr<data::Dataset> validation_dataset,
                      std::shared_ptr<metric::ir::Metric> metric,
-                     unsigned int partial_save,
+                     size_t partial_save,
                      const std::string model_filename);
 
   /*
@@ -88,11 +88,11 @@ class CoordinateAscent : public LTR_Algorithm {
    /// \param scores The vector where scores are stored.
    /// \param offset The offset to the next feature in the data representation.
    virtual void score_query_results(std::shared_ptr<data::QueryResults> results,
-   Score* scores, unsigned int offset) const;
+   Score* scores, size_t offset) const;
    */
   /// Returns the score of a given document.
   virtual Score score_document(const Feature* d,
-                               const unsigned int next_fx_offset) const;
+                               const size_t next_fx_offset) const;
  protected:
 
   /// Prepare the dataset before training or scoring takes place.
@@ -105,11 +105,11 @@ class CoordinateAscent : public LTR_Algorithm {
  private:
   std::vector<double> best_weights_;
 
-  unsigned int num_samples_;
+  size_t num_samples_;
   double window_size_;
   double reduction_factor_;
-  unsigned int max_iterations_;
-  unsigned int max_failed_vali_;
+  size_t max_iterations_;
+  size_t max_failed_vali_;
 
   /// The output stream operator.
   friend std::ostream& operator<<(std::ostream& os, const CoordinateAscent& a) {

@@ -42,9 +42,9 @@ class Mart : public LTR_Algorithm {
   /// \param minleafsupport Minimum number of instances in each leaf.
   /// \param valid_iterations Early stopping if no improvement after \esr iterations
   /// on the validation set.
-  Mart(unsigned int ntrees, float shrinkage, unsigned int nthresholds,
-       unsigned int ntreeleaves, unsigned int minleafsupport,
-       unsigned int valid_iterations)
+  Mart(size_t ntrees, float shrinkage, size_t nthresholds,
+       size_t ntreeleaves, size_t minleafsupport,
+       size_t valid_iterations)
       : ntrees_(ntrees),
         shrinkage_(shrinkage),
         nthresholds_(nthresholds),
@@ -64,7 +64,7 @@ class Mart : public LTR_Algorithm {
   virtual void learn(std::shared_ptr<data::Dataset> training_dataset,
                      std::shared_ptr<data::Dataset> validation_dataset,
                      std::shared_ptr<metric::ir::Metric> training_metric,
-                     unsigned int partial_save,
+                     size_t partial_save,
                      const std::string output_basename);
 
   /// Returns the score by the current ranker
@@ -72,7 +72,7 @@ class Mart : public LTR_Algorithm {
   /// \param d Document to be scored.
   /// \param next_fx_offset Offset to the next feature from \a d.
   virtual Score score_document(const Feature* d,
-                               const unsigned int next_fx_offset) const {
+                               const size_t next_fx_offset) const {
     return ensemble_model_.score_instance(d, next_fx_offset);
   }
 
@@ -125,22 +125,22 @@ class Mart : public LTR_Algorithm {
 
  protected:
   float **thresholds_ = NULL;
-  unsigned int *thresholds_size_ = NULL;
+  size_t *thresholds_size_ = NULL;
   double *scores_on_training_ = NULL;  //[0..nentries-1]
   quickrank::Score* scores_on_validation_ = NULL;  //[0..nentries-1]
-  unsigned int validation_bestmodel_ = 0;
+  size_t validation_bestmodel_ = 0;
   double *pseudoresponses_ = NULL;  //[0..nentries-1]
   Ensemble ensemble_model_;
 
-  unsigned int ntrees_;  //>0
+  size_t ntrees_;  //>0
   double shrinkage_;  //>0.0f
-  unsigned int nthresholds_;  //if ==0 then no. of thresholds is not limited
-  unsigned int nleaves_;  //>0
-  unsigned int minleafsupport_;  //>0
-  unsigned int valid_iterations_;  //If no performance gain on validation data is observed in 'esr' rounds, stop the training process right away (if esr==0 feature is disabled).
+  size_t nthresholds_;  //if ==0 then no. of thresholds is not limited
+  size_t nleaves_;  //>0
+  size_t minleafsupport_;  //>0
+  size_t valid_iterations_;  //If no performance gain on validation data is observed in 'esr' rounds, stop the training process right away (if esr==0 feature is disabled).
 
-  unsigned int **sortedsid_ = NULL;
-  unsigned int sortedsize_ = 0;
+  size_t **sortedsid_ = NULL;
+  size_t sortedsize_ = 0;
   RTRootHistogram *hist_ = NULL;
 
  private:

@@ -58,7 +58,7 @@ class LTR_Algorithm : private boost::noncopyable {
   virtual void learn(std::shared_ptr<data::Dataset> training_dataset,
                      std::shared_ptr<data::Dataset> validation_dataset,
                      std::shared_ptr<metric::ir::Metric> metric,
-                     unsigned int partial_save,
+                     size_t partial_save,
                      const std::string model_filename) = 0;
 
   /// Given and input \a dateset, the current ranker generates
@@ -79,15 +79,15 @@ class LTR_Algorithm : private boost::noncopyable {
   /// \param next_d_offset The offset to the next document in the data representation.
   /// \note  Usually this does not need to be overridden.
   virtual void score_query_results(std::shared_ptr<data::QueryResults> results,
-                                   Score* scores, unsigned int next_fx_offset,
-                                   unsigned int next_d_offset) const;
+                                   Score* scores, size_t next_fx_offset,
+                                   size_t next_d_offset) const;
 
   /// Returns the score of a given document.
   /// \param d is a pointer to the document to be evaluated
   /// \param next_fx_offset The offset to the next feature in the data representation.
   /// \note   Each algorithm has a different implementation.
   virtual Score score_document(const Feature* d,
-                               const unsigned int next_fx_offset) const = 0;
+                               const size_t next_fx_offset) const = 0;
 
   /// Save the current model to the output_file.
   ///

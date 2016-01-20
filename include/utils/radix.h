@@ -28,8 +28,8 @@
  * \brief Set of functions implementing descending radix sort for floating point values (ideal for long array)
  */
 
-std::unique_ptr<unsigned int[]> idx_radixsort(float const* fvalues,
-                                              const unsigned int nvalues);
+std::unique_ptr<size_t[]> idx_radixsort(float const* fvalues,
+                                              const size_t nvalues);
 
 //
 // Functions belows are not used
@@ -40,8 +40,8 @@ std::unique_ptr<unsigned int[]> idx_radixsort(float const* fvalues,
  *  @param nvalues length of \a fvalues
  *  @return indexes of ascending sorted \a fvalues
  */
-unsigned int *idxfloat_radixsort(float const* fvalues,
-                                 const unsigned int nvalues);
+size_t *idxfloat_radixsort(float const* fvalues,
+                                 const size_t nvalues);
 
 enum sortorder {
   ascending,
@@ -53,7 +53,7 @@ enum sortorder {
  *  @param nvalues length of \a fvalues
  */
 template<sortorder const order> void float_radixsort(
-    float *fvalues, const unsigned int nvalues);
+    float *fvalues, const size_t nvalues);
 
 /*! sort an array of float values with respect to another one without modifing the input array and returning permuted indexes of the sorted items
  *  @param extvalues input float array
@@ -62,7 +62,7 @@ template<sortorder const order> void float_radixsort(
  *  @return a sorted copy of \a extvalues wrt \a fvalues
  */
 template<sortorder const order> float *copyextfloat_radixsort(
-    float const* extvalues, float const* fvalues, const unsigned int nvalues);
+    float const* extvalues, float const* fvalues, const size_t nvalues);
 
 #endif
 

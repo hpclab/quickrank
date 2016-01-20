@@ -40,16 +40,16 @@ namespace quickrank {
 namespace learning {
 namespace linear {
 
-void preCompute(Feature* training_dataset, unsigned int num_docs,
-                unsigned int num_fx, Score* PreSum, double* weights,
-                Score* MyTrainingScore, unsigned int i) {
+void preCompute(Feature* training_dataset, size_t num_docs,
+                size_t num_fx, Score* PreSum, double* weights,
+                Score* MyTrainingScore, size_t i) {
 
 #pragma omp parallel for
-  for (unsigned int j = 0; j < num_docs; j++) {
+  for (size_t j = 0; j < num_docs; j++) {
     PreSum[j] = 0;
     MyTrainingScore[j] = 0;
     // compute feature*weight for all the feature different from i
-    for (unsigned int k = 0; k < num_fx; k++) {
+    for (size_t k = 0; k < num_fx; k++) {
       MyTrainingScore[j] += weights[k] * training_dataset[j * num_fx + k];
     }
     PreSum[j] = MyTrainingScore[j]
@@ -59,10 +59,10 @@ void preCompute(Feature* training_dataset, unsigned int num_docs,
 
 const std::string CoordinateAscent::NAME_ = "COORDASC";
 
-CoordinateAscent::CoordinateAscent(unsigned int num_points, double window_size,
+CoordinateAscent::CoordinateAscent(size_t num_points, double window_size,
                                    double reduction_factor,
-                                   unsigned int max_iterations,
-                                   unsigned int max_failed_vali)
+                                   size_t max_iterations,
+                                   size_t max_failed_vali)
     : num_samples_(num_points),
       window_size_(window_size),
       reduction_factor_(reduction_factor),
@@ -81,17 +81,17 @@ CoordinateAscent::CoordinateAscent(
   max_failed_vali_ = 0;
 
   //read (training) info
-  num_samples_ = info_ptree.get<unsigned int>("num-samples");
+  num_samples_ = info_ptree.get<size_t>("num-samples");
   window_size_ = info_ptree.get<double>("window-size");
   reduction_factor_ = info_ptree.get<double>("reduction-factor");
-  max_iterations_ = info_ptree.get<unsigned int>("max-iterations");
-  max_failed_vali_ = info_ptree.get<unsigned int>("max-failed-vali");
+  max_iterations_ = info_ptree.get<size_t>("max-iterations");
+  max_failed_vali_ = info_ptree.get<size_t>("max-failed-vali");
 
-  unsigned int max_feature = 0;
+  size_t max_feature = 0;
   BOOST_FOREACH(const boost::property_tree::ptree::value_type &couple, model_ptree) {
 
     if (couple.first == "couple") {
-      unsigned int feature = couple.second.get<unsigned int>("feature");
+      size_t feature = couple.second.get<size_t>("feature");
       if (feature > max_feature) {
         max_feature = feature;
       }
@@ -132,7 +132,7 @@ void CoordinateAscent::learn(
     std::shared_ptr<quickrank::data::Dataset> training_dataset,
     std::shared_ptr<quickrank::data::Dataset> validation_dataset,
     std::shared_ptr<quickrank::metric::ir::Metric> scorer,
-    unsigned int partial_save, const std::string output_basename) {
+    size_t partial_save, const std::string output_basename) {
 
   auto begin = std::chrono::steady_clock::now();
   double window_size = window_size_ / training_dataset->num_features();  //preserve original value of the window
@@ -166,13 +166,13 @@ void CoordinateAscent::learn(
     MyValidationScore.resize(n_train_instances);
 
   // counter of sequential iterations without improvement on validation
-  unsigned int count_failed_vali = 0;
+  size_t count_failed_vali = 0;
   // loop for max_iterations_
-  for (unsigned int b = 0; b < max_iterations_; b++) {
+  for (size_t b = 0; b < max_iterations_; b++) {
     MetricScore metric_on_training = 0;
 
     double step = 2 * window_size / num_samples_;  // step to select points in the window
-    for (unsigned int i = 0; i < num_features; i++) {
+    for (size_t i = 0; i < num_features; i++) {
       // compute feature*weight for all the feature different from i
       preCompute(training_dataset->at(0, 0), n_train_instances, num_features,
                  &PreSum[0], &weights[0], &MyTrainingScore[0], i);
@@ -189,9 +189,9 @@ void CoordinateAscent::learn(
       }
 
 #pragma omp parallel for
-      for (unsigned int p = 0; p < points.size(); p++) {
+      for (size_t p = 0; p < points.size(); p++) {
         //loop to add partial scores to the total score of the feature i
-        for (unsigned int j = 0; j < n_train_instances; j++) {
+        for (size_t j = 0; j < n_train_instances; j++) {
           MyTrainingScore[j + (n_train_instances * p)] = points[p]
               * training_dataset->at(j, i)[0] + PreSum[j];
         }
@@ -223,7 +223,7 @@ void CoordinateAscent::learn(
     // check if there is validation_dataset
     if (validation_dataset) {
       //compute scores of validation documents
-      for (unsigned int j = 0; j < validation_dataset->num_instances(); j++)
+      for (size_t j = 0; j < validation_dataset->num_instances(); j++)
         MyValidationScore[j] = std::inner_product(weights.cbegin(),
                                                   weights.cend(),
                                                   validation_dataset->at(j, 0),
@@ -266,10 +266,10 @@ void CoordinateAscent::learn(
 }
 
 Score CoordinateAscent::score_document(
-    const Feature* d, const unsigned int next_fx_offset) const {
+    const Feature* d, const size_t next_fx_offset) const {
   // next_fx_offset is ignored as it is equal to 1 for horizontal dataset
   Score score = 0;
-  for (unsigned int k = 0; k < best_weights_.size(); k++) {
+  for (size_t k = 0; k < best_weights_.size(); k++) {
     score += best_weights_[k] * d[k];
   }
   return score;
@@ -292,7 +292,7 @@ std::ofstream& CoordinateAscent::save_model_to_file(std::ofstream& os) const {
   os << "\t<ensemble>" << std::endl;
   auto old_precision = os.precision();
   os.setf(std::ios::floatfield, std::ios::fixed);
-  for (unsigned int i = 0; i < best_weights_.size(); i++) {
+  for (size_t i = 0; i < best_weights_.size(); i++) {
     os << "\t\t<couple>" << std::endl;
     os << std::setprecision(3);
     os << "\t\t\t<feature>" << i + 1 << "</feature>" << std::endl;
