@@ -62,25 +62,25 @@ Mart::Mart(const boost::property_tree::ptree &info_ptree,
   ensemble_model_.set_capacity(ntrees_);
 
   // loop over trees
-  BOOST_FOREACH(const boost::property_tree::ptree::value_type& tree, model_ptree) {
-    RTNode* root = NULL;
-    float tree_weight = tree.second.get<double>("<xmlattr>.weight", shrinkage_);
+  BOOST_FOREACH(const boost::property_tree::ptree::value_type& tree, model_ptree){
+  RTNode* root = NULL;
+  float tree_weight = tree.second.get<double>("<xmlattr>.weight", shrinkage_);
 
-    // find the root of the tree
-    BOOST_FOREACH(const boost::property_tree::ptree::value_type& node, tree.second ) {
-      if (node.first == "split") {
-        root = io::RTNode_parse_xml(node.second);
-        break;
-      }
+  // find the root of the tree
+  BOOST_FOREACH(const boost::property_tree::ptree::value_type& node, tree.second ) {
+    if (node.first == "split") {
+      root = io::RTNode_parse_xml(node.second);
+      break;
     }
-
-    if (root == NULL) {
-      std::cerr << "!!! Unable to parse tree from XML model." << std::endl;
-      exit(EXIT_FAILURE);
-    }
-
-    ensemble_model_.push(root, tree_weight, -1);
   }
+
+  if (root == NULL) {
+    std::cerr << "!!! Unable to parse tree from XML model." << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  ensemble_model_.push(root, tree_weight, -1);
+}
 }
 
 std::ostream& Mart::put(std::ostream& os) const {
@@ -102,6 +102,8 @@ void Mart::init(std::shared_ptr<quickrank::data::Dataset> training_dataset,
                 std::shared_ptr<quickrank::data::Dataset> validation_dataset) {
   // make sure dataset is vertical
   preprocess_dataset(training_dataset);
+
+  std::cout << "pippo" << std::endl;
 
   const size_t nentries = training_dataset->num_instances();
   scores_on_training_ = new double[nentries]();  //0.0f initialized
@@ -131,24 +133,22 @@ void Mart::init(std::shared_ptr<quickrank::data::Dataset> training_dataset,
             * (nthresholds_ == 0 ? sortedsize_ + 1 : nthresholds_ + 1));
     //skip samples with the same feature value. early stop for if nthresholds!=size_max
     uniqs[uniqs_size++] = features[idx[0]];
-    for (size_t j = 1;
-        j < sortedsize_ && (nthresholds_ == 0 || uniqs_size != nthresholds_ + 1);
-        ++j) {
+    for (size_t j = 1; j < sortedsize_ && (nthresholds_ == 0 || uniqs_size != nthresholds_ + 1); ++j) {
       const float fval = features[idx[j]];
       if (uniqs[uniqs_size - 1] < fval)
         uniqs[uniqs_size++] = fval;
     }
+
     //define thresholds
     if (uniqs_size <= nthresholds_ || nthresholds_ == 0) {
       uniqs[uniqs_size++] = FLT_MAX;
       thresholds_size_[i] = uniqs_size, thresholds_[i] = (float*) realloc(
           uniqs, sizeof(float) * uniqs_size);
     } else {
-      free(uniqs), thresholds_size_[i] = nthresholds_ + 1, thresholds_[i] =
-          (float*) malloc(sizeof(float) * (nthresholds_ + 1));
+      free(uniqs);
+      thresholds_size_[i] = nthresholds_ + 1, thresholds_[i] = (float*) malloc(sizeof(float) * (nthresholds_ + 1));
       float t = features[idx[0]];  //equals fmin
-      const float step = fabs(features[idx[sortedsize_ - 1]] - t)
-          / nthresholds_;  //(fmax-fmin)/nthresholds
+      const float step = fabs(features[idx[sortedsize_ - 1]] - t) / nthresholds_;  //(fmax-fmin)/nthresholds
       for (size_t j = 0; j != nthresholds_; t += step)
         thresholds_[i][j++] = t;
       thresholds_[i][nthresholds_] = FLT_MAX;

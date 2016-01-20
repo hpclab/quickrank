@@ -35,8 +35,9 @@ inline size_t iflip(size_t x) {
 std::unique_ptr<size_t[]> idx_radixsort(float const* fvalues,
                                               const size_t nvalues) {
   size_t *ivalues = new size_t[nvalues];
-  size_t* lbucket = new size_t[65536]();
-  size_t* hbucket = new size_t[65536]();
+  size_t *lbucket = new size_t[65536]();
+  size_t *hbucket = new size_t[65536]();
+
   for (size_t i = 0; i < nvalues; ++i) {
     //feature values are flipped so at to be possible to apply radix sort
     size_t flippedvalue = flip(*(size_t*) (fvalues + i));
@@ -44,6 +45,7 @@ std::unique_ptr<size_t[]> idx_radixsort(float const* fvalues,
     ++lbucket[flippedvalue & 0xFFFF];
     ++hbucket[flippedvalue >> 16];
   }
+
   // prefixsum on histograms
   for (size_t ltmp, htmp, lsum = -1, hsum = -1, i = 0; i < 65536; ++i) {
     ltmp = lbucket[i];
@@ -53,6 +55,7 @@ std::unique_ptr<size_t[]> idx_radixsort(float const* fvalues,
     lsum += ltmp;
     hsum += htmp;
   }
+
   // final pass
   struct pair_t {
     size_t value, id;
