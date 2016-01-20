@@ -23,31 +23,30 @@
 
 static_assert(sizeof(float)==4,"sizeof(float) exception!");
 static_assert(sizeof(int)==4,"sizeof(int) exception!");
-static_assert(sizeof(size_t)==8,"sizeof(size_t) exception!");
+static_assert(sizeof(unsigned int)==4,"sizeof(unsigned int) exception!");
 
-inline size_t flip(size_t x) {
+inline unsigned int flip(unsigned int x) {
   return x ^ (-int(x >> 31) | 0x80000000);
 }  //!<flip a float for sorting: if it's negative, it flips all bits otherwise flips the sign only
-inline size_t iflip(size_t x) {
+inline unsigned int iflip(unsigned int x) {
   return x ^ (((x >> 31) - 1) | 0x80000000);
 }  //!<flip a float back (invert flip)
 
 std::unique_ptr<size_t[]> idx_radixsort(float const* fvalues,
                                               const size_t nvalues) {
   size_t *ivalues = new size_t[nvalues];
-  size_t *lbucket = new size_t[65536]();
-  size_t *hbucket = new size_t[65536]();
-
-  for (size_t i = 0; i < nvalues; ++i) {
+  unsigned int* lbucket = new unsigned int[65536]();
+  unsigned int* hbucket = new unsigned int[65536]();
+  for (unsigned int i = 0; i < nvalues; ++i) {
     //feature values are flipped so at to be possible to apply radix sort
-    size_t flippedvalue = flip(*(size_t*) (fvalues + i));
+    unsigned int flippedvalue = flip(*(unsigned int*) (fvalues + i));
     ivalues[i] = flippedvalue;
     ++lbucket[flippedvalue & 0xFFFF];
     ++hbucket[flippedvalue >> 16];
   }
 
   // prefixsum on histograms
-  for (size_t ltmp, htmp, lsum = -1, hsum = -1, i = 0; i < 65536; ++i) {
+  for (unsigned int ltmp, htmp, lsum = -1, hsum = -1, i = 0; i < 65536; ++i) {
     ltmp = lbucket[i];
     htmp = hbucket[i];
     lbucket[i] = lsum;
@@ -59,11 +58,14 @@ std::unique_ptr<size_t[]> idx_radixsort(float const* fvalues,
   // final pass
   struct pair_t {
     size_t value, id;
-  }*aux = new pair_t[nvalues];
-  for (size_t i = 0; i < nvalues; ++i)
-    aux[++lbucket[ivalues[i]&0xFFFF]] = {ivalues[i], i};
-  for (size_t i = 0; i < nvalues; ++i)
+  } *aux = new pair_t[nvalues];
+
+  for (unsigned int i = 0; i < nvalues; ++i)
+    aux[++lbucket[ivalues[i] & 0xFFFF]] = {ivalues[i], i};
+
+  for (unsigned int i = 0; i < nvalues; ++i)
     ivalues[++hbucket[aux[i].value >> 16]] = aux[i].id;
+
   delete[] aux;
   delete[] lbucket;
   delete[] hbucket;
@@ -75,31 +77,31 @@ std::unique_ptr<size_t[]> idx_radixsort(float const* fvalues,
  *  @param nvalues length of \a fvalues
  *  @return indexes of ascending sorted \a fvalues
  */
-size_t *idxfloat_radixsort(float const* fvalues,
-                                 const size_t nvalues) {
-  size_t *ivalues = new size_t[nvalues];
+unsigned int *idxfloat_radixsort(float const* fvalues,
+                                 const unsigned int nvalues) {
+  unsigned int *ivalues = new unsigned int[nvalues];
   // TODO: (by cla) The following was not working with mac compiler
-  size_t* lbucket = new size_t[65536]();  // size_t lbucket[65536] {0};
-  size_t* hbucket = new size_t[65536]();  // size_t hbucket[65536] {0};
-  for (size_t i = 0; i < nvalues; ++i) {
+  unsigned int* lbucket = new unsigned int[65536]();  // unsigned int lbucket[65536] {0};
+  unsigned int* hbucket = new unsigned int[65536]();  // unsigned int hbucket[65536] {0};
+  for (unsigned int i = 0; i < nvalues; ++i) {
     //feature values are flipped so at to be possible to apply radix sort
-    size_t flippedvalue = flip(*(size_t*) (fvalues + i));
+    unsigned int flippedvalue = flip(*(unsigned int*) (fvalues + i));
     ivalues[i] = flippedvalue, ++lbucket[flippedvalue & 0xFFFF], ++hbucket[flippedvalue
         >> 16];
   }
   // prefixsum on histograms
-  for (size_t ltmp, htmp, lsum = -1, hsum = -1, i = 0; i < 65536; ++i) {
+  for (unsigned int ltmp, htmp, lsum = -1, hsum = -1, i = 0; i < 65536; ++i) {
     ltmp = lbucket[i], htmp = hbucket[i];
     lbucket[i] = lsum, hbucket[i] = hsum;
     lsum += ltmp, hsum += htmp;
   }
   // final pass
   struct pair_t {
-    size_t value, id;
+    unsigned int value, id;
   }*aux = new pair_t[nvalues];
-  for (size_t i = 0; i < nvalues; ++i)
+  for (unsigned int i = 0; i < nvalues; ++i)
     aux[++lbucket[ivalues[i]&0xFFFF]] = {ivalues[i], i};
-  for (size_t i = 0; i < nvalues; ++i)
+  for (unsigned int i = 0; i < nvalues; ++i)
     ivalues[++hbucket[aux[i].value >> 16]] = aux[i].id;
   delete[] aux;
   delete[] lbucket;
@@ -112,36 +114,36 @@ size_t *idxfloat_radixsort(float const* fvalues,
  *  @param nvalues length of \a fvalues
  */
 template<sortorder const order> void float_radixsort(
-    float *fvalues, const size_t nvalues) {
-  size_t lbucket[65536] { 0 };
-  size_t hbucket[65536] { 0 };
+    float *fvalues, const unsigned int nvalues) {
+  unsigned int lbucket[65536] { 0 };
+  unsigned int hbucket[65536] { 0 };
   // histogramming
-  for (size_t i = 0; i < nvalues; ++i) {
-    size_t x = flip(*(size_t*) (fvalues + i));
+  for (unsigned int i = 0; i < nvalues; ++i) {
+    unsigned int x = flip(*(unsigned int*) (fvalues + i));
     ++lbucket[x & 0xFFFF], ++hbucket[x >> 16];
   }
   // prefixsum on histograms
   if (order == ascending)
-    for (size_t ltmp, htmp, lsum = -1, hsum = -1, i = 0; i < 65536; ++i) {
+    for (unsigned int ltmp, htmp, lsum = -1, hsum = -1, i = 0; i < 65536; ++i) {
       ltmp = lbucket[i], htmp = hbucket[i];
       lbucket[i] = lsum, hbucket[i] = hsum;
       lsum += ltmp, hsum += htmp;
     }
   else
-    for (size_t lsum = nvalues - 1, hsum = nvalues - 1, i = 0; i < 65536;
+    for (unsigned int lsum = nvalues - 1, hsum = nvalues - 1, i = 0; i < 65536;
         ++i) {
       lsum -= lbucket[i], hsum -= hbucket[i];
       lbucket[i] = lsum, hbucket[i] = hsum;
     }
   // final pass
-  size_t *aux = new size_t[nvalues];
-  for (size_t i = 0; i < nvalues;) {
-    size_t x = flip(*(size_t*) (fvalues + i++));
+  unsigned int *aux = new unsigned int[nvalues];
+  for (unsigned int i = 0; i < nvalues;) {
+    unsigned int x = flip(*(unsigned int*) (fvalues + i++));
     aux[++lbucket[x & 0xFFFF]] = x;
   }
-  for (size_t i = 0; i < nvalues;) {
-    size_t x = aux[i++];
-    *(size_t*) &fvalues[++hbucket[x >> 16]] = iflip(x);
+  for (unsigned int i = 0; i < nvalues;) {
+    unsigned int x = aux[i++];
+    *(unsigned int*) &fvalues[++hbucket[x >> 16]] = iflip(x);
   }
   delete[] aux;
 }
@@ -153,38 +155,38 @@ template<sortorder const order> void float_radixsort(
  *  @return a sorted copy of \a extvalues wrt \a fvalues
  */
 template<sortorder const order> float *copyextfloat_radixsort(
-    float const* extvalues, float const* fvalues, const size_t nvalues) {
-  size_t lbucket[65536] { 0 };
-  size_t hbucket[65536] { 0 };
-  for (size_t i = 0; i < nvalues; ++i) {
+    float const* extvalues, float const* fvalues, const unsigned int nvalues) {
+  unsigned int lbucket[65536] { 0 };
+  unsigned int hbucket[65536] { 0 };
+  for (unsigned int i = 0; i < nvalues; ++i) {
     //feature values are flipped so at to be possible to apply radix sort
-    size_t flippedvalue = flip(*(size_t*) (fvalues + i));
+    unsigned int flippedvalue = flip(*(unsigned int*) (fvalues + i));
     ++lbucket[flippedvalue & 0xFFFF], ++hbucket[flippedvalue >> 16];
   }
   // prefixsum on histograms
   if (order == ascending)
-    for (size_t ltmp, htmp, lsum = -1, hsum = -1, i = 0; i < 65536; ++i) {
+    for (unsigned int ltmp, htmp, lsum = -1, hsum = -1, i = 0; i < 65536; ++i) {
       ltmp = lbucket[i], htmp = hbucket[i];
       lbucket[i] = lsum, hbucket[i] = hsum;
       lsum += ltmp, hsum += htmp;
     }
   else
-    for (size_t lsum = nvalues - 1, hsum = nvalues - 1, i = 0; i < 65536;
+    for (unsigned int lsum = nvalues - 1, hsum = nvalues - 1, i = 0; i < 65536;
         ++i) {
       lsum -= lbucket[i], hsum -= hbucket[i];
       lbucket[i] = lsum, hbucket[i] = hsum;
     }
   // final pass
   struct pair_t {
-    size_t value;
+    unsigned int value;
     float extvalue;
   }*aux = new pair_t[nvalues];
-  for (size_t i = 0; i < nvalues; ++i) {
-    size_t flippedvalue = flip(*(size_t*) (fvalues + i));
+  for (unsigned int i = 0; i < nvalues; ++i) {
+    unsigned int flippedvalue = flip(*(unsigned int*) (fvalues + i));
     aux[++lbucket[flippedvalue&0xFFFF]] = {flippedvalue, extvalues[i]};
   }
   float *sortedextvalues = new float[nvalues];
-  for (size_t i = 0; i < nvalues; ++i)
+  for (unsigned int i = 0; i < nvalues; ++i)
     sortedextvalues[++hbucket[aux[i].value >> 16]] = aux[i].extvalue;
   delete[] aux;
   return sortedextvalues;
