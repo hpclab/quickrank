@@ -107,7 +107,7 @@ std::unique_ptr<data::Dataset> Svml::read_horizontal(
         //read a feature (id,val) from token
         size_t fid = 0;
         float fval = 0.0f;
-        if (sscanf(token, "%u:%f", &fid, &fval) != 2)
+        if (sscanf(token, "%zu:%f", &fid, &fval) != 2)
           exit(4);
         //add feature to the current dp
         if (fid > maxfid) {
