@@ -51,7 +51,7 @@ RTNode* RTNode_parse_xml(const boost::property_tree::ptree &split_xml) {
 
   bool is_leaf = false;
 
-  unsigned int feature_id = 0;
+  size_t feature_id = 0;
   Feature threshold = 0.0f;
   Score prediction = 0.0;
 
@@ -61,7 +61,7 @@ RTNode* RTNode_parse_xml(const boost::property_tree::ptree &split_xml) {
       is_leaf = true;
       break;
     } else if (split_child.first == "feature") {
-      feature_id = split_child.second.get_value<unsigned int>();
+      feature_id = split_child.second.get_value<size_t>();
     } else if (split_child.first == "threshold") {
       threshold = split_child.second.get_value<Feature>();
     } else if (split_child.first == "split") {
@@ -85,7 +85,7 @@ RTNode* RTNode_parse_xml(const boost::property_tree::ptree &split_xml) {
 
 void model_node_to_c_baseline(const boost::property_tree::ptree &split_xml,
                               std::stringstream &os) {
-  unsigned int feature_id = 0;
+  size_t feature_id = 0;
   std::string threshold;
   std::string prediction;
   bool is_leaf = false;
@@ -99,7 +99,7 @@ void model_node_to_c_baseline(const boost::property_tree::ptree &split_xml,
       is_leaf = true;
       break;
     } else if (split_child.first == "feature") {
-      feature_id = split_child.second.get_value<unsigned int>();
+      feature_id = split_child.second.get_value<size_t>();
     } else if (split_child.first == "threshold") {
       threshold = split_child.second.get_value<std::string>();
       boost::algorithm::trim(threshold);
@@ -157,11 +157,11 @@ void model_tree_get_leaves(const boost::property_tree::ptree &split_xml,
 }
 
 void model_tree_get_tests(const boost::property_tree::ptree &tree_xml,
-                          boost::container::list<unsigned int> &features,
+                          boost::container::list<size_t> &features,
                           boost::container::list<float> &thresholds) {
   const boost::property_tree::ptree* left = NULL;
   const boost::property_tree::ptree* right = NULL;
-  unsigned int feature = 0;
+  size_t feature = 0;
   float threshold = 0.0f;
   bool is_leaf = false;
   for (auto p_node = tree_xml.begin(); p_node != tree_xml.end(); p_node++) {
@@ -172,7 +172,7 @@ void model_tree_get_tests(const boost::property_tree::ptree &tree_xml,
       else
         right = &(p_node->second);
     } else if (p_node->first == "feature") {
-      feature = p_node->second.get_value<unsigned int>();
+      feature = p_node->second.get_value<size_t>();
     } else if (p_node->first == "threshold") {
       threshold = p_node->second.get_value<float>();
     } else if (p_node->first == "output") {
@@ -202,13 +202,13 @@ void Xml::generate_c_code_vectorized(std::string model_filename,
   is.close();
 
   namespace bc = boost::container;
-  bc::list<bc::list<unsigned int> > tree_features;
+  bc::list<bc::list<size_t> > tree_features;
   bc::list<bc::list<float> > tree_thresholds;
 
 // collect data
   auto ensemble = xml_model.get_child("ranker.ensemble");
   for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); ++p_tree) {
-    boost::container::list<unsigned int> features;
+    boost::container::list<size_t> features;
     boost::container::list<float> thresholds;
     auto tree_root = p_tree->second.find("split");
     model_tree_get_tests(tree_root->second, features, thresholds);
@@ -223,7 +223,7 @@ void Xml::generate_c_code_vectorized(std::string model_filename,
 // iterate over trees
   auto features = tree_features.begin();
   auto thresholds = tree_thresholds.begin();
-  unsigned int t = 0;
+  size_t t = 0;
   for (; features != tree_features.end() && thresholds != tree_thresholds.end();
       ++features, ++thresholds, ++t) {
     // iterate over nodes of the given tree
@@ -233,7 +233,7 @@ void Xml::generate_c_code_vectorized(std::string model_filename,
     source_code << "(double)( ";
     auto f = features->begin();
     auto t = thresholds->begin();
-    unsigned int l = 0;
+    size_t l = 0;
     for (; f != features->end() && t != thresholds->end(); ++f, ++t, ++l) {
       if (l != 0)
         source_code << " | ";
@@ -310,9 +310,9 @@ void Xml::generate_c_code_oblivious_trees(std::string model_filename,
   std::stringstream source_code;
 
   auto ensemble = xml_tree.get_child("ranker.ensemble");
-  unsigned int trees = ensemble.size();
-  unsigned int depth = xml_tree.get<unsigned int>("ranker.info.depth");
-  unsigned int max_leaves = 1 << depth;
+  size_t trees = ensemble.size();
+  size_t depth = xml_tree.get<size_t>("ranker.info.depth");
+  size_t max_leaves = 1 << depth;
 
 // forests info
   source_code << "#define N " << trees << " // no. of trees" << std::endl;
@@ -347,13 +347,13 @@ void Xml::generate_c_code_oblivious_trees(std::string model_filename,
   }
 
   // load features ids
-  std::vector<std::vector<unsigned int> > feature_ids(trees);
+  std::vector<std::vector<size_t> > feature_ids(trees);
   curr_tree = 0;
   for (auto p_tree = ensemble.begin(); p_tree != ensemble.end(); p_tree++) {
     auto p_split = p_tree->second.get_child("split");
     while (p_split.size() != 2) {
       feature_ids[curr_tree].push_back(
-          p_split.get<unsigned int>("feature") - 1);
+          p_split.get<size_t>("feature") - 1);
       p_split = p_split.get_child("split");
     }
     curr_tree++;
@@ -469,7 +469,7 @@ void Xml::generate_c_code_oblivious_trees(std::string model_filename,
 
   source_code
       << "unsigned int leaf_id(float *v, unsigned int const *fids, float const *thresh, const unsigned int m) {"
-      << std::endl << "  unsigned int leafidx = 0;" << std::endl
+      << std::endl << "  unsigned int leafidx;" << std::endl
       << "  for (unsigned int i=0; i<m; ++i)" << std::endl
       << "    leafidx |= SHL( v[fids[i]]>thresh[i], m-1-i);" << std::endl
       << "  return leafidx;" << std::endl << "}" << std::endl << std::endl;

@@ -37,7 +37,7 @@ template<typename val_t> class MaxHeap {
   /** \brief default constructor
    * @param initsize set the initial size of the data structure if available
    */
-  MaxHeap(unsigned int initsize = 0)
+  MaxHeap(size_t initsize = 0)
       : maxsize(initsize + 2) {
     arr = (item*) malloc(sizeof(item) * maxsize);
     arrsize = 0, arr[0] = item(DBL_MAX);
@@ -52,7 +52,7 @@ template<typename val_t> class MaxHeap {
   }
   /** \brief return numebr of items stored in the heap
    */
-  unsigned int get_size() const {
+  size_t get_size() const {
     return arrsize;
   }
   /** \brief push a new element in the heap and resize the data structure if it is full
@@ -64,7 +64,7 @@ template<typename val_t> class MaxHeap {
       maxsize = 2 * maxsize + 1;
       arr = (item*) realloc(arr, sizeof(item) * maxsize);
     }
-    unsigned int p = arrsize;
+    size_t p = arrsize;
     while (key > arr[p >> 1].key) {
       arr[p] = arr[p >> 1];
       p >>= 1;
@@ -75,7 +75,7 @@ template<typename val_t> class MaxHeap {
    */
   void pop() {
     const item &last = arr[arrsize--];
-    unsigned int child, p = 1;
+    size_t child, p = 1;
     while (p << 1 <= arrsize) {
       child = p << 1;
       if (child < arrsize && arr[child + 1].key > arr[child].key)
@@ -106,7 +106,7 @@ template<typename val_t> class MaxHeap {
     val_t val;
   };
   item *arr;
-  unsigned int arrsize, maxsize;
+  size_t arrsize, maxsize;
 };
 
 #endif

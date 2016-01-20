@@ -53,7 +53,7 @@ class Evaluator : private boost::noncopyable {
                              const std::string validation_filename,
                              const std::string feature_filename,
                              const std::string output_filename,
-                             const unsigned int npartialsave);
+                             const size_t npartialsave);
 
   /// Runs the learned or loaded model on the test data
   /// and then measures \a test_metric on the test data.

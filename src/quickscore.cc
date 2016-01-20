@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
 
   // parameters
   std::string dataset_file;
-  unsigned int rounds = 10;
+  size_t rounds = 10;
   std::string scores_file;
 
   // prepare options
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
                         po::value<std::string>(&dataset_file)->required(),
                         "Input dataset in SVML format");
   options.add_options()("rounds,r",
-                        po::value<unsigned int>(&rounds)->default_value(rounds),
+                        po::value<size_t>(&rounds)->default_value(rounds),
                         "Number of test repetitions");
   options.add_options()(
       "scores,s",
@@ -107,9 +107,9 @@ int main(int argc, char *argv[]) {
   double* scores = new double[dataset->num_instances()];
   auto start_scoring = std::chrono::high_resolution_clock::now();
 
-  for (unsigned int r = 0; r < rounds; r++) {
+  for (size_t r = 0; r < rounds; r++) {
     float* document = dataset->at(0, 0);
-    for (unsigned int i = 0; i < dataset->num_instances(); i++) {
+    for (size_t i = 0; i < dataset->num_instances(); i++) {
       scores[i] = ranker(document);
       document += dataset->num_features();
     }
@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
     std::fstream output;
     output.open(scores_file, std::ofstream::out);
     output << std::setprecision(std::numeric_limits<double>::digits10);
-    for (unsigned int i = 0; i < dataset->num_instances(); i++) {
+    for (size_t i = 0; i < dataset->num_instances(); i++) {
       output << scores[i] << std::endl;
     }
     output.close();

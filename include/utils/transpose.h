@@ -22,6 +22,8 @@
 #ifndef QUICKRANK_UTILS_TRANSPOSE_H_
 #define QUICKRANK_UTILS_TRANSPOSE_H_
 
+#include <stdlib.h>
+
 /*! \file transpose.h
  * \brief transpose matrix
  */
@@ -32,8 +34,8 @@
  *  @param n number of rows of input matrix
  *  @param m number of columns of input matrix
  */
-void transpose(float **output, float **input, const unsigned int n,
-               const unsigned int m);
+void transpose(float **output, float **input, const size_t n,
+               const size_t m);
 
 #endif
 

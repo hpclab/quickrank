@@ -41,7 +41,7 @@ void Evaluator::training_phase(std::shared_ptr<learning::LTR_Algorithm> algo,
                                const std::string validation_filename,
                                const std::string feature_filename,
                                const std::string output_filename,
-                               const unsigned int npartialsave) {
+                               const size_t npartialsave) {
 
   // create reader: assum svml as ltr format
   quickrank::io::Svml reader;
@@ -108,7 +108,7 @@ void Evaluator::testing_phase(std::shared_ptr<learning::LTR_Algorithm> algo,
       std::ofstream os;
       os << std::setprecision(std::numeric_limits<Score>::digits10);
       os.open(scores_filename, std::fstream::out);
-      for (unsigned int i = 0; i < test_dataset->num_instances(); ++i)
+      for (size_t i = 0; i < test_dataset->num_instances(); ++i)
         os << test_scores[i] << std::endl;
       os.close();
       std::cout << "# Scores written to file: " << scores_filename << std::endl;

@@ -41,7 +41,7 @@ namespace metric {
 namespace ir {
 
 std::shared_ptr<Metric> ir_metric_factory(std::string metric,
-                                          unsigned int cutoff) {
+                                          size_t cutoff) {
   boost::to_upper(metric);
   if (metric == Dcg::NAME_)
     return std::shared_ptr<Metric>(new Dcg(cutoff));

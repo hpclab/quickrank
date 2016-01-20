@@ -134,18 +134,18 @@ int main(int argc, char *argv[]) {
 
   // default parameters
   std::string algorithm_string = quickrank::learning::forests::LambdaMart::NAME_;
-  unsigned int ntrees = 1000;
+  size_t ntrees = 1000;
   float shrinkage = 0.10f;
-  unsigned int nthresholds = 0;
-  unsigned int minleafsupport = 1;
-  unsigned int esr = 100;
-  unsigned int ntreeleaves = 10;
-  unsigned int treedepth = 3;
+  size_t nthresholds = 0;
+  size_t minleafsupport = 1;
+  size_t esr = 100;
+  size_t ntreeleaves = 10;
+  size_t treedepth = 3;
   std::string train_metric_string = "NDCG";
-  unsigned int train_cutoff = 10;
+  size_t train_cutoff = 10;
   std::string test_metric_string = "NDCG";
-  unsigned int test_cutoff = 10;
-  unsigned int partial_save = 100;
+  size_t test_cutoff = 10;
+  size_t partial_save = 100;
   std::string training_filename;
   std::string validation_filename;
   std::string test_filename;
@@ -158,11 +158,11 @@ int main(int argc, char *argv[]) {
 
   // ------------------------------------------
   // Coordinate ascent added by Chiara Pierucci
-  unsigned int num_points = 21;
-  unsigned int max_iterations = 100;
+  size_t num_points = 21;
+  size_t max_iterations = 100;
   float window_size = 10.0;
   float reduction_factor = 0.95;
-  unsigned int max_failed_vali = 20;
+  size_t max_failed_vali = 20;
 
   // data structures
   std::shared_ptr<quickrank::learning::LTR_Algorithm> ranking_algorithm;
@@ -189,11 +189,11 @@ int main(int argc, char *argv[]) {
           + quickrank::metric::ir::Map::NAME_ + "]").c_str());
   learning_options.add_options()(
       "train-cutoff",
-      po::value<unsigned int>(&train_cutoff)->default_value(train_cutoff),
+      po::value<size_t>(&train_cutoff)->default_value(train_cutoff),
       "set train metric cutoff");
   learning_options.add_options()(
       "partial",
-      po::value<unsigned int>(&partial_save)->default_value(partial_save),
+      po::value<size_t>(&partial_save)->default_value(partial_save),
       "set partial file save frequency");
   learning_options.add_options()(
       "train",
@@ -218,30 +218,30 @@ int main(int argc, char *argv[]) {
   po::options_description tree_model_options(
       "Training options for tree-based models");
   tree_model_options.add_options()(
-      "num-trees", po::value<unsigned int>(&ntrees)->default_value(ntrees),
+      "num-trees", po::value<size_t>(&ntrees)->default_value(ntrees),
       "set number of trees");
   tree_model_options.add_options()(
       "shrinkage", po::value<float>(&shrinkage)->default_value(shrinkage),
       "set shrinkage");
   tree_model_options.add_options()(
       "num-thresholds",
-      po::value<unsigned int>(&nthresholds)->default_value(nthresholds),
+      po::value<size_t>(&nthresholds)->default_value(nthresholds),
       "set number of thresholds");
   tree_model_options.add_options()(
       "min-leaf-support",
-      po::value<unsigned int>(&minleafsupport)->default_value(minleafsupport),
+      po::value<size_t>(&minleafsupport)->default_value(minleafsupport),
       "set minimum number of leaf support");
   tree_model_options.add_options()(
       "end-after-rounds",
-      po::value<unsigned int>(&esr)->default_value(esr),
+      po::value<size_t>(&esr)->default_value(esr),
       "set num. rounds with no boost in validation before ending (if 0 disabled)");
   tree_model_options.add_options()(
       "num-leaves",
-      po::value<unsigned int>(&ntreeleaves)->default_value(ntreeleaves),
+      po::value<size_t>(&ntreeleaves)->default_value(ntreeleaves),
       "set number of leaves [applies only to Mart/LambdaMart]");
   tree_model_options.add_options()(
       "tree-depth",
-      po::value<unsigned int>(&treedepth)->default_value(treedepth),
+      po::value<size_t>(&treedepth)->default_value(treedepth),
       "set tree depth [applies only to Oblivious Mart/LambdaMart]");
 
   po::options_description testing_options("Testing options");
@@ -255,7 +255,7 @@ int main(int argc, char *argv[]) {
           + quickrank::metric::ir::Map::NAME_ + "]").c_str());
   testing_options.add_options()(
       "test-cutoff",
-      po::value<unsigned int>(&test_cutoff)->default_value(test_cutoff),
+      po::value<size_t>(&test_cutoff)->default_value(test_cutoff),
       "set test metric cutoff");
   testing_options.add_options()(
       "test",
@@ -283,7 +283,7 @@ int main(int argc, char *argv[]) {
       "Training options for Coordinate Ascent");
   coordasc_options.add_options()(
       "num-samples",
-      po::value<unsigned int>(&num_points)->default_value(num_points),
+      po::value<size_t>(&num_points)->default_value(num_points),
       "set number of samples in search window");
   coordasc_options.add_options()(
       "window-size", po::value<float>(&window_size)->default_value(window_size),
@@ -294,11 +294,11 @@ int main(int argc, char *argv[]) {
       "set window reduction factor");
   coordasc_options.add_options()(
       "max-iterations",
-      po::value<unsigned int>(&max_iterations)->default_value(max_iterations),
+      po::value<size_t>(&max_iterations)->default_value(max_iterations),
       "set number of max iterations");
   coordasc_options.add_options()(
       "max-failed-valid",
-      po::value<unsigned int>(&max_failed_vali)->default_value(max_failed_vali),
+      po::value<size_t>(&max_failed_vali)->default_value(max_failed_vali),
       "set number of fails on validation before exit");
 
   po::options_description all_desc("Allowed options");

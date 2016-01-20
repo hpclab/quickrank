@@ -51,10 +51,10 @@ std::unique_ptr<data::Dataset> Svml::read_horizontal(
   std::chrono::high_resolution_clock::time_point start_reading =
       std::chrono::high_resolution_clock::now();
 
-  unsigned int maxfid = 0;
+  size_t maxfid = 0;
 
   // temporary copy of data
-  boost::container::list<unsigned int> data_qids;
+  boost::container::list<size_t> data_qids;
   boost::container::list<quickrank::Label> data_labels;
   boost::container::list<boost::container::vector<quickrank::Feature> > data_instances;
 
@@ -91,7 +91,7 @@ std::unique_ptr<data::Dataset> Svml::read_horizontal(
 
     // read label and qid
     quickrank::Label relevance = atof(token);
-    unsigned int qid = atou(read_token(pch), "qid:");
+    size_t qid = atou(read_token(pch), "qid:");
 
     // allocate feature vector and read instance
     boost::container::vector<quickrank::Feature> curr_instance(maxfid);
@@ -105,7 +105,7 @@ std::unique_ptr<data::Dataset> Svml::read_horizontal(
         *pch = '\0';
       } else {
         //read a feature (id,val) from token
-        unsigned int fid = 0;
+        size_t fid = 0;
         float fval = 0.0f;
         if (sscanf(token, "%u:%f", &fid, &fval) != 2)
           exit(4);
