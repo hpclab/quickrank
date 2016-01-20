@@ -104,8 +104,7 @@ std::unique_ptr<QueryResults> Dataset::getQueryResults(size_t i) const {
 // TODO: in-place block-based transpose?
 void Dataset::transpose() {
   quickrank::Feature* transposed;  // = new quickrank::Feature[max_instances_ * num_features_];
-  if (posix_memalign((void**) &transposed, 16,
-                     max_instances_ * num_features_ * sizeof(Feature)) != 0) {
+  if (posix_memalign((void**) &transposed, 16, max_instances_ * num_features_ * sizeof(Feature)) != 0) {
     std::cerr
         << "!!! Impossible to allocate memory for transposed dataset storage."
         << std::endl;
