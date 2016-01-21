@@ -110,24 +110,16 @@ void Mart::init(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   sortedsid_ = new size_t*[nfeatures];
   sortedsize_ = nentries;
 
-  std::cout << "eccomi1" << std::endl;
-
 #pragma omp parallel for
   for (size_t i = 0; i < nfeatures; ++i)
     sortedsid_[i] = idx_radixsort(training_dataset->at(0, i),
                                   training_dataset->num_instances()).release();
-
-
-  std::cout << "eccomi2" << std::endl;
 
   // for(size_t i=0; i<nfeatures; ++i)
   //    training_set->sort_dpbyfeature(i, sortedsid[i], sortedsize);
   //for each featureid, init threshold array by keeping track of the list of "unique values" and their max, min
   thresholds_ = new float*[nfeatures];
   thresholds_size_ = new size_t[nfeatures];
-
-
-  std::cout << "eccomi3" << std::endl;
 
 #pragma omp parallel for
   for (size_t i = 0; i < nfeatures; ++i) {
@@ -142,14 +134,13 @@ void Mart::init(std::shared_ptr<quickrank::data::Dataset> training_dataset,
             * (nthresholds_ == 0 ? sortedsize_ + 1 : nthresholds_ + 1));
     //skip samples with the same feature value. early stop for if nthresholds!=size_max
     uniqs[uniqs_size++] = features[idx[0]];
-    for (size_t j = 1; j < sortedsize_ && (nthresholds_ == 0 || uniqs_size != nthresholds_ + 1); ++j) {
+    for (size_t j = 1;
+        j < sortedsize_ && (nthresholds_ == 0 || uniqs_size != nthresholds_ + 1);
+        ++j) {
       const float fval = features[idx[j]];
       if (uniqs[uniqs_size - 1] < fval)
         uniqs[uniqs_size++] = fval;
     }
-
-
-    std::cout << "eccomi4" << std::endl;
 
     //define thresholds
     if (uniqs_size <= nthresholds_ || nthresholds_ == 0) {
@@ -158,25 +149,22 @@ void Mart::init(std::shared_ptr<quickrank::data::Dataset> training_dataset,
           uniqs, sizeof(float) * uniqs_size);
     } else {
       free(uniqs);
-      thresholds_size_[i] = nthresholds_ + 1, thresholds_[i] = (float*) malloc(sizeof(float) * (nthresholds_ + 1));
+      thresholds_size_[i] = nthresholds_ + 1, thresholds_[i] = (float*) malloc(
+          sizeof(float) * (nthresholds_ + 1));
       float t = features[idx[0]];  //equals fmin
-      const float step = fabs(features[idx[sortedsize_ - 1]] - t) / nthresholds_;  //(fmax-fmin)/nthresholds
+      const float step = fabs(features[idx[sortedsize_ - 1]] - t)
+          / nthresholds_;  //(fmax-fmin)/nthresholds
       for (size_t j = 0; j != nthresholds_; t += step)
         thresholds_[i][j++] = t;
       thresholds_[i][nthresholds_] = FLT_MAX;
     }
   }
 
-
-  std::cout << "eccomi5" << std::endl;
-
-
   if (validation_dataset) {
     preprocess_dataset(validation_dataset);
     scores_on_validation_ = new Score[validation_dataset->num_instances()]();
   }
 
-  std::cout << "eccomi6" << std::endl;
   // here, pseudo responses is empty !
   hist_ = new RTRootHistogram(training_dataset.get(), sortedsid_, sortedsize_,
                               thresholds_, thresholds_size_);
@@ -218,8 +206,6 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
       std::chrono::high_resolution_clock::now();
 
   init(training_dataset, validation_dataset);
-
-  std::cout << "e quindi uscimmo a riveder le stelle..." << std::endl;
 
   std::chrono::high_resolution_clock::time_point chrono_init_end =
       std::chrono::high_resolution_clock::now();
