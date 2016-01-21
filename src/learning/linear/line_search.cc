@@ -269,10 +269,13 @@ void LineSearch::learn(
 
     auto cur_reduction_factor = reduction_factor_;
     if (adaptive_) {
-      double max_gain = 0.01;
-      double relative_gain = (gain_on_training - max_gain) / max_gain;
-      cur_reduction_factor = reduction_factor_ +
-          reduction_factor_ * std::max(relative_gain, -0.5);
+      double max_gain = 0.005;
+      // At most double the reduction factor (2 * reduction_factor_ > 1)
+      double relative_gain =
+          std::min( (gain_on_training - max_gain) / max_gain, 1.);
+      // At least half the reduction factor (0.5 * reduction_factor_)
+      cur_reduction_factor =
+          reduction_factor_ * (1 + std::max(relative_gain, -0.5));
     }
 
     // check if there is validation_dataset
@@ -310,7 +313,7 @@ void LineSearch::learn(
     std::cout << std::endl;
     window_size *= cur_reduction_factor;
 
-    if (window_size < 0.01)
+    if (adaptive_ && window_size < 0.01)
       break;
 
   }
