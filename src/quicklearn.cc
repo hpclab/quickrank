@@ -143,6 +143,7 @@ int main(int argc, char *argv[]) {
   unsigned int partial_save = 100;
   bool verbose_testing = false;
   bool ensemble_pruning_with_line_search = false;
+  bool adaptive = false;
   std::string training_filename;
   std::string validation_filename;
   std::string test_filename;
@@ -311,6 +312,14 @@ int main(int argc, char *argv[]) {
       po::value<unsigned int>(&max_failed_vali)->default_value(max_failed_vali),
       "set number of fails on validation before exit");
 
+  // LineSearch options add by Salvatore Trani
+  po::options_description linesearch_options(
+      "Training options for Line Search");
+  linesearch_options.add_options()(
+      "adaptive",
+      po::bool_switch(&adaptive),
+      "set adaptive reduction factor (based on last iteration metric gain)");
+
   // Ensemble Pruning options add by Salvatore Trani
   po::options_description epruning_options(
       "Training options for Ensemble Pruning");
@@ -333,6 +342,7 @@ int main(int argc, char *argv[]) {
   all_desc.add(learning_options)
       .add(tree_model_options)
       .add(coordasc_options)
+      .add(linesearch_options)
       .add(epruning_options)
       .add(testing_options)
       .add(fast_scoring_options);
@@ -386,7 +396,8 @@ int main(int argc, char *argv[]) {
                                                       window_size,
                                                       reduction_factor,
                                                       max_iterations,
-                                                      max_failed_vali));
+                                                      max_failed_vali,
+                                                      adaptive));
     else if (algorithm_string == quickrank::pruning::EnsemblePruning::NAME_) {
       if (!ensemble_pruning_with_line_search)
         ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
@@ -397,7 +408,7 @@ int main(int argc, char *argv[]) {
             std::shared_ptr<quickrank::learning::linear::LineSearch>(
                 new quickrank::learning::linear::LineSearch(
                     num_points, window_size, reduction_factor, max_iterations,
-                    max_failed_vali));
+                    max_failed_vali, adaptive));
         ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
             new quickrank::pruning::EnsemblePruning(epruning_method,
                                                     epruning_rate, lineSearch));

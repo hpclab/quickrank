@@ -36,12 +36,14 @@ const std::string LineSearch::NAME_ = "LINESEARCH";
 LineSearch::LineSearch(unsigned int num_points, double window_size,
                        double reduction_factor,
                        unsigned int max_iterations,
-                       unsigned int max_failed_vali)
+                       unsigned int max_failed_vali,
+                       bool adaptive)
     : num_points_(num_points),
       window_size_(window_size),
       reduction_factor_(reduction_factor),
       max_iterations_(max_iterations),
-      max_failed_vali_(max_failed_vali) {
+      max_failed_vali_(max_failed_vali),
+      adaptive_(adaptive) {
 }
 
 LineSearch::LineSearch(const boost::property_tree::ptree &info_ptree,
@@ -52,6 +54,7 @@ LineSearch::LineSearch(const boost::property_tree::ptree &info_ptree,
   reduction_factor_ = 0.0;
   max_iterations_ = 0;
   max_failed_vali_ = 0;
+  adaptive_ = false;
 
   //read (training) info
   num_points_ = info_ptree.get < unsigned int > ("num-samples");
@@ -59,6 +62,7 @@ LineSearch::LineSearch(const boost::property_tree::ptree &info_ptree,
   reduction_factor_ = info_ptree.get<double>("reduction-factor");
   max_iterations_ = info_ptree.get <unsigned int> ("max-iterations");
   max_failed_vali_ = info_ptree.get <unsigned int> ("max-failed-vali");
+  adaptive_ = info_ptree.get <bool> ("adaptive", false);
 
   unsigned int max_feature = 0;
   for (const boost::property_tree::ptree::value_type& tree: model_ptree) {
@@ -90,7 +94,9 @@ std::ostream& LineSearch::put(std::ostream &os) const {
   << "# window reduction factor = " << reduction_factor_ << std::endl
   << "# number of max iterations = " << max_iterations_ << std::endl
   << "# number of fails on validation before exit = " << max_failed_vali_
-  << std::endl;
+  << std::endl
+  << "# adaptive reduction factor = " << adaptive_ << std::endl;
+
   return os;
 }
 
@@ -219,6 +225,7 @@ void LineSearch::learn(
     // if step2 is a 0-vector, no way to improve in step2
     bool zeros = std::all_of(step2.begin(), step2.end(),
                              [] (double s) { return s == 0; });
+    double gain_on_training = 0;
     if (!zeros) {
 
       #pragma omp parallel for
@@ -251,6 +258,7 @@ void LineSearch::learn(
         for (unsigned int f = 0; f < num_features; f++) {
           weights[f] = (weights_prev[f] + step2[f] * p);
         }
+        gain_on_training = *i_max_metric_score - best_metric_on_training;
         best_metric_on_training = *i_max_metric_score;
         // Set weights_prev to current weights for the next iteration
         weights_prev = weights;
@@ -258,6 +266,14 @@ void LineSearch::learn(
     } // end if zeros step2 vector
 
     std::cout << std::setw(7) << i+1 << std::setw(9) << best_metric_on_training;
+
+    auto cur_reduction_factor = reduction_factor_;
+    if (adaptive_) {
+      double max_gain = 0.01;
+      double relative_gain = (gain_on_training - max_gain) / max_gain;
+      cur_reduction_factor = reduction_factor_ +
+          reduction_factor_ * std::max(relative_gain, -0.5);
+    }
 
     // check if there is validation_dataset
     if (validation_dataset) {
@@ -283,10 +299,19 @@ void LineSearch::learn(
           break;
         }
       }
+
+      if (metric_on_validation > best_metric_on_validation)
+        std::cout << "  ";
+      std::cout << " " << std::setw(8) << gain_on_training << " "
+        << std::setw(8) << window_size << " "
+        << std::setw(8) << cur_reduction_factor;
     }
 
     std::cout << std::endl;
-    window_size *= reduction_factor_;
+    window_size *= cur_reduction_factor;
+
+    if (window_size < 0.01)
+      break;
 
   }
   //end iterations
