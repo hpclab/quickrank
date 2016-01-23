@@ -297,6 +297,7 @@ void LineSearch::learn(
         best_weights_ = weights;
         std::cout << " *";
       } else {
+        std::cout << "  ";
         if (++count_failed_vali >= max_failed_vali_) {
           std::cout << std::endl;
           break;
@@ -305,7 +306,7 @@ void LineSearch::learn(
 
       if (metric_on_validation > best_metric_on_validation)
         std::cout << "  ";
-      std::cout << " " << std::setw(8) << gain_on_training << " "
+      std::cout << " " << std::setw(7) << gain_on_training << " "
         << std::setw(8) << window_size << " "
         << std::setw(8) << cur_reduction_factor;
     }
