@@ -35,7 +35,7 @@ namespace pruning {
 const std::string EnsemblePruning::NAME_ = "EPRUNING";
 
 const std::vector<std::string> EnsemblePruning::pruningMethodName = {
-  "RANDOM", "LOW_WEIGHTS", "SKIP", "LAST", "QUALITY_LOSS"
+  "RANDOM", "LOW_WEIGHTS", "SKIP", "LAST", "QUALITY_LOSS", "SCORE_LOSS"
 };
 
 EnsemblePruning::EnsemblePruning(PruningMethod pruning_method,
@@ -165,7 +165,8 @@ void EnsemblePruning::learn(
 
   // Some pruning methods needs to perform line search before the pruning
   if (pruning_method_ == PruningMethod::LOW_WEIGHTS ||
-      pruning_method_ == PruningMethod::QUALITY_LOSS) {
+      pruning_method_ == PruningMethod::QUALITY_LOSS ||
+      pruning_method_ == PruningMethod::SCORE_LOSS) {
 
     if (!lineSearch_) {
       throw std::invalid_argument(std::string(
@@ -199,6 +200,10 @@ void EnsemblePruning::learn(
     }
     case PruningMethod::SKIP: {
       skip_pruning(pruned_estimators);
+      break;
+    }
+    case PruningMethod::SCORE_LOSS: {
+      score_loss_pruning(pruned_estimators, training_dataset);
       break;
     }
     default:
@@ -436,12 +441,42 @@ void EnsemblePruning::quality_loss_pruning(
     weights_[f] = weight_bkp;
   }
 
-  // Find the last metric scores and set the weights of the related features = 0
+  // Find the last metric scores
   std::vector<unsigned int> idx (num_features);
   std::iota(idx.begin(), idx.end(), 0);
   std::sort(idx.begin(), idx.end(),
             [&metric_scores] (const unsigned int& a, const unsigned int& b) {
               return metric_scores[a] > metric_scores[b];
+            });
+
+  for (unsigned int f = 0; f < estimators_to_prune_; f++) {
+    pruned_estimators.insert(idx[f]);
+  }
+}
+
+void EnsemblePruning::score_loss_pruning(
+    std::set<unsigned int>& pruned_estimators,
+    std::shared_ptr<data::Dataset> dataset) {
+
+  unsigned int num_features = dataset->num_features();
+  unsigned int num_instances = dataset->num_instances();
+  std::vector<Score> feature_scores(num_features, 0);
+
+  Feature* features = dataset->at(0,0);
+  #pragma omp parallel for
+  for (unsigned int s = 0; s < num_instances; s++) {
+    unsigned int offset_feature = s * num_features;
+    for (unsigned int f = 0; f < num_features; f++) {
+      feature_scores[f] += weights_[f] * features[offset_feature + f];
+    }
+  }
+
+  // Find the last feature scores
+  std::vector<unsigned int> idx (num_features);
+  std::iota(idx.begin(), idx.end(), 0);
+  std::sort(idx.begin(), idx.end(),
+            [&feature_scores] (const unsigned int& a, const unsigned int& b) {
+              return feature_scores[a] < feature_scores[b];
             });
 
   for (unsigned int f = 0; f < estimators_to_prune_; f++) {

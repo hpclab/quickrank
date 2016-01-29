@@ -43,7 +43,7 @@ class EnsemblePruning : public quickrank::learning::LTR_Algorithm {
  public:
 
   enum class PruningMethod {
-    RANDOM, LOW_WEIGHTS, SKIP, LAST, QUALITY_LOSS
+    RANDOM, LOW_WEIGHTS, SKIP, LAST, QUALITY_LOSS, SCORE_LOSS
   };
 
   EnsemblePruning(PruningMethod pruning_method, double pruning_rate);
@@ -180,6 +180,9 @@ class EnsemblePruning : public quickrank::learning::LTR_Algorithm {
   virtual void quality_loss_pruning(std::set<unsigned int>& pruned_estimators,
                                     std::shared_ptr<data::Dataset> dataset,
                                     std::shared_ptr<metric::ir::Metric> scorer);
+
+  virtual void score_loss_pruning(std::set<unsigned int>& pruned_estimators,
+                                  std::shared_ptr<data::Dataset> dataset);
 };
 
 }  // namespace pruning
