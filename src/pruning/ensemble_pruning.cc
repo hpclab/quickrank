@@ -138,7 +138,7 @@ void EnsemblePruning::learn(
   estimators_to_select_ =
       training_dataset->num_features() - estimators_to_prune_;
 
-  // Set all the weights to 1
+  // Set all the weights to 1 (and initialize the vector)
   std::vector<double>(training_dataset->num_features(), 1.0).swap(weights_);
 
   // compute training and validation scores using starting weights
@@ -216,6 +216,10 @@ void EnsemblePruning::learn(
   }
 
   if (lineSearch_) {
+
+    // Reset all the weights to 1
+    std::fill(weights_.begin(), weights_.end(), 1);
+
     // Filter the dataset by deleting the weight-0 features
     std::shared_ptr<data::Dataset> filtered_training_dataset;
     std::shared_ptr<data::Dataset> filtered_validation_dataset;
