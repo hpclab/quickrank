@@ -210,15 +210,17 @@ void EnsemblePruning::learn(
       throw std::invalid_argument("pruning method still not implemented");
   }
 
+  if (lineSearch_) {
+    // Reset all the weights to 1
+    std::fill(weights_.begin(), weights_.end(), 1);
+  }
+
   // Set the weights of the pruned features to 0
   for (unsigned int f: pruned_estimators) {
     weights_[f] = 0;
   }
 
   if (lineSearch_) {
-
-    // Reset all the weights to 1
-    std::fill(weights_.begin(), weights_.end(), 1);
 
     // Filter the dataset by deleting the weight-0 features
     std::shared_ptr<data::Dataset> filtered_training_dataset;
