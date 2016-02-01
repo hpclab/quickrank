@@ -163,6 +163,8 @@ void EnsemblePruning::learn(
   }
   std::cout << std::endl;
 
+  std::set<unsigned int> pruned_estimators;
+
   // Some pruning methods needs to perform line search before the pruning
   if (pruning_method_ == PruningMethod::LOW_WEIGHTS ||
       pruning_method_ == PruningMethod::QUALITY_LOSS ||
@@ -177,10 +179,11 @@ void EnsemblePruning::learn(
     std::cout << "# --------------------------" << std::endl;
     lineSearch_->learn(training_dataset, validation_dataset, scorer,
                        partial_save, output_basename);
+    // Needs to import the line search learned weights into this model
+    import_weights_from_line_search(pruned_estimators);
     std::cout << std::endl;
   }
 
-  std::set<unsigned int> pruned_estimators;
   switch (pruning_method_) {
     case PruningMethod::RANDOM: {
       random_pruning(pruned_estimators);
