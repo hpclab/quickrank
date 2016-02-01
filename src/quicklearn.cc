@@ -79,6 +79,7 @@
 #include <memory>
 #include <stdio.h>
 #include <unistd.h>
+#include <fstream>
 
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
@@ -120,6 +121,17 @@ void print_logo() {
   }
 }
 
+inline bool file_exists(const std::string& name) {
+  std::ifstream f(name.c_str());
+  if (f.good()) {
+    f.close();
+    return true;
+  } else {
+    f.close();
+    return false;
+  }
+}
+
 int main(int argc, char *argv[]) {
 
   print_logo();
@@ -151,6 +163,7 @@ int main(int argc, char *argv[]) {
   std::string model_filename;
   std::string scores_filename;
   std::string xml_filename;
+  std::string xml_linesearch_filename;
   std::string c_filename;
   std::string model_code_type;
 
@@ -290,24 +303,24 @@ int main(int argc, char *argv[]) {
       "set C code generation strategy. Allowed options are: \"baseline\", \"oblivious\". \"vpred\".");
 
   // CoordinateAscent options add by Chiara Pierucci
-  po::options_description coordasc_options(
+  po::options_description coordasc_linesearch_options(
       "Training options for Coordinate Ascent and Line Search");
-  coordasc_options.add_options()(
+  coordasc_linesearch_options.add_options()(
       "num-samples",
       po::value<unsigned int>(&num_points)->default_value(num_points),
       "set number of samples in search window");
-  coordasc_options.add_options()(
+  coordasc_linesearch_options.add_options()(
       "window-size", po::value<float>(&window_size)->default_value(window_size),
       "set search window size");
-  coordasc_options.add_options()(
+  coordasc_linesearch_options.add_options()(
       "reduction-factor",
       po::value<float>(&reduction_factor)->default_value(reduction_factor),
       "set window reduction factor");
-  coordasc_options.add_options()(
+  coordasc_linesearch_options.add_options()(
       "max-iterations",
       po::value<unsigned int>(&max_iterations)->default_value(max_iterations),
       "set number of max iterations");
-  coordasc_options.add_options()(
+  coordasc_linesearch_options.add_options()(
       "max-failed-valid",
       po::value<unsigned int>(&max_failed_vali)->default_value(max_failed_vali),
       "set number of fails on validation before exit");
@@ -337,11 +350,17 @@ int main(int argc, char *argv[]) {
       po::bool_switch(&ensemble_pruning_with_line_search),
       "ensemble pruning is made in conjunction with line search "
           "[related parameters accepted]");
+  epruning_options.add_options()(
+      "line-search-model",
+          po::value<std::string>(&xml_linesearch_filename)->default_value(
+              xml_linesearch_filename),
+          "set line search XML file path for loading line search model "
+          "(options and already trained weights");
 
   po::options_description all_desc("Allowed options");
   all_desc.add(learning_options)
       .add(tree_model_options)
-      .add(coordasc_options)
+      .add(coordasc_linesearch_options)
       .add(linesearch_options)
       .add(epruning_options)
       .add(testing_options)
@@ -404,14 +423,28 @@ int main(int argc, char *argv[]) {
           new quickrank::pruning::EnsemblePruning(epruning_method,
                                                   epruning_rate));
       else {
-        std::shared_ptr<quickrank::learning::linear::LineSearch> lineSearch =
-            std::shared_ptr<quickrank::learning::linear::LineSearch>(
-                new quickrank::learning::linear::LineSearch(
-                    num_points, window_size, reduction_factor, max_iterations,
-                    max_failed_vali, adaptive));
+        std::shared_ptr<quickrank::learning::linear::LineSearch> lineSearch;
+        if (!xml_linesearch_filename.empty() &&
+            file_exists(xml_linesearch_filename)) {
+
+          // We should load the line search model (both weights and parameters)
+          lineSearch = std::dynamic_pointer_cast<quickrank::learning::linear::LineSearch>(
+              quickrank::learning::LTR_Algorithm::load_model_from_file(
+                  xml_linesearch_filename));
+
+        } else {
+          // We should create a new line search model (with default weights,
+          // to train in the pre-pruning step if it has to be done)
+          lineSearch = std::shared_ptr<quickrank::learning::linear::LineSearch>(
+              new quickrank::learning::linear::LineSearch(
+                  num_points, window_size, reduction_factor, max_iterations,
+                  max_failed_vali, adaptive));
+        }
+
         ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
             new quickrank::pruning::EnsemblePruning(epruning_method,
-                                                    epruning_rate, lineSearch));
+                                                    epruning_rate,
+                                                    lineSearch));
       }
     } else if (algorithm_string == quickrank::learning::CustomLTR::NAME_)
       ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(

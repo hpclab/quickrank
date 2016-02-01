@@ -54,7 +54,7 @@ LineSearch::LineSearch(const boost::property_tree::ptree &info_ptree,
   reduction_factor_ = 0.0;
   max_iterations_ = 0;
   max_failed_vali_ = 0;
-  adaptive_ = false;
+  adaptive_ = true;
 
   //read (training) info
   num_points_ = info_ptree.get < unsigned int > ("num-samples");
@@ -62,7 +62,7 @@ LineSearch::LineSearch(const boost::property_tree::ptree &info_ptree,
   reduction_factor_ = info_ptree.get<double>("reduction-factor");
   max_iterations_ = info_ptree.get <unsigned int> ("max-iterations");
   max_failed_vali_ = info_ptree.get <unsigned int> ("max-failed-vali");
-  adaptive_ = info_ptree.get <bool> ("adaptive", false);
+  adaptive_ = info_ptree.get <bool> ("adaptive", adaptive_);
 
   unsigned int max_feature = 0;
   for (const boost::property_tree::ptree::value_type& tree: model_ptree) {
@@ -94,7 +94,7 @@ std::ostream& LineSearch::put(std::ostream &os) const {
   << "# window reduction factor = " << reduction_factor_ << std::endl
   << "# number of max iterations = " << max_iterations_ << std::endl
   << "# number of fails on validation before exit = " << max_failed_vali_
-  << std::endl
+    << std::endl
   << "# adaptive reduction factor = " << adaptive_ << std::endl;
 
   return os;
@@ -348,18 +348,15 @@ std::ofstream& LineSearch::save_model_to_file(std::ofstream &os) const {
   // write ranker description
   os << "\t<info>" << std::endl;
   os << "\t\t<type>" << name() << "</type>" << std::endl;
-  os << "\t\t<num-samples>" << num_points_ << "</num-samples>" <<
-  std::endl;
-  os << "\t\t<window-size>" << window_size_ << "</window-size>" <<
-  std::endl;
+  os << "\t\t<num-samples>" << num_points_ << "</num-samples>" << std::endl;
+  os << "\t\t<window-size>" << window_size_ << "</window-size>" << std::endl;
   os << "\t\t<reduction-factor>" << reduction_factor_ <<
-  "</reduction-factor>"
-  << std::endl;
+    "</reduction-factor>" << std::endl;
   os << "\t\t<max-iterations>" << max_iterations_ << "</max-iterations>"
-  << std::endl;
+    << std::endl;
   os << "\t\t<max-failed-vali>" << max_failed_vali_ <<
-  "</max-failed-vali>"
-  << std::endl;
+    "</max-failed-vali>" << std::endl;
+  os << "\t\t<adaptive>" << adaptive_ << "</adaptive>" << std::endl;
   os << "\t</info>" << std::endl;
 
   os << "\t<ensemble>" << std::endl;

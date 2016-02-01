@@ -57,7 +57,7 @@ EnsemblePruning::EnsemblePruning(std::string pruning_method,
                                  std::shared_ptr<learning::linear::LineSearch> lineSearch) :
     pruning_rate_(pruning_rate),
     pruning_method_(getPruningMethod(pruning_method)),
-    lineSearch_(lineSearch)  {
+    lineSearch_(lineSearch) {
 }
 
 EnsemblePruning::EnsemblePruning(const boost::property_tree::ptree &info_ptree,
@@ -175,10 +175,20 @@ void EnsemblePruning::learn(
           "This pruning method requires line search"));
     }
 
-    std::cout << "# LineSearch pre-pruning:" << std::endl;
-    std::cout << "# --------------------------" << std::endl;
-    lineSearch_->learn(training_dataset, validation_dataset, scorer,
-                       partial_save, output_basename);
+    if (lineSearch_->get_weigths().empty()) {
+
+      // Need to do the line search pre pruning. The line search model is empty
+      std::cout << "# LineSearch pre-pruning:" << std::endl;
+      std::cout << "# --------------------------" << std::endl;
+      lineSearch_->learn(training_dataset, validation_dataset, scorer,
+                         partial_save, output_basename);
+    } else {
+      // The line search pre pruning is already done and the weights are in
+      // the model. We just need to load them.
+      std::cout << "# LineSearch pre-pruning already done:" << std::endl;
+      std::cout << "# --------------------------" << std::endl;
+    }
+
     // Needs to import the line search learned weights into this model
     import_weights_from_line_search(pruned_estimators);
     std::cout << std::endl;
@@ -492,6 +502,7 @@ void EnsemblePruning::score_loss_pruning(
     pruned_estimators.insert(idx[f]);
   }
 }
+
 
 }  // namespace pruning
 }  // namespace quickrank
