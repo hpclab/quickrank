@@ -223,11 +223,6 @@ void EnsemblePruning::learn(
       throw std::invalid_argument("pruning method still not implemented");
   }
 
-  if (lineSearch_) {
-    // Reset all the weights to 1
-    std::fill(weights_.begin(), weights_.end(), 1);
-  }
-
   // Set the weights of the pruned features to 0
   for (unsigned int f: pruned_estimators) {
     weights_[f] = 0;
@@ -248,6 +243,7 @@ void EnsemblePruning::learn(
     // Run the line search algorithm
     std::cout << "# LineSearch post-pruning:" << std::endl;
     std::cout << "# --------------------------" << std::endl;
+    // On each learn call, line search internally resets the weights vector
     lineSearch_->learn(filtered_training_dataset, filtered_validation_dataset,
                        scorer, partial_save, output_basename);
     std::cout << std::endl;
