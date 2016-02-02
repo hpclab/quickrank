@@ -309,7 +309,7 @@ std::ofstream& EnsemblePruning::save_model_to_file(std::ofstream &os) const {
     os << "\t\t<tree>" << std::endl;
     os << std::setprecision(3);
     os << "\t\t\t<index>" << i + 1 << "</index>" << std::endl;
-    os << std::setprecision(std::numeric_limits<quickrank::Score>::digits10);
+    os << std::setprecision(std::numeric_limits<Score>::max_digits10);
     os << "\t\t\t<weight>" << weights_[i] << "</weight>" <<
     std::endl;
     os << "\t\t</tree>" << std::endl;
