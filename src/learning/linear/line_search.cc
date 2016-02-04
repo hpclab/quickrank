@@ -117,6 +117,12 @@ void LineSearch::learn(
   // preserve original value of the window
   double window_size = window_size_;
 
+  // We force num_points to be odd, so that the central point in step 1 is
+  // included by default in searching the best weight for each feature
+  unsigned int num_points = num_points_;
+  if (num_points_ % 2 > 0)
+    num_points--;
+
   // Do some initialization
   preprocess_dataset(training_dataset);
   if (validation_dataset)
@@ -136,13 +142,14 @@ void LineSearch::learn(
   std::vector<double> weights_prev(num_features, 1.0);
   std::vector<double>(num_features, 1.0).swap(best_weights_);
 
-  MetricScore best_metric_on_validation = 0;
+
   MetricScore best_metric_on_training = 0;
+  MetricScore best_metric_on_validation = 0;
 
   // array of points in the window to be used to compute the metric
-  std::vector<MetricScore> metric_scores(num_points_ + 1, 0.0);
+  std::vector<MetricScore> metric_scores(num_points + 1, 0.0);
   std::vector<Score> pre_sum(num_train_instances);
-  std::vector<Score> training_score(num_train_instances * (num_points_ + 1));
+  std::vector<Score> training_score(num_train_instances * (num_points + 1));
 
   std::vector<Score> validation_score;
   if (validation_dataset)
@@ -168,18 +175,19 @@ void LineSearch::learn(
   // loop for max_iterations_
   for (unsigned int i = 0; i < max_iterations_; i++) {
 
-    // step1 to select points in the window
-    double step1 = 2 * window_size / num_points_;
+    // step1 length used to select points in the window
+    double step1 = 2 * window_size / num_points;
 
     // Step 1: linear search on each feature (independently)
     for (unsigned int f = 0; f < num_features; f++) {
+
       // compute feature * weight for all the features different from f
       preCompute(training_dataset->at(0, 0), num_train_instances, num_features,
                  &pre_sum[0], &weights_prev[0], &training_score[0], f);
 
       // Compute the points (weights to try) related to feature f
       std::vector<double> points;
-      points.reserve(num_points_ + 1); //don't know the exact points number here
+      points.reserve(num_points + 1); // don't know the exact number of points
       for (double point = weights_prev[f] - window_size;
            point <= weights_prev[f] + window_size; point += step1) {
         if (point >= 0)
@@ -204,7 +212,8 @@ void LineSearch::learn(
 
       // Find the best metric score
       auto i_max_metric_score = std::max_element(metric_scores.cbegin(),
-                                                 metric_scores.cend());
+                                                 metric_scores.cbegin() +
+                                                     points.size());
       if (*i_max_metric_score > best_metric_on_training) {
         auto p = std::distance(metric_scores.cbegin(), i_max_metric_score);
         weights[f] = points[p];
@@ -213,13 +222,12 @@ void LineSearch::learn(
     // end Step 1: linear search on each feature (independently)
 
     // Step 2: linear search on all features (between weights and weights_prev)
-    std::fill(metric_scores.begin(), metric_scores.end(), 0.0);
 
-    // steps size (different for each feature)
+    // step2 length (different for each feature)
     std::vector<double> step2(num_features);
     std::transform(weights.begin(), weights.end(), weights_prev.begin(),
                    step2.begin(), [&](double curr, double prev) {
-      return (curr - prev) / num_points_;
+      return (curr - prev) / num_points;
     });
 
     // if step2 is a 0-vector, no way to improve in step2
@@ -229,7 +237,7 @@ void LineSearch::learn(
     if (!zeros) {
 
       #pragma omp parallel for
-      for (unsigned int p = 0; p < num_points_ + 1; p++) {
+      for (unsigned int p = 0; p < num_points + 1; p++) {
         // loop to add partial scores to the total score of the feature i
         for (unsigned int s = 0; s < num_train_instances; s++) {
 
@@ -249,11 +257,12 @@ void LineSearch::learn(
       }
       // End parallel loop
 
-      // Find the best metric scoreé
+      // Find the best metric score
       auto i_max_metric_score = std::max_element(metric_scores.cbegin(),
                                                  metric_scores.cend());
       if (*i_max_metric_score > best_metric_on_training) {
         auto p = std::distance(metric_scores.cbegin(), i_max_metric_score);
+
         // recompute the weights vector related to point p
         for (unsigned int f = 0; f < num_features; f++) {
           weights[f] = (weights_prev[f] + step2[f] * p);
@@ -263,6 +272,7 @@ void LineSearch::learn(
         // Set weights_prev to current weights for the next iteration
         weights_prev = weights;
       }
+
     } // end if zeros step2 vector
 
     std::cout << std::setw(7) << i+1 << std::setw(9) << best_metric_on_training;
@@ -320,7 +330,7 @@ void LineSearch::learn(
   }
   //end iterations
 
-  //if there is no validation dataset get the weights of training as best_weights
+  // if validation dataset is missing, best_weights is found on training
   if (validation_dataset == NULL)
     best_weights_ = weights;
 
