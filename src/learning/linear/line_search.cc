@@ -120,7 +120,7 @@ void LineSearch::learn(
   // We force num_points to be odd, so that the central point in step 1 is
   // included by default in searching the best weight for each feature
   unsigned int num_points = num_points_;
-  if (num_points_ % 2 > 0)
+  if (num_points_ % 2)
     num_points--;
 
   // Do some initialization
@@ -140,8 +140,8 @@ void LineSearch::learn(
   // initialize weights, weights_prev and best_weights_ a 1
   std::vector<double> weights(num_features, 1.0);
   std::vector<double> weights_prev(num_features, 1.0);
+  // Need the swap method because best_weights_ is unitialized
   std::vector<double>(num_features, 1.0).swap(best_weights_);
-
 
   MetricScore best_metric_on_training = 0;
   MetricScore best_metric_on_validation = 0;
@@ -302,7 +302,7 @@ void LineSearch::learn(
 
       std::cout << std::setw(9) << metric_on_validation;
       if (metric_on_validation > best_metric_on_validation) {
-        count_failed_vali = 0;  //reset to zero when validation improves
+        count_failed_vali = 0;  // reset to zero when validation improves
         best_metric_on_validation = metric_on_validation;
         best_weights_ = weights;
         std::cout << " *";
@@ -314,8 +314,6 @@ void LineSearch::learn(
         }
       }
 
-      if (metric_on_validation > best_metric_on_validation)
-        std::cout << "  ";
       std::cout << " " << std::setw(7) << gain_on_training << " "
         << std::setw(8) << window_size << " "
         << std::setw(8) << cur_reduction_factor;
@@ -339,9 +337,7 @@ void LineSearch::learn(
       std::chrono::duration<double>>(end - begin);
   std::cout << std::endl;
   std::cout << "# \t Training time: " << std::setprecision(2) <<
-  elapsed.count()
-  << " seconds" << std::endl;
-
+    elapsed.count() << " seconds" << std::endl;
 }
 
 Score LineSearch::score_document(const Feature *d,
