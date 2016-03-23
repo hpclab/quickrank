@@ -19,8 +19,7 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_LEARNING_FORESTS_MART_H_
-#define QUICKRANK_LEARNING_FORESTS_MART_H_
+#pragma once
 
 #include "types.h"
 #include "learning/ltr_algorithm.h"
@@ -93,25 +92,24 @@ class Mart : public LTR_Algorithm {
   virtual void preprocess_dataset(std::shared_ptr<data::Dataset> dataset) const;
 
   /// Prepares private data structures before training takes place.
-  virtual void init(std::shared_ptr<data::Dataset> training_dataset,
-                    std::shared_ptr<data::Dataset> validation_dataset);
+  virtual void init(std::shared_ptr<data::VerticalDataset> training_dataset);
 
   /// De-allocates private data structure after training has taken place.
-  virtual void clear(std::shared_ptr<data::Dataset> training_dataset);
+  virtual void clear(size_t num_features);
 
   /// Computes pseudo responses.
   ///
   /// \param training_dataset The training data.
   /// \param metric The metric to be optimized.
   virtual void compute_pseudoresponses(
-      std::shared_ptr<data::Dataset> training_dataset,
+      std::shared_ptr<data::VerticalDataset> training_dataset,
       metric::ir::Metric* metric);
 
   /// Fits a regression tree on the gradient given by the pseudo residuals
   ///
   /// \param training_dataset The dataset used for training
   virtual std::unique_ptr<RegressionTree> fit_regressor_on_gradient(
-      std::shared_ptr<data::Dataset> training_dataset);
+      std::shared_ptr<data::VerticalDataset> training_dataset);
 
   /// Updates scores with the last learnt regression tree.
   ///
@@ -119,6 +117,8 @@ class Mart : public LTR_Algorithm {
   /// \param scores Scores vector to be updated.
   /// \param tree Last regression tree leartn.
   virtual void update_modelscores(std::shared_ptr<data::Dataset> dataset,
+                                  Score *scores, RegressionTree* tree);
+  virtual void update_modelscores(std::shared_ptr<data::VerticalDataset> dataset,
                                   Score *scores, RegressionTree* tree);
 
   virtual std::ofstream& save_model_to_file(std::ofstream& os) const;
@@ -158,4 +158,3 @@ class Mart : public LTR_Algorithm {
 }  // namespace learning
 }  // namespace quickrank
 
-#endif

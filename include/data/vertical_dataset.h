@@ -23,11 +23,11 @@
 
 #include <iostream>
 #include <memory>
-
-#include <boost/container/vector.hpp>
+#include <vector>
 
 #include "types.h"
 #include "data/queryresults.h"
+#include "dataset.h"
 
 namespace quickrank {
 namespace data {
@@ -35,49 +35,39 @@ namespace data {
 /**
  * This class implements a Dataset to be used for a L-t-R task.
  *
- * The internal representation is quite simple: a row vector
+ * The internal representation is vertical: a row vector
  * of size \a num_instances() x \a num_features().
  * (A training instance is indeed a document.)
  * We allow to directly
  * access the internal representation through the function \a at()
  * to support fast access and custom high performance implementations.
- * Both horizontal (instances x features) and vertical (features x instances)
- * representations are supported.
+ * Representation is vertical, i.e., a matrix features x documents.
  */
-class Dataset{
+class VerticalDataset {
  public:
 
-  enum Format {
-    HORIZ,
-    VERT
-  };
-
-  /// Allocates an empty Dataset of given size in horizontal format.
+  /// Allocates a vertical dataset by copying and transposing an horizontal one.
   ///
-  /// \param n_instances The number of training instances (lines) in the dataset.
-  /// \param n_features The number of features.
-  Dataset(unsigned int n_instances, unsigned int n_features);
-  virtual ~Dataset();
+  /// \param h_dataset The horizontal dataset.
+  VerticalDataset( std::shared_ptr<Dataset> h_dataset);
+  virtual ~VerticalDataset();
 
   /// Avoid inefficient copy constructor
-  Dataset( const Dataset& other ) = delete;
+  VerticalDataset( const VerticalDataset& other ) = delete;
   /// Avoid inefficient copy assignment
-  Dataset& operator=( const Dataset& ) = delete;
+  VerticalDataset& operator=( const VerticalDataset& ) = delete;
 
   /// Returns a pointer to a specific data item.
   ///
   /// \param document_id The document of interest.
   /// \param feature_id The feature of interest.
   /// \returns A reference to the requested feature value of the given document id.
-  quickrank::Feature* at(unsigned int document_id, unsigned int feature_id) {
-    return
-        (format_ == HORIZ) ?
-            (data_ + document_id * num_features_ + feature_id) :
-            (data_ + document_id + feature_id * num_instances_);
+  quickrank::Feature* at(size_t document_id, size_t feature_id) {
+    return data_ + document_id + feature_id * num_instances_;
   }
 
   /// Returns the value of the i-th relevance label.
-  Label getLabel(unsigned int document_id) {
+  Label getLabel(size_t document_id) {
     return labels_[document_id];
   }
 
@@ -86,7 +76,7 @@ class Dataset{
   /// \param i The i-th query results list of interest.
   /// \returns The offset of the first document in the i-th query results list.
   ///     This can be used to later invoke the \a at() function.
-  unsigned int offset(unsigned int i) const {
+  unsigned int offset(size_t i) const {
     return offsets_[i];
   }
 
@@ -94,16 +84,7 @@ class Dataset{
   ///
   /// \param i The i-th query results list of interest.
   /// \returns The requested QueryResults.
-  std::unique_ptr<QueryResults> getQueryResults(unsigned int i) const;
-
-  /// Add a new training instance, i.e., a labeled document, to the dataset.
-  ///
-  /// \warning Currently the addition works only when data is in HORIZ format.
-  /// \param q_id The query ID.
-  /// \param i_label The relevance label of the result.
-  /// \param i_features The feature vector of the document.
-  void addInstance(QueryID q_id, Label i_label,
-                   boost::container::vector<Feature> i_features);
+  std::unique_ptr<QueryResults> getQueryResults(size_t i) const;
 
   /// Returns the number of features used to represent a document.
   unsigned int num_features() const {
@@ -117,20 +98,6 @@ class Dataset{
   unsigned int num_instances() const {
     return num_instances_;
   }
-  /// Returns current format, HORIZ vs. VERT, of the dataset.
-  Format format() const {
-    return format_;
-  }
-
-  /// Transposes the matrix.
-  ///
-  /// The internal representation is transformed from HORIZ to VERT
-  /// or viceversa.
-  void transpose();
-
-  // - support normalization
-  // - support discretisation, or simply provide discr.ed thresholds
-  // - support horiz. and vert. sampling
 
  private:
 
@@ -138,18 +105,13 @@ class Dataset{
   size_t num_queries_;
   size_t num_instances_;
 
-  Format format_;
-
   quickrank::Feature* data_ = NULL;
   quickrank::Label* labels_ = NULL;
-  boost::container::vector<size_t> offsets_;
-
-  unsigned int last_instance_id_;
-  unsigned int max_instances_;
+  std::vector<size_t> offsets_;
 
   /// The output stream operator.
   /// Prints the data reading time stats
-  friend std::ostream& operator<<(std::ostream& os, const Dataset& me) {
+  friend std::ostream& operator<<(std::ostream& os, const VerticalDataset& me) {
     return me.put(os);
   }
 

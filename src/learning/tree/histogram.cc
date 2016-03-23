@@ -127,7 +127,7 @@ void RTNodeHistogram::quick_dump(unsigned int f, unsigned int num_t) {
   printf("\n");
 }
 
-RTRootHistogram::RTRootHistogram(quickrank::data::Dataset *dps,
+RTRootHistogram::RTRootHistogram(quickrank::data::VerticalDataset *dps,
                                  unsigned int **sortedidx,
                                  unsigned int sortedidxsize, float **thresholds,
                                  unsigned int const *thresholds_size)

@@ -66,25 +66,24 @@ class LambdaMart : public Mart {
 
  protected:
   /// Prepares private data structurs befor training takes place.
-  virtual void init(std::shared_ptr<data::Dataset> training_dataset,
-                    std::shared_ptr<data::Dataset> validation_dataset);
+  virtual void init(std::shared_ptr<data::VerticalDataset> training_dataset);
 
   /// De-allocates private data structure after training has taken place.
-  virtual void clear(std::shared_ptr<data::Dataset> training_dataset);
+  virtual void clear(size_t num_features);
 
   /// Computes pseudo responses.
   ///
   /// \param training_dataset The training data.
   /// \param metric The metric to be optimized.
   virtual void compute_pseudoresponses(
-      std::shared_ptr<data::Dataset> training_dataset,
+      std::shared_ptr<data::VerticalDataset> training_dataset,
       metric::ir::Metric* metric);
 
   /// Fits a regression tree on the gradient given by the pseudo residuals
   ///
   /// \param training_dataset The dataset used for training
   virtual std::unique_ptr<RegressionTree> fit_regressor_on_gradient(
-      std::shared_ptr<data::Dataset> training_dataset);
+      std::shared_ptr<data::VerticalDataset> training_dataset);
 
  protected:
   double* instance_weights_ = NULL;  //corresponds to datapoint.cache
