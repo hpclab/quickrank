@@ -108,20 +108,4 @@ BOOST_AUTO_TEST_CASE( Dataset_IO_Test ) {
   BOOST_CHECK_EQUAL(qr->features()[0], 3);
   BOOST_CHECK_EQUAL(qr->features()[dataset->num_instances() + 1], 0);
   BOOST_CHECK_EQUAL(qr->features()[2 * dataset->num_instances() + 2], 2);
-
-  // check vertical dataset
-  dataset->transpose();
-  qr = dataset->getQueryResults(0);
-  BOOST_CHECK_EQUAL(qr->num_results(), 86);
-  BOOST_CHECK_EQUAL(qr->features()[0], 3);
-  BOOST_CHECK_EQUAL(qr->features()[dataset->num_instances() + 1], 0);
-  BOOST_CHECK_EQUAL(qr->features()[2 * dataset->num_instances() + 2], 2);
-
-  // check horizontal dataset
-  dataset->transpose();
-  qr = dataset->getQueryResults(0);
-  BOOST_CHECK_EQUAL(qr->num_results(), 86);
-  BOOST_CHECK_EQUAL(qr->features()[0], 3);
-  BOOST_CHECK_EQUAL(qr->features()[dataset->num_features() + 1], 0);
-  BOOST_CHECK_EQUAL(qr->features()[2 * dataset->num_features() + 2], 2);
 }

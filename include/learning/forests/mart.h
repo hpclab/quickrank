@@ -69,10 +69,8 @@ class Mart : public LTR_Algorithm {
   /// Returns the score by the current ranker
   ///
   /// \param d Document to be scored.
-  /// \param next_fx_offset Offset to the next feature from \a d.
-  virtual Score score_document(const Feature* d,
-                               const unsigned int next_fx_offset) const {
-    return ensemble_model_.score_instance(d, next_fx_offset);
+  virtual Score score_document(const Feature* d) const {
+    return ensemble_model_.score_instance(d, 1);
   }
 
   /// Print additional statistics.
@@ -88,8 +86,6 @@ class Mart : public LTR_Algorithm {
   static const std::string NAME_;
 
  protected:
-  /// Makes sure the dataset in in vertical format.
-  virtual void preprocess_dataset(std::shared_ptr<data::Dataset> dataset) const;
 
   /// Prepares private data structures before training takes place.
   virtual void init(std::shared_ptr<data::VerticalDataset> training_dataset);

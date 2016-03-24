@@ -33,35 +33,14 @@
 // Added by Chiara Pierucci Andrea Battistini
 #include "learning/linear/coordinate_ascent.h"
 
-#ifdef _OPENMP
-#include <omp.h>
-#else
-#include "utils/omp-stubs.h"
-#endif
-
 namespace quickrank {
 namespace learning {
 
-void LTR_Algorithm::score_dataset(std::shared_ptr<data::Dataset> dataset,
-                                  Score* scores) const {
-  preprocess_dataset(dataset);
-  for (unsigned int q = 0; q < dataset->num_queries(); q++) {
-    std::shared_ptr<data::QueryResults> r = dataset->getQueryResults(q);
-    if (dataset->format() == quickrank::data::Dataset::HORIZ)
-      score_query_results(r, scores, 1, dataset->num_features());
-    else
-      score_query_results(r, scores, dataset->num_instances(), 1);
-    scores += r->num_results();
-  }
-}
-
-void LTR_Algorithm::score_query_results(
-    std::shared_ptr<data::QueryResults> results, Score* scores,
-    unsigned int next_fx_offset, unsigned int next_d_offset) const {
-  const quickrank::Feature* d = results->features();
-  for (unsigned int i = 0; i < results->num_results(); i++) {
-    scores[i] = score_document(d, next_fx_offset);
-    d+=next_d_offset;
+void LTR_Algorithm::score_dataset(std::shared_ptr<data::Dataset> dataset, Score* scores) const {
+  const quickrank::Feature* d = dataset->at(0,0);
+  for (unsigned int i = 0; i < dataset->num_instances(); i++) {
+    scores[i] = score_document(d);
+    d += dataset->num_features();
   }
 }
 

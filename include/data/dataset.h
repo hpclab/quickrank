@@ -41,16 +41,10 @@ namespace data {
  * We allow to directly
  * access the internal representation through the function \a at()
  * to support fast access and custom high performance implementations.
- * Both horizontal (instances x features) and vertical (features x instances)
- * representations are supported.
+ * Internal representation is horizontal (instances x features).
  */
 class Dataset{
  public:
-
-  enum Format {
-    HORIZ,
-    VERT
-  };
 
   /// Allocates an empty Dataset of given size in horizontal format.
   ///
@@ -70,10 +64,7 @@ class Dataset{
   /// \param feature_id The feature of interest.
   /// \returns A reference to the requested feature value of the given document id.
   quickrank::Feature* at(unsigned int document_id, unsigned int feature_id) {
-    return
-        (format_ == HORIZ) ?
-            (data_ + document_id * num_features_ + feature_id) :
-            (data_ + document_id + feature_id * num_instances_);
+    return data_ + document_id * num_features_ + feature_id;
   }
 
   /// Returns the value of the i-th relevance label.
@@ -117,16 +108,6 @@ class Dataset{
   unsigned int num_instances() const {
     return num_instances_;
   }
-  /// Returns current format, HORIZ vs. VERT, of the dataset.
-  Format format() const {
-    return format_;
-  }
-
-  /// Transposes the matrix.
-  ///
-  /// The internal representation is transformed from HORIZ to VERT
-  /// or viceversa.
-  void transpose();
 
   // - support normalization
   // - support discretisation, or simply provide discr.ed thresholds
@@ -137,8 +118,6 @@ class Dataset{
   size_t num_features_;
   size_t num_queries_;
   size_t num_instances_;
-
-  Format format_;
 
   quickrank::Feature* data_ = NULL;
   quickrank::Label* labels_ = NULL;

@@ -26,12 +26,6 @@
 #include <cmath>
 #include <cstring>
 
-#ifdef _OPENMP
-#include <omp.h>
-#else
-#include "utils/omp-stubs.h"
-#endif
-
 #include "utils/maxheap.h"
 #include "data/vertical_dataset.h"
 #include "learning/tree/rtnode.h"

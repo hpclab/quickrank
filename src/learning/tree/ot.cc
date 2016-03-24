@@ -21,6 +21,12 @@
  */
 #include "learning/tree/ot.h"
 
+#ifdef _OPENMP
+#include <omp.h>
+#else
+#include "utils/omp-stubs.h"
+#endif
+
 #define POWTWO(e) (1<<(e))
 
 void ObliviousRT::fit(RTNodeHistogram *hist) {

@@ -172,11 +172,6 @@ void Mart::clear(size_t num_features) {
   }
 }
 
-void Mart::preprocess_dataset(std::shared_ptr<data::Dataset> dataset) const {
-  if (dataset->format() != data::Dataset::VERT)
-    dataset->transpose();
-}
-
 void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
                  std::shared_ptr<quickrank::data::Dataset> validation_dataset,
                  std::shared_ptr<quickrank::metric::ir::Metric> scorer,

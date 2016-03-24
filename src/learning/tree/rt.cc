@@ -21,6 +21,12 @@
  */
 #include "learning/tree/rt.h"
 
+#ifdef _OPENMP
+#include <omp.h>
+#else
+#include "utils/omp-stubs.h"
+#endif
+
 void DevianceMaxHeap::push_chidrenof(RTNode *parent) {
   push(parent->left->deviance, parent->left);
   push(parent->right->deviance, parent->right);

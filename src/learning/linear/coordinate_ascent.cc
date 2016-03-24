@@ -122,11 +122,6 @@ std::ostream& CoordinateAscent::put(std::ostream& os) const {
   return os;
 }
 
-void CoordinateAscent::preprocess_dataset(
-    std::shared_ptr<data::Dataset> dataset) const {
-  if (dataset->format() != data::Dataset::HORIZ)
-    dataset->transpose();
-}
 
 void CoordinateAscent::learn(
     std::shared_ptr<quickrank::data::Dataset> training_dataset,
@@ -136,11 +131,6 @@ void CoordinateAscent::learn(
 
   auto begin = std::chrono::steady_clock::now();
   double window_size = window_size_ / training_dataset->num_features();  //preserve original value of the window
-
-  // Do some initialization
-  preprocess_dataset(training_dataset);
-  if (validation_dataset)
-    preprocess_dataset(validation_dataset);
 
   std::cout << "# Training:" << std::endl;
   std::cout << std::fixed << std::setprecision(4);
@@ -265,9 +255,7 @@ void CoordinateAscent::learn(
 
 }
 
-Score CoordinateAscent::score_document(const Feature* d,
-                                       const unsigned int next_fx_offset) const {
-  // next_fx_offset is ignored as it is equal to 1 for horizontal dataset
+Score CoordinateAscent::score_document(const Feature* d) const {
   Score score = 0;
   for (unsigned int k = 0; k < best_weights_.size(); k++) {
     score += best_weights_[k] * d[k];
