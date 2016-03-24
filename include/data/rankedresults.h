@@ -62,19 +62,19 @@ class RankedResults : private boost::noncopyable {
     return scores_;
   }
 
-  const unsigned int pos_of_rank(const unsigned int rank) const {
+  const size_t pos_of_rank(const size_t rank) const {
     return unmap_[rank];
   }
 
-  const unsigned int num_results() const {
+  const size_t num_results() const {
     return num_results_;
   }
 
  private:
   Label* labels_ = NULL;
   Score* scores_ = NULL;
-  unsigned int num_results_;
-  unsigned int* unmap_ = NULL;
+  size_t num_results_;
+  size_t* unmap_ = NULL;
 };
 
 }  // namespace data

@@ -41,6 +41,7 @@ UTESTSOBJS:=$(subst $(UTESTSDIR),$(OBJSDIR)/$(UTESTSDIR),$(UTESTS:.cc=.o))
 
 CXX=
 CXXFLAGS:=-std=c++11 -Wall -fopenmp -march=native -mtune=native -O3
+# CXXFLAGS:=-std=c++11 -Wall -march=native -mtune=native -O0 -fopenmp -g
 LDLIBS:=-lboost_program_options -lboost_system -lboost_filesystem -fopenmp
 
 # find the compiler

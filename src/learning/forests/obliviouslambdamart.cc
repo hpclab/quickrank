@@ -36,16 +36,16 @@ namespace forests {
 
 const std::string ObliviousLambdaMart::NAME_ = "OBVLAMBDAMART";
 
-
-ObliviousLambdaMart::ObliviousLambdaMart(const boost::property_tree::ptree &info_ptree,
-                     const boost::property_tree::ptree &model_ptree)
+ObliviousLambdaMart::ObliviousLambdaMart(
+    const boost::property_tree::ptree &info_ptree,
+    const boost::property_tree::ptree &model_ptree)
     : LambdaMart(info_ptree, model_ptree) {
   treedepth_ = info_ptree.get<double>("depth");
 }
 
 std::ostream& ObliviousLambdaMart::put(std::ostream& os) const {
-  os << "# Ranker: "<< name() << std::endl << "# max no. of trees = " << ntrees_
-     << std::endl << "# max tree depth = " << treedepth_ << std::endl
+  os << "# Ranker: " << name() << std::endl << "# max no. of trees = "
+     << ntrees_ << std::endl << "# max tree depth = " << treedepth_ << std::endl
      << "# shrinkage = " << shrinkage_ << std::endl << "# min leaf support = "
      << minleafsupport_ << std::endl;
   if (nthresholds_)
@@ -69,7 +69,8 @@ std::unique_ptr<RegressionTree> ObliviousLambdaMart::fit_regressor_on_gradient(
   return std::unique_ptr<RegressionTree>(tree);
 }
 
-std::ofstream& ObliviousLambdaMart::save_model_to_file(std::ofstream& os) const {
+std::ofstream& ObliviousLambdaMart::save_model_to_file(
+    std::ofstream& os) const {
   // write ranker description
   os << "\t<info>" << std::endl << "\t\t<type>" << name() << "</type>"
      << std::endl << "\t\t<trees>" << ntrees_ << "</trees>" << std::endl

@@ -42,16 +42,16 @@ class ObliviousMart : public Mart {
   /// \param minleafsupport Minimum number of instances in each leaf.
   /// \param esr Early stopping if no improvement after \esr iterations
   /// on the validation set.
-  ObliviousMart(unsigned int ntrees, float shrinkage, unsigned int nthresholds,
-            unsigned int treedepth, unsigned int minleafsupport,
-            unsigned int esr)
-      : Mart(ntrees, shrinkage, nthresholds, 1 << treedepth,
-                   minleafsupport, esr),
+  ObliviousMart(size_t ntrees, float shrinkage, size_t nthresholds,
+                size_t treedepth, size_t minleafsupport,
+                size_t esr)
+      : Mart(ntrees, shrinkage, nthresholds, 1 << treedepth, minleafsupport,
+             esr),
         treedepth_(treedepth) {
   }
 
   ObliviousMart(const boost::property_tree::ptree &info_ptree,
-            const boost::property_tree::ptree &model_ptree);
+                const boost::property_tree::ptree &model_ptree);
 
   virtual ~ObliviousMart() {
   }
@@ -72,7 +72,7 @@ class ObliviousMart : public Mart {
 
   virtual std::ofstream& save_model_to_file(std::ofstream& os) const;
 
-  unsigned int treedepth_;  //>0
+  size_t treedepth_;  //>0
 
  private:
   /// The output stream operator.

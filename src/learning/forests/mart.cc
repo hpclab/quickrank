@@ -52,11 +52,11 @@ Mart::Mart(const boost::property_tree::ptree &info_ptree,
   valid_iterations_ = 0;
 
   // read (training) info
-  ntrees_ = info_ptree.get<unsigned int>("trees");
-  nleaves_ = info_ptree.get<unsigned int>("leaves");
-  minleafsupport_ = info_ptree.get<unsigned int>("leafsupport");
-  nthresholds_ = info_ptree.get<unsigned int>("discretization");
-  valid_iterations_ = info_ptree.get<unsigned int>("estop");
+  ntrees_ = info_ptree.get<size_t>("trees");
+  nleaves_ = info_ptree.get<size_t>("leaves");
+  minleafsupport_ = info_ptree.get<size_t>("leafsupport");
+  nthresholds_ = info_ptree.get<size_t>("discretization");
+  valid_iterations_ = info_ptree.get<size_t>("estop");
   shrinkage_ = info_ptree.get<double>("shrinkage");
 
   // read ensemble
@@ -101,36 +101,41 @@ std::ostream& Mart::put(std::ostream& os) const {
 
 void Mart::init(std::shared_ptr<quickrank::data::VerticalDataset> training_dataset) {
 
-  const unsigned int nentries = training_dataset->num_instances();
+  const size_t nentries = training_dataset->num_instances();
   scores_on_training_ = new double[nentries]();  //0.0f initialized
   pseudoresponses_ = new double[nentries]();  //0.0f initialized
-  const unsigned int nfeatures = training_dataset->num_features();
-  sortedsid_ = new unsigned int*[nfeatures];
+  const size_t nfeatures = training_dataset->num_features();
+  sortedsid_ = new size_t*[nfeatures];
   sortedsize_ = nentries;
+
 #pragma omp parallel for
-  for (unsigned int i = 0; i < nfeatures; ++i)
+  for (size_t i = 0; i < nfeatures; ++i)
     sortedsid_[i] = idx_radixsort(training_dataset->at(0, i),
                                   training_dataset->num_instances()).release();
+
   thresholds_ = new float*[nfeatures];
-  thresholds_size_ = new unsigned int[nfeatures];
+  thresholds_size_ = new size_t[nfeatures];
+
 #pragma omp parallel for
-  for (unsigned int i = 0; i < nfeatures; ++i) {
+  for (size_t i = 0; i < nfeatures; ++i) {
     //select feature array realted to the current feature index
     float const* features = training_dataset->at(0, i);  // ->get_fvector(i);
     //init with values with the 1st sample
-    unsigned int *idx = sortedsid_[i];
+    size_t *idx = sortedsid_[i];
     //get_ sample indexes sorted by the fid-th feature
-    unsigned int uniqs_size = 0;
+    size_t uniqs_size = 0;
     float *uniqs = (float*) malloc(
         sizeof(float) * (nthresholds_ == 0 ? sortedsize_ + 1 : nthresholds_ + 1));
     //skip samples with the same feature value. early stop for if nthresholds!=size_max
     uniqs[uniqs_size++] = features[idx[0]];
-    for (unsigned int j = 1; j < sortedsize_ && (nthresholds_ == 0 || uniqs_size != nthresholds_ + 1);
+    for (size_t j = 1;
+        j < sortedsize_ && (nthresholds_ == 0 || uniqs_size != nthresholds_ + 1);
         ++j) {
       const float fval = features[idx[j]];
       if (uniqs[uniqs_size - 1] < fval)
         uniqs[uniqs_size++] = fval;
     }
+
     //define thresholds
     if (uniqs_size <= nthresholds_ || nthresholds_ == 0) {
       uniqs[uniqs_size++] = FLT_MAX;
@@ -140,17 +145,17 @@ void Mart::init(std::shared_ptr<quickrank::data::VerticalDataset> training_datas
       thresholds_size_[i] = nthresholds_ + 1;
       thresholds_[i] = (float*) malloc(sizeof(float) * (nthresholds_ + 1));
       float t = features[idx[0]];  //equals fmin
-      const float step = fabs(features[idx[sortedsize_ - 1]] - t) / nthresholds_;  //(fmax-fmin)/nthresholds
-      for (unsigned int j = 0; j != nthresholds_; t += step)
+      const float step = fabs(features[idx[sortedsize_ - 1]] - t)
+          / nthresholds_;  //(fmax-fmin)/nthresholds
+      for (size_t j = 0; j != nthresholds_; t += step)
         thresholds_[i][j++] = t;
       thresholds_[i][nthresholds_] = FLT_MAX;
     }
   }
 
   // here, pseudo responses is empty !
-  hist_ = new RTRootHistogram(training_dataset.get(),
-                              sortedsid_, sortedsize_, thresholds_,
-                              thresholds_size_);
+  hist_ = new RTRootHistogram(training_dataset.get(), sortedsid_, sortedsize_,
+                              thresholds_, thresholds_size_);
 }
 
 void Mart::clear(size_t num_features) {
@@ -165,7 +170,7 @@ void Mart::clear(size_t num_features) {
   if (thresholds_size_)
     delete[] thresholds_size_;
   if (sortedsid_) {
-    for (unsigned int i = 0; i < num_features; ++i) {
+    for (size_t i = 0; i < num_features; ++i) {
       delete[] sortedsid_[i];
       free(thresholds_[i]);
     }
@@ -175,7 +180,7 @@ void Mart::clear(size_t num_features) {
 void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
                  std::shared_ptr<quickrank::data::Dataset> validation_dataset,
                  std::shared_ptr<quickrank::metric::ir::Metric> scorer,
-                 unsigned int partial_save, const std::string output_basename) {
+                 size_t partial_save, const std::string output_basename) {
   // ---------- Initialization ----------
   std::cout << "# Initialization";
   std::cout.flush();
@@ -213,7 +218,7 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   ensemble_model_.set_capacity(ntrees_);
 
   //start iterations
-  for (unsigned int m = 0; m < ntrees_; ++m) {
+  for (size_t m = 0; m < ntrees_; ++m) {
     if (validation_dataset
         && (valid_iterations_ != 0
             && m > validation_bestmodel_ + valid_iterations_))
@@ -296,8 +301,8 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
 void Mart::compute_pseudoresponses(
     std::shared_ptr<quickrank::data::VerticalDataset> training_dataset,
     quickrank::metric::ir::Metric* scorer) {
-  const unsigned int nentries = training_dataset->num_instances();
-  for (unsigned int i = 0; i < nentries; i++)
+  const size_t nentries = training_dataset->num_instances();
+  for (size_t i = 0; i < nentries; i++)
     pseudoresponses_[i] = training_dataset->getLabel(i)
         - scores_on_training_[i];
 }
@@ -319,12 +324,12 @@ std::unique_ptr<RegressionTree> Mart::fit_regressor_on_gradient(
 void Mart::update_modelscores(std::shared_ptr<data::Dataset> dataset,
                               Score *scores, RegressionTree* tree) {
   quickrank::Score* score_i = scores;
-  for (unsigned int q = 0; q < dataset->num_queries(); q++) {
+  for (size_t q = 0; q < dataset->num_queries(); q++) {
     std::shared_ptr<quickrank::data::QueryResults> results = dataset
         ->getQueryResults(q);
-    const unsigned int offset = 1;
+    const size_t offset = 1;
     const Feature* d = results->features();
-    for (unsigned int i = 0; i < results->num_results(); i++) {
+    for (size_t i = 0; i < results->num_results(); i++) {
       score_i[i] += shrinkage_ * tree->get_proot()->score_instance(d, offset);
       d+=dataset->num_features();
     }
@@ -335,11 +340,11 @@ void Mart::update_modelscores(std::shared_ptr<data::Dataset> dataset,
 void Mart::update_modelscores(std::shared_ptr<data::VerticalDataset> dataset,
                               Score *scores, RegressionTree* tree) {
   quickrank::Score* score_i = scores;
-  for (unsigned int q = 0; q < dataset->num_queries(); q++) {
+  for (size_t q = 0; q < dataset->num_queries(); q++) {
     std::shared_ptr<quickrank::data::QueryResults> results = dataset->getQueryResults(q);
-    const unsigned int offset = dataset->num_instances();
+    const size_t offset = dataset->num_instances();
     const Feature* d = results->features();
-    for (unsigned int i = 0; i < results->num_results(); i++) {
+    for (size_t i = 0; i < results->num_results(); i++) {
       score_i[i] += shrinkage_ * tree->get_proot()->score_instance(d, offset);
       d++;
     }
@@ -372,7 +377,6 @@ void Mart::print_additional_stats(void) const {
   std::cout << "# Internal Nodes Traversed: " << RTNode::internal_nodes_traversed() << std::endl;
 #endif
 }
-
 
 }  // namespace forests
 }  // namespace learning

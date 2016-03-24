@@ -29,13 +29,13 @@
 #include <atomic>
 #endif
 
-static const unsigned int uint_max = (unsigned int) -1;
+static const size_t uint_max = (size_t) -1;
 
 class RTNode {
 
  public:
-  unsigned int *sampleids = NULL;
-  unsigned int nsampleids = 0;
+  size_t *sampleids = NULL;
+  size_t nsampleids = 0;
   float threshold = 0.0f;
   double deviance = 0.0;
   double avglabel = 0.0;
@@ -44,8 +44,8 @@ class RTNode {
   RTNodeHistogram *hist = NULL;
 
  private:
-  unsigned int featureidx = uint_max;  //refer the index in the feature matrix
-  unsigned int featureid = uint_max;  //refer to the id occurring in the dataset file
+  size_t featureidx = uint_max;  //refer the index in the feature matrix
+  size_t featureid = uint_max;  //refer to the id occurring in the dataset file
 
 #ifdef QUICKRANK_PERF_STATS
   // number of internal nodes traversed
@@ -68,15 +68,16 @@ class RTNode {
      */
   }
 
-  RTNode(unsigned int *new_sampleids, unsigned int new_nsampleids, double prediction) {
+  RTNode(size_t *new_sampleids, size_t new_nsampleids,
+         double prediction) {
     sampleids = new_sampleids;
     nsampleids = new_nsampleids;
     avglabel = prediction;
   }
 
   // new node
-  RTNode(float new_threshold, unsigned int new_featureidx,
-         unsigned int new_featureid, RTNode* new_left, RTNode* new_right) {
+  RTNode(float new_threshold, size_t new_featureidx,
+         size_t new_featureid, RTNode* new_left, RTNode* new_right) {
     threshold = new_threshold;
     featureidx = new_featureidx;
     featureid = new_featureid;
@@ -91,7 +92,7 @@ class RTNode {
      */
   }
 
-  RTNode(unsigned int *new_sampleids, RTNodeHistogram* new_hist) {
+  RTNode(size_t *new_sampleids, RTNodeHistogram* new_hist) {
     hist = new_hist;
     sampleids = new_sampleids;
     nsampleids = hist->count[0][hist->thresholds_size[0] - 1];
@@ -109,26 +110,26 @@ class RTNode {
     if (right)
       delete right;
   }
-  void set_feature(unsigned int fidx, unsigned int fid) {
+  void set_feature(size_t fidx, size_t fid) {
     //if(fidx==uint_max or fid==uint_max) exit(7);
     featureidx = fidx, featureid = fid;
   }
-  unsigned int get_feature_id() {
+  size_t get_feature_id() {
     return featureid;
   }
-  unsigned int get_feature_idx() {
+  size_t get_feature_idx() {
     return featureidx;
   }
 
-  void save_leaves(RTNode **&leaves, unsigned int &nleaves,
-                   unsigned int &capacity);
+  void save_leaves(RTNode **&leaves, size_t &nleaves,
+                   size_t &capacity);
 
   bool is_leaf() const {
     return featureidx == uint_max;
   }
 
   quickrank::Score score_instance(const quickrank::Feature* d,
-                                  const unsigned int next_fx_offset) const {
+                                  const size_t next_fx_offset) const {
     /*if (featureidx == uint_max)
      std::cout << avglabel << std::endl;
      else

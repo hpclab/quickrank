@@ -19,15 +19,16 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_SCORING_OPT_CONVERTER_H
-#define QUICKRANK_SCORING_OPT_CONVERTER_H
+#ifndef QUICKRANK_IO_VPRED_CONVERTER_H
+#define QUICKRANK_IO_VPRED_CONVERTER_H
 
 namespace quickrank {
-namespace scoring {
+namespace io {
 
-  void generate_opt_trees_input(const std::string &ensemble_file, const std::string &output_file);
+void generate_vpred_input(const std::string &ensemble_file,
+                          const std::string &output_file);
 
-} // namespace scoring
-} // namesapce quickrank
+}  // namespace io
+}  // namesapce quickrank
 
-#endif // QUICKRANK_SCORING_OPT_CONVERTER_H
+#endif // QUICKRANK_IO_VPRED_CONVERTER_H

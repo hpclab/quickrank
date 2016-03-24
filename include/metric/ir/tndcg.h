@@ -39,7 +39,7 @@ namespace ir {
  */
 class Tndcg : public Ndcg {
  public:
-  explicit Tndcg(int k = NO_CUTOFF)
+  explicit Tndcg(size_t k = NO_CUTOFF)
       : Ndcg(k) {
   }
   virtual ~Tndcg() {

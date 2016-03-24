@@ -28,12 +28,12 @@ RankedResults::RankedResults(std::shared_ptr<QueryResults> results,
                              Score* scores) {
 
   num_results_ = results->num_results();
-  unmap_ = new unsigned int [num_results_];
+  unmap_ = new size_t[num_results_];
   results->indexing_of_sorted_labels(scores, unmap_);
 
   labels_ = new Label[num_results_];
   scores_ = new Score[num_results_];
-  for (unsigned int i = 0; i < num_results_; i++) {
+  for (size_t i = 0; i < num_results_; i++) {
     labels_[i] = results->labels()[unmap_[i]];
     scores_[i] = scores[unmap_[i]];
   }

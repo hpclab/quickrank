@@ -37,7 +37,7 @@ namespace ir {
  */
 class Map : public Metric {
  public:
-  explicit Map(int k = NO_CUTOFF)
+  explicit Map(size_t k = NO_CUTOFF)
       : Metric(k) {
   }
   virtual ~Map() {

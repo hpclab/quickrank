@@ -50,7 +50,7 @@ class Dataset{
   ///
   /// \param n_instances The number of training instances (lines) in the dataset.
   /// \param n_features The number of features.
-  Dataset(unsigned int n_instances, unsigned int n_features);
+  Dataset(size_t n_instances, size_t n_features);
   virtual ~Dataset();
 
   /// Avoid inefficient copy constructor
@@ -63,12 +63,12 @@ class Dataset{
   /// \param document_id The document of interest.
   /// \param feature_id The feature of interest.
   /// \returns A reference to the requested feature value of the given document id.
-  quickrank::Feature* at(unsigned int document_id, unsigned int feature_id) {
+  quickrank::Feature* at(size_t document_id, size_t feature_id) {
     return data_ + document_id * num_features_ + feature_id;
   }
 
   /// Returns the value of the i-th relevance label.
-  Label getLabel(unsigned int document_id) {
+  Label getLabel(size_t document_id) {
     return labels_[document_id];
   }
 
@@ -77,7 +77,7 @@ class Dataset{
   /// \param i The i-th query results list of interest.
   /// \returns The offset of the first document in the i-th query results list.
   ///     This can be used to later invoke the \a at() function.
-  unsigned int offset(unsigned int i) const {
+  size_t offset(size_t i) const {
     return offsets_[i];
   }
 
@@ -85,7 +85,7 @@ class Dataset{
   ///
   /// \param i The i-th query results list of interest.
   /// \returns The requested QueryResults.
-  std::unique_ptr<QueryResults> getQueryResults(unsigned int i) const;
+  std::unique_ptr<QueryResults> getQueryResults(size_t i) const;
 
   /// Add a new training instance, i.e., a labeled document, to the dataset.
   ///
@@ -97,15 +97,15 @@ class Dataset{
                    boost::container::vector<Feature> i_features);
 
   /// Returns the number of features used to represent a document.
-  unsigned int num_features() const {
+  size_t num_features() const {
     return num_features_;
   }
   /// Returns the number of queries in the dataset.
-  unsigned int num_queries() const {
+  size_t num_queries() const {
     return num_queries_;
   }
   /// Returns the number of documents in the dataset.
-  unsigned int num_instances() const {
+  size_t num_instances() const {
     return num_instances_;
   }
 
@@ -123,8 +123,8 @@ class Dataset{
   quickrank::Label* labels_ = NULL;
   boost::container::vector<size_t> offsets_;
 
-  unsigned int last_instance_id_;
-  unsigned int max_instances_;
+  size_t last_instance_id_;
+  size_t max_instances_;
 
   /// The output stream operator.
   /// Prints the data reading time stats

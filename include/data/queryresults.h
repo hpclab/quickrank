@@ -45,7 +45,7 @@ class QueryResults : private boost::noncopyable {
   /// related to a specific query.
   /// \param n_instances The number of training instances (lines) in the dataset.
   /// \param n_features The number of features.
-  QueryResults(unsigned int n_results, Label* new_labels,
+  QueryResults(size_t n_results, Label* new_labels,
                Feature* new_features);
   virtual ~QueryResults();
 
@@ -55,7 +55,7 @@ class QueryResults : private boost::noncopyable {
   Label* labels() const {
     return labels_;
   }
-  unsigned int num_results() const {
+  size_t num_results() const {
     return num_results_;
   }
 
@@ -65,7 +65,7 @@ class QueryResults : private boost::noncopyable {
   ///
   /// \param scores vector of scores used for reverse sorting.
   /// \param dest output of the sorting indexing.
-  void indexing_of_sorted_labels(const Score* scores, unsigned int* dest) const;
+  void indexing_of_sorted_labels(const Score* scores, size_t* dest) const;
 
   /// Sorts the element of the current result list
   /// in descending order of the given \a scores vector
@@ -74,12 +74,13 @@ class QueryResults : private boost::noncopyable {
   /// \param scores vector of scores used for reverse sorting.
   /// \param dest output of the labels sorting.
   /// \param cutoff number of labels of interest, i.e., length of \a dest.
-  void sorted_labels(const Score* scores, Label* dest, const unsigned int cutoff) const;
+  void sorted_labels(const Score* scores, Label* dest,
+                     const size_t cutoff) const;
 
  private:
   Label* labels_;
   Feature* features_;
-  unsigned int num_results_;
+  size_t num_results_;
 
 };
 

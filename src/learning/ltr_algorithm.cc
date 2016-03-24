@@ -38,7 +38,7 @@ namespace learning {
 
 void LTR_Algorithm::score_dataset(std::shared_ptr<data::Dataset> dataset, Score* scores) const {
   const quickrank::Feature* d = dataset->at(0,0);
-  for (unsigned int i = 0; i < dataset->num_instances(); i++) {
+  for (size_t i = 0; i < dataset->num_instances(); i++) {
     scores[i] = score_document(d);
     d += dataset->num_features();
   }
@@ -82,12 +82,12 @@ std::shared_ptr<LTR_Algorithm> LTR_Algorithm::load_model_from_file(
   boost::property_tree::ptree info_ptree;
   boost::property_tree::ptree ensemble_ptree;
 
-  BOOST_FOREACH(const boost::property_tree::ptree::value_type& node, xml_tree.get_child("ranker")){
-  if (node.first == "info")
-  info_ptree = node.second;
-  else if (node.first == "ensemble")
-  ensemble_ptree = node.second;
-}
+  BOOST_FOREACH(const boost::property_tree::ptree::value_type& node, xml_tree.get_child("ranker")) {
+    if (node.first == "info")
+      info_ptree = node.second;
+    else if (node.first == "ensemble")
+      ensemble_ptree = node.second;
+  }
 
   std::string ranker_type = info_ptree.get<std::string>("type");
   if (ranker_type == forests::Mart::NAME_)

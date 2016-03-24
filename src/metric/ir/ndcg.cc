@@ -24,7 +24,6 @@
 
 #include "metric/ir/ndcg.h"
 
-
 namespace quickrank {
 namespace metric {
 namespace ir {
@@ -39,7 +38,7 @@ MetricScore Ndcg::compute_idcg(const quickrank::data::QueryResults* rl) const {
   std::sort(copyoflabels, copyoflabels + rl->num_results(),
             std::greater<int>());
   //compute dcg
-  MetricScore dcg = compute_dcg(copyoflabels,rl->num_results());
+  MetricScore dcg = compute_dcg(copyoflabels, rl->num_results());
 
   delete[] copyoflabels;
   return dcg;
@@ -68,10 +67,10 @@ std::unique_ptr<Jacobian> Ndcg::jacobian(
   if (idcg <= 0.0)
     return jacobian;
 
-  const unsigned int size = std::min(cutoff(), ranked->num_results());
+  const size_t size = std::min(cutoff(), ranked->num_results());
 
-  for (unsigned int i = 0; i < size; ++i) {
-    for (unsigned int j = i + 1; j < ranked->num_results(); ++j) {
+  for (size_t i = 0; i < size; ++i) {
+    for (size_t j = i + 1; j < ranked->num_results(); ++j) {
       // if the score is the same, non changes occur
       if (ranked->sorted_labels()[i] != ranked->sorted_labels()[j]) {
         //*p_jacobian =

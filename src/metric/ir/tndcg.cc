@@ -36,23 +36,23 @@ MetricScore Tndcg::compute_tndcg(const quickrank::data::QueryResults* rl,
   if (idcg <= 0.0)
     return 0;
 
-  unsigned int* idx = new unsigned int [rl->num_results()];
+  size_t* idx = new size_t[rl->num_results()];
   rl->indexing_of_sorted_labels(scores, idx);
 
-  const unsigned int size = std::min(cutoff(), rl->num_results());
+  const size_t size = std::min(cutoff(), rl->num_results());
   double tndcg = 0.0;
 
-  for (unsigned int i = 0; i < size;) {
+  for (size_t i = 0; i < size;) {
     // find how many with the same score
     // and compute avg score
     double avg_score = pow(2.0, rl->labels()[idx[i]]) - 1.0;
-    unsigned int j = i + 1;
+    size_t j = i + 1;
     while (j < rl->num_results() && scores[idx[i]] == scores[idx[j]]) {
       avg_score += pow(2.0, rl->labels()[idx[j]]) - 1.0;
       j++;
     }
     avg_score /= (double) (j - i);
-    for (unsigned int k = i; k < j; k++)
+    for (size_t k = i; k < j; k++)
       tndcg += avg_score / log2(k + 2.0f);
 
     i = j;
@@ -84,33 +84,33 @@ std::unique_ptr<Jacobian> Tndcg::jacobian(
   if (idcg <= 0.0)
     return jacobian;
 
-  const unsigned int size = std::min(cutoff(), ranked->num_results());
+  const size_t size = std::min(cutoff(), ranked->num_results());
 
   double* weights = new double[ranked->num_results()]();  // init with 0s
 
   /// \todo TODO: it makes sense to pre-compute weights also in ndcg
-  for (unsigned int i = 0; i < ranked->num_results();) {
+  for (size_t i = 0; i < ranked->num_results();) {
     // find how many with the same score
     // and compute avg score
-    unsigned int j = i + 1;
+    size_t j = i + 1;
     while (j < ranked->num_results()
         && ranked->sorted_scores()[i] == ranked->sorted_scores()[j])
       j++;
 
-    for (unsigned int k = i; k < j; k++)
+    for (size_t k = i; k < j; k++)
       weights[i] += (1.0 / log2(k + 2.0f));
     double tie_size = (double) (j - i);
     weights[i] /= tie_size;     // divide by tie size
     weights[i] /= idcg;         // divide now by idcg to save future operations
-    for (unsigned int k = i + 1; k < j; k++)
+    for (size_t k = i + 1; k < j; k++)
       weights[k] = weights[i];  // copy for ties
     i = j;
   }
 
   /// \todo TODO: jacobian->at is expensive, we should do this in the results list order
   /// and not in the re-sorted list
-  for (unsigned int i = 0; i < size; ++i) {
-    for (unsigned int j = i + 1; j < ranked->num_results(); ++j) {
+  for (size_t i = 0; i < size; ++i) {
+    for (size_t j = i + 1; j < ranked->num_results(); ++j) {
       // if the score is the same, non changes occur
       if (ranked->sorted_scores()[i] != ranked->sorted_scores()[j]
           && ranked->sorted_labels()[i] != ranked->sorted_labels()[j]) {

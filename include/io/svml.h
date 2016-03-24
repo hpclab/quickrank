@@ -52,6 +52,7 @@ class Svml : private boost::noncopyable {
   /// \param k The cut-off threshold.
   Svml() {
   }
+
   virtual ~Svml() {
   }
 

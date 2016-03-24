@@ -61,7 +61,7 @@ class LTR_Algorithm : private boost::noncopyable {
   virtual void learn(std::shared_ptr<data::Dataset> training_dataset,
                      std::shared_ptr<data::Dataset> validation_dataset,
                      std::shared_ptr<metric::ir::Metric> metric,
-                     unsigned int partial_save,
+                     size_t partial_save,
                      const std::string model_filename) = 0;
 
   /// Given and input \a dateset, the current ranker generates

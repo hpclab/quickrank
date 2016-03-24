@@ -25,14 +25,14 @@
 #include "learning/tree/ensemble.h"
 
 Ensemble::~Ensemble() {
-  for (unsigned int i = 0; i < size; ++i)
+  for (size_t i = 0; i < size; ++i)
     delete arr[i].root;
   free(arr);
 }
 
-void Ensemble::set_capacity(const unsigned int n) {
+void Ensemble::set_capacity(const size_t n) {
   if (arr) {
-    for (unsigned int i = 0; i < size; ++i)
+    for (size_t i = 0; i < size; ++i)
       delete arr[i].root;
     free(arr);
   }
@@ -49,10 +49,10 @@ void Ensemble::pop() {
 
 // assumes vertical dataset
 quickrank::Score Ensemble::score_instance(const quickrank::Feature* d,
-                                          const unsigned int offset) const {
+                                          const size_t offset) const {
   double sum = 0.0f;
 // #pragma omp parallel for reduction(+:sum)
-  for (unsigned int i = 0; i < size; ++i)
+  for (size_t i = 0; i < size; ++i)
     sum += arr[i].root->score_instance(d, offset) * arr[i].weight;
   return sum;
 }
@@ -60,8 +60,8 @@ quickrank::Score Ensemble::score_instance(const quickrank::Feature* d,
 // TODO TO BE REMOVED
 void Ensemble::write_outputtofile(FILE *f) {
   fprintf(f, "\n<ensemble>\n");
-  for (unsigned int i = 0; i < size; ++i) {
-    fprintf(f, "\t<tree id=\"%u\" weight=\"%.8f\">\n", i + 1, arr[i].weight);
+  for (size_t i = 0; i < size; ++i) {
+    fprintf(f, "\t<tree id=\"%zu\" weight=\"%.8f\">\n", i + 1, arr[i].weight);
     if (arr[i].root) {
       fprintf(f, "\t\t<split>\n");
       arr[i].root->write_outputtofile(f, 2);
@@ -76,7 +76,7 @@ std::ofstream& Ensemble::save_model_to_file(std::ofstream& os) const {
   auto old_precision = os.precision();
   os.setf(std::ios::floatfield, std::ios::fixed);
   os << "\t<ensemble>" << std::endl;
-  for (unsigned int i = 0; i < size; ++i) {
+  for (size_t i = 0; i < size; ++i) {
     os << std::setprecision(3);
     os << "\t\t<tree id=\"" << i + 1 << "\" weight=\"" << arr[i].weight << "\">"
        << std::endl;

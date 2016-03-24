@@ -29,11 +29,11 @@ class Ensemble {
 
  public:
   virtual ~Ensemble();
-  void set_capacity(const unsigned int n);
+  void set_capacity(const size_t n);
   void push(RTNode *root, const float weight, const float maxlabel);
   void pop();
 
-  unsigned int get_size() const {
+  size_t get_size() const {
     return size;
   }
   bool is_notempty() const {
@@ -42,7 +42,7 @@ class Ensemble {
 
   // assumes vertical dataset
   virtual quickrank::Score score_instance(const quickrank::Feature* d,
-                                          const unsigned int offset = 1) const;
+                                          const size_t offset = 1) const;
 
   void write_outputtofile(FILE *f);
   std::ofstream& save_model_to_file(std::ofstream& os) const;
@@ -58,7 +58,7 @@ class Ensemble {
     float weight = 0.0f;
     float maxlabel = 0.0f;
   };
-  unsigned int size = 0;
+  size_t size = 0;
   wt *arr = NULL;
 };
 

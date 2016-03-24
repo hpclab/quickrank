@@ -37,7 +37,7 @@ namespace ir {
  */
 class Dcg : public Metric {
  public:
-  explicit Dcg(int k = NO_CUTOFF)
+  explicit Dcg(size_t k = NO_CUTOFF)
       : Metric(k) {
   }
   virtual ~Dcg() {
@@ -60,7 +60,7 @@ class Dcg : public Metric {
   /// Computes the DCG\@K of a given array of labels.
   /// \param rl The given array of labels.
   /// \return DCG\@K for computed on the given labels.
-  MetricScore compute_dcg(const Label* labels, unsigned int len) const;
+  MetricScore compute_dcg(const Label* labels, size_t len) const;
 
  private:
   friend std::ostream& operator<<(std::ostream& os, const Dcg& ndcg) {
