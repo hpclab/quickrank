@@ -37,22 +37,20 @@ namespace forests {
 
 const std::string LambdaMart::NAME_ = "LAMBDAMART";
 
-void LambdaMart::init(
-    std::shared_ptr<quickrank::data::Dataset> training_dataset,
-    std::shared_ptr<quickrank::data::Dataset> validation_dataset) {
-  Mart::init(training_dataset, validation_dataset);
+void LambdaMart::init(std::shared_ptr<quickrank::data::VerticalDataset> training_dataset) {
+  Mart::init(training_dataset);
   const unsigned int nentries = training_dataset->num_instances();
   instance_weights_ = new double[nentries]();  //0.0f initialized
 }
 
-void LambdaMart::clear(std::shared_ptr<data::Dataset> training_dataset) {
-  Mart::clear(training_dataset);
+void LambdaMart::clear(size_t num_features) {
+  Mart::clear(num_features);
   if (instance_weights_)
     delete[] instance_weights_;
 }
 
 std::unique_ptr<RegressionTree> LambdaMart::fit_regressor_on_gradient(
-    std::shared_ptr<data::Dataset> training_dataset) {
+    std::shared_ptr<data::VerticalDataset> training_dataset) {
   //Fit a regression tree
   /// \todo TODO: memory management of regression tree is wrong!!!
   RegressionTree* tree = new RegressionTree(nleaves_, training_dataset.get(),
@@ -66,15 +64,14 @@ std::unique_ptr<RegressionTree> LambdaMart::fit_regressor_on_gradient(
 }
 
 void LambdaMart::compute_pseudoresponses(
-    std::shared_ptr<quickrank::data::Dataset> training_dataset,
+    std::shared_ptr<quickrank::data::VerticalDataset> training_dataset,
     quickrank::metric::ir::Metric* scorer) {
   const unsigned int cutoff = scorer->cutoff();
 
   const unsigned int nrankedlists = training_dataset->num_queries();
 #pragma omp parallel for
   for (unsigned int i = 0; i < nrankedlists; ++i) {
-    std::shared_ptr<data::QueryResults> qr = training_dataset->getQueryResults(
-        i);
+    std::shared_ptr<data::QueryResults> qr = training_dataset->getQueryResults(i);
 
     const unsigned int offset = training_dataset->offset(i);
     double *lambdas = pseudoresponses_ + offset;

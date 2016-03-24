@@ -75,21 +75,11 @@ class CustomLTR : public LTR_Algorithm {
 
 
   /// Returns the score of a given document.
-  virtual Score score_document(const Feature* d,
-                               const unsigned int offset = 1) const;
+  virtual Score score_document(const Feature* d) const;
 
   /// \todo TODO: add load_model();
 
   const Score FIXED_SCORE = 666.0;
-
- protected:
-
-  /// Prepare the dataset before training or scoring takes place.
-  ///
-  /// Different algorithms might modify the data representation
-  /// to improve efficacy or efficiency,
-  /// This is also used to make sure dataset is in the right vertical vs. horizontal format.
-  virtual void preprocess_dataset(std::shared_ptr<data::Dataset> dataset) const;
 
  private:
 

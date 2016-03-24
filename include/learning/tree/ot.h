@@ -29,7 +29,7 @@
 
 class ObliviousRT : public RegressionTree {
  public:
-  ObliviousRT(unsigned int nodes, quickrank::data::Dataset *dps, double *labels,
+  ObliviousRT(unsigned int nodes, quickrank::data::VerticalDataset *dps, double *labels,
               unsigned int minls, unsigned int treedepth)
       : RegressionTree(nodes, dps, labels, minls),
         treedepth(treedepth) {

@@ -25,6 +25,7 @@
 #include "metric/ir/dcg.h"
 #include "metric/ir/ndcg.h"
 #include "data/dataset.h"
+#include "data/vertical_dataset.h"
 #include "data/queryresults.h"
 #include "io/svml.h"
 #include <cmath>
@@ -34,7 +35,7 @@ BOOST_AUTO_TEST_CASE( Dataset_IO_Test ) {
 
   // read and check dataset
   quickrank::io::Svml reader;
-  std::unique_ptr<quickrank::data::Dataset> dataset = reader.read_horizontal(
+  std::shared_ptr<quickrank::data::Dataset> dataset = reader.read_horizontal(
       "quickranktestdata/msn1/msn1.fold1.train.5k.txt");
 
   // 226244459
@@ -97,18 +98,14 @@ BOOST_AUTO_TEST_CASE( Dataset_IO_Test ) {
           / ((pow(2, 3) - 1) + (pow(2, 2) - 1) / log2(3) + (pow(2, 2) - 1) / 2));
 
   // check vertical dataset
-  dataset->transpose();
-  qr = dataset->getQueryResults(0);
+  quickrank::data::VerticalDataset vd (dataset);
+  BOOST_CHECK_EQUAL(vd.num_features(), 136);
+  BOOST_CHECK_EQUAL(vd.num_instances(), 5000);
+  BOOST_CHECK_EQUAL(vd.num_queries(), 43);
+
+  qr = vd.getQueryResults(0);
   BOOST_CHECK_EQUAL(qr->num_results(), 86);
   BOOST_CHECK_EQUAL(qr->features()[0], 3);
   BOOST_CHECK_EQUAL(qr->features()[dataset->num_instances() + 1], 0);
   BOOST_CHECK_EQUAL(qr->features()[2 * dataset->num_instances() + 2], 2);
-
-  // check horizontal dataset
-  dataset->transpose();
-  qr = dataset->getQueryResults(0);
-  BOOST_CHECK_EQUAL(qr->num_results(), 86);
-  BOOST_CHECK_EQUAL(qr->features()[0], 3);
-  BOOST_CHECK_EQUAL(qr->features()[dataset->num_features() + 1], 0);
-  BOOST_CHECK_EQUAL(qr->features()[2 * dataset->num_features() + 2], 2);
 }

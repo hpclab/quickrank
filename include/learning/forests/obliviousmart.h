@@ -68,7 +68,7 @@ class ObliviousMart : public Mart {
   ///
   /// \param training_dataset The dataset used for training
   virtual std::unique_ptr<RegressionTree> fit_regressor_on_gradient(
-      std::shared_ptr<data::Dataset> training_dataset);
+      std::shared_ptr<data::VerticalDataset> training_dataset);
 
   virtual std::ofstream& save_model_to_file(std::ofstream& os) const;
 
