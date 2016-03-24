@@ -32,6 +32,8 @@
 #include "learning/forests/obliviousmart.h"
 // Added by Chiara Pierucci Andrea Battistini
 #include "learning/linear/coordinate_ascent.h"
+// Added by Tommaso Papini and Gabriele Bani
+#include "learning/forests/rankboost.h"
 
 namespace quickrank {
 namespace learning {
@@ -106,6 +108,10 @@ std::shared_ptr<LTR_Algorithm> LTR_Algorithm::load_model_from_file(
   if (ranker_type == linear::CoordinateAscent::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
         new linear::CoordinateAscent(info_ptree, ensemble_ptree));
+  // Rankboost added by Tommaso Papini and Gabriele Bani
+  if (ranker_type == forests::Rankboost::NAME_)
+    return std::shared_ptr<LTR_Algorithm>(
+        new forests::Rankboost(info_ptree, ensemble_ptree));
 
   return NULL;
 }
