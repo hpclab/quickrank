@@ -21,7 +21,7 @@
  */
 
 /**
- * \mainpage QuickRank: Efficient Learning-to-Rank Toolkit
+ * \mainpage QuickRank: A C++ suite of Learning to Rank algorithms
  *
  * \section nutshell QuickRank in a nutshell
  *
@@ -35,38 +35,25 @@
  *   - \b LamdaMART: Q. Wu, C. Burges, K. Svore, and J. Gao.
  *   Adapting boosting for information retrieval measures.
  *   Information Retrieval, 2010.
- *   - \b Oblivious GBRT / LambdaMart: Inspired to I. Segalovich. Machine learning in search quality at yandex.
- *   Invited Talk, SIGIR, 2010.
+ *   - \b Oblivious \b GBRT / \b LambdaMart: Inspired to I. Segalovich. Machine learning in search quality at Yandex.
+ *   Invited Talk, ACM SIGIR, 2010.
  *   - \b CoordinateAscent: Metzler, D., Croft, W.B.: Linear feature-based models for information retrieval.
- *   Information Retrieval 10(3), 257–274 (2007)
- *
- * \subsection authors Authors and Contributors
- *
- * QuickRank has been developed by:
- *   - Claudio Lucchese (since Sept. 2014)
- *   - Franco Maria Nardini (since Sept. 2014)
- *   - Nicola Tonellotto (since Sept. 2014)
- *   - Gabriele Capannini (v0.0. June 2014 - Sept. 2014)
- *   - Andrea Battistini and Chiara Pierucci (Implementation of CoordinateAscent - March 2015)
- *   - Tommaso Papini and Gabriele Bani (Implementation of Rankboost - October 2015)
+ *   Information Retrieval 10(3), 257–274 (2007).
+ *   - \b RankBoost: Freund, Y., Iyer, R., Schapire, R. E., & Singer, Y. An efficient boosting algorithm
+ *   for combining preferences. The Journal of machine learning research, 4, 933-969 (2003).
  *
  * \subsection download Get QuickRank
- * QuickRank is available here: <a href="http://quickrank.isti.cnr.it">http://quickrank.isti.cnr.it</a>.
+ * The homepage of QuickRank is available at: <a href="http://quickrank.isti.cnr.it">http://quickrank.isti.cnr.it</a>.
  *
- * \section Usage
+ * \subsection compile Compile and Use QuickRank
+ * 
+ * - clone the GitHub repository as shown in the dedicated section of the QuickRank homepage.
  *
- * \subsection cmd Command line options
+ * - run "make";
  *
- * \todo command line description
+ * - run "bin/quicklearn -h" to have the list of command line options.
  *
- * \subsection compile Compilation
- *
- *
- * \section log ChangeLog
- *
- * - xx/xx/2014: Version 1.1 released
- *
- *
+ * - have fun! :)
  */
 
 /// \todo TODO: (by cla) Decide on outpuformat, logging and similar.
