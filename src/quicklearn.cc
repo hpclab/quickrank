@@ -48,7 +48,7 @@
  *   - Nicola Tonellotto (since Sept. 2014)
  *   - Gabriele Capannini (v0.0. June 2014 - Sept. 2014)
  *   - Andrea Battistini and Chiara Pierucci (Implementation of CoordinateAscent - March 2015)
- *
+ *   - Tommaso Papini and Gabriele Bani (Implementation of Rankboost - October 2015)
  *
  * \subsection download Get QuickRank
  * QuickRank is available here: <a href="http://quickrank.isti.cnr.it">http://quickrank.isti.cnr.it</a>.
@@ -88,6 +88,7 @@
 #include "learning/forests/lambdamart.h"
 #include "learning/forests/obliviousmart.h"
 #include "learning/forests/obliviouslambdamart.h"
+#include "learning/forests/rankboost.h"
 #include "learning/linear/coordinate_ascent.h"
 #include "learning/custom/custom_ltr.h"
 #include "metric/metricfactory.h"
@@ -170,6 +171,7 @@ int main(int argc, char *argv[]) {
           + quickrank::learning::forests::LambdaMart::NAME_ + "|"
           + quickrank::learning::forests::ObliviousMart::NAME_ + "|"
           + quickrank::learning::forests::ObliviousLambdaMart::NAME_ + "|"
+          + quickrank::learning::forests::Rankboost::NAME_ + "|"
           + quickrank::learning::linear::CoordinateAscent::NAME_ + "|"
           + quickrank::learning::CustomLTR::NAME_ + "]").c_str());
   learning_options.add_options()(
@@ -334,6 +336,9 @@ int main(int argc, char *argv[]) {
           new quickrank::learning::forests::ObliviousLambdaMart(ntrees, shrinkage,
                                                       nthresholds, treedepth,
                                                       minleafsupport, esr));
+    else if (algorithm_string == quickrank::learning::forests::Rankboost::NAME_)
+      ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
+          new quickrank::learning::forests::Rankboost(ntrees));
     else if (algorithm_string
         == quickrank::learning::linear::CoordinateAscent::NAME_)
       ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
