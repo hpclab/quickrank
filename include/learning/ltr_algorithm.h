@@ -30,7 +30,7 @@
 namespace quickrank {
 namespace learning {
 
-class LTR_Algorithm : private boost::noncopyable {
+class LTR_Algorithm {
 
  public:
   LTR_Algorithm() {

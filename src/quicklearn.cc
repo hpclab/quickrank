@@ -39,6 +39,8 @@
  *   Invited Talk, ACM SIGIR, 2010.
  *   - \b CoordinateAscent: Metzler, D., Croft, W.B.: Linear feature-based models for information retrieval.
  *   Information Retrieval 10(3), 257–274 (2007).
+ *   - \b RankBoost: Freund, Y., Iyer, R., Schapire, R. E., & Singer, Y. An efficient boosting algorithm
+ *   for combining preferences. The Journal of machine learning research, 4, 933-969 (2003).
  *
  * \subsection download Get QuickRank
  * The homepage of QuickRank is available at: <a href="http://quickrank.isti.cnr.it">http://quickrank.isti.cnr.it</a>.
@@ -73,6 +75,7 @@
 #include "learning/forests/lambdamart.h"
 #include "learning/forests/obliviousmart.h"
 #include "learning/forests/obliviouslambdamart.h"
+#include "learning/forests/rankboost.h"
 #include "learning/linear/coordinate_ascent.h"
 #include "learning/custom/custom_ltr.h"
 #include "metric/metricfactory.h"
@@ -162,6 +165,7 @@ int main(int argc, char *argv[]) {
           + quickrank::learning::forests::LambdaMart::NAME_ + "|"
           + quickrank::learning::forests::ObliviousMart::NAME_ + "|"
           + quickrank::learning::forests::ObliviousLambdaMart::NAME_ + "|"
+          + quickrank::learning::forests::Rankboost::NAME_ + "|"
           + quickrank::learning::linear::CoordinateAscent::NAME_ + "|"
           + quickrank::learning::CustomLTR::NAME_ + "]").c_str());
   learning_options.add_options()(
@@ -326,14 +330,13 @@ int main(int argc, char *argv[]) {
     else if (algorithm_string
         == quickrank::learning::forests::ObliviousLambdaMart::NAME_)
       ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
-          new quickrank::learning::forests::ObliviousLambdaMart(ntrees,
-                                                                shrinkage,
-                                                                nthresholds,
-                                                                treedepth,
-                                                                minleafsupport,
-                                                                esr));
-    else if (algorithm_string
-        == quickrank::learning::linear::CoordinateAscent::NAME_)
+          new quickrank::learning::forests::ObliviousLambdaMart(ntrees, shrinkage,
+                                                      nthresholds, treedepth,
+                                                      minleafsupport, esr));
+    else if (algorithm_string == quickrank::learning::forests::Rankboost::NAME_)
+      ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
+          new quickrank::learning::forests::Rankboost(ntrees));
+    else if (algorithm_string == quickrank::learning::linear::CoordinateAscent::NAME_)
       ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
           new quickrank::learning::linear::CoordinateAscent(num_points,
                                                             window_size,
