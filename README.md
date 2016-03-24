@@ -1,4 +1,4 @@
-<img src=documentation/quickrank.png/>
+<img src=http://quickrank.isti.cnr.it/doxygen/quickrank.png>
 
 QuickRank: A C++ suite of Learning to Rank algorithms
 ===========
