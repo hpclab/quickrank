@@ -133,8 +133,8 @@ private:
     Feature** THETA = NULL;
     unsigned int* n_theta = NULL;
     unsigned int*** SDF = NULL;
-    Score* training_scores;
-    Score* validation_scores;
+    Score* training_scores = NULL;
+    Score* validation_scores = NULL;
     unsigned int T;
     unsigned int best_T;
     bool go_parallel;

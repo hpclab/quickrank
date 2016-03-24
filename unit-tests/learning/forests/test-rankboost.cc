@@ -126,8 +126,9 @@ BOOST_AUTO_TEST_CASE( RankBoost_Test ) {
   // RankLIb searches exponentially, while we search linearly
   // NDCG@10 on training data: 0.4303
   // NDCG@10 on validation data: 0.3929
+  // NDCG@10 on test data: 0.3159
 
-  BOOST_CHECK(training_score >= 0.4521);
-  BOOST_CHECK(validation_score >= 0.4083);
-  BOOST_CHECK(test_score >= 0.3204);
+  BOOST_CHECK(training_score >= 0.4431);
+  BOOST_CHECK(validation_score >= 0.4208);
+  BOOST_CHECK(test_score >= 0.3108);
 }

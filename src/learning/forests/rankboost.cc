@@ -109,7 +109,7 @@ void Rankboost::learn(
         unsigned int partial_save, const std::string output_basename) {
 
     std::cout << std::endl << "# Rankboost running..." << std::endl;
-    std::chrono::high_resolution_clock::time_point rank_start = std::chrono::high_resolution_clock::now();
+    auto rank_start = std::chrono::high_resolution_clock::now();
     std::cout << "#" << std::endl;
     const char* on_off[2] = {"OFF", "ON"};
     std::cout << "# Parallel: " << on_off[go_parallel] << std::endl;
@@ -167,24 +167,29 @@ void Rankboost::learn(
         MetricScore metric_on_training = scorer->evaluate_dataset(training_dataset, training_scores);
         printf("| %-12.4g", metric_on_training);
 
-        for (unsigned int i = 0; i < validation_dataset->num_instances(); i++) {
-            validation_scores[i] += alpha * wr->score_document(validation_dataset->at(i, 0));
-        }
+        if (validation_dataset) {
+          for (unsigned int i = 0; i < validation_dataset->num_instances(); i++)
+              validation_scores[i] += alpha * wr->score_document(validation_dataset->at(i, 0));
+          MetricScore metric_on_validation = scorer->evaluate_dataset(validation_dataset, validation_scores);
+          printf("| %-13.4g", metric_on_validation);
 
-        MetricScore metric_on_validation = scorer->evaluate_dataset(validation_dataset, validation_scores);
-        printf("| %-13.4g", metric_on_validation);
-        if (metric_on_validation > best_metric_on_validation) {
-          best_metric_on_validation = metric_on_validation;
+          if (metric_on_validation > best_metric_on_validation) {
+            best_metric_on_validation = metric_on_validation;
+            best_metric_on_training = metric_on_training;
+            best_T = t+1;
+            printf("*");
+          } else
+            printf(" ");
+        } else {
           best_metric_on_training = metric_on_training;
-          best_T = T;
-          printf("*");
-        } else
-          printf(" ");
+          best_T = t+1;
+          printf("| ------        ");
+        }
 
         // update document pair weights
         update_d(training_dataset, wr, alpha);
 
-        std::chrono::high_resolution_clock::time_point train_t_end = std::chrono::high_resolution_clock::now();
+        auto train_t_end = std::chrono::high_resolution_clock::now();
         double train_t_time = std::chrono::duration_cast<std::chrono::duration<double>>(train_t_end - train_t_start).count();
 
         printf("| %-5.3g s.%-2s|\n", train_t_time, "");
@@ -193,21 +198,23 @@ void Rankboost::learn(
 
     std::cout << table_hline << std::endl;
 
+    // destroy temp objects
+    clean(training_dataset);
+
     std::cout << "#" << std::endl;
-    std::chrono::high_resolution_clock::time_point train_end = std::chrono::high_resolution_clock::now();
+    auto train_end = std::chrono::high_resolution_clock::now();
     double train_time = std::chrono::duration_cast<std::chrono::duration<double>>(train_end - train_start).count();
     std::cout << "# Training completed! (" << std::setprecision(3) << train_time << " s.)" << std::endl;
 
     // print metric on training/validation
     std::cout << "#" << std::endl;
     std::cout << std::setprecision(4) << "# " << *scorer << " on training: " << best_metric_on_training << std::endl;
-    std::cout << std::setprecision(4) << "# " << *scorer << " on validation: " << best_metric_on_validation << std::endl;
+    if (validation_dataset)
+      std::cout << std::setprecision(4) << "# " << *scorer << " on validation: " << best_metric_on_validation << std::endl;
 
-    // destroy temp objects
-    clean(training_dataset);
 
     std::cout << "#" << std::endl;
-    std::chrono::high_resolution_clock::time_point rank_end = std::chrono::high_resolution_clock::now();
+    auto rank_end = std::chrono::high_resolution_clock::now();
     double rank_time = std::chrono::duration_cast<std::chrono::duration<double>>(rank_end - rank_start).count();
     std::cout << "# Rankboost done! (" << std::setprecision(3) << rank_time << " s.)" << std::endl;
 }
@@ -219,14 +226,15 @@ void Rankboost::init(std::shared_ptr<data::Dataset> training_dataset,
 
     std::cout << "#" << std::endl;
     std::cout << "# Initializing...";
-    std::chrono::high_resolution_clock::time_point init_start = std::chrono::high_resolution_clock::now();
+    auto init_start = std::chrono::high_resolution_clock::now();
 
     const unsigned int nq = training_dataset->num_queries();
     const unsigned int nf = training_dataset->num_features();
     const unsigned int ni = training_dataset->num_instances();
 
     training_scores = new Score[training_dataset->num_instances()]();
-    validation_scores = new Score[validation_dataset->num_instances()]();
+    if (validation_dataset)
+      validation_scores = new Score[validation_dataset->num_instances()]();
 
     setenv("OMP_SCHEDULE", omp_schedule, 1);
 
@@ -310,7 +318,7 @@ void Rankboost::init(std::shared_ptr<data::Dataset> training_dataset,
         }
     }
     
-    std::chrono::high_resolution_clock::time_point init_end = std::chrono::high_resolution_clock::now();
+    auto init_end = std::chrono::high_resolution_clock::now();
     double init_time = std::chrono::duration_cast<std::chrono::duration<double>>(init_end - init_start).count();
     std::cout << " [Done] (" << std::setprecision(3) << init_time << " s.)" << std::endl;
 } // init
@@ -419,9 +427,13 @@ void Rankboost::clean(std::shared_ptr<data::Dataset> dataset) {
 
     std::cout << "#" << std::endl;
     std::cout << "# Cleaning...";
-    std::chrono::high_resolution_clock::time_point clean_start =
-            std::chrono::high_resolution_clock::now();
+    auto clean_start = std::chrono::high_resolution_clock::now();
 
+/*    if (weak_rankers) {
+        for (unsigned int t = best_T; t < T; t++)
+            delete weak_rankers[t];
+    }
+*/
     const unsigned int nq = dataset->num_queries();
     const unsigned int nf = dataset->num_features();
 
@@ -484,7 +496,7 @@ void Rankboost::clean(std::shared_ptr<data::Dataset> dataset) {
 Score Rankboost::score_document(const quickrank::Feature* d) const {
 
     Score doc_score = 0.0;
-    for (unsigned int t = 0; t < T; t++) {
+    for (unsigned int t = 0; t < best_T; t++) {
         doc_score += alphas[t] * weak_rankers[t]->score_document(d);
     }
     return doc_score;
