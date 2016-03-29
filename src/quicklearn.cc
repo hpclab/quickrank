@@ -32,7 +32,7 @@
  *   - \b GBRT: J. H. Friedman. Greedy function approximation: a gradient boosting machine.
  *   Annals of Statistics, pages 1189–1232,
  2001.
- *   - \b LamdaMART: Q. Wu, C. Burges, K. Svore, and J. Gao.
+ *   - \b LambdaMART: Q. Wu, C. Burges, K. Svore, and J. Gao.
  *   Adapting boosting for information retrieval measures.
  *   Information Retrieval, 2010.
  *   - \b Oblivious \b GBRT / \b LambdaMart: Inspired to I. Segalovich. Machine learning in search quality at Yandex.
