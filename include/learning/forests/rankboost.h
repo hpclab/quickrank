@@ -93,7 +93,7 @@ public:
     Rankboost(unsigned int max_wr);
 
     Rankboost(const boost::property_tree::ptree &info_ptree,
-                     const boost::property_tree::ptree &model_ptree);
+              const boost::property_tree::ptree &model_ptree);
 
     virtual ~Rankboost();
 
@@ -125,6 +125,10 @@ public:
 
     /// Returns the score of a given document.
     virtual Score score_document(const Feature* d) const;
+
+    /// Returns the partial scores of a given document, tree.
+    /// \param d is a pointer to the document to be evaluated
+    virtual std::shared_ptr<std::vector<Score>> detailed_scores_document(const Feature* d) const;
 
 private:
     float*** D = NULL;

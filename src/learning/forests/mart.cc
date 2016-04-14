@@ -226,7 +226,8 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
 
     compute_pseudoresponses(vertical_training, scorer.get());
 
-    //update the histogram with these training_seting labels (the feature histogram will be used to find the best tree rtnode)
+    //update the histogram with these training_seting labels
+    //(the feature histogram will be used to find the best tree rtnode)
     hist_->update(pseudoresponses_, training_dataset->num_instances());
 
     //Fit a regression tree

@@ -57,6 +57,15 @@ quickrank::Score Ensemble::score_instance(const quickrank::Feature* d,
   return sum;
 }
 
+std::shared_ptr<std::vector<quickrank::Score>>
+  Ensemble::detailed_scores_instance(const quickrank::Feature* d,
+                                     const size_t offset) const {
+  std::vector<quickrank::Score> scores(size);
+  for (unsigned int i = 0; i < size; ++i)
+    scores[i] = arr[i].root->score_instance(d, offset) * arr[i].weight;
+  return std::make_shared<std::vector<quickrank::Score>>(std::move(scores));
+}
+
 // TODO TO BE REMOVED
 void Ensemble::write_outputtofile(FILE *f) {
   fprintf(f, "\n<ensemble>\n");

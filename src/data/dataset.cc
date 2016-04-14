@@ -61,7 +61,7 @@ Dataset::~Dataset() {
 }
 
 void Dataset::addInstance(QueryID q_id, Label i_label,
-                          boost::container::vector<Feature> i_features) {
+                          std::vector<Feature> i_features) {
 
   if (i_features.size() > num_features_ || num_instances_ == max_instances_) {
     std::cerr << "!!! Impossible to add a new instance to the dataset."

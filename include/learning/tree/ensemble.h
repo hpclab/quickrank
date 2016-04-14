@@ -40,9 +40,12 @@ class Ensemble {
     return size > 0;
   }
 
-  // assumes vertical dataset
   virtual quickrank::Score score_instance(const quickrank::Feature* d,
                                           const size_t offset = 1) const;
+
+  virtual std::shared_ptr<std::vector<quickrank::Score>>
+      detailed_scores_instance(const quickrank::Feature* d,
+                               const size_t offset = 1) const;
 
   void write_outputtofile(FILE *f);
   std::ofstream& save_model_to_file(std::ofstream& os) const;

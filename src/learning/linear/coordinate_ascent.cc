@@ -262,7 +262,7 @@ Score CoordinateAscent::score_document(const Feature* d) const {
   }
   return score;
 }
-
+  
 std::ofstream& CoordinateAscent::save_model_to_file(std::ofstream& os) const {
   // write ranker description
   os << "\t<info>" << std::endl;

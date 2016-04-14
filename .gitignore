@@ -6,7 +6,6 @@ _build
 .project
 .settings
 .idea/
-CMakeLists.txt
 documentation/html
 *~
 *.d

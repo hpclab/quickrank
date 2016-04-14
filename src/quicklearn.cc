@@ -46,7 +46,7 @@
  * The homepage of QuickRank is available at: <a href="http://quickrank.isti.cnr.it">http://quickrank.isti.cnr.it</a>.
  *
  * \subsection compile Compile and Use QuickRank
- * 
+ *
  * - clone the GitHub repository as shown in the dedicated section of the QuickRank homepage.
  *
  * - run "make";
@@ -66,6 +66,7 @@
 #include <memory>
 #include <stdio.h>
 #include <unistd.h>
+#include <fstream>
 
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
@@ -77,6 +78,8 @@
 #include "learning/forests/obliviouslambdamart.h"
 #include "learning/forests/rankboost.h"
 #include "learning/linear/coordinate_ascent.h"
+#include "learning/linear/line_search.h"
+#include "pruning/ensemble_pruning.h"
 #include "learning/custom/custom_ltr.h"
 #include "metric/metricfactory.h"
 #include "io/xml.h"
@@ -88,28 +91,30 @@ void print_logo() {
   if (isatty(fileno(stdout))) {
     std::string color_reset = "\033[0m";
     std::string color_logo = "\033[1m\033[32m";
-    std::cout
-        << color_logo
-        << std::endl
-        << "      _____  _____"
-        << std::endl
-        << "     /    / /____/"
-        << std::endl
-        << "    /____\\ /    \\          QuickRank has been developed by hpc.isti.cnr.it"
-        << std::endl
-        << "    ::Quick:Rank::                                   quickrank@isti.cnr.it"
-        << std::endl << color_reset << std::endl;
+    std::cout << color_logo << std::endl
+              << "      _____  _____" << std::endl
+              << "     /    / /____/"  << std::endl
+              << "    /____\\ /    \\          QuickRank has been developed by hpc.isti.cnr.it" << std::endl
+              << "    ::Quick:Rank::                                   quickrank@isti.cnr.it" << std::endl
+              << color_reset << std::endl;
   } else {
-    std::cout
-        << std::endl
-        << "      _____  _____"
-        << std::endl
-        << "     /    / /____/"
-        << std::endl
-        << "    /____\\ /    \\          QuickRank has been developed by hpc.isti.cnr.it"
-        << std::endl
-        << "    ::Quick:Rank::                                   quickrank@isti.cnr.it"
-        << std::endl << std::endl;
+    std::cout << std::endl
+              << "      _____  _____" << std::endl
+              << "     /    / /____/" << std::endl
+              << "    /____\\ /    \\          QuickRank has been developed by hpc.isti.cnr.it" << std::endl
+              << "    ::Quick:Rank::                                   quickrank@isti.cnr.it" << std::endl
+              << std::endl;
+  }
+}
+
+inline bool file_exists(const std::string& name) {
+  std::ifstream f(name.c_str());
+  if (f.good()) {
+    f.close();
+    return true;
+  } else {
+    f.close();
+    return false;
   }
 }
 
@@ -129,11 +134,14 @@ int main(int argc, char *argv[]) {
   size_t esr = 100;
   size_t ntreeleaves = 10;
   size_t treedepth = 3;
-  std::string train_metric_string = "NDCG";
+  std::string train_metric_string = quickrank::metric::ir::Ndcg::NAME_;
   size_t train_cutoff = 10;
-  std::string test_metric_string = "NDCG";
+  std::string test_metric_string = quickrank::metric::ir::Ndcg::NAME_;
   size_t test_cutoff = 10;
   size_t partial_save = 100;
+  bool detailed_testing = false;
+  bool ensemble_pruning_with_line_search = false;
+  bool adaptive = false;
   std::string training_filename;
   std::string validation_filename;
   std::string test_filename;
@@ -141,6 +149,7 @@ int main(int argc, char *argv[]) {
   std::string model_filename;
   std::string scores_filename;
   std::string xml_filename;
+  std::string xml_linesearch_filename;
   std::string c_filename;
   std::string model_code_type;
 
@@ -152,6 +161,12 @@ int main(int argc, char *argv[]) {
   float reduction_factor = 0.95;
   size_t max_failed_vali = 20;
 
+  // ------------------------------------------
+  // Ensemble Pruning added by Salvatore Trani
+  double epruning_rate = 0.5;
+  std::string epruning_method = quickrank::pruning::EnsemblePruning::getPruningMethod(
+      quickrank::pruning::EnsemblePruning::PruningMethod::RANDOM);
+
   // data structures
   std::shared_ptr<quickrank::learning::LTR_Algorithm> ranking_algorithm;
 
@@ -161,13 +176,17 @@ int main(int argc, char *argv[]) {
       "algo",
       po::value<std::string>(&algorithm_string)->default_value(
           algorithm_string),
-      ("LtR algorithm [" + quickrank::learning::forests::Mart::NAME_ + "|"
+      ("LtR algorithm ["
+          + quickrank::learning::forests::Mart::NAME_ + "|"
           + quickrank::learning::forests::LambdaMart::NAME_ + "|"
           + quickrank::learning::forests::ObliviousMart::NAME_ + "|"
           + quickrank::learning::forests::ObliviousLambdaMart::NAME_ + "|"
           + quickrank::learning::forests::Rankboost::NAME_ + "|"
           + quickrank::learning::linear::CoordinateAscent::NAME_ + "|"
-          + quickrank::learning::CustomLTR::NAME_ + "]").c_str());
+          + quickrank::learning::linear::LineSearch::NAME_ + "|"
+          + quickrank::pruning::EnsemblePruning::NAME_ + "|"
+          + quickrank::learning::CustomLTR::NAME_ + "]")
+          .c_str());
   learning_options.add_options()(
       "train-metric",
       po::value<std::string>(&train_metric_string)->default_value(
@@ -254,6 +273,10 @@ int main(int argc, char *argv[]) {
       "scores",
       po::value<std::string>(&scores_filename)->default_value(scores_filename),
       "set output scores file");
+  testing_options.add_options()(
+      "detailed",
+      po::bool_switch(&detailed_testing),
+      "set detailed testing [applies only to ensemble models]");
 
   po::options_description fast_scoring_options("Fast Scoring options");
   fast_scoring_options.add_options()(
@@ -268,31 +291,77 @@ int main(int argc, char *argv[]) {
       "set C code generation strategy. Allowed options are: \"baseline\", \"oblivious\". \"vpred\".");
 
   // CoordinateAscent options add by Chiara Pierucci
-  po::options_description coordasc_options(
-      "Training options for Coordinate Ascent");
-  coordasc_options.add_options()(
+  po::options_description coordasc_linesearch_options(
+      "Training options for Coordinate Ascent and Line Search");
+  coordasc_linesearch_options.add_options()(
       "num-samples",
       po::value<size_t>(&num_points)->default_value(num_points),
       "set number of samples in search window");
-  coordasc_options.add_options()(
+  coordasc_linesearch_options.add_options()(
       "window-size", po::value<float>(&window_size)->default_value(window_size),
       "set search window size");
-  coordasc_options.add_options()(
+  coordasc_linesearch_options.add_options()(
       "reduction-factor",
       po::value<float>(&reduction_factor)->default_value(reduction_factor),
       "set window reduction factor");
-  coordasc_options.add_options()(
+  coordasc_linesearch_options.add_options()(
       "max-iterations",
       po::value<size_t>(&max_iterations)->default_value(max_iterations),
       "set number of max iterations");
-  coordasc_options.add_options()(
+  coordasc_linesearch_options.add_options()(
       "max-failed-valid",
       po::value<size_t>(&max_failed_vali)->default_value(max_failed_vali),
       "set number of fails on validation before exit");
 
+  // LineSearch options add by Salvatore Trani
+  po::options_description linesearch_options(
+      "Training options for Line Search");
+  linesearch_options.add_options()(
+      "adaptive",
+      po::bool_switch(&adaptive),
+      "set adaptive reduction factor (based on last iteration metric gain)");
+
+  // Ensemble Pruning options add by Salvatore Trani
+  po::options_description epruning_options(
+      "Training options for Ensemble Pruning");
+  epruning_options.add_options()(
+      "pruning-rate",
+      po::value<double>(&epruning_rate)->default_value(epruning_rate),
+      "ensemble to prune (either as a ratio with respect to ensemble size or "
+          "as an absolute number of estimators to prune)");
+
+
+  std::string pruningMethods = "";
+  for (auto i: quickrank::pruning::EnsemblePruning::pruningMethodName) {
+    pruningMethods += i + "|";
+  }
+  pruningMethods = pruningMethods.substr(0, pruningMethods.size() - 1);
+
+  epruning_options.add_options()(
+      "pruning-method",
+      po::value<std::string>(&epruning_method)->default_value(epruning_method),
+      ("method for pruning the ensemble [" + pruningMethods + "]").c_str());
+
+  epruning_options.add_options()(
+      "with-line-search",
+      po::bool_switch(&ensemble_pruning_with_line_search),
+      "ensemble pruning is made in conjunction with line search "
+          "[related parameters accepted]");
+  epruning_options.add_options()(
+      "line-search-model",
+          po::value<std::string>(&xml_linesearch_filename)->default_value(
+              xml_linesearch_filename),
+          "set line search XML file path for loading line search model "
+          "(options and already trained weights)");
+
   po::options_description all_desc("Allowed options");
-  all_desc.add(learning_options).add(tree_model_options).add(coordasc_options)
-      .add(testing_options).add(fast_scoring_options);
+  all_desc.add(learning_options)
+      .add(tree_model_options)
+      .add(coordasc_linesearch_options)
+      .add(linesearch_options)
+      .add(epruning_options)
+      .add(testing_options)
+      .add(fast_scoring_options);
   all_desc.add_options()("help,h", "produce help message");
 
   po::variables_map vm;
@@ -320,15 +389,12 @@ int main(int argc, char *argv[]) {
           new quickrank::learning::forests::Mart(ntrees, shrinkage, nthresholds,
                                                  ntreeleaves, minleafsupport,
                                                  esr));
-    else if (algorithm_string
-        == quickrank::learning::forests::ObliviousMart::NAME_)
+    else if (algorithm_string == quickrank::learning::forests::ObliviousMart::NAME_)
       ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
           new quickrank::learning::forests::ObliviousMart(ntrees, shrinkage,
-                                                          nthresholds,
-                                                          treedepth,
-                                                          minleafsupport, esr));
-    else if (algorithm_string
-        == quickrank::learning::forests::ObliviousLambdaMart::NAME_)
+                                                      nthresholds, treedepth,
+                                                      minleafsupport, esr));
+    else if (algorithm_string == quickrank::learning::forests::ObliviousLambdaMart::NAME_)
       ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
           new quickrank::learning::forests::ObliviousLambdaMart(ntrees, shrinkage,
                                                       nthresholds, treedepth,
@@ -343,7 +409,44 @@ int main(int argc, char *argv[]) {
                                                             reduction_factor,
                                                             max_iterations,
                                                             max_failed_vali));
-    else if (algorithm_string == quickrank::learning::CustomLTR::NAME_)
+    else if (algorithm_string == quickrank::learning::linear::LineSearch::NAME_)
+      ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
+          new quickrank::learning::linear::LineSearch(num_points,
+                                                      window_size,
+                                                      reduction_factor,
+                                                      max_iterations,
+                                                      max_failed_vali,
+                                                      adaptive));
+    else if (algorithm_string == quickrank::pruning::EnsemblePruning::NAME_) {
+      if (!ensemble_pruning_with_line_search)
+        ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
+          new quickrank::pruning::EnsemblePruning(epruning_method,
+                                                  epruning_rate));
+      else {
+        std::shared_ptr<quickrank::learning::linear::LineSearch> lineSearch;
+        if (!xml_linesearch_filename.empty() &&
+            file_exists(xml_linesearch_filename)) {
+
+          // We should load the line search model (both weights and parameters)
+          lineSearch = std::dynamic_pointer_cast<quickrank::learning::linear::LineSearch>(
+              quickrank::learning::LTR_Algorithm::load_model_from_file(
+                  xml_linesearch_filename));
+
+        } else {
+          // We should create a new line search model (with default weights,
+          // to train in the pre-pruning step if it has to be done)
+          lineSearch = std::shared_ptr<quickrank::learning::linear::LineSearch>(
+              new quickrank::learning::linear::LineSearch(
+                  num_points, window_size, reduction_factor, max_iterations,
+                  max_failed_vali, adaptive));
+        }
+
+        ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
+            new quickrank::pruning::EnsemblePruning(epruning_method,
+                                                    epruning_rate,
+                                                    lineSearch));
+      }
+    } else if (algorithm_string == quickrank::learning::CustomLTR::NAME_)
       ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
           new quickrank::learning::CustomLTR());
     else {
@@ -353,8 +456,7 @@ int main(int argc, char *argv[]) {
 
     // METRIC STUFF
     std::shared_ptr<quickrank::metric::ir::Metric> training_metric =
-        quickrank::metric::ir::ir_metric_factory(train_metric_string,
-                                                 train_cutoff);
+        quickrank::metric::ir::ir_metric_factory(train_metric_string, train_cutoff);
     if (!training_metric) {
       std::cout << " !! Train Metric was not set properly" << std::endl;
       exit(EXIT_FAILURE);
@@ -370,7 +472,8 @@ int main(int argc, char *argv[]) {
                                                  training_filename,
                                                  validation_filename,
                                                  features_filename,
-                                                 model_filename, partial_save);
+                                                 model_filename,
+                                                 partial_save);
   }
 
   if (!test_filename.empty()) {
@@ -387,8 +490,7 @@ int main(int argc, char *argv[]) {
     }
 
     std::shared_ptr<quickrank::metric::ir::Metric> testing_metric =
-        quickrank::metric::ir::ir_metric_factory(test_metric_string,
-                                                 test_cutoff);
+        quickrank::metric::ir::ir_metric_factory(test_metric_string, test_cutoff);
     if (!testing_metric) {
       std::cout << " !! Test Metric was not set properly" << std::endl;
       exit(EXIT_FAILURE);
@@ -397,8 +499,10 @@ int main(int argc, char *argv[]) {
     std::cout << "# test scorer: " << *testing_metric << std::endl << "#"
               << std::endl;
     quickrank::metric::Evaluator::testing_phase(ranking_algorithm,
-                                                testing_metric, test_filename,
-                                                scores_filename);
+                                                testing_metric,
+                                                test_filename,
+                                                scores_filename,
+                                                detailed_testing);
   }
 
   // Fast Scoring
@@ -407,9 +511,8 @@ int main(int argc, char *argv[]) {
   if (xml_filename != "" && c_filename != "") {
     quickrank::io::Xml xml;
     if (model_code_type == "baseline") {
-      std::cout
-          << "applying baseline strategy (conditional operators) for C code generation to: "
-          << xml_filename << std::endl;
+      std::cout << "applying baseline strategy (conditional operators) for C code generation to: "
+                << xml_filename << std::endl;
       xml.generate_c_code_baseline(xml_filename, c_filename);
     } else if (model_code_type == "oblivious") {
       std::cout << "applying oblivious strategy for C code generation to: "

@@ -502,6 +502,14 @@ Score Rankboost::score_document(const quickrank::Feature* d) const {
     return doc_score;
 }
 
+std::shared_ptr<std::vector<Score>> Rankboost::detailed_scores_document(const Feature* d) const {
+    std::vector<quickrank::Score> scores(best_T);
+    for (unsigned int t = 0; t < best_T; t++) {
+        scores[t] = alphas[t] * weak_rankers[t]->score_document(d);
+    }
+    return std::make_shared<std::vector<quickrank::Score>>(std::move(scores));
+}
+
 std::ofstream & Rankboost::save_model_to_file(std::ofstream & os) const {
     // write ranker description
     os << "\t<info>" << std::endl;

@@ -94,7 +94,7 @@ class Dataset{
   /// \param i_label The relevance label of the result.
   /// \param i_features The feature vector of the document.
   void addInstance(QueryID q_id, Label i_label,
-                   boost::container::vector<Feature> i_features);
+                   std::vector<Feature> i_features);
 
   /// Returns the number of features used to represent a document.
   size_t num_features() const {

@@ -80,7 +80,6 @@ void CustomLTR::learn(
   delete[] validation_scores;
 }
 
-// assumes vertical dataset
 Score CustomLTR::score_document(const quickrank::Feature* d) const {
   return FIXED_SCORE;
 }

@@ -16,11 +16,13 @@
  * PURPOSE, QUIET ENJOYMENT, OR NON-INFRINGEMENT. See the RPL for specific
  * language governing rights and limitations under the RPL.
  *
- * Contributor:
- *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
+ * Contributors:
+ *  - Andrea Battistini (andreabattistini@hotmail.com)
+ *  - Chiara Pierucci (chiarapierucci14@gmail.com)
+ *  - Claudio Lucchese (claudio.lucchese@isti.cnr.it)
  */
-#ifndef QUICKRANK_LEARNING_CUSTOM_LTR_H_
-#define QUICKRANK_LEARNING_CUSTOM_LTR_H_
+#ifndef QUICKRANK_LEARNING_LINE_SEARCH_H_
+#define QUICKRANK_LEARNING_LINE_SEARCH_H_
 
 #include <boost/noncopyable.hpp>
 #include <boost/property_tree/ptree.hpp>
@@ -32,26 +34,21 @@
 
 namespace quickrank {
 namespace learning {
+namespace linear {
 
-/*
- * Command line
- ./bin/quickrank --algo custom \
- --train tests/data/msn1.fold1.train.5k.txt \
- --valid tests/data/msn1.fold1.vali.5k.txt \
- --test tests/data/msn1.fold1.test.5k.txt \
- --model model.xml
- */
-
-class CustomLTR : public LTR_Algorithm {
+/// This implements the Line Search algorithm.
+class LineSearch : public LTR_Algorithm {
 
  public:
-  CustomLTR();
 
-  CustomLTR(const boost::property_tree::ptree &info_ptree,
-            const boost::property_tree::ptree &model_ptree) {
-  }
+  LineSearch(unsigned int num_points, double window_size,
+             double reduction_factor, unsigned int max_iterations,
+             unsigned int max_failed_vali, bool adaptive);
 
-  virtual ~CustomLTR();
+  LineSearch(const boost::property_tree::ptree &info_ptree,
+             const boost::property_tree::ptree &model_ptree);
+
+  virtual ~LineSearch();
 
   /// Returns the name of the ranker.
   virtual std::string name() const {
@@ -76,14 +73,23 @@ class CustomLTR : public LTR_Algorithm {
   /// Returns the score of a given document.
   virtual Score score_document(const Feature* d) const;
 
-  /// \todo TODO: add load_model();
-
-  const Score FIXED_SCORE = 666.0;
+  /// Returns the learned weights
+  virtual std::vector<double> get_weigths() {
+    return best_weights_;
+  }
 
  private:
+  unsigned int num_points_;
+  double window_size_;
+  double reduction_factor_;
+  unsigned int max_iterations_;
+  unsigned int max_failed_vali_;
+  bool adaptive_;
+
+  std::vector<double> best_weights_;
 
   /// The output stream operator.
-  friend std::ostream& operator<<(std::ostream& os, const CustomLTR& a) {
+  friend std::ostream& operator<<(std::ostream& os, const LineSearch& a) {
     return a.put(os);
   }
 
@@ -92,8 +98,16 @@ class CustomLTR : public LTR_Algorithm {
 
   /// Save the current model in the given output file stream.
   virtual std::ofstream& save_model_to_file(std::ofstream& of) const;
+
+  virtual void preCompute(Feature *training_dataset, unsigned int num_samples,
+                          unsigned int num_features, Score *pre_sum, double *weights,
+                          Score *training_score, unsigned int feature_exclude);
+
+  virtual void score(Feature *dataset, unsigned int num_samples,
+             unsigned int num_features, double *weights, Score *scores);
 };
 
+}  // namespace linear
 }  // namespace learning
 }  // namespace quickrank
 
