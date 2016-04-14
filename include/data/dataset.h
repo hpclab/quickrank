@@ -72,7 +72,8 @@ class Dataset{
     return labels_[document_id];
   }
 
-  /// Returns the offset in the internal data strcutures of the i-th query results list.
+  /// Returns the offset in the internal data structure of the i-th query
+  /// results list.
   ///
   /// \param i The i-th query results list of interest.
   /// \returns The offset of the first document in the i-th query results list.
