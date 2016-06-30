@@ -22,6 +22,8 @@
 #include <cmath>
 #include <algorithm>
 
+#include <cstring>
+
 #include "metric/ir/ndcg.h"
 
 namespace quickrank {

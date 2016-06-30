@@ -23,6 +23,7 @@
 
 #include <iomanip>
 #include <stdlib.h>
+#include <cstring>
 
 namespace quickrank {
 namespace data {
