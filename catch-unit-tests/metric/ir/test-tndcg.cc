@@ -17,10 +17,11 @@
  * language governing rights and limitations under the RPL.
  *
  * Contributor:
- *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
+ *   Claudio Lucchese 2016 - claudio.lucchese@isti.cnr.it
  */
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+
+#include "catch/include/catch.hpp"
+
 
 #include <iomanip>
 
@@ -28,7 +29,7 @@
 #include "data/dataset.h"
 #include <cmath>
 
-BOOST_AUTO_TEST_CASE( tndcg_test ) {
+TEST_CASE( "Testing TNDCG", "[metric][tndcg]" ) {
   quickrank::Label labels[] = { 3, 2, 1, 0, 0 };
   quickrank::Score scores[] = { 5, 4, 3, 2, 1 };
   auto results = std::shared_ptr<quickrank::data::QueryResults>(
@@ -41,13 +42,10 @@ BOOST_AUTO_TEST_CASE( tndcg_test ) {
   idcg = (pow(2, labels[0]) - 1) + (pow(2, labels[1]) - 1) / log2(3)
           + (pow(2, labels[2]) - 1) / 2;
 
-  BOOST_CHECK_EQUAL(
-      tndcg_metric.evaluate_result_list(results.get(), scores),
-      1.0);
+  REQUIRE( Approx( tndcg_metric.evaluate_result_list(results.get(), scores) ) == 1.0);
 
   scores[0] = 4;
-  BOOST_CHECK_EQUAL(
-      tndcg_metric.evaluate_result_list(results.get(), scores),
+  REQUIRE( Approx( tndcg_metric.evaluate_result_list(results.get(), scores) ) ==
       (
           (  (pow(2, labels[0]) - 1) + (pow(2, labels[1]) - 1)  ) / 2 +
           (  (pow(2, labels[0]) - 1) + (pow(2, labels[1]) - 1)  ) / 2 / log2(3) +
@@ -55,8 +53,7 @@ BOOST_AUTO_TEST_CASE( tndcg_test ) {
       ) / idcg );
 
   scores[1] = 3;
-  BOOST_CHECK_EQUAL(
-      tndcg_metric.evaluate_result_list(results.get(), scores),
+  REQUIRE( Approx( tndcg_metric.evaluate_result_list(results.get(), scores) ) ==
       (
           (pow(2, labels[0]) - 1) +
           (  (pow(2, labels[1]) - 1) + (pow(2, labels[2]) - 1)  ) / 2 / log2(3) +

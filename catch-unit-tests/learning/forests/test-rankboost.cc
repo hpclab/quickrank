@@ -17,10 +17,9 @@
  * language governing rights and limitations under the RPL.
  *
  * Contributor:
- *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
+ *   Claudio Lucchese 2016 - claudio.lucchese@isti.cnr.it
  */
-#define BOOST_TEST_RANKBOOST_LINK
-#include <boost/test/unit_test.hpp>
+#include "catch/include/catch.hpp"
 
 #include "learning/forests/rankboost.h"
 #include "metric/ir/ndcg.h"
@@ -33,7 +32,7 @@
 #include <cmath>
 #include <iomanip>
 
-BOOST_AUTO_TEST_CASE( RankBoost_Test ) {
+TEST_CASE( "Testing RankBoost", "[learning][forests][rankboost]" ) {
 
   std::string training_filename =
       "quickranktestdata/msn1/msn1.fold1.train.5k.txt";
@@ -119,7 +118,7 @@ BOOST_AUTO_TEST_CASE( RankBoost_Test ) {
 
   std::remove(model_filename.c_str());
 
-  BOOST_CHECK_EQUAL(test_score, test_score_reloaded);
+  REQUIRE( Approx(test_score) == test_score_reloaded);
 
   // ------- RANKKLIB++ Performance ---------
   // RankLIb searches exponentially, while we search linearly
@@ -127,7 +126,7 @@ BOOST_AUTO_TEST_CASE( RankBoost_Test ) {
   // NDCG@10 on validation data: 0.3929
   // NDCG@10 on test data: 0.3159
 
-  BOOST_CHECK(training_score >= 0.4431);
-  BOOST_CHECK(validation_score >= 0.4208);
-  BOOST_CHECK(test_score >= 0.3108);
+  REQUIRE( training_score >= 0.4431);
+  REQUIRE( validation_score >= 0.4208);
+  REQUIRE( test_score >= 0.3108);
 }

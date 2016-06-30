@@ -17,10 +17,10 @@
  * language governing rights and limitations under the RPL.
  *
  * Contributor:
- *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
+ *   Claudio Lucchese 2016 - claudio.lucchese@isti.cnr.it
  */
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+
+#include "catch/include/catch.hpp"
 
 #include <cmath>
 #include <iomanip>
@@ -29,7 +29,7 @@
 #include "data/dataset.h"
 #include "data/rankedresults.h"
 
-BOOST_AUTO_TEST_CASE( ndcg_test ) {
+TEST_CASE( "Testing NDCG", "[metric][ndcg]" ) {
   quickrank::Label labels[] = { 3, 2, 1, 0, 0 };
   quickrank::Score scores[] = { 5, 4, 3, 2, 1 };
   auto results = std::shared_ptr<quickrank::data::QueryResults>(
@@ -41,30 +41,26 @@ BOOST_AUTO_TEST_CASE( ndcg_test ) {
   // NDCG@k computation with K > num results
   idcg = (pow(2, labels[0]) - 1) + (pow(2, labels[1]) - 1) / log2(3)
       + (pow(2, labels[2]) - 1) / 2;
-  BOOST_CHECK_EQUAL(
-      ndcg_metric.evaluate_result_list(results.get(), scores),
+  REQUIRE( Approx( ndcg_metric.evaluate_result_list(results.get(), scores) ) ==
       ((pow(2, labels[0]) - 1) + (pow(2, labels[1]) - 1) / log2(3)
           + (pow(2, labels[2]) - 1) / 2) / idcg);
 
   // NDCG@k computation with K = 0
   ndcg_metric.set_cutoff(0);
-  BOOST_CHECK_EQUAL(
-      ndcg_metric.evaluate_result_list(results.get(), scores),
+  REQUIRE( Approx( ndcg_metric.evaluate_result_list(results.get(), scores)) ==
       ((pow(2, labels[0]) - 1) + (pow(2, labels[1]) - 1) / log2(3)
           + (pow(2, labels[2]) - 1) / 2) / idcg);
 
   // NDCG@k computation with K = No cutoff
   ndcg_metric.set_cutoff(ndcg_metric.NO_CUTOFF);
-  BOOST_CHECK_EQUAL(
-      ndcg_metric.evaluate_result_list(results.get(), scores),
+  REQUIRE( Approx( ndcg_metric.evaluate_result_list(results.get(), scores)) ==
       ((pow(2, labels[0]) - 1) + (pow(2, labels[1]) - 1) / log2(3)
           + (pow(2, labels[2]) - 1) / 2) / idcg);
 
   // NDCG@k computation with K < num results
   ndcg_metric.set_cutoff(2);
   idcg = (pow(2, labels[0]) - 1) + (pow(2, labels[1]) - 1) / log2(3);
-  BOOST_CHECK_EQUAL(
-      ndcg_metric.evaluate_result_list(results.get(), scores),
+  REQUIRE( Approx( ndcg_metric.evaluate_result_list(results.get(), scores)) ==
       ((pow(2, labels[0]) - 1) + (pow(2, labels[1]) - 1) / log2(3)) / idcg);
 
 

@@ -40,11 +40,13 @@ MetricScore Dcg::compute_dcg(const Label* labels, size_t len) const {
 
 MetricScore Dcg::evaluate_result_list(const quickrank::data::QueryResults* rl,
                                       const Score* scores) const {
-  if (rl->num_results() == 0)
+  const size_t size = std::min(cutoff(), rl->num_results());
+
+  if (size == 0)
     return 0.0;
 
   // we have at most cutoff to be evaluated
-  Label* sorted_l = new Label[cutoff()];
+  Label* sorted_l = new Label[size];
   rl->sorted_labels(scores, sorted_l, cutoff());
 
   MetricScore dcg = compute_dcg(sorted_l, rl->num_results());

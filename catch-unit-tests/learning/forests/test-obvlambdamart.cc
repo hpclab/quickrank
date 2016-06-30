@@ -17,12 +17,11 @@
  * language governing rights and limitations under the RPL.
  *
  * Contributor:
- *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
+ *   Claudio Lucchese 2016 - claudio.lucchese@isti.cnr.it
  */
-#define BOOST_TEST_LMART_LINK
-#include <boost/test/unit_test.hpp>
+#include "catch/include/catch.hpp"
 
-#include "learning/forests/lambdamart.h"
+#include "learning/forests/obliviouslambdamart.h"
 #include "metric/ir/ndcg.h"
 
 #include "metric/ir/dcg.h"
@@ -34,7 +33,7 @@
 #include <iomanip>
 #include <cstdio>
 
-BOOST_AUTO_TEST_CASE( LambdaMart_Test ) {
+TEST_CASE( "Testing ObliviousLambdaMart", "[learning][forests][olmart]" ) {
 
   std::string training_filename =
       "quickranktestdata/msn1/msn1.fold1.train.5k.txt";
@@ -42,20 +41,20 @@ BOOST_AUTO_TEST_CASE( LambdaMart_Test ) {
       "quickranktestdata/msn1/msn1.fold1.vali.5k.txt";
   std::string test_filename = "quickranktestdata/msn1/msn1.fold1.test.5k.txt";
   std::string features_filename;
-  std::string model_filename = "test-lambdamart-model.xml";
+  std::string model_filename = "test-obvlambdamart-model.xml";
 
   unsigned int ntrees = 100;
   float shrinkage = 0.1;
   unsigned int nthresholds = 0;
-  unsigned int ntreeleaves = 16;
+  unsigned int treedepth = 4;
   unsigned int minleafsupport = 1;
   unsigned int esr = 100;
   unsigned int partial_save = -1;
   unsigned int ndcg_cutoff = 10;
 
   auto ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
-      new quickrank::learning::forests::LambdaMart(ntrees, shrinkage, nthresholds,
-                                             ntreeleaves, minleafsupport, esr));
+      new quickrank::learning::forests::ObliviousLambdaMart(ntrees, shrinkage, nthresholds,
+                                             treedepth, minleafsupport, esr));
 
   auto training_metric = std::shared_ptr<quickrank::metric::ir::Metric>(
       new quickrank::metric::ir::Ndcg(ndcg_cutoff));
@@ -126,14 +125,14 @@ BOOST_AUTO_TEST_CASE( LambdaMart_Test ) {
 
   std::remove(model_filename.c_str());
 
-  BOOST_CHECK_EQUAL(test_score, test_score_reloaded);
+  REQUIRE( Approx(test_score) == test_score_reloaded);
 
-  // ------- RANKKLIB++ Performance ---------
-  // NDCG@10 on training data: 0.6614
-  // NDCG@10 on validation data: 0.4343
-  // NDCG@10 on test data: 0.3367
+  // ------- QuickRank L-Mart Performance ---------
+  // NDCG@10 on training data: 0.7321
+  // NDCG@10 on validation data: 0.4136
+  // NDCG@10 on test data: 0.3230
 
-  BOOST_CHECK (training_score >= 0.7321);
-  BOOST_CHECK (validation_score >= 0.4136);
-  BOOST_CHECK (test_score >= 0.3230);
+  REQUIRE( training_score >= 0.4368);
+  REQUIRE( validation_score >= 0.3468);
+  REQUIRE( test_score >= 0.2819);
 }

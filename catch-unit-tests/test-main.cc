@@ -17,8 +17,13 @@
  * language governing rights and limitations under the RPL.
  *
  * Contributor:
- *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
+ *   Claudio Lucchese 2016 - claudio.lucchese@isti.cnr.it
  */
-#define BOOST_TEST_DYN_LINK
-#define BOOST_TEST_MODULE QuickRank_Test
-#include <boost/test/unit_test.hpp>
+
+
+#define CATCH_CONFIG_MAIN
+#include "catch/include/catch.hpp"
+
+TEST_CASE( "CATCH IS WORKING", "[global]" ) {
+    REQUIRE( 1 );
+}

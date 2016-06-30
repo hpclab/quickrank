@@ -17,12 +17,11 @@
  * language governing rights and limitations under the RPL.
  *
  * Contributor:
- *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
+ *   Claudio Lucchese 2016 - claudio.lucchese@isti.cnr.it
  */
-#define BOOST_TEST_MART_LINK
-#include <boost/test/unit_test.hpp>
+#include "catch/include/catch.hpp"
 
-#include "learning/forests/mart.h"
+#include "learning/forests/obliviousmart.h"
 #include "metric/ir/ndcg.h"
 
 #include "metric/ir/dcg.h"
@@ -33,7 +32,7 @@
 #include <cmath>
 #include <iomanip>
 
-BOOST_AUTO_TEST_CASE( Mart_Test ) {
+TEST_CASE( "Testing ObliviousMart", "[learning][forests][omart]" ) {
 
   std::string training_filename =
       "quickranktestdata/msn1/msn1.fold1.train.5k.txt";
@@ -41,20 +40,20 @@ BOOST_AUTO_TEST_CASE( Mart_Test ) {
       "quickranktestdata/msn1/msn1.fold1.vali.5k.txt";
   std::string test_filename = "quickranktestdata/msn1/msn1.fold1.test.5k.txt";
   std::string features_filename;
-  std::string model_filename = "test-mart-model.xml";
+  std::string model_filename = "test-obvmart-model.xml";
 
   unsigned int ntrees = 100;
   float shrinkage = 0.1;
   unsigned int nthresholds = 0;
-  unsigned int ntreeleaves = 16;
+  unsigned int treedepth = 4;
   unsigned int minleafsupport = 1;
   unsigned int esr = 100;
   unsigned int partial_save = -1;
   unsigned int ndcg_cutoff = 10;
 
   auto ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
-      new quickrank::learning::forests::Mart(ntrees, shrinkage, nthresholds,
-                                             ntreeleaves, minleafsupport, esr));
+      new quickrank::learning::forests::ObliviousMart(ntrees, shrinkage, nthresholds,
+                                             treedepth, minleafsupport, esr));
 
   auto training_metric = std::shared_ptr<quickrank::metric::ir::Metric>(
       new quickrank::metric::ir::Ndcg(ndcg_cutoff));
@@ -125,15 +124,14 @@ BOOST_AUTO_TEST_CASE( Mart_Test ) {
 
   std::remove(model_filename.c_str());
 
-  BOOST_CHECK_EQUAL(test_score, test_score_reloaded);
+  REQUIRE( Approx(test_score) == test_score_reloaded);
 
-
-  // ------- RANKKLIB++ Performance ---------
-  // NDCG@10 on training data: 0.7154
-  // NDCG@10 on validation data: 0.4548
+  // ------- QuickRank Mart ---------
+  // NDCG@10 on training data: 0.7153
+  // NDCG@10 on validation data: 0.4580
   // NDCG@10 on test data: 0.3706
 
-  BOOST_CHECK (training_score >= 0.7153);
-  BOOST_CHECK (validation_score >= 0.4580);
-  BOOST_CHECK (test_score >= 0.3706);
+  REQUIRE( training_score >= 0.69);
+  REQUIRE( validation_score >= 0.436);
+  REQUIRE( test_score >= 0.3490);
 }

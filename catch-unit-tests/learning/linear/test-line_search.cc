@@ -17,44 +17,45 @@
  * language governing rights and limitations under the RPL.
  *
  * Contributor:
- *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
+ *   Salvatore Trani 2016 - salvatore.trani@isti.cnr.it
+ *   Claudio Lucchese 2016 - claudio.lucchese@isti.cnr.it
  */
-#define BOOST_TEST_OBVMART_LINK
-#include <boost/test/unit_test.hpp>
+#include "catch/include/catch.hpp"
 
-#include "learning/forests/obliviousmart.h"
+#include "learning/linear/line_search.h"
 #include "metric/ir/ndcg.h"
 
-#include "metric/ir/dcg.h"
-#include "metric/ir/ndcg.h"
 #include "data/dataset.h"
 #include "data/queryresults.h"
 #include "io/svml.h"
 #include <cmath>
 #include <iomanip>
 
-BOOST_AUTO_TEST_CASE( ObliviousMart_Test ) {
+TEST_CASE( "Testing LineSearch", "[learning][linear][linesearch]" ) {
 
   std::string training_filename =
       "quickranktestdata/msn1/msn1.fold1.train.5k.txt";
   std::string validation_filename =
       "quickranktestdata/msn1/msn1.fold1.vali.5k.txt";
   std::string test_filename = "quickranktestdata/msn1/msn1.fold1.test.5k.txt";
-  std::string features_filename;
-  std::string model_filename = "test-obvmart-model.xml";
+  std::string model_filename = "test-ls-model.xml";
 
-  unsigned int ntrees = 100;
-  float shrinkage = 0.1;
-  unsigned int nthresholds = 0;
-  unsigned int treedepth = 4;
-  unsigned int minleafsupport = 1;
-  unsigned int esr = 100;
+  unsigned int num_samples = 21;
+  float window_size = 10.0;
+  float reduction_factor = 0.95;
+  unsigned int max_iterations = 100;
+  unsigned int max_failed_valid = 10;
+  bool adaptive = false;
   unsigned int partial_save = -1;
   unsigned int ndcg_cutoff = 10;
 
   auto ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
-      new quickrank::learning::forests::ObliviousMart(ntrees, shrinkage, nthresholds,
-                                             treedepth, minleafsupport, esr));
+      new quickrank::learning::linear::LineSearch(num_samples,
+                                                  window_size,
+                                                  reduction_factor,
+                                                  max_iterations,
+                                                  max_failed_valid,
+                                                  adaptive));
 
   auto training_metric = std::shared_ptr<quickrank::metric::ir::Metric>(
       new quickrank::metric::ir::Ndcg(ndcg_cutoff));
@@ -79,31 +80,30 @@ BOOST_AUTO_TEST_CASE( ObliviousMart_Test ) {
   std::cout << reader << *test_dataset;
 
   // run the learning process
-  ranking_algorithm->learn(training_dataset, validation_dataset, training_metric, partial_save,
-                           model_filename);
-
-
+  ranking_algorithm->learn(training_dataset, validation_dataset,
+                           training_metric, partial_save, model_filename);
 
   // check again performance on training set
-  std::vector<quickrank::Score> train_scores( training_dataset->num_instances() );
+  std::vector<quickrank::Score> train_scores(training_dataset->num_instances());
   ranking_algorithm->score_dataset(training_dataset, &train_scores[0]);
   quickrank::MetricScore training_score = training_metric->evaluate_dataset(
       training_dataset, &train_scores[0]);
 
-  std::cout << *training_metric << " on training data = " << std::setprecision(4)
-            << training_score << std::endl;
+  std::cout << *training_metric << " on training data = "
+            << std::setprecision(4) << training_score << std::endl;
 
   // check again performance on validation set
-  std::vector<quickrank::Score> valid_scores( validation_dataset->num_instances() );
+  std::vector<quickrank::Score> valid_scores(
+      validation_dataset->num_instances());
   ranking_algorithm->score_dataset(validation_dataset, &valid_scores[0]);
   quickrank::MetricScore validation_score = training_metric->evaluate_dataset(
       validation_dataset, &valid_scores[0]);
 
-  std::cout << *training_metric << " on validation data = " << std::setprecision(4)
-            << validation_score << std::endl;
+  std::cout << *training_metric << " on validation data = "
+            << std::setprecision(4) << validation_score << std::endl;
 
   // check again performance on test set
-  std::vector<quickrank::Score> test_scores( test_dataset->num_instances() );
+  std::vector<quickrank::Score> test_scores(test_dataset->num_instances());
   ranking_algorithm->score_dataset(test_dataset, &test_scores[0]);
   quickrank::MetricScore test_score = testing_metric->evaluate_dataset(
       test_dataset, &test_scores[0]);
@@ -115,24 +115,20 @@ BOOST_AUTO_TEST_CASE( ObliviousMart_Test ) {
   ranking_algorithm->save(model_filename);
 
   // reload model from disk
-  auto model_reloaded = quickrank::learning::LTR_Algorithm::load_model_from_file(model_filename);
+  auto model_reloaded =
+      quickrank::learning::LTR_Algorithm::load_model_from_file(model_filename);
   model_reloaded->score_dataset(test_dataset, &test_scores[0]);
   quickrank::MetricScore test_score_reloaded = testing_metric->evaluate_dataset(
       test_dataset, &test_scores[0]);
 
-  std::cout << *testing_metric << " on test data = " << std::setprecision(4)
-            << test_score_reloaded << std::endl;
+  std::cout << *testing_metric << " on test data (reloading the model) = " <<
+      std::setprecision(4) << test_score_reloaded << std::endl;
 
   std::remove(model_filename.c_str());
 
-  BOOST_CHECK_EQUAL(test_score, test_score_reloaded);
+  REQUIRE( Approx( test_score ) == test_score_reloaded);
 
-  // ------- QuickRank Mart ---------
-  // NDCG@10 on training data: 0.7153
-  // NDCG@10 on validation data: 0.4580
-  // NDCG@10 on test data: 0.3706
-
-  BOOST_CHECK (training_score >= 0.69);
-  BOOST_CHECK (validation_score >= 0.436);
-  BOOST_CHECK (test_score >= 0.3490);
+  REQUIRE(training_score >= 0.2334);
+  REQUIRE(validation_score >= 0.2307);
+  REQUIRE(test_score >= 0.2484);
 }

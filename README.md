@@ -27,6 +27,12 @@ QuickRank is presented in:
 QuickRank has been used in:
  - C. Lucchese, F. M. Nardini, S. Orlando, R. Perego, N. Tonellotto, R. Venturini. **QuickScorer: a Fast Algorithm to Rank Documents with Additive Ensembles of Regression Trees**. Full Paper. SIGIR 2015: Proceedings of the 37th Annual International ACM SIGIR Conference on Research and Development in Information Retrieval, Santiago, Chile, August 2015. **BEST PAPER AWARD**.  [LINK](http://dl.acm.org/citation.cfm?id=2767733)
 
+Tools and Libraries
+-------
+
+We thank the developers of the following toosl and libraries:
+ - [Catch](https://github.com/philsquared/Catch) C++ Automated Test Cases in Headers
+
 License
 -------
 © Contributors, 2016. Licensed under an [Reciprocal Public License (RPL-1.5)](https://opensource.org/licenses/RPL-1.5).

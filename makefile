@@ -22,13 +22,13 @@
 QUICKLEARN:=quicklearn
 QUICKSCORE:=quickscore
 SRCDIR:=src
-UTESTSDIR:=unit-tests
 BINDIR:=bin
-INCDIRS:=-Iinclude
+INCDIRS:=-Iinclude -Ilib
 OBJSDIR:=_build
 DEPSDIR:=_deps
 DOCDIR:=documentation
 TESTDATA:=quickranktestdata
+CATCHTESTSDIR:=catch-unit-tests
 
 # all sources
 SRCS:=$(wildcard $(SRCDIR)/*.cc) $(wildcard $(SRCDIR)/*/*.cc) $(wildcard $(SRCDIR)/*/*/*.cc) $(wildcard $(SRCDIR)/*/*/*/*.cc)
@@ -36,13 +36,12 @@ DEPS:=$(subst $(SRCDIR),$(DEPSDIR)/$(SRCDIR),$(SRCS:.cc=.d))
 OBJS:=$(subst $(SRCDIR),$(OBJSDIR)/$(SRCDIR),$(SRCS:.cc=.o))
 
 # all test sources
-UTESTS:=$(wildcard $(UTESTSDIR)/*.cc) $(wildcard $(UTESTSDIR)/*/*.cc) $ (wildcard $(UTESTSDIR)/*/*/*.cc) $(wildcard $(UTESTSDIR)/*/*/*/*.cc)
-UTESTSOBJS:=$(subst $(UTESTSDIR),$(OBJSDIR)/$(UTESTSDIR),$(UTESTS:.cc=.o))
+CATCHTESTS:=$(wildcard $(CATCHTESTSDIR)/*.cc) $(wildcard $(CATCHTESTSDIR)/*/*.cc) $(wildcard $(CATCHTESTSDIR)/*/*/*.cc) $(wildcard $(CATCHTESTSDIR)/*/*/*/*.cc)
+CATCHTESTSOBJS:=$(subst $(CATCHTESTSDIR),$(OBJSDIR)/$(CATCHTESTSDIR),$(CATCHTESTS:.cc=.o))
 
 CXX=
 CXXFLAGS:=-std=c++11 -Wall -fopenmp -march=native -mtune=native -O3
 # CXXFLAGS:=-std=c++11 -Wall -march=native -mtune=native -O0 -fopenmp -g
-# LDLIBS:=-lboost_system -lboost_filesystem -fopenmp
 LDLIBS:=-fopenmp
 
 # find the compiler
@@ -82,10 +81,10 @@ doc:
 	cd $(DOCDIR); doxygen quickrank.doxygen
 
 # runs all the unit tests
-# to run a single test use make unit-tests TEST=dcg_test
-.PHONY: unit-tests
-unit-tests:  $(TESTDATA) $(BINDIR)/unit-tests
-	$(BINDIR)/unit-tests --log_level=test_suite --run_test=$(TEST)
+# to run a single test use make catch-unit-tests TEST="[io]"
+# to show all the tags available $(BINDIR)/catch-unit-tests -t
+catch-unit-tests:  $(TESTDATA) $(BINDIR)/catch-unit-tests
+	$(BINDIR)/catch-unit-tests $(TEST) -d yes
 
 # removes intermediate files
 clean:
@@ -112,12 +111,12 @@ $(TESTDATA):
 	git clone http://git.hpc.isti.cnr.it/quickrank/quickranktestdata.git $(TESTDATA)
 	
 # linking
-$(BINDIR)/unit-tests:$(OBJS) $(UTESTSOBJS)
+$(BINDIR)/catch-unit-tests: $(OBJS) $(CATCHTESTSOBJS)
 	$(CXX) \
 	$(filter-out $(OBJSDIR)/$(SRCDIR)/$(QUICKLEARN).o $(OBJSDIR)/$(SRCDIR)/$(QUICKSCORE).o,$(OBJS)) \
-	$(UTESTSOBJS) \
-	$(LDLIBS) -lboost_unit_test_framework \
-	-o $(BINDIR)/unit-tests
+	$(CATCHTESTSOBJS) \
+	$(LDLIBS) \
+	-o $@
 
 #include dependency files
 -include $(DEPS)

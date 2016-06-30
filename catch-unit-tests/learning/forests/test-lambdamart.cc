@@ -17,12 +17,11 @@
  * language governing rights and limitations under the RPL.
  *
  * Contributor:
- *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
+ *   Claudio Lucchese 2016 - claudio.lucchese@isti.cnr.it
  */
-#define BOOST_TEST_CA_LINK
-#include <boost/test/unit_test.hpp>
+#include "catch/include/catch.hpp"
 
-#include "learning/linear/coordinate_ascent.h"
+#include "learning/forests/lambdamart.h"
 #include "metric/ir/ndcg.h"
 
 #include "metric/ir/dcg.h"
@@ -32,8 +31,9 @@
 #include "io/svml.h"
 #include <cmath>
 #include <iomanip>
+#include <cstdio>
 
-BOOST_AUTO_TEST_CASE( CA_Test ) {
+TEST_CASE( "Testing LambdaMart", "[learning][forests][lmart]" ) {
 
   std::string training_filename =
       "quickranktestdata/msn1/msn1.fold1.train.5k.txt";
@@ -41,21 +41,20 @@ BOOST_AUTO_TEST_CASE( CA_Test ) {
       "quickranktestdata/msn1/msn1.fold1.vali.5k.txt";
   std::string test_filename = "quickranktestdata/msn1/msn1.fold1.test.5k.txt";
   std::string features_filename;
-  std::string model_filename = "test-ca-model.xml";
+  std::string model_filename = "test-lambdamart-model.xml";
 
-  unsigned int num_samples = 21;
-  float window_size = 10.0;
-  float reduction_factor = 0.95;
-  unsigned int max_iterations = 100;
+  unsigned int ntrees = 100;
+  float shrinkage = 0.1;
+  unsigned int nthresholds = 0;
+  unsigned int ntreeleaves = 16;
+  unsigned int minleafsupport = 1;
   unsigned int esr = 100;
   unsigned int partial_save = -1;
   unsigned int ndcg_cutoff = 10;
 
   auto ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
-      new quickrank::learning::linear::CoordinateAscent(num_samples,
-                                                        window_size,
-                                                        reduction_factor,
-                                                        max_iterations, esr));
+      new quickrank::learning::forests::LambdaMart(ntrees, shrinkage, nthresholds,
+                                             ntreeleaves, minleafsupport, esr));
 
   auto training_metric = std::shared_ptr<quickrank::metric::ir::Metric>(
       new quickrank::metric::ir::Ndcg(ndcg_cutoff));
@@ -80,30 +79,31 @@ BOOST_AUTO_TEST_CASE( CA_Test ) {
   std::cout << reader << *test_dataset;
 
   // run the learning process
-  ranking_algorithm->learn(training_dataset, validation_dataset,
-                           training_metric, partial_save, model_filename);
+  ranking_algorithm->learn(training_dataset, validation_dataset, training_metric, partial_save,
+                           model_filename);
+
+
 
   // check again performance on training set
-  std::vector<quickrank::Score> train_scores(training_dataset->num_instances());
+  std::vector<quickrank::Score> train_scores( training_dataset->num_instances() );
   ranking_algorithm->score_dataset(training_dataset, &train_scores[0]);
   quickrank::MetricScore training_score = training_metric->evaluate_dataset(
       training_dataset, &train_scores[0]);
 
-  std::cout << *training_metric << " on training data = "
-            << std::setprecision(4) << training_score << std::endl;
+  std::cout << *training_metric << " on training data = " << std::setprecision(4)
+            << training_score << std::endl;
 
   // check again performance on validation set
-  std::vector<quickrank::Score> valid_scores(
-      validation_dataset->num_instances());
+  std::vector<quickrank::Score> valid_scores( validation_dataset->num_instances() );
   ranking_algorithm->score_dataset(validation_dataset, &valid_scores[0]);
   quickrank::MetricScore validation_score = training_metric->evaluate_dataset(
       validation_dataset, &valid_scores[0]);
 
-  std::cout << *training_metric << " on validation data = "
-            << std::setprecision(4) << validation_score << std::endl;
+  std::cout << *training_metric << " on validation data = " << std::setprecision(4)
+            << validation_score << std::endl;
 
   // check again performance on test set
-  std::vector<quickrank::Score> test_scores(test_dataset->num_instances());
+  std::vector<quickrank::Score> test_scores( test_dataset->num_instances() );
   ranking_algorithm->score_dataset(test_dataset, &test_scores[0]);
   quickrank::MetricScore test_score = testing_metric->evaluate_dataset(
       test_dataset, &test_scores[0]);
@@ -115,8 +115,7 @@ BOOST_AUTO_TEST_CASE( CA_Test ) {
   ranking_algorithm->save(model_filename);
 
   // reload model from disk
-  auto model_reloaded =
-      quickrank::learning::LTR_Algorithm::load_model_from_file(model_filename);
+  auto model_reloaded = quickrank::learning::LTR_Algorithm::load_model_from_file(model_filename);
   model_reloaded->score_dataset(test_dataset, &test_scores[0]);
   quickrank::MetricScore test_score_reloaded = testing_metric->evaluate_dataset(
       test_dataset, &test_scores[0]);
@@ -126,15 +125,14 @@ BOOST_AUTO_TEST_CASE( CA_Test ) {
 
   std::remove(model_filename.c_str());
 
-  BOOST_CHECK_EQUAL(test_score, test_score_reloaded);
+  REQUIRE( Approx(test_score) == test_score_reloaded);
 
   // ------- RANKKLIB++ Performance ---------
-  // RankLIb searches exponentially, while we search linearly
-  // NDCG@10 on training data: 0.5112
-  // NDCG@10 on validation data: 0.4181
-  // NDCG@10 on test data: 0.4033
+  // NDCG@10 on training data: 0.6614
+  // NDCG@10 on validation data: 0.4343
+  // NDCG@10 on test data: 0.3367
 
-  BOOST_CHECK(training_score >= 0.4467);
-  BOOST_CHECK(validation_score >= 0.3981);
-  BOOST_CHECK(test_score >= 0.3721);
+  REQUIRE( training_score >= 0.7321);
+  REQUIRE( validation_score >= 0.4136);
+  REQUIRE( test_score >= 0.3230);
 }
