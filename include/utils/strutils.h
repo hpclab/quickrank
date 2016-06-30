@@ -23,6 +23,7 @@
 #define QUICKRANK_UTILS_STRUTILS_H_
 
 #include <cctype>
+#include <string>
 
 /*! \file strutils.hpp
  * \brief some useful functions for strings
@@ -52,5 +53,10 @@ bool is_empty(const char *str);
  *  \brief skip a sequence of spaces (see ISSPC macro) and return the unsigned int after \a sep
  */
 unsigned int atou(char *str, const char *sep);
+
+/*! \fn std::string trim(std::string str)
+ *  \brief delete spaces from start/end of a string (in place modification)
+ */
+void trim(std::string str);
 
 #endif

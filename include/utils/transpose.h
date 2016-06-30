@@ -19,8 +19,7 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_UTILS_TRANSPOSE_H_
-#define QUICKRANK_UTILS_TRANSPOSE_H_
+#pragma once
 
 #include <stdlib.h>
 
@@ -36,6 +35,4 @@
  */
 void transpose(float **output, float **input, const size_t n,
                const size_t m);
-
-#endif
 

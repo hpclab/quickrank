@@ -31,18 +31,19 @@ DOCDIR:=documentation
 TESTDATA:=quickranktestdata
 
 # all sources
-SRCS:=$(wildcard $(SRCDIR)/*.cc) $(wildcard $(SRCDIR)/*/*.cc) $(wildcard $(SRCDIR)/*/*/*.cc)
+SRCS:=$(wildcard $(SRCDIR)/*.cc) $(wildcard $(SRCDIR)/*/*.cc) $(wildcard $(SRCDIR)/*/*/*.cc) $(wildcard $(SRCDIR)/*/*/*/*.cc)
 DEPS:=$(subst $(SRCDIR),$(DEPSDIR)/$(SRCDIR),$(SRCS:.cc=.d))
 OBJS:=$(subst $(SRCDIR),$(OBJSDIR)/$(SRCDIR),$(SRCS:.cc=.o))
 
 # all test sources
-UTESTS:=$(wildcard $(UTESTSDIR)/*.cc) $(wildcard $(UTESTSDIR)/*/*.cc) $(wildcard $(UTESTSDIR)/*/*/*.cc)
+UTESTS:=$(wildcard $(UTESTSDIR)/*.cc) $(wildcard $(UTESTSDIR)/*/*.cc) $ (wildcard $(UTESTSDIR)/*/*/*.cc) $(wildcard $(UTESTSDIR)/*/*/*/*.cc)
 UTESTSOBJS:=$(subst $(UTESTSDIR),$(OBJSDIR)/$(UTESTSDIR),$(UTESTS:.cc=.o))
 
 CXX=
 CXXFLAGS:=-std=c++11 -Wall -fopenmp -march=native -mtune=native -O3
 # CXXFLAGS:=-std=c++11 -Wall -march=native -mtune=native -O0 -fopenmp -g
-LDLIBS:=-lboost_program_options -lboost_system -lboost_filesystem -fopenmp
+# LDLIBS:=-lboost_system -lboost_filesystem -fopenmp
+LDLIBS:=-fopenmp
 
 # find the compiler
 ifneq ($(shell whereis g++-5),)

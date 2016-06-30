@@ -63,7 +63,7 @@ std::unique_ptr<RegressionTree> ObliviousMart::fit_regressor_on_gradient(
                                       pseudoresponses_, minleafsupport_,
                                       treedepth_);
   tree->fit(hist_);
-  //update the outputs of the tree (with gamma computed using the Newton-Raphson method)
+  //update the outputs of the tree (with gamma computed using the Newton-Raphson pruning_method)
   tree->update_output(pseudoresponses_);
   return std::unique_ptr<RegressionTree>(tree);
 }

@@ -66,21 +66,6 @@ std::shared_ptr<std::vector<quickrank::Score>>
   return std::make_shared<std::vector<quickrank::Score>>(std::move(scores));
 }
 
-// TODO TO BE REMOVED
-void Ensemble::write_outputtofile(FILE *f) {
-  fprintf(f, "\n<ensemble>\n");
-  for (size_t i = 0; i < size; ++i) {
-    fprintf(f, "\t<tree id=\"%zu\" weight=\"%.8f\">\n", i + 1, arr[i].weight);
-    if (arr[i].root) {
-      fprintf(f, "\t\t<split>\n");
-      arr[i].root->write_outputtofile(f, 2);
-      fprintf(f, "\t\t</split>\n");
-    }
-    fprintf(f, "\t</tree>\n");
-  }
-  fprintf(f, "</ensemble>\n");
-}
-
 std::ofstream& Ensemble::save_model_to_file(std::ofstream& os) const {
   auto old_precision = os.precision();
   os.setf(std::ios::floatfield, std::ios::fixed);

@@ -19,44 +19,23 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_METRIC_IR_METRIC_FACTORY_H_
-#define QUICKRANK_METRIC_IR_METRIC_FACTORY_H_
+#pragma once
 
-#include <iostream>
-#include <climits>
-#include <memory>
-#include <boost/noncopyable.hpp>
-
-#include "types.h"
-
-#include <boost/algorithm/string/case_conv.hpp>
-
-#include "metric/ir/tndcg.h"
-#include "metric/ir/ndcg.h"
-#include "metric/ir/dcg.h"
-#include "metric/ir/map.h"
+#include "optimization/optimization.h"
 
 namespace quickrank {
-namespace metric {
-namespace ir {
+namespace optimization {
+namespace pre_learning {
 
-std::shared_ptr<Metric> ir_metric_factory(std::string metric,
-                                          size_t cutoff) {
-  boost::to_upper(metric);
-  if (metric == Dcg::NAME_)
-    return std::shared_ptr<Metric>(new Dcg(cutoff));
-  else if (metric == Ndcg::NAME_)
-    return std::shared_ptr<Metric>(new Ndcg(cutoff));
-  else if (metric == Tndcg::NAME_)
-    return std::shared_ptr<Metric>(new Tndcg(cutoff));
-  else if (metric == Map::NAME_)
-    return std::shared_ptr<Metric>(new Map(cutoff));
-  else
-    return std::shared_ptr<Metric>();
-}
+class PreLearningOptimization : public Optimization {
 
-}  // namespace ir
-}  // namespace metric
+public:
+
+  bool is_pre_learning() const {
+    return true;
+  }
+};
+
+}  // namespace pre_learning
+}  // namespace optimization
 }  // namespace quickrank
-
-#endif

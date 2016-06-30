@@ -22,7 +22,6 @@
 #define BOOST_TEST_RANKBOOST_LINK
 #include <boost/test/unit_test.hpp>
 
-#include "metric/evaluator.h"
 #include "learning/forests/rankboost.h"
 #include "metric/ir/ndcg.h"
 

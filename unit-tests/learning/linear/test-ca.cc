@@ -22,7 +22,6 @@
 #define BOOST_TEST_CA_LINK
 #include <boost/test/unit_test.hpp>
 
-#include "metric/evaluator.h"
 #include "learning/linear/coordinate_ascent.h"
 #include "metric/ir/ndcg.h"
 

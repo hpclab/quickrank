@@ -23,8 +23,7 @@
 
 #include <iostream>
 #include <memory>
-
-#include <boost/container/vector.hpp>
+#include <vector>
 
 #include "types.h"
 #include "data/queryresults.h"
@@ -122,7 +121,7 @@ class Dataset{
 
   quickrank::Feature* data_ = NULL;
   quickrank::Label* labels_ = NULL;
-  boost::container::vector<size_t> offsets_;
+  std::vector<size_t> offsets_;
 
   size_t last_instance_id_;
   size_t max_instances_;

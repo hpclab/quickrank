@@ -22,7 +22,6 @@
 #define BOOST_TEST_OBVMART_LINK
 #include <boost/test/unit_test.hpp>
 
-#include "metric/evaluator.h"
 #include "learning/forests/obliviousmart.h"
 #include "metric/ir/ndcg.h"
 

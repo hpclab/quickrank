@@ -19,23 +19,35 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_METRIC_EVALUATOR_H_
-#define QUICKRANK_METRIC_EVALUATOR_H_
+#pragma once
 
 #include "metric/ir/metric.h"
 #include "learning/ltr_algorithm.h"
 
+#include "io/xml.h"
+#include "io/vpred.h"
+
+#include "utils/paramsmap.h"
+
 namespace quickrank {
-namespace metric {
+namespace driver {
 
 /**
- * This class implements some utility functions to train and test L-t-R models.
+ * This class implements the main logic of the quickrank application.
  */
-class Evaluator : private boost::noncopyable {
+class Driver {
  public:
-  Evaluator();
-  virtual ~Evaluator();
+  Driver();
+  virtual ~Driver();
 
+  /// Implements the main logic of the quickrank application, detecting
+  /// the metrics to adopt and the phases to execute (train/validation/test).
+  /// Returns the exit code of the application
+  ///
+  /// \param, vm The Variable mapping of CLI options (boost object)
+  static int run(ParamsMap& pmap);
+
+ private:
   /// Runs train/validation of \a algo by optimizing \a train_metric
   /// and then measures \a test_metric on the test data.
   ///
@@ -48,7 +60,7 @@ class Evaluator : private boost::noncopyable {
   /// If empty, no output file is written.
   /// \param npartialsave Allows to save a partial model every given number of iterations.
   static void training_phase(std::shared_ptr<learning::LTR_Algorithm> algo,
-                             std::shared_ptr<ir::Metric> train_metric,
+                             std::shared_ptr<metric::ir::Metric> train_metric,
                              const std::string training_filename,
                              const std::string validation_filename,
                              const std::string feature_filename,
@@ -67,14 +79,12 @@ class Evaluator : private boost::noncopyable {
   /// \param verbose If True saves an SVML-like file with the score of each ranker in the ensemble.
   /// NB. Works only for ensembles.
   static void testing_phase(std::shared_ptr<learning::LTR_Algorithm> algo,
-                       std::shared_ptr<ir::Metric> test_metric,
+                       std::shared_ptr<metric::ir::Metric> test_metric,
                        const std::string test_filename,
                        const std::string scores_filename,
                        const bool detailed_testing);
 };
 
-}  // namespace metric
+}  // namespace driver
 }  // namespace quickrank
-
-#endif
 

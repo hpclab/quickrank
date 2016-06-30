@@ -41,9 +41,9 @@ class LineSearch : public LTR_Algorithm {
 
  public:
 
-  LineSearch(unsigned int num_points, double window_size,
-             double reduction_factor, unsigned int max_iterations,
-             unsigned int max_failed_vali, bool adaptive);
+  LineSearch(size_t num_points, double window_size,
+             double reduction_factor, size_t max_iterations,
+             size_t max_failed_vali, bool adaptive);
 
   LineSearch(const boost::property_tree::ptree &info_ptree,
              const boost::property_tree::ptree &model_ptree);
@@ -79,11 +79,11 @@ class LineSearch : public LTR_Algorithm {
   }
 
  private:
-  unsigned int num_points_;
+  size_t num_points_;
   double window_size_;
   double reduction_factor_;
-  unsigned int max_iterations_;
-  unsigned int max_failed_vali_;
+  size_t max_iterations_;
+  size_t max_failed_vali_;
   bool adaptive_;
 
   std::vector<double> best_weights_;

@@ -90,7 +90,7 @@ private:
 /// The Journal of machine learning research, 4, 933-969.
 class Rankboost : public LTR_Algorithm {
 public:
-    Rankboost(unsigned int max_wr);
+    Rankboost(size_t max_wr);
 
     Rankboost(const boost::property_tree::ptree &info_ptree,
               const boost::property_tree::ptree &model_ptree);
@@ -138,8 +138,8 @@ private:
     unsigned int*** SDF = NULL;
     Score* training_scores = NULL;
     Score* validation_scores = NULL;
-    unsigned int T;
-    unsigned int best_T;
+    size_t T;
+    size_t best_T;
     bool go_parallel;
     char const* omp_schedule;
     WeakRanker** weak_rankers = NULL;

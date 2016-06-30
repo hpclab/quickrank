@@ -40,7 +40,7 @@ RTNode* RTNode_parse_xml(const boost::property_tree::ptree &split_xml);
  *
  * The XML format is used for loading and storing ranking models
  */
-class Xml : private boost::noncopyable {
+class Xml {
  public:
   /// Creates a new Svml IO reader/writer.
   ///
@@ -86,7 +86,7 @@ class Xml : private boost::noncopyable {
       std::string model_filename);
 
   /// Generates the C++ implementation of the model scoring function.
-  /// This is en experimental method.
+  /// This is en experimental pruning_method.
   ///
   /// \param model_filename Previously saved xml ranker model.
   /// \param code_filename Output source code file name.

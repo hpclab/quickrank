@@ -23,14 +23,12 @@
 #include <iomanip>
 #include <chrono>
 #include <fstream>
-
-#include <boost/container/list.hpp>
-#include <boost/container/vector.hpp>
-
-#include <boost/filesystem.hpp>
+#include <sys/stat.h>
+#include <list>
 
 #include "io/svml.h"
 #include "utils/strutils.h"
+
 
 namespace quickrank {
 namespace io {
@@ -47,7 +45,9 @@ std::unique_ptr<data::Dataset> Svml::read_horizontal(
     exit(EXIT_FAILURE);
   }
 
-  file_size_ = boost::filesystem::file_size(filename);
+  struct stat filestatus;
+  stat(filename.c_str(), &filestatus);
+  file_size_ = filestatus.st_size;
 
   std::chrono::high_resolution_clock::time_point start_reading =
       std::chrono::high_resolution_clock::now();

@@ -42,7 +42,7 @@ namespace forests {
 
 const std::string Rankboost::NAME_ = "RANKBOOST";
 
-Rankboost::Rankboost(unsigned int max_wr) {
+Rankboost::Rankboost(size_t max_wr) {
     T = max_wr;
     best_T = 0;
     go_parallel = true;
@@ -59,7 +59,7 @@ Rankboost::Rankboost(const boost::property_tree::ptree &info_ptree,
     weak_rankers = new WeakRanker*[T];
     alphas = new float[T]();
 
-    BOOST_FOREACH(const boost::property_tree::ptree::value_type &wr, model_ptree) {
+    for (const boost::property_tree::ptree::value_type &wr: model_ptree) {
         if (wr.first =="weakranker") {
             unsigned int id = wr.second.get<unsigned int>("id");
             unsigned int feature_id = wr.second.get<unsigned int>("featureid");

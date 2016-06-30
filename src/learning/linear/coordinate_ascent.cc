@@ -88,7 +88,7 @@ CoordinateAscent::CoordinateAscent(
   max_failed_vali_ = info_ptree.get<size_t>("max-failed-vali");
 
   size_t max_feature = 0;
-  BOOST_FOREACH(const boost::property_tree::ptree::value_type &couple, model_ptree) {
+  for (const boost::property_tree::ptree::value_type &couple: model_ptree) {
 
     if (couple.first == "couple") {
       size_t feature = couple.second.get<size_t>("feature");
@@ -100,7 +100,7 @@ CoordinateAscent::CoordinateAscent(
 
   std::vector<double>(max_feature, 0.0).swap(best_weights_);
 
-  BOOST_FOREACH(const boost::property_tree::ptree::value_type &couple, model_ptree) {
+  for (const boost::property_tree::ptree::value_type &couple: model_ptree) {
     if (couple.first == "couple") {
       int feature = couple.second.get<int>("feature");
       double weight = couple.second.get<double>("weight");

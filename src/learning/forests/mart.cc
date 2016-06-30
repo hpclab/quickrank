@@ -63,25 +63,25 @@ Mart::Mart(const boost::property_tree::ptree &info_ptree,
   ensemble_model_.set_capacity(ntrees_);
 
   // loop over trees
-  BOOST_FOREACH(const boost::property_tree::ptree::value_type& tree, model_ptree){
-  RTNode* root = NULL;
-  float tree_weight = tree.second.get<double>("<xmlattr>.weight", shrinkage_);
+  for (const auto& tree: model_ptree) {
+    RTNode* root = NULL;
+    float tree_weight = tree.second.get<double>("<xmlattr>.weight", shrinkage_);
 
-  // find the root of the tree
-  BOOST_FOREACH(const boost::property_tree::ptree::value_type& node, tree.second ) {
-    if (node.first == "split") {
-      root = io::RTNode_parse_xml(node.second);
-      break;
+    // find the root of the tree
+    for (const auto& node: tree.second) {
+      if (node.first == "split") {
+        root = io::RTNode_parse_xml(node.second);
+        break;
+      }
     }
-  }
 
-  if (root == NULL) {
-    std::cerr << "!!! Unable to parse tree from XML model." << std::endl;
-    exit(EXIT_FAILURE);
-  }
+    if (root == NULL) {
+      std::cerr << "!!! Unable to parse tree from XML model." << std::endl;
+      exit(EXIT_FAILURE);
+    }
 
-  ensemble_model_.push(root, tree_weight, -1);
-}
+    ensemble_model_.push(root, tree_weight, -1);
+  }
 }
 
 std::ostream& Mart::put(std::ostream& os) const {
@@ -315,7 +315,7 @@ std::unique_ptr<RegressionTree> Mart::fit_regressor_on_gradient(
   RegressionTree* tree = new RegressionTree(nleaves_, training_dataset.get(),
                                             pseudoresponses_, minleafsupport_);
   tree->fit(hist_);
-  //update the outputs of the tree (with gamma computed using the Newton-Raphson method)
+  //update the outputs of the tree (with gamma computed using the Newton-Raphson pruning_method)
   //float maxlabel =
   tree->update_output(pseudoresponses_);
   return std::unique_ptr<RegressionTree>(tree);

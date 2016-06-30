@@ -23,8 +23,6 @@
 #define QUICKRANK_DATA_QUERYRESULTS_H_
 
 #include <algorithm>
-#include <boost/noncopyable.hpp>
-#include <boost/container/vector.hpp>
 
 #include "types.h"
 
@@ -36,7 +34,7 @@ namespace data {
 /// The internal data representation is the same as the
 /// \a Dataset it comes from.
 /// \todo TODO: it seems we need also a class withouth features
-class QueryResults : private boost::noncopyable {
+class QueryResults {
  public:
 
   /// Allocates an Query Results Object.

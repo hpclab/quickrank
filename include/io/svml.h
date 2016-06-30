@@ -23,7 +23,6 @@
 #define QUICKRANK_IO_SVML_H_
 
 #include <string>
-#include <boost/noncopyable.hpp>
 
 #include "data/dataset.h"
 
@@ -45,7 +44,7 @@ namespace io {
 
  \todo TODO: handle feature filtering
  */
-class Svml : private boost::noncopyable {
+class Svml {
  public:
   /// Creates a new Svml IO reader/writer.
   ///

@@ -36,7 +36,8 @@
 #include "learning/forests/rankboost.h"
 // Added by Salvatore Trani
 #include "learning/linear/line_search.h"
-#include "pruning/ensemble_pruning.h"
+#include "optimization/post_learning/pruning/ensemble_pruning.h"
+#include "optimization/optimization.h"
 
 namespace quickrank {
 namespace learning {
@@ -121,10 +122,6 @@ std::shared_ptr<LTR_Algorithm> LTR_Algorithm::load_model_from_file(
   else if (ranker_type == linear::LineSearch::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
         new linear::LineSearch(info_ptree, ensemble_ptree));
-    // Ensemble Pruning added by Salvatore Trani
-  else if (ranker_type == pruning::EnsemblePruning::NAME_)
-    return std::shared_ptr<LTR_Algorithm>(
-        new pruning::EnsemblePruning(info_ptree, ensemble_ptree));
 
   return nullptr;
 //  else

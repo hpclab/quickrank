@@ -33,10 +33,10 @@ namespace linear {
 
 const std::string LineSearch::NAME_ = "LINESEARCH";
 
-LineSearch::LineSearch(unsigned int num_points, double window_size,
+LineSearch::LineSearch(size_t num_points, double window_size,
                        double reduction_factor,
-                       unsigned int max_iterations,
-                       unsigned int max_failed_vali,
+                       size_t max_iterations,
+                       size_t max_failed_vali,
                        bool adaptive)
     : num_points_(num_points),
       window_size_(window_size),
@@ -131,7 +131,7 @@ void LineSearch::learn(
   // initialize weights, weights_prev and best_weights_ a 1
   std::vector<double> weights(num_features, 1.0);
   std::vector<double> weights_prev(num_features, 1.0);
-  // Need the swap method because best_weights_ is unitialized
+  // Need the swap pruning_method because best_weights_ is unitialized
   std::vector<double>(num_features, 1.0).swap(best_weights_);
 
   MetricScore best_metric_on_training = 0;

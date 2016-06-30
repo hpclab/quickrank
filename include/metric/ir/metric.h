@@ -25,7 +25,6 @@
 #include <iostream>
 #include <climits>
 #include <memory>
-#include <boost/noncopyable.hpp>
 
 #include <stdint.h>
 
@@ -42,7 +41,7 @@ namespace ir {
 /**
  * This class implements the basic functionalities of an IR evaluation metric.
  */
-class Metric : private boost::noncopyable {
+class Metric {
  public:
   /// This should be used when no cut-off on the results list is required.
   static const size_t NO_CUTOFF = SIZE_MAX;

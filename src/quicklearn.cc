@@ -68,10 +68,8 @@
 #include <unistd.h>
 #include <fstream>
 
-#include <boost/program_options.hpp>
-#include <boost/algorithm/string/case_conv.hpp>
+#include "utils/paramsmap.h"
 
-#include "metric/evaluator.h"
 #include "learning/forests/mart.h"
 #include "learning/forests/lambdamart.h"
 #include "learning/forests/obliviousmart.h"
@@ -79,13 +77,16 @@
 #include "learning/forests/rankboost.h"
 #include "learning/linear/coordinate_ascent.h"
 #include "learning/linear/line_search.h"
-#include "pruning/ensemble_pruning.h"
 #include "learning/custom/custom_ltr.h"
-#include "metric/metricfactory.h"
-#include "io/xml.h"
-#include "io/vpred.h"
+#include "optimization/post_learning/pruning/ensemble_pruning.h"
 
-namespace po = boost::program_options;
+#include "metric/ir/tndcg.h"
+#include "metric/ir/ndcg.h"
+#include "metric/ir/dcg.h"
+#include "metric/ir/map.h"
+
+#include "driver/driver.h"
+
 
 void print_logo() {
   if (isatty(fileno(stdout))) {
@@ -104,17 +105,6 @@ void print_logo() {
               << "    /____\\ /    \\          QuickRank has been developed by hpc.isti.cnr.it" << std::endl
               << "    ::Quick:Rank::                                   quickrank@isti.cnr.it" << std::endl
               << std::endl;
-  }
-}
-
-inline bool file_exists(const std::string& name) {
-  std::ifstream f(name.c_str());
-  if (f.good()) {
-    f.close();
-    return true;
-  } else {
-    f.close();
-    return false;
   }
 }
 
@@ -139,19 +129,21 @@ int main(int argc, char *argv[]) {
   std::string test_metric_string = quickrank::metric::ir::Ndcg::NAME_;
   size_t test_cutoff = 10;
   size_t partial_save = 100;
-  bool detailed_testing = false;
-  bool ensemble_pruning_with_line_search = false;
-  bool adaptive = false;
-  std::string training_filename;
-  std::string validation_filename;
-  std::string test_filename;
-  std::string features_filename;
-  std::string model_filename;
-  std::string scores_filename;
-  std::string xml_filename;
-  std::string xml_linesearch_filename;
-  std::string c_filename;
-  std::string model_code_type;
+//  bool detailed_testing = false;
+//  std::string opt_algo_string;
+//  std::string opt_method_string;
+//  bool ensemble_pruning_with_line_search = false;
+//  bool adaptive = false;
+//  std::string training_filename;
+//  std::string validation_filename;
+//  std::string test_filename;
+//  std::string features_filename;
+//  std::string model_filename;
+//  std::string scores_filename;
+//  std::string xml_filename;
+//  std::string xml_linesearch_filename;
+//  std::string c_filename;
+//  std::string model_code_type;
 
   // ------------------------------------------
   // Coordinate ascent added by Chiara Pierucci
@@ -163,367 +155,195 @@ int main(int argc, char *argv[]) {
 
   // ------------------------------------------
   // Ensemble Pruning added by Salvatore Trani
-  double epruning_rate = 0.5;
-  std::string epruning_method = quickrank::pruning::EnsemblePruning::getPruningMethod(
-      quickrank::pruning::EnsemblePruning::PruningMethod::RANDOM);
+//  double epruning_rate;
+//  std::string epruning_method_name;
 
-  // data structures
-  std::shared_ptr<quickrank::learning::LTR_Algorithm> ranking_algorithm;
+  ParamsMap pmap;
 
   // Declare the supported options.
-  po::options_description learning_options("Training options");
-  learning_options.add_options()(
-      "algo",
-      po::value<std::string>(&algorithm_string)->default_value(
-          algorithm_string),
-      ("LtR algorithm ["
-          + quickrank::learning::forests::Mart::NAME_ + "|"
-          + quickrank::learning::forests::LambdaMart::NAME_ + "|"
-          + quickrank::learning::forests::ObliviousMart::NAME_ + "|"
-          + quickrank::learning::forests::ObliviousLambdaMart::NAME_ + "|"
-          + quickrank::learning::forests::Rankboost::NAME_ + "|"
-          + quickrank::learning::linear::CoordinateAscent::NAME_ + "|"
-          + quickrank::learning::linear::LineSearch::NAME_ + "|"
-          + quickrank::pruning::EnsemblePruning::NAME_ + "|"
-          + quickrank::learning::CustomLTR::NAME_ + "]")
-          .c_str());
-  learning_options.add_options()(
-      "train-metric",
-      po::value<std::string>(&train_metric_string)->default_value(
-          train_metric_string),
-      ("set train metric [" + quickrank::metric::ir::Dcg::NAME_ + "|"
-          + quickrank::metric::ir::Ndcg::NAME_ + "|"
-          + quickrank::metric::ir::Tndcg::NAME_ + "|"
-          + quickrank::metric::ir::Map::NAME_ + "]").c_str());
-  learning_options.add_options()(
-      "train-cutoff",
-      po::value<size_t>(&train_cutoff)->default_value(train_cutoff),
-      "set train metric cutoff");
-  learning_options.add_options()(
-      "partial",
-      po::value<size_t>(&partial_save)->default_value(partial_save),
-      "set partial file save frequency");
-  learning_options.add_options()(
-      "train",
-      po::value<std::string>(&training_filename)->default_value(
-          training_filename),
-      "set training file");
-  learning_options.add_options()(
-      "valid",
-      po::value<std::string>(&validation_filename)->default_value(
-          validation_filename),
-      "set validation file");
-  learning_options.add_options()(
-      "features",
-      po::value<std::string>(&features_filename)->default_value(
-          features_filename),
-      "set features file");
-  learning_options.add_options()(
-      "model",
-      po::value<std::string>(&model_filename)->default_value(model_filename),
-      "set output model file for training or input model file for testing");
+  pmap.addMessage("Training options");
+  pmap.addOptionWithArg("algo",
+                        "LtR algorithm ["
+                          + quickrank::learning::forests::Mart::NAME_ + "|"
+                          + quickrank::learning::forests::LambdaMart::NAME_ + "|"
+                          + quickrank::learning::forests::ObliviousMart::NAME_ + "|"
+                          + quickrank::learning::forests::ObliviousLambdaMart::NAME_ + "|"
+                          + quickrank::learning::forests::Rankboost::NAME_ + "|"
+                          + quickrank::learning::linear::CoordinateAscent::NAME_ + "|"
+                          + quickrank::learning::linear::LineSearch::NAME_ + "|"
+                          + quickrank::learning::CustomLTR::NAME_ + "]",
+                        algorithm_string);
 
-  po::options_description tree_model_options(
-      "Training options for tree-based models");
-  tree_model_options.add_options()(
-      "num-trees", po::value<size_t>(&ntrees)->default_value(ntrees),
-      "set number of trees");
-  tree_model_options.add_options()(
-      "shrinkage", po::value<float>(&shrinkage)->default_value(shrinkage),
-      "set shrinkage");
-  tree_model_options.add_options()(
-      "num-thresholds",
-      po::value<size_t>(&nthresholds)->default_value(nthresholds),
-      "set number of thresholds");
-  tree_model_options.add_options()(
-      "min-leaf-support",
-      po::value<size_t>(&minleafsupport)->default_value(minleafsupport),
-      "set minimum number of leaf support");
-  tree_model_options.add_options()(
-      "end-after-rounds",
-      po::value<size_t>(&esr)->default_value(esr),
-      "set num. rounds with no boost in validation before ending (if 0 disabled)");
-  tree_model_options.add_options()(
-      "num-leaves",
-      po::value<size_t>(&ntreeleaves)->default_value(ntreeleaves),
-      "set number of leaves [applies only to Mart/LambdaMart]");
-  tree_model_options.add_options()(
-      "tree-depth",
-      po::value<size_t>(&treedepth)->default_value(treedepth),
-      "set tree depth [applies only to Oblivious Mart/LambdaMart]");
+  pmap.addOptionWithArg("train-metric",
+                        "set train metric [" + quickrank::metric::ir::Dcg::NAME_ + "|"
+                          + quickrank::metric::ir::Ndcg::NAME_ + "|"
+                          + quickrank::metric::ir::Tndcg::NAME_ + "|"
+                          + quickrank::metric::ir::Map::NAME_ + "]",
+                        train_metric_string);
 
-  po::options_description testing_options("Testing options");
-  testing_options.add_options()(
-      "test-metric",
-      po::value<std::string>(&test_metric_string)->default_value(
-          test_metric_string),
-      ("set test metric [" + quickrank::metric::ir::Dcg::NAME_ + "|"
-          + quickrank::metric::ir::Ndcg::NAME_ + "|"
-          + quickrank::metric::ir::Tndcg::NAME_ + "|"
-          + quickrank::metric::ir::Map::NAME_ + "]").c_str());
-  testing_options.add_options()(
-      "test-cutoff",
-      po::value<size_t>(&test_cutoff)->default_value(test_cutoff),
-      "set test metric cutoff");
-  testing_options.add_options()(
-      "test",
-      po::value<std::string>(&test_filename)->default_value(test_filename),
-      "set testing file");
-  testing_options.add_options()(
-      "scores",
-      po::value<std::string>(&scores_filename)->default_value(scores_filename),
-      "set output scores file");
-  testing_options.add_options()(
-      "detailed",
-      po::bool_switch(&detailed_testing),
-      "set detailed testing [applies only to ensemble models]");
+  pmap.addOptionWithArg("train-cutoff",
+                        "set train metric cutoff",
+                        train_cutoff);
 
-  po::options_description fast_scoring_options("Fast Scoring options");
-  fast_scoring_options.add_options()(
-      "dump-model",
-      po::value<std::string>(&xml_filename)->default_value(xml_filename),
-      "set XML model file path")(
-      "dump-code",
-      po::value<std::string>(&c_filename)->default_value(c_filename),
-      "set C code file path")(
-      "dump-type",
-      po::value<std::string>(&model_code_type)->default_value("baseline"),
-      "set C code generation strategy. Allowed options are: \"baseline\", \"oblivious\". \"vpred\".");
+  pmap.addOptionWithArg("partial",
+                        "set partial file save frequency",
+                        partial_save);
 
-  // CoordinateAscent options add by Chiara Pierucci
-  po::options_description coordasc_linesearch_options(
-      "Training options for Coordinate Ascent and Line Search");
-  coordasc_linesearch_options.add_options()(
-      "num-samples",
-      po::value<size_t>(&num_points)->default_value(num_points),
-      "set number of samples in search window");
-  coordasc_linesearch_options.add_options()(
-      "window-size", po::value<float>(&window_size)->default_value(window_size),
-      "set search window size");
-  coordasc_linesearch_options.add_options()(
-      "reduction-factor",
-      po::value<float>(&reduction_factor)->default_value(reduction_factor),
-      "set window reduction factor");
-  coordasc_linesearch_options.add_options()(
-      "max-iterations",
-      po::value<size_t>(&max_iterations)->default_value(max_iterations),
-      "set number of max iterations");
-  coordasc_linesearch_options.add_options()(
-      "max-failed-valid",
-      po::value<size_t>(&max_failed_vali)->default_value(max_failed_vali),
-      "set number of fails on validation before exit");
+  pmap.addOptionWithArg<std::string>("train", "set training file");
 
-  // LineSearch options add by Salvatore Trani
-  po::options_description linesearch_options(
-      "Training options for Line Search");
-  linesearch_options.add_options()(
-      "adaptive",
-      po::bool_switch(&adaptive),
-      "set adaptive reduction factor (based on last iteration metric gain)");
+  pmap.addOptionWithArg<std::string>("valid", "set validation file");
 
-  // Ensemble Pruning options add by Salvatore Trani
-  po::options_description epruning_options(
-      "Training options for Ensemble Pruning");
-  epruning_options.add_options()(
-      "pruning-rate",
-      po::value<double>(&epruning_rate)->default_value(epruning_rate),
-      "ensemble to prune (either as a ratio with respect to ensemble size or "
-          "as an absolute number of estimators to prune)");
+  pmap.addOptionWithArg<std::string>("valid", "set validation file");
 
+  pmap.addOptionWithArg<std::string>("features", "set features file");
+
+  pmap.addOptionWithArg<std::string>("model",
+                                     "set output model file for training or "
+                                         "input model file for testing");
+
+  // --------------------------------------------------------
+  pmap.addMessage("Training options for tree-based models");
+  pmap.addOptionWithArg("num-trees",
+                        "set number of trees",
+                        ntrees);
+
+  pmap.addOptionWithArg("shrinkage",
+                        "set shrinkage",
+                        shrinkage);
+
+  pmap.addOptionWithArg("num-thresholds",
+                        "set number of thresholds",
+                        nthresholds);
+
+  pmap.addOptionWithArg("min-leaf-support",
+                        "set minimum number of leaf support",
+                        minleafsupport);
+
+  pmap.addOptionWithArg("end-after-rounds",
+                        "set num. rounds with no boost in validation before ending (if 0 disabled)",
+                        esr);
+
+  pmap.addOptionWithArg("num-leaves",
+                        "set number of leaves [applies only to Mart/LambdaMart]",
+                        ntreeleaves);
+
+  pmap.addOptionWithArg("tree-depth",
+                        "set tree depth [applies only to Oblivious Mart/LambdaMart]",
+                        treedepth);
+
+  // --------------------------------------------------------
+  pmap.addMessage("Testing options");
+  pmap.addOptionWithArg("test-metric",
+                        "set test metric [" + quickrank::metric::ir::Dcg::NAME_ + "|"
+                          + quickrank::metric::ir::Ndcg::NAME_ + "|"
+                          + quickrank::metric::ir::Tndcg::NAME_ + "|"
+                          + quickrank::metric::ir::Map::NAME_ + "]",
+                        test_metric_string);
+
+  pmap.addOptionWithArg("test-cutoff",
+                        "set test metric cutoff",
+                        test_cutoff);
+
+  pmap.addOptionWithArg<std::string>("test", "set testing file");
+
+  pmap.addOptionWithArg<std::string>("scores", "set output scores file");
+
+  pmap.addOption("detailed",
+                 "enable detailed testing [applies only to ensemble models]");
+
+  pmap.addMessage("Fast Scoring options");
+  pmap.addOptionWithArg<std::string>("dump-model", "set XML model file path");
+
+  pmap.addOptionWithArg<std::string>("dump-code", "set C code file path");
+
+  pmap.addOptionWithArg("dump-type",
+                        "set C code generation strategy. Allowed options are:"
+                            " \"baseline\", \"oblivious\". \"vpred\".",
+                        std::string("baseline"));
+
+  pmap.addOptionWithArg<std::string>("detailed",
+                                     "set detailed testing [applies only to "
+                                         "ensemble models]");
+
+  // --------------------------------------------------------
+  // CoordinateAscent and LineSearch options
+  // add by Chiara Pierucci and Salvatore Trani
+  pmap.addMessage("Training options for Coordinate Ascent and Line Search");
+  pmap.addOptionWithArg("num-samples",
+                        "set number of samples in search window",
+                        num_points);
+
+  pmap.addOptionWithArg("window-size",
+                        "set search window size",
+                        window_size);
+
+  pmap.addOptionWithArg("reduction-factor",
+                        "set window reduction factor",
+                        reduction_factor);
+
+  pmap.addOptionWithArg("max-iterations",
+                        "set number of max iterations",
+                        max_iterations);
+
+  pmap.addOptionWithArg("max-failed-valid",
+                        "set number of fails on validation before exit",
+                        max_failed_vali);
+
+  // --------------------------------------------------------
+  // LineSearch extra options add by Salvatore Trani
+  pmap.addMessage("Training options for Line Search");
+  pmap.addOption("adaptive",
+                 "enable adaptive reduction factor (based on last iteration "
+                     "metric gain)");
+
+  // --------------------------------------------------------
+  // Optimization options add by Salvatore Trani
+  pmap.addMessage("Optimization options");
+  pmap.addOptionWithArg<std::string>(
+      "opt-algo",
+      "Optimization alghoritm [" +
+        quickrank::optimization::post_learning::pruning::EnsemblePruning::NAME_
+        + "]");
 
   std::string pruningMethods = "";
-  for (auto i: quickrank::pruning::EnsemblePruning::pruningMethodName) {
+  for (auto i: quickrank::optimization::post_learning::pruning::EnsemblePruning::pruningMethodNames) {
     pruningMethods += i + "|";
   }
   pruningMethods = pruningMethods.substr(0, pruningMethods.size() - 1);
 
-  epruning_options.add_options()(
-      "pruning-method",
-      po::value<std::string>(&epruning_method)->default_value(epruning_method),
-      ("method for pruning the ensemble [" + pruningMethods + "]").c_str());
+  pmap.addOptionWithArg<std::string>(
+      "opt-method",
+      "Optimization method: " +
+        quickrank::optimization::post_learning::pruning::EnsemblePruning::NAME_
+        + " [" + pruningMethods  + "]");
 
-  epruning_options.add_options()(
-      "with-line-search",
-      po::bool_switch(&ensemble_pruning_with_line_search),
-      "ensemble pruning is made in conjunction with line search "
-          "[related parameters accepted]");
-  epruning_options.add_options()(
-      "line-search-model",
-          po::value<std::string>(&xml_linesearch_filename)->default_value(
-              xml_linesearch_filename),
-          "set line search XML file path for loading line search model "
-          "(options and already trained weights)");
 
-  po::options_description all_desc("Allowed options");
-  all_desc.add(learning_options)
-      .add(tree_model_options)
-      .add(coordasc_linesearch_options)
-      .add(linesearch_options)
-      .add(epruning_options)
-      .add(testing_options)
-      .add(fast_scoring_options);
-  all_desc.add_options()("help,h", "produce help message");
+  // --------------------------------------------------------
+  pmap.addMessage("Training options for Ensemble Pruning");
+  pmap.addOptionWithArg<double>("pruning-rate",
+                                "ensemble to prune (either as a ratio with "
+                                    "respect to ensemble size or as an absolute "
+                                    "number of estimators to prune)");
 
-  po::variables_map vm;
-  po::store(po::parse_command_line(argc, argv, all_desc), vm);
-  po::notify(vm);
+  pmap.addOption("with-line-search",
+                 "ensemble pruning is made in conjunction with line search "
+                     "[related parameters accepted]");
 
-  // Show Help
-  if (vm.count("help")) {
-    std::cout << all_desc << "\n";
+  pmap.addOptionWithArg<std::string>("line-search-model",
+                                     "set line search XML file path for "
+                                         "loading line search model (options "
+                                         "and already trained weights)");
+
+  // --------------------------------------------------------
+  pmap.addMessage("Help options:");
+  pmap.addOption("help", "h", "print help message");
+
+
+  bool parse_status = pmap.parse(argc, argv);
+  if (!parse_status || pmap.isSet("help")) {
+    std::cout << pmap.help();
     return 1;
   }
 
-  // Run Training
-  if (!training_filename.empty()) {
-
-    // Create model
-    boost::to_upper(algorithm_string);
-    if (algorithm_string == quickrank::learning::forests::LambdaMart::NAME_)
-      ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
-          new quickrank::learning::forests::LambdaMart(ntrees, shrinkage,
-                                                       nthresholds, ntreeleaves,
-                                                       minleafsupport, esr));
-    else if (algorithm_string == quickrank::learning::forests::Mart::NAME_)
-      ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
-          new quickrank::learning::forests::Mart(ntrees, shrinkage, nthresholds,
-                                                 ntreeleaves, minleafsupport,
-                                                 esr));
-    else if (algorithm_string == quickrank::learning::forests::ObliviousMart::NAME_)
-      ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
-          new quickrank::learning::forests::ObliviousMart(ntrees, shrinkage,
-                                                      nthresholds, treedepth,
-                                                      minleafsupport, esr));
-    else if (algorithm_string == quickrank::learning::forests::ObliviousLambdaMart::NAME_)
-      ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
-          new quickrank::learning::forests::ObliviousLambdaMart(ntrees, shrinkage,
-                                                      nthresholds, treedepth,
-                                                      minleafsupport, esr));
-    else if (algorithm_string == quickrank::learning::forests::Rankboost::NAME_)
-      ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
-          new quickrank::learning::forests::Rankboost(ntrees));
-    else if (algorithm_string == quickrank::learning::linear::CoordinateAscent::NAME_)
-      ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
-          new quickrank::learning::linear::CoordinateAscent(num_points,
-                                                            window_size,
-                                                            reduction_factor,
-                                                            max_iterations,
-                                                            max_failed_vali));
-    else if (algorithm_string == quickrank::learning::linear::LineSearch::NAME_)
-      ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
-          new quickrank::learning::linear::LineSearch(num_points,
-                                                      window_size,
-                                                      reduction_factor,
-                                                      max_iterations,
-                                                      max_failed_vali,
-                                                      adaptive));
-    else if (algorithm_string == quickrank::pruning::EnsemblePruning::NAME_) {
-      if (!ensemble_pruning_with_line_search)
-        ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
-          new quickrank::pruning::EnsemblePruning(epruning_method,
-                                                  epruning_rate));
-      else {
-        std::shared_ptr<quickrank::learning::linear::LineSearch> lineSearch;
-        if (!xml_linesearch_filename.empty() &&
-            file_exists(xml_linesearch_filename)) {
-
-          // We should load the line search model (both weights and parameters)
-          lineSearch = std::dynamic_pointer_cast<quickrank::learning::linear::LineSearch>(
-              quickrank::learning::LTR_Algorithm::load_model_from_file(
-                  xml_linesearch_filename));
-
-        } else {
-          // We should create a new line search model (with default weights,
-          // to train in the pre-pruning step if it has to be done)
-          lineSearch = std::shared_ptr<quickrank::learning::linear::LineSearch>(
-              new quickrank::learning::linear::LineSearch(
-                  num_points, window_size, reduction_factor, max_iterations,
-                  max_failed_vali, adaptive));
-        }
-
-        ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
-            new quickrank::pruning::EnsemblePruning(epruning_method,
-                                                    epruning_rate,
-                                                    lineSearch));
-      }
-    } else if (algorithm_string == quickrank::learning::CustomLTR::NAME_)
-      ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
-          new quickrank::learning::CustomLTR());
-    else {
-      std::cout << " !! Train Algorithm was not set properly" << std::endl;
-      exit(EXIT_FAILURE);
-    }
-
-    // METRIC STUFF
-    std::shared_ptr<quickrank::metric::ir::Metric> training_metric =
-        quickrank::metric::ir::ir_metric_factory(train_metric_string, train_cutoff);
-    if (!training_metric) {
-      std::cout << " !! Train Metric was not set properly" << std::endl;
-      exit(EXIT_FAILURE);
-    }
-
-    //show ranker parameters
-    std::cout << "#" << std::endl << *ranking_algorithm;
-    std::cout << "#" << std::endl << "# training scorer: " << *training_metric
-              << std::endl;
-
-    quickrank::metric::Evaluator::training_phase(ranking_algorithm,
-                                                 training_metric,
-                                                 training_filename,
-                                                 validation_filename,
-                                                 features_filename,
-                                                 model_filename,
-                                                 partial_save);
-  }
-
-  if (!test_filename.empty()) {
-    if (!ranking_algorithm) {
-      std::cout << "# Loading model from file " << model_filename << std::endl;
-      ranking_algorithm =
-          quickrank::learning::LTR_Algorithm::load_model_from_file(
-              model_filename);
-      std::cout << "#" << std::endl << *ranking_algorithm;
-      if (!ranking_algorithm) {
-        std::cout << " !! Unable to load model from file." << std::endl;
-        exit(EXIT_FAILURE);
-      }
-    }
-
-    std::shared_ptr<quickrank::metric::ir::Metric> testing_metric =
-        quickrank::metric::ir::ir_metric_factory(test_metric_string, test_cutoff);
-    if (!testing_metric) {
-      std::cout << " !! Test Metric was not set properly" << std::endl;
-      exit(EXIT_FAILURE);
-    }
-
-    std::cout << "# test scorer: " << *testing_metric << std::endl << "#"
-              << std::endl;
-    quickrank::metric::Evaluator::testing_phase(ranking_algorithm,
-                                                testing_metric,
-                                                test_filename,
-                                                scores_filename,
-                                                detailed_testing);
-  }
-
-  // Fast Scoring
-
-  // if the dump files are set, it proceeds to dump the model by following a given strategy.
-  if (xml_filename != "" && c_filename != "") {
-    quickrank::io::Xml xml;
-    if (model_code_type == "baseline") {
-      std::cout << "applying baseline strategy (conditional operators) for C code generation to: "
-                << xml_filename << std::endl;
-      xml.generate_c_code_baseline(xml_filename, c_filename);
-    } else if (model_code_type == "oblivious") {
-      std::cout << "applying oblivious strategy for C code generation to: "
-                << xml_filename << std::endl;
-      xml.generate_c_code_oblivious_trees(xml_filename, c_filename);
-    } else if (model_code_type == "vpred") {
-      std::cout << "generating VPred input file from: " << xml_filename
-                << std::endl;
-      quickrank::io::generate_vpred_input(xml_filename, c_filename);
-    }
-  }
-
-  return EXIT_SUCCESS;
+  return quickrank::driver::Driver::run(pmap);
 }

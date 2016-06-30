@@ -83,7 +83,7 @@ BOOST_AUTO_TEST_CASE( ndcg_test ) {
   double delta3_ndcg = ndcg_metric.get_jacobian(results)->at(0,2);
   std::cout << "true delta ndcg: " << delta_ndcg << std::endl;
   std::cout << "delta ndcg by specialized method: " << delta2_ndcg << std::endl;
-  std::cout << "old ndcg by specialized method: " << delta3_ndcg << std::endl;
+  std::cout << "old ndcg by specialized pruning_method: " << delta3_ndcg << std::endl;
 
   BOOST_CHECK_EQUAL(delta_ndcg, delta2_ndcg);
 */

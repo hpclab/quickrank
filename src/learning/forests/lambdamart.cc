@@ -57,7 +57,7 @@ std::unique_ptr<RegressionTree> LambdaMart::fit_regressor_on_gradient(
   RegressionTree* tree = new RegressionTree(nleaves_, training_dataset.get(),
                                             pseudoresponses_, minleafsupport_);
   tree->fit(hist_);
-  //update the outputs of the tree (with gamma computed using the Newton-Raphson method)
+  //update the outputs of the tree (with gamma computed using the Newton-Raphson pruning_method)
   //float maxlabel =
   tree->update_output(pseudoresponses_, instance_weights_);
 

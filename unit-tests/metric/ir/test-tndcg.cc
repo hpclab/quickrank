@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE( tndcg_test ) {
 
   std::cout << "true delta ndcg: " << delta_tndcg << std::endl;
   std::cout << "delta ndcg by specialized method: " << delta2_tndcg << std::endl;
-  //std::cout << "old ndcg by specialized method: " << delta3_tndcg << std::endl;
+  //std::cout << "old ndcg by specialized pruning_method: " << delta3_tndcg << std::endl;
   */
 
 }
