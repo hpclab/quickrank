@@ -1,43 +1,74 @@
+# to be compiled with cmake .. -DCMAKE_CXX_COMPILER=/usr/local/bin/g++-5
 cmake_minimum_required(VERSION 3.4)
-project(quicklearn)
 
-#set( CMAKE_VERBOSE_MAKEFILE on )
+project(quicklearn CXX)
 
-# set compiler options
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -march=native -mtune=native -O3 -Wa,-q")
 
-# Put the binaries in the bin dir of the project
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
-#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
-#set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
-#set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
+# require support of c++11
+set_property(GLOBAL PROPERTY CXX_STANDARD 11)
+set_property(GLOBAL PROPERTY CXX_STANDARD_REQUIRED ON)
 
-find_package(Boost REQUIRED COMPONENTS program_options system filesystem unit_test_framework)
-set(Boost_USE_MULTITHREAD ON)  # enable multithreading
-
+# require support of openmp
 find_package(OpenMP REQUIRED)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 
+# Compiler flags (todo: fix release vs. debug)
+# SET(CMAKE_BUILD_TYPE Release CACHE STRING "Release is the default build type")
+# set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -std=c++11 -Wall -march=native -mtune=native -O3") # for franco  -Wa,-q
+# set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -std=c++11 -Wall -g") # for franco  -Wa,-q
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -march=native -mtune=native -O3") # for franco  -Wa,-q
+
+# Binary output directory
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
+
+# -----------------------------------------
+# boost to be removed
+find_package(Boost REQUIRED COMPONENTS program_options system filesystem unit_test_framework)
+set(Boost_USE_MULTITHREAD ON)  # enable multithreading
 include_directories(${Boost_INCLUDE_DIR})
+# -----------------------------------------
+
+# include files path
 include_directories(${CMAKE_SOURCE_DIR}/include)
+include_directories("lib")
 
+# source files path, excluding main files
+set(QUICKLEARN_MAIN "${CMAKE_SOURCE_DIR}/src/quicklearn.cc")
+set(QUICKSCORE_MAIN "${CMAKE_SOURCE_DIR}/src/quickscore.cc")
 file(GLOB_RECURSE all_sources ${CMAKE_SOURCE_DIR}/src/*.cc)
+list(REMOVE_ITEM all_sources ${QUICKLEARN_MAIN})
+list(REMOVE_ITEM all_sources ${QUICKSCORE_MAIN})
 file(GLOB_RECURSE all_headers ${CMAKE_SOURCE_DIR}/include/*.h)
-file(GLOB_RECURSE unit_tests_sources ${CMAKE_SOURCE_DIR}/unit-tests/*.cc)
+file(GLOB_RECURSE unit_tests_sources ${CMAKE_SOURCE_DIR}/catch-unit-tests/*.cc)
 
-set(quicklearn_sources ${all_sources})
-list(REMOVE_ITEM quicklearn_sources "${CMAKE_SOURCE_DIR}/src/quickscore.cc")
+# ---------------------------------
+# quicklearn target
+add_executable(quicklearn ${all_headers} ${all_sources} ${QUICKLEARN_MAIN})
 
-set(quickscore_sources ${all_sources})
-list(REMOVE_ITEM quickscore_sources "${CMAKE_SOURCE_DIR}/src/quicklearn.cc")
+# ---------------------------------
+# quickscore target
 
-set(all_sources_wo_exec ${all_sources})
-list(REMOVE_ITEM all_sources_wo_exec "${CMAKE_SOURCE_DIR}/src/quicklearn.cc
-                                      ${CMAKE_SOURCE_DIR}/src/quickscore.cc")
+# ---------------------------------
+# download test data
+add_custom_command( OUTPUT ${CMAKE_SOURCE_DIR}/quickranktestdata
+    COMMAND git clone http://git.hpc.isti.cnr.it/quickrank/quickranktestdata.git ${CMAKE_SOURCE_DIR}/quickranktestdata
+    COMMENT "Cloning Quickrank small datasets repo"
+    )
+add_custom_target( quickranktestdata DEPENDS ${CMAKE_SOURCE_DIR}/quickranktestdata )
 
-# right now quickscore is not compiled
-add_executable(quicklearn ${all_headers} ${quicklearn_sources})
-target_link_libraries(quicklearn ${Boost_LIBRARIES})
+# ---------------------------------
+# unit-test target
+add_executable(unit-tests ${all_headers} ${all_sources} ${unit_tests_sources})
+add_dependencies(unit-tests quickranktestdata)
 
-add_executable(unit-tests ${all_sources_wo_exec} ${unit_tests})
-target_link_libraries(unit-tests ${Boost_LIBRARIES})
+# ---------------------------------
+# generate documentation
+add_custom_target( doc
+    COMMAND doxygen quickrank.doxygen
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/documentation
+    COMMENT "Creating the documentation with doxygen"
+    )
+
+
+
+
