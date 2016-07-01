@@ -1,8 +1,9 @@
-# to be compiled with cmake .. -DCMAKE_CXX_COMPILER=/usr/local/bin/g++-5
+# compile with CMake.
+# G++ COMPILER OPTION (on Mac OS X, brew): -DCMAKE_CXX_COMPILER=/usr/local/bin/g++-5
+# GCC COMPILER OPTION (on Mac OS X, brew): -DCMAKE_C_COMPILER=/usr/local/bin/gcc-5
+
 cmake_minimum_required(VERSION 3.4)
-
-project(quicklearn CXX)
-
+project(QUICKRANK)
 
 # require support of c++11
 set_property(GLOBAL PROPERTY CXX_STANDARD 11)
@@ -15,8 +16,16 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 # Compiler flags (todo: fix release vs. debug)
 # SET(CMAKE_BUILD_TYPE Release CACHE STRING "Release is the default build type")
 # set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -std=c++11 -Wall -march=native -mtune=native -O3") # for franco  -Wa,-q
-# set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -std=c++11 -Wall -g") # for franco  -Wa,-q
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -march=native -mtune=native -O3") # for franco  -Wa,-q
+# set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -std=c++11 -Wall -g") # for franco  -Wa,-q
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -march=native -mtune=native -O3") # for franco  -Wa,-q
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -std=c++11 -Wall -march=native -mtune=native -O3 -Wa,-q")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -std=c++11 -Wall -O0 -g -Wa,-q")
+elseif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -std=c++11 -Wall -march=native -mtune=native -O3 -Wa,-q")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -std=c++11 -Wall -O0 -g -Wa,-q")
+endif()
 
 # Binary output directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
