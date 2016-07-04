@@ -21,11 +21,8 @@
  *  - Chiara Pierucci (chiarapierucci14@gmail.com)
  *  - Claudio Lucchese (claudio.lucchese@isti.cnr.it)
  */
-#ifndef QUICKRANK_LEARNING_COORDINATE_ASCENT_H_
-#define QUICKRANK_LEARNING_COORDINATE_ASCENT_H_
+#pragma once
 
-#include <boost/noncopyable.hpp>
-#include <boost/property_tree/ptree.hpp>
 #include <memory>
 
 #include "data/dataset.h"
@@ -43,12 +40,11 @@ namespace linear {
 class CoordinateAscent : public LTR_Algorithm {
 
  public:
-  CoordinateAscent(size_t num_points, double window_size,
-                   double reduction_factor, size_t max_iterations,
-                   size_t max_failed_vali);
+  CoordinateAscent(unsigned int num_points, double window_size,
+                   double reduction_factor, unsigned int max_iterations,
+                   unsigned int max_failed_vali);
 
-  CoordinateAscent(const boost::property_tree::ptree &info_ptree,
-                   const boost::property_tree::ptree &model_ptree);
+  CoordinateAscent(const pugi::xml_document& model);
 
   virtual ~CoordinateAscent();
 
@@ -78,11 +74,11 @@ class CoordinateAscent : public LTR_Algorithm {
  private:
   std::vector<double> best_weights_;
 
-  size_t num_samples_;
+  unsigned int num_samples_;
   double window_size_;
   double reduction_factor_;
-  size_t max_iterations_;
-  size_t max_failed_vali_;
+  unsigned int max_iterations_;
+  unsigned int max_failed_vali_;
 
   /// The output stream operator.
   friend std::ostream& operator<<(std::ostream& os, const CoordinateAscent& a) {
@@ -99,5 +95,3 @@ class CoordinateAscent : public LTR_Algorithm {
 }  // namespace linear
 }  // namespace learning
 }  // namespace quickrank
-
-#endif

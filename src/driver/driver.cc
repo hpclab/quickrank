@@ -22,11 +22,14 @@
 #include <iomanip>
 #include <fstream>
 #include <limits>
+#include <memory>
 
 #include "driver/driver.h"
 #include "io/svml.h"
 
 #include "learning/ltr_algorithm_factory.h"
+#include "optimization/optimization.h"
+#include "optimization/optimization_factory.h"
 #include "metric/metric_factory.h"
 
 namespace quickrank {
@@ -44,6 +47,13 @@ int Driver::run(ParamsMap& pmap) {
       quickrank::learning::ltr_algorithm_factory(pmap);
   if (!ranking_algorithm) {
     std::cerr << " !! LTR Algorithm was not set properly" << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  std::shared_ptr<quickrank::optimization::Optimization> opt_algorithm =
+      quickrank::optimization::optimization_factory(pmap);
+  if (!opt_algorithm) {
+    std::cerr << " !! Optimization Algorithm was not set properly" << std::endl;
     exit(EXIT_FAILURE);
   }
 
@@ -67,6 +77,8 @@ int Driver::run(ParamsMap& pmap) {
     std::cout << "#" << std::endl << *ranking_algorithm;
     std::cout << "#" << std::endl << "# training scorer: " << *training_metric
     << std::endl;
+
+//    if (opt_algorithm && opt_algorithm.
 
     training_phase(ranking_algorithm,
                    training_metric,
@@ -109,19 +121,19 @@ int Driver::run(ParamsMap& pmap) {
     std::string model_code_type = pmap.get<std::string>("dump-type");
 
     quickrank::io::Xml xml;
-    if (model_code_type == "baseline") {
-      std::cout << "applying baseline strategy (conditional operators) for C code generation to: "
-        << xml_filename << std::endl;
-      xml.generate_c_code_baseline(xml_filename, c_filename);
-    } else if (model_code_type == "oblivious") {
-      std::cout << "applying oblivious strategy for C code generation to: "
-        << xml_filename << std::endl;
-      xml.generate_c_code_oblivious_trees(xml_filename, c_filename);
-    } else if (model_code_type == "vpred") {
-      std::cout << "generating VPred input file from: " << xml_filename
-        << std::endl;
-      quickrank::io::generate_vpred_input(xml_filename, c_filename);
-    }
+//    if (model_code_type == "baseline") {
+//      std::cout << "applying baseline strategy (conditional operators) for C code generation to: "
+//        << xml_filename << std::endl;
+//      xml.generate_c_code_baseline(xml_filename, c_filename);
+//    } else if (model_code_type == "oblivious") {
+//      std::cout << "applying oblivious strategy for C code generation to: "
+//        << xml_filename << std::endl;
+//      xml.generate_c_code_oblivious_trees(xml_filename, c_filename);
+//    } else if (model_code_type == "vpred") {
+//      std::cout << "generating VPred input file from: " << xml_filename
+//        << std::endl;
+//      quickrank::io::generate_vpred_input(xml_filename, c_filename);
+//    }
   }
 
   return EXIT_SUCCESS;

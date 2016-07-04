@@ -19,8 +19,7 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_LEARNING_TREE_OT_H_
-#define QUICKRANK_LEARNING_TREE_OT_H_
+#pragma once
 
 #include <cfloat>
 #include <cmath>
@@ -45,5 +44,3 @@ class ObliviousRT : public RegressionTree {
             RTNodeHistogram const *hist);
   const double invalid = -DBL_MAX;
 };
-
-#endif

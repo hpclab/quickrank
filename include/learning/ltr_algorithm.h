@@ -21,11 +21,11 @@
  */
 #pragma once
 
-#include <boost/property_tree/ptree.hpp>
 #include <memory>
 
 #include "data/dataset.h"
 #include "metric/ir/metric.h"
+#include "pugixml/pugixml.hpp"
 
 namespace quickrank {
 namespace learning {
@@ -37,8 +37,7 @@ class LTR_Algorithm {
   }
 
   /// Generates a LTR_Algorithm instance from a previously saved XML model.
-  LTR_Algorithm(const boost::property_tree::ptree &info_ptree,
-                const boost::property_tree::ptree &model_ptree);
+  LTR_Algorithm(const pugi::xml_document& model);
 
   virtual ~LTR_Algorithm() {
   }

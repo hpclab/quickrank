@@ -21,9 +21,7 @@
  */
 #include <fstream>
 
-#include <boost/property_tree/xml_parser.hpp>
-#include <boost/foreach.hpp>
-
+#include "pugixml/pugixml.hpp"
 #include "learning/ltr_algorithm.h"
 
 #include "learning/forests/mart.h"
@@ -37,7 +35,6 @@
 // Added by Salvatore Trani
 #include "learning/linear/line_search.h"
 #include "optimization/post_learning/pruning/ensemble_pruning.h"
-#include "optimization/optimization.h"
 
 namespace quickrank {
 namespace learning {
@@ -76,52 +73,40 @@ std::shared_ptr<LTR_Algorithm> LTR_Algorithm::load_model_from_file(
     exit(EXIT_FAILURE);
   }
 
-  boost::property_tree::ptree xml_tree;
-
-  std::ifstream is;
-  is.open(model_filename, std::ifstream::in);
-
-  boost::property_tree::read_xml(is, xml_tree);
-
-  is.close();
-
-  boost::property_tree::ptree info_ptree;
-  boost::property_tree::ptree ensemble_ptree;
-
-//  BOOST_FOREACH(const boost::property_tree::ptree::value_type& node, xml_tree.get_child("ranker")){
-  for (const boost::property_tree::ptree::value_type& node:
-      xml_tree.get_child("ranker")) {
-    if (node.first == "info")
-      info_ptree = node.second;
-    else if (node.first == "ensemble")
-      ensemble_ptree = node.second;
+  pugi::xml_document model;
+  pugi::xml_parse_result result = model.load_file(model_filename.c_str());
+  if (!result) {
+    std::cerr << "!!! Model filename is not parsed correctly." << std::endl;
+    exit(EXIT_FAILURE);
   }
 
-  std::string ranker_type = info_ptree.get<std::string>("type");
+  std::string ranker_type =
+      model.child("ranker").child("info").child("type").child_value();
+
   if (ranker_type == forests::Mart::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
-        new forests::Mart(info_ptree, ensemble_ptree));
+        new forests::Mart(model));
   else if (ranker_type == forests::LambdaMart::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
-        new forests::LambdaMart(info_ptree, ensemble_ptree));
+        new forests::LambdaMart(model));
   else if (ranker_type == forests::ObliviousMart::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
-        new forests::ObliviousMart(info_ptree, ensemble_ptree));
+        new forests::ObliviousMart(model));
   else if (ranker_type == forests::ObliviousLambdaMart::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
-        new forests::ObliviousLambdaMart(info_ptree, ensemble_ptree));
-    // Coordinate Ascent added by Chiara Pierucci Andrea Battistini
+        new forests::ObliviousLambdaMart(model));
+    // Coordinate Ascent added by Chiara Pierucci and Andrea Battistini
   else if (ranker_type == linear::CoordinateAscent::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
-        new linear::CoordinateAscent(info_ptree, ensemble_ptree));
+        new linear::CoordinateAscent(model));
   // Rankboost added by Tommaso Papini and Gabriele Bani
   else if (ranker_type == forests::Rankboost::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
-        new forests::Rankboost(info_ptree, ensemble_ptree));
+        new forests::Rankboost(model));
     // Line Search added by Salvatore Trani
   else if (ranker_type == linear::LineSearch::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
-        new linear::LineSearch(info_ptree, ensemble_ptree));
+        new linear::LineSearch(model));
 
   return nullptr;
 //  else

@@ -29,8 +29,8 @@
 #include <iomanip>
 #include <chrono>
 #include <set>
-
-#include <boost/property_tree/xml_parser.hpp>
+#include <string.h>
+#include <cassert>
 #include <io/svml.h>
 
 namespace quickrank {
@@ -55,15 +55,17 @@ EnsemblePruning::EnsemblePruning(double pruning_rate,
     lineSearch_(lineSearch) {
 }
 
-void EnsemblePruning::load_model(const boost::property_tree::ptree &info_ptree,
-                                 const boost::property_tree::ptree &model_ptree)
-{
-  pruning_rate_ = info_ptree.get <double> ("pruning-rate");
+EnsemblePruning::EnsemblePruning(const pugi::xml_document& model) {
+  pugi::xml_node model_info = model.child("optimizer").child("info");
+  pugi::xml_node model_tree = model.child("optimizer").child("ensemble");
+
+  pruning_rate_ = model_info.child("pruning-rate").text().as_double();
 
   unsigned int max_feature = 0;
-  for (const boost::property_tree::ptree::value_type& tree: model_ptree) {
-    if (tree.first == "tree") {
-      unsigned int feature = tree.second.get<unsigned int>("index");
+  for (const auto& couple: model_tree.children()) {
+
+    if (strcmp(couple.name(), "tree") == 0) {
+      unsigned int feature = couple.child("index").text().as_uint();
       if (feature > max_feature) {
         max_feature = feature;
       }
@@ -72,10 +74,10 @@ void EnsemblePruning::load_model(const boost::property_tree::ptree &info_ptree,
 
   estimators_to_prune_ = 0;
   std::vector<double>(max_feature, 0.0).swap(weights_);
-  for (const boost::property_tree::ptree::value_type& tree: model_ptree) {
-    if (tree.first == "tree") {
-      int feature = tree.second.get<int>("index");
-      double weight = tree.second.get<double>("weight");
+  for (const auto& tree: model_tree.children()) {
+    if (strcmp(tree.name(), "tree") == 0) {
+      unsigned int feature = tree.child("index").text().as_uint();
+      double weight = tree.child("weight").text().as_double();
       weights_[feature - 1] = weight;
       if (weight > 0)
         estimators_to_prune_++;

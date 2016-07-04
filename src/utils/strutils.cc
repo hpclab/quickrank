@@ -79,7 +79,7 @@ unsigned int atou(char *str, const char *sep) {
  return (*a!='\0' || *b!='\0') ? 1 : 0;
  }*/
 
-void trim(std::string str) {
+std::string trim(std::string str) {
 
   while (std::isspace(str[0])) {
     str.erase(str.begin()); // erase it
@@ -90,4 +90,6 @@ void trim(std::string str) {
   while (std::isspace(str[str.length() - 1])) {
     str.erase(str.end() - 1); // erase it
   }
+
+  return str;
 }

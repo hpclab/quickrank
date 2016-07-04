@@ -19,8 +19,7 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_LEARNING_TREE_ENSEMBLE_H_
-#define QUICKRANK_LEARNING_TREE_ENSEMBLE_H_
+#pragma once
 
 #include "learning/tree/rt.h"
 #include "types.h"
@@ -64,5 +63,3 @@ class Ensemble {
   size_t size = 0;
   wt *arr = NULL;
 };
-
-#endif

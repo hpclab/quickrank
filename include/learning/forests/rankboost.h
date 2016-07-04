@@ -92,8 +92,7 @@ class Rankboost : public LTR_Algorithm {
 public:
     Rankboost(size_t max_wr);
 
-    Rankboost(const boost::property_tree::ptree &info_ptree,
-              const boost::property_tree::ptree &model_ptree);
+    Rankboost(const pugi::xml_document& model);
 
     virtual ~Rankboost();
 

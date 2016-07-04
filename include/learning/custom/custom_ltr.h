@@ -19,11 +19,9 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_LEARNING_CUSTOM_LTR_H_
-#define QUICKRANK_LEARNING_CUSTOM_LTR_H_
 
-#include <boost/noncopyable.hpp>
-#include <boost/property_tree/ptree.hpp>
+#pragma once
+
 #include <memory>
 
 #include "data/dataset.h"
@@ -47,8 +45,7 @@ class CustomLTR : public LTR_Algorithm {
  public:
   CustomLTR();
 
-  CustomLTR(const boost::property_tree::ptree &info_ptree,
-            const boost::property_tree::ptree &model_ptree) {
+  CustomLTR(const pugi::xml_document& model) {
   }
 
   virtual ~CustomLTR();
@@ -96,5 +93,3 @@ class CustomLTR : public LTR_Algorithm {
 
 }  // namespace learning
 }  // namespace quickrank
-
-#endif

@@ -21,73 +21,20 @@
  */
 #pragma once
 
+#include <memory>
+
 #include "utils/paramsmap.h"
 
 #include "optimization/optimization.h"
-#include "optimization/post_learning/pruning/ensemble_pruning.h"
-#include "optimization/post_learning/pruning/ensemble_pruning_factory.h"
+#include "learning/linear/line_search.h"
 
 namespace quickrank {
 namespace optimization {
 std::shared_ptr<learning::linear::LineSearch> linesearch_opt_factory(
-    ParamsMap& pmap) {
-
-  std::shared_ptr<learning::linear::LineSearch> lineSearch = nullptr;
-
-  // Check if line search is to do...
-  if (pmap.isSet("with-line-search")) {
-
-    if (pmap.isSet("line-search-model")) {
-      // We have to load the model from file
-      std::string xml_linesearch_filename =
-          pmap.get<std::string>("line-search-model");
-
-      lineSearch =
-          std::dynamic_pointer_cast<quickrank::learning::linear::LineSearch>(
-              quickrank::learning::LTR_Algorithm::load_model_from_file(
-              xml_linesearch_filename));
-
-    } else {
-      // We have to create an empty model
-      lineSearch = std::shared_ptr<learning::linear::LineSearch>(
-          new quickrank::learning::linear::LineSearch(
-              pmap.get<size_t>("num-samples"),
-              pmap.get<float>("window-size"),
-              pmap.get<float>("reduction-factor"),
-              pmap.get<size_t>("max-iterations"),
-              pmap.get<size_t>("max-failed-valid"),
-              pmap.isSet("adaptive")
-      ));
-    }
-  }
-
-  return lineSearch;
-}
+    ParamsMap& pmap);
 
 std::shared_ptr<quickrank::optimization::Optimization> optimization_factory(
-    ParamsMap& pmap) {
-
-  std::shared_ptr<quickrank::optimization::Optimization> optimizer = nullptr;
-  std::shared_ptr<learning::linear::LineSearch> lineSearch =
-      linesearch_opt_factory(pmap);
-
-  if (pmap.isSet("opt_algo")) {
-
-    std::string opt_algo = pmap.get<std::string>("opt_algo");
-
-    if (opt_algo == quickrank::optimization::post_learning::pruning
-                    ::EnsemblePruning::NAME_) {
-
-      optimizer = quickrank::optimization::post_learning::pruning::create_pruner(
-          pmap.get<std::string>("opt-method"),
-          pmap.get<double>("pruning-rate"),
-          lineSearch
-      );
-    }
-  }
-
-  return optimizer;
-}
+    ParamsMap& pmap);
 
 }
 }

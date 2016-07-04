@@ -34,6 +34,7 @@ SOFTWARE.
 #include <sstream>
 #include <regex>
 #include <unistd.h>
+#include <iostream>
 
 
 /// This class implements a simple command line parser

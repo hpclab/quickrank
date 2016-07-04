@@ -21,11 +21,12 @@
  */
 #include <fstream>
 
-#include <boost/property_tree/xml_parser.hpp>
-#include <boost/foreach.hpp>
-
 #include "learning/ltr_algorithm.h"
 #include "optimization/optimization.h"
+#include "optimization/post_learning/pruning/ensemble_pruning.h"
+#include "optimization/post_learning/pruning/ensemble_pruning_factory.h"
+
+#include "pugixml/pugixml.hpp"
 
 namespace quickrank {
 namespace optimization {
@@ -61,31 +62,19 @@ std::shared_ptr<Optimization> Optimization::load_model_from_file(
     exit(EXIT_FAILURE);
   }
 
-  boost::property_tree::ptree xml_tree;
-
-  std::ifstream is;
-  is.open(model_filename, std::ifstream::in);
-
-  boost::property_tree::read_xml(is, xml_tree);
-
-  is.close();
-
-  boost::property_tree::ptree info_ptree;
-  boost::property_tree::ptree model_ptree;
-
-  for (const boost::property_tree::ptree::value_type& node:
-                            xml_tree.get_child("optimizer")) {
-    if (node.first == "info")
-      info_ptree = node.second;
-    else
-      model_ptree = node.second;
+  pugi::xml_document model;
+  pugi::xml_parse_result result = model.load_file(model_filename.c_str());
+  if (!result) {
+    std::cerr << "!!! Model filename is not parsed correctly." << std::endl;
+    exit(EXIT_FAILURE);
   }
 
-  std::string optimizer_type = info_ptree.get<std::string>("type");
-    // Ensemble Pruning added by Salvatore Trani
-//  if (optimizer_type == optimization::post_learning::pruning::EnsemblePruning::NAME_)
-//    return std::shared_ptr<Optimization>(
-//        new pruning::EnsemblePruning(info_ptree, model_ptree));
+  std::string optimizer_type =
+      model.child("optimizer").child("info").child("opt-algo").child_value();
+
+  // Ensemble Pruning added by Salvatore Trani
+  if (optimizer_type == optimization::post_learning::pruning::EnsemblePruning::NAME_)
+    return optimization::post_learning::pruning::create_pruner(model);
 
   return nullptr;
 //  else

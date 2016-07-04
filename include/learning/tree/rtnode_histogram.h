@@ -19,8 +19,7 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_LEARNING_TREE_HISTOGRAM_H_
-#define QUICKRANK_LEARNING_TREE_HISTOGRAM_H_
+#pragma once
 
 #include "data/vertical_dataset.h"
 
@@ -59,5 +58,3 @@ class RTRootHistogram : public RTNodeHistogram {
 
   ~RTRootHistogram();
 };
-
-#endif

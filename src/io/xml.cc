@@ -27,8 +27,7 @@
 #include <limits>
 #include <list>
 
-#include <boost/property_tree/xml_parser.hpp>
-#include <boost/property_tree/detail/ptree_utils.hpp>
+#include "pugixml/pugixml.hpp"
 
 #include "io/xml.h"
 #include "utils/strutils.h"
@@ -40,32 +39,35 @@
 namespace quickrank {
 namespace io {
 
-RTNode* RTNode_parse_xml(const boost::property_tree::ptree &split_xml) {
+RTNode* RTNode_parse_xml(const pugi::xml_node& split_xml) {
   RTNode* model_node = NULL;
   RTNode* left_child = NULL;
   RTNode* right_child = NULL;
 
   bool is_leaf = false;
 
-  size_t feature_id = 0;
+  unsigned int feature_id = 0;
   Feature threshold = 0.0f;
   Score prediction = 0.0;
 
-  for (const boost::property_tree::ptree::value_type& split_child: split_xml ) {
-    if (split_child.first == "output") {
-      prediction = split_child.second.get_value<Score>();
+  for (const pugi::xml_node& split_child: split_xml.children()) {
+
+    //
+
+    if (strcmp(split_child.name(), "output") == 0) {
+      prediction = split_child.text().as_double();
       is_leaf = true;
       break;
-    } else if (split_child.first == "feature") {
-      feature_id = split_child.second.get_value<size_t>();
-    } else if (split_child.first == "threshold") {
-      threshold = split_child.second.get_value<Feature>();
-    } else if (split_child.first == "split") {
-      std::string pos = split_child.second.get<std::string>("<xmlattr>.pos");
+    } else if (strcmp(split_child.name(), "feature") == 0) {
+      feature_id = split_child.text().as_uint();
+    } else if (strcmp(split_child.name(), "threshold") == 0) {
+      threshold = split_child.text().as_float();
+    } else if (strcmp(split_child.name(), "split") == 0) {
+      std::string pos = split_child.attribute("pos").value();
       if (pos == "left")
-        left_child = RTNode_parse_xml(split_child.second);
+        left_child = RTNode_parse_xml(split_child);
       else
-        right_child = RTNode_parse_xml(split_child.second);
+        right_child = RTNode_parse_xml(split_child);
     }
   }
 
@@ -78,6 +80,8 @@ RTNode* RTNode_parse_xml(const boost::property_tree::ptree &split_xml) {
 
   return model_node;
 }
+
+/**
 
 void model_node_to_c_baseline(const boost::property_tree::ptree &split_xml,
                               std::stringstream &os) {
@@ -404,15 +408,14 @@ void Xml::generate_c_code_oblivious_trees(std::string model_filename,
   }
   source_code << " };" << std::endl << std::endl;
 
-  /*
-   // print tree depths
-   source_code << "const unsigned int tree_depths[N] = { ";
-   for (size_t i = 0; i<tree_depths.size(); i++) {
-   if (i!=0) source_code << ", ";
-   source_code << tree_depths[ tree_mapping[i] ];
-   }
-   source_code << " };" << std::endl << std::endl;
-   */
+
+//   // print tree depths
+//   source_code << "const unsigned int tree_depths[N] = { ";
+//   for (size_t i = 0; i<tree_depths.size(); i++) {
+//   if (i!=0) source_code << ", ";
+//   source_code << tree_depths[ tree_mapping[i] ];
+//   }
+//   source_code << " };" << std::endl << std::endl;
 
   // print leaf outputs
   source_code << "const double leaf_outputs[N][F] = { " << std::endl << '\t';
@@ -490,46 +493,7 @@ void Xml::generate_c_code_oblivious_trees(std::string model_filename,
   output.close();
 }
 
-std::shared_ptr<learning::LTR_Algorithm> Xml::load_model_from_file(
-    std::string model_filename) {
-  if (model_filename.empty()) {
-    std::cerr << "!!! Model filename is empty." << std::endl;
-    exit(EXIT_FAILURE);
-  }
-
-  boost::property_tree::ptree xml_tree;
-
-  std::ifstream is;
-  is.open(model_filename, std::ifstream::in);
-
-  boost::property_tree::read_xml(is, xml_tree);
-
-  is.close();
-
-  boost::property_tree::ptree info_ptree;
-  boost::property_tree::ptree ensemble_ptree;
-
-  for (const boost::property_tree::ptree::value_type& node:
-      xml_tree.get_child("ranker")) {
-    if (node.first == "info")
-      info_ptree = node.second;
-    else if (node.first == "ensemble")
-      ensemble_ptree = node.second;
-  }
-
-  std::string ranker_type = info_ptree.get<std::string>("type");
-  if (ranker_type == "MART")
-    return std::shared_ptr<learning::LTR_Algorithm>(
-        new learning::forests::Mart(info_ptree, ensemble_ptree));
-  if (ranker_type == "LAMBDAMART")
-    return std::shared_ptr<learning::LTR_Algorithm>(
-        new learning::forests::LambdaMart(info_ptree, ensemble_ptree));
-  if (ranker_type == "MATRIXNET")
-    return std::shared_ptr<learning::LTR_Algorithm>(
-        new learning::forests::ObliviousLambdaMart(info_ptree, ensemble_ptree));
-
-  return NULL;
-}
+**/
 
 }  // namespace io
 }  // namespace quickrank

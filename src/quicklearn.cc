@@ -87,6 +87,8 @@
 
 #include "driver/driver.h"
 
+#include "pugixml/pugixml.hpp"
+
 
 void print_logo() {
   if (isatty(fileno(stdout))) {
@@ -261,10 +263,6 @@ int main(int argc, char *argv[]) {
                             " \"baseline\", \"oblivious\". \"vpred\".",
                         std::string("baseline"));
 
-  pmap.addOptionWithArg<std::string>("detailed",
-                                     "set detailed testing [applies only to "
-                                         "ensemble models]");
-
   // --------------------------------------------------------
   // CoordinateAscent and LineSearch options
   // add by Chiara Pierucci and Salvatore Trani
@@ -344,6 +342,19 @@ int main(int argc, char *argv[]) {
     std::cout << pmap.help();
     return 1;
   }
+
+  pugi::xml_document doc;
+  pugi::xml_parse_result result = doc.load_file
+      ("/Users/Salvatore/Documents/eclipse/workspace/quickrank/modello.xml");
+  std::cout << "Load result: " << result.description() << std::endl;
+  std::cout << "1. " << doc.child("ranker").child("info").child("type")
+                            .child_value() << std::endl;
+
+  pugi::xml_node node = doc.child("ranker").child("info").child("type");
+  node.first_child().set_value("TRAM");
+  std::cout << "Saving result: " << doc.save_file
+      ("/Users/Salvatore/Documents/eclipse/workspace/quickrank/modello_new"
+           ".xml") << std::endl;
 
   return quickrank::driver::Driver::run(pmap);
 }

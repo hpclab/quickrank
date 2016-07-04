@@ -32,9 +32,7 @@
 #include <vector>
 #include <numeric>
 #include <algorithm>
-
-#include <boost/property_tree/xml_parser.hpp>
-#include <boost/foreach.hpp>
+#include <string.h>
 
 namespace quickrank {
 namespace learning {
@@ -59,10 +57,10 @@ void preCompute(Feature* training_dataset, size_t num_docs,
 
 const std::string CoordinateAscent::NAME_ = "COORDASC";
 
-CoordinateAscent::CoordinateAscent(size_t num_points, double window_size,
+CoordinateAscent::CoordinateAscent(unsigned int num_points, double window_size,
                                    double reduction_factor,
-                                   size_t max_iterations,
-                                   size_t max_failed_vali)
+                                   unsigned int max_iterations,
+                                   unsigned int max_failed_vali)
     : num_samples_(num_points),
       window_size_(window_size),
       reduction_factor_(reduction_factor),
@@ -70,9 +68,7 @@ CoordinateAscent::CoordinateAscent(size_t num_points, double window_size,
       max_failed_vali_(max_failed_vali) {
 }
 
-CoordinateAscent::CoordinateAscent(
-    const boost::property_tree::ptree &info_ptree,
-    const boost::property_tree::ptree &model_ptree) {
+CoordinateAscent::CoordinateAscent(const pugi::xml_document& model) {
 
   num_samples_ = 0;
   window_size_ = 0.0;
@@ -81,17 +77,20 @@ CoordinateAscent::CoordinateAscent(
   max_failed_vali_ = 0;
 
   //read (training) info
-  num_samples_ = info_ptree.get<size_t>("num-samples");
-  window_size_ = info_ptree.get<double>("window-size");
-  reduction_factor_ = info_ptree.get<double>("reduction-factor");
-  max_iterations_ = info_ptree.get<size_t>("max-iterations");
-  max_failed_vali_ = info_ptree.get<size_t>("max-failed-vali");
+  pugi::xml_node model_info = model.child("ranker").child("info");
+  pugi::xml_node model_ensemble = model.child("ranker").child("ensemble");
 
-  size_t max_feature = 0;
-  for (const boost::property_tree::ptree::value_type &couple: model_ptree) {
+  num_samples_ = model_info.child("num-samples").text().as_uint();
+  window_size_ = model_info.child("window-size").text().as_double();
+  reduction_factor_ = model_info.child("reduction-factor").text().as_double();
+  max_iterations_ = model_info.child("max-iterations").text().as_uint();
+  max_failed_vali_ = model_info.child("max-failed-vali").text().as_uint();
 
-    if (couple.first == "couple") {
-      size_t feature = couple.second.get<size_t>("feature");
+  unsigned int max_feature = 0;
+  for (const auto& couple: model_ensemble.children()) {
+
+    if (strcmp(couple.name(), "couple") == 0) {
+      unsigned int feature = couple.child("feature").text().as_uint();
       if (feature > max_feature) {
         max_feature = feature;
       }
@@ -100,10 +99,10 @@ CoordinateAscent::CoordinateAscent(
 
   std::vector<double>(max_feature, 0.0).swap(best_weights_);
 
-  for (const boost::property_tree::ptree::value_type &couple: model_ptree) {
-    if (couple.first == "couple") {
-      int feature = couple.second.get<int>("feature");
-      double weight = couple.second.get<double>("weight");
+  for (const auto& couple: model_ensemble.children()) {
+    if (strcmp(couple.name(), "couple") == 0) {
+      unsigned int feature = couple.child("feature").text().as_uint();
+      double weight = couple.child("weight").text().as_double();
       best_weights_[feature - 1] = weight;
     }
   }

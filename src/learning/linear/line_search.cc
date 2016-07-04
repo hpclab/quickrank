@@ -33,10 +33,10 @@ namespace linear {
 
 const std::string LineSearch::NAME_ = "LINESEARCH";
 
-LineSearch::LineSearch(size_t num_points, double window_size,
+LineSearch::LineSearch(unsigned int num_points, double window_size,
                        double reduction_factor,
-                       size_t max_iterations,
-                       size_t max_failed_vali,
+                       unsigned int max_iterations,
+                       unsigned int max_failed_vali,
                        bool adaptive)
     : num_points_(num_points),
       window_size_(window_size),
@@ -46,8 +46,7 @@ LineSearch::LineSearch(size_t num_points, double window_size,
       adaptive_(adaptive) {
 }
 
-LineSearch::LineSearch(const boost::property_tree::ptree &info_ptree,
-                       const boost::property_tree::ptree &model_ptree) {
+LineSearch::LineSearch(const pugi::xml_document& model) {
 
   num_points_ = 0;
   window_size_ = 0.0;
@@ -57,17 +56,24 @@ LineSearch::LineSearch(const boost::property_tree::ptree &info_ptree,
   adaptive_ = true;
 
   //read (training) info
-  num_points_ = info_ptree.get < unsigned int > ("num-samples");
-  window_size_ = info_ptree.get<double>("window-size");
-  reduction_factor_ = info_ptree.get<double>("reduction-factor");
-  max_iterations_ = info_ptree.get <unsigned int> ("max-iterations");
-  max_failed_vali_ = info_ptree.get <unsigned int> ("max-failed-vali");
-  adaptive_ = info_ptree.get <bool> ("adaptive", adaptive_);
+  //read (training) info
+  pugi::xml_node model_info = model.child("ranker").child("info");
+  pugi::xml_node model_ensemble = model.child("ranker").child("ensemble");
+
+  num_points_ = model_info.child("num-samples").text().as_uint();
+  window_size_ = model_info.child("window-size").text().as_double();
+  reduction_factor_ = model_info.child("reduction-factor").text().as_double();
+  max_iterations_ = model_info.child("max-iterations").text().as_uint();
+  max_failed_vali_ = model_info.child("max-failed-vali").text().as_uint();
+
+  if (model_info.child("adaptive"))
+    adaptive_ = model_info.child("adaptive").text().as_bool();
 
   unsigned int max_feature = 0;
-  for (const boost::property_tree::ptree::value_type& tree: model_ptree) {
-    if (tree.first == "tree") {
-      unsigned int feature = tree.second.get<unsigned int>("index");
+  for (const auto& couple: model_ensemble.children()) {
+
+    if (strcmp(couple.name(), "couple") == 0) {
+      unsigned int feature = couple.child("feature").text().as_uint();
       if (feature > max_feature) {
         max_feature = feature;
       }
@@ -75,10 +81,11 @@ LineSearch::LineSearch(const boost::property_tree::ptree &info_ptree,
   }
 
   std::vector<double>(max_feature, 0.0).swap(best_weights_);
-  for (const boost::property_tree::ptree::value_type& tree: model_ptree) {
-    if (tree.first == "tree") {
-      int feature = tree.second.get<int>("index");
-      double weight = tree.second.get<double>("weight");
+
+  for (const auto& tree: model_ensemble.children()) {
+    if (strcmp(tree.name(), "tree") == 0) {
+      unsigned int feature = tree.child("index").text().as_uint();
+      double weight = tree.child("weight").text().as_double();
       best_weights_[feature - 1] = weight;
     }
   }

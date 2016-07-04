@@ -21,15 +21,12 @@
  */
 #include "learning/forests/mart.h"
 
-#include <iostream>
 #include <fstream>
 #include <iomanip>
 #include <cfloat>
 #include <cmath>
 #include <chrono>
-
-#include <boost/property_tree/xml_parser.hpp>
-#include <boost/foreach.hpp>
+#include <string>
 
 #include "data/vertical_dataset.h"
 #include "data/rankedresults.h"
@@ -42,8 +39,7 @@ namespace forests {
 
 const std::string Mart::NAME_ = "MART";
 
-Mart::Mart(const boost::property_tree::ptree &info_ptree,
-           const boost::property_tree::ptree &model_ptree) {
+Mart::Mart(const pugi::xml_document& model) {
   ntrees_ = 0;
   shrinkage_ = 0;
   nthresholds_ = 0;
@@ -51,29 +47,27 @@ Mart::Mart(const boost::property_tree::ptree &info_ptree,
   minleafsupport_ = 0;
   valid_iterations_ = 0;
 
+  pugi::xml_node model_info = model.child("ranker").child("info");
+  pugi::xml_node model_tree = model.child("ranker").child("ensemble");
+
   // read (training) info
-  ntrees_ = info_ptree.get<size_t>("trees");
-  nleaves_ = info_ptree.get<size_t>("leaves");
-  minleafsupport_ = info_ptree.get<size_t>("leafsupport");
-  nthresholds_ = info_ptree.get<size_t>("discretization");
-  valid_iterations_ = info_ptree.get<size_t>("estop");
-  shrinkage_ = info_ptree.get<double>("shrinkage");
+  nleaves_ = model_info.child("trees").text().as_int();
+  minleafsupport_ = model_info.child("leafsupport").text().as_int();
+  nthresholds_ = model_info.child("discretization").text().as_int();
+  valid_iterations_ = model_info.child("estop").text().as_int();
+  shrinkage_ = model_info.child("shrinkage").text().as_double();
 
   // read ensemble
   ensemble_model_.set_capacity(ntrees_);
 
   // loop over trees
-  for (const auto& tree: model_ptree) {
+  for (const auto& tree: model_tree.children()) {
     RTNode* root = NULL;
-    float tree_weight = tree.second.get<double>("<xmlattr>.weight", shrinkage_);
+    float tree_weight = tree.attribute("weight").as_float();
 
-    // find the root of the tree
-    for (const auto& node: tree.second) {
-      if (node.first == "split") {
-        root = io::RTNode_parse_xml(node.second);
-        break;
-      }
-    }
+    const auto& root_split = tree.child("split");
+    if (root_split)
+      root = io::RTNode_parse_xml(root_split);
 
     if (root == NULL) {
       std::cerr << "!!! Unable to parse tree from XML model." << std::endl;

@@ -19,8 +19,7 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_DATA_RANKEDRESULTS_H_
-#define QUICKRANK_DATA_RANKEDRESULTS_H_
+#pragma once
 
 #include <memory>
 
@@ -77,5 +76,3 @@ class RankedResults {
 
 }  // namespace data
 }  // namespace quickrank
-
-#endif

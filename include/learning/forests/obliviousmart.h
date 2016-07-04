@@ -19,8 +19,7 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_LEARNING_FORESTS_OBLIVIOUSMART_H_
-#define QUICKRANK_LEARNING_FORESTS_OBLIVIOUSMART_H_
+#pragma once
 
 #include "types.h"
 #include "learning/forests/mart.h"
@@ -50,8 +49,7 @@ class ObliviousMart : public Mart {
         treedepth_(treedepth) {
   }
 
-  ObliviousMart(const boost::property_tree::ptree &info_ptree,
-                const boost::property_tree::ptree &model_ptree);
+  ObliviousMart(const pugi::xml_document& model);
 
   virtual ~ObliviousMart() {
   }
@@ -88,5 +86,3 @@ class ObliviousMart : public Mart {
 }  // namespace forests
 }  // namespace learning
 }  // namespace quickrank
-
-#endif

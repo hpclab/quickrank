@@ -19,8 +19,7 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_LEARNING_FORESTS_LMART_H_
-#define QUICKRANK_LEARNING_FORESTS_LMART_H_
+#pragma once
 
 #include "types.h"
 #include "learning/forests/mart.h"
@@ -49,9 +48,8 @@ class LambdaMart : public Mart {
   }
 
   /// Generates a LTR_Algorithm instance from a previously saved XML model.
-  LambdaMart(const boost::property_tree::ptree &info_ptree,
-             const boost::property_tree::ptree &model_ptree)
-      : Mart(info_ptree, model_ptree) {
+  LambdaMart(const pugi::xml_document& model)
+      : Mart(model) {
   }
 
   virtual ~LambdaMart() {
@@ -93,5 +91,3 @@ class LambdaMart : public Mart {
 }  // namespace forests
 }  // namespace learning
 }  // namespace quickrank
-
-#endif

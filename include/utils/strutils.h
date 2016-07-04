@@ -57,6 +57,6 @@ unsigned int atou(char *str, const char *sep);
 /*! \fn std::string trim(std::string str)
  *  \brief delete spaces from start/end of a string (in place modification)
  */
-void trim(std::string str);
+std::string trim(std::string str);
 
 #endif

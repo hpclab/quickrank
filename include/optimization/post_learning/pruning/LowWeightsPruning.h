@@ -38,6 +38,9 @@ class LowWeightsPruning : public EnsemblePruning {
                 std::shared_ptr<learning::linear::LineSearch> lineSearch) :
         EnsemblePruning(pruning_rate, lineSearch) {};
 
+    LowWeightsPruning(const pugi::xml_document& model) :
+        EnsemblePruning(model) {};
+
     EnsemblePruning::PruningMethod pruning_method() const;
 
     bool line_search_pre_pruning() const;

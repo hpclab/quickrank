@@ -21,7 +21,6 @@
  */
 #pragma once
 
-#include <boost/property_tree/ptree.hpp>
 #include <memory>
 
 #include "data/dataset.h"
@@ -40,6 +39,9 @@ class Optimization {
   };
 
   Optimization() {};
+
+  /// Generates a LTR_Algorithm instance from a previously saved XML model.
+  Optimization(const pugi::xml_document& model);
 
   virtual ~Optimization() = default;
 

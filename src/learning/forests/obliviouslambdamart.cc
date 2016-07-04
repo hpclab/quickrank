@@ -36,11 +36,10 @@ namespace forests {
 
 const std::string ObliviousLambdaMart::NAME_ = "OBVLAMBDAMART";
 
-ObliviousLambdaMart::ObliviousLambdaMart(
-    const boost::property_tree::ptree &info_ptree,
-    const boost::property_tree::ptree &model_ptree)
-    : LambdaMart(info_ptree, model_ptree) {
-  treedepth_ = info_ptree.get<double>("depth");
+ObliviousLambdaMart::ObliviousLambdaMart(const pugi::xml_document& model)
+    : LambdaMart(model) {
+  treedepth_ = model.child("ranker").child("info").child("depth").text()
+      .as_int();
 }
 
 std::ostream& ObliviousLambdaMart::put(std::ostream& os) const {

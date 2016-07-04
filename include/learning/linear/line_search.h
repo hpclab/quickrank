@@ -21,11 +21,8 @@
  *  - Chiara Pierucci (chiarapierucci14@gmail.com)
  *  - Claudio Lucchese (claudio.lucchese@isti.cnr.it)
  */
-#ifndef QUICKRANK_LEARNING_LINE_SEARCH_H_
-#define QUICKRANK_LEARNING_LINE_SEARCH_H_
+#pragma once
 
-#include <boost/noncopyable.hpp>
-#include <boost/property_tree/ptree.hpp>
 #include <memory>
 
 #include "data/dataset.h"
@@ -41,12 +38,11 @@ class LineSearch : public LTR_Algorithm {
 
  public:
 
-  LineSearch(size_t num_points, double window_size,
-             double reduction_factor, size_t max_iterations,
-             size_t max_failed_vali, bool adaptive);
+  LineSearch(unsigned int num_points, double window_size,
+             double reduction_factor, unsigned int max_iterations,
+             unsigned int max_failed_vali, bool adaptive);
 
-  LineSearch(const boost::property_tree::ptree &info_ptree,
-             const boost::property_tree::ptree &model_ptree);
+  LineSearch(const pugi::xml_document& model);
 
   virtual ~LineSearch();
 
@@ -79,11 +75,11 @@ class LineSearch : public LTR_Algorithm {
   }
 
  private:
-  size_t num_points_;
+  unsigned int num_points_;
   double window_size_;
   double reduction_factor_;
-  size_t max_iterations_;
-  size_t max_failed_vali_;
+  unsigned int max_iterations_;
+  unsigned int max_failed_vali_;
   bool adaptive_;
 
   std::vector<double> best_weights_;
@@ -110,5 +106,3 @@ class LineSearch : public LTR_Algorithm {
 }  // namespace linear
 }  // namespace learning
 }  // namespace quickrank
-
-#endif

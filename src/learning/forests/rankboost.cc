@@ -30,11 +30,10 @@
 #include <cmath>
 #include <chrono>
 #include <sstream>
+#include <string.h>
+
 
 #include <omp.h>
-
-#include <boost/property_tree/xml_parser.hpp>
-#include <boost/foreach.hpp>
 
 namespace quickrank {
 namespace learning {
@@ -49,23 +48,26 @@ Rankboost::Rankboost(size_t max_wr) {
     omp_schedule = "dynamic";
 }
 
-Rankboost::Rankboost(const boost::property_tree::ptree &info_ptree,
-                     const boost::property_tree::ptree &model_ptree) {
+Rankboost::Rankboost(const pugi::xml_document& model) {
+
+    pugi::xml_node model_info = model.child("ranker").child("info");
+    pugi::xml_node model_wr = model.child("ranker").child("ensemble");
+
     //read (training) info
-    T = info_ptree.get<unsigned int>("maxweakrankers");
-    best_T=0;
+    T = model_info.child("maxweakrankers").text().as_uint();
+    best_T = 0;
 
     // allocate weak rankers and their weights
     weak_rankers = new WeakRanker*[T];
     alphas = new float[T]();
 
-    for (const boost::property_tree::ptree::value_type &wr: model_ptree) {
-        if (wr.first =="weakranker") {
-            unsigned int id = wr.second.get<unsigned int>("id");
-            unsigned int feature_id = wr.second.get<unsigned int>("featureid");
-            Feature theta = wr.second.get<Feature>("theta");
-            int sign = wr.second.get<int>("sign");
-            float alpha = wr.second.get<float>("alpha");
+    for (const auto& wr: model_wr.children()) {
+        if (strcmp(wr.name(), "weakranker") == 0) {
+            unsigned int id = wr.child("id").text().as_uint();
+            unsigned int feature_id = wr.child("featureid").text().as_uint();
+            Feature theta = wr.child("theta").text().as_float();
+            int sign = wr.child("sign").text().as_uint();
+            float alpha = wr.child("alpha").text().as_float();
 
             alphas[id] = alpha;
             weak_rankers[id] = new WeakRanker(feature_id, theta, sign);

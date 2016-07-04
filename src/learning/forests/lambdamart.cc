@@ -26,7 +26,6 @@
 #include <iomanip>
 #include <cfloat>
 #include <cmath>
-#include <boost/foreach.hpp>
 
 #include "data/rankedresults.h"
 #include "io/xml.h"

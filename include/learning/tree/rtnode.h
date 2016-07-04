@@ -19,8 +19,7 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_LEARNING_TREE_RTNODE_H_
-#define QUICKRANK_LEARNING_TREE_RTNODE_H_
+#pragma once
 
 #include "learning/tree/rtnode_histogram.h"
 #include "types.h"
@@ -161,5 +160,3 @@ class RTNode {
   void write_outputtofile(FILE *f, const int indentsize);
   std::ofstream& save_model_to_file(std::ofstream&, const int);
 };
-
-#endif

@@ -30,21 +30,19 @@ endif()
 # Binary output directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 
-# -----------------------------------------
-# boost to be removed
-find_package(Boost REQUIRED COMPONENTS program_options system filesystem unit_test_framework)
-set(Boost_USE_MULTITHREAD ON)  # enable multithreading
-include_directories(${Boost_INCLUDE_DIR})
-# -----------------------------------------
-
 # include files path
 include_directories(${CMAKE_SOURCE_DIR}/include)
-include_directories("lib")
+include_directories(lib)
 
 # source files path, excluding main files
 set(QUICKLEARN_MAIN "${CMAKE_SOURCE_DIR}/src/quicklearn.cc")
 set(QUICKSCORE_MAIN "${CMAKE_SOURCE_DIR}/src/quickscore.cc")
 file(GLOB_RECURSE all_sources ${CMAKE_SOURCE_DIR}/src/*.cc)
+
+file(GLOB_RECURSE lib_sources ${CMAKE_SOURCE_DIR}/lib/*.cpp)
+ADD_LIBRARY(libraries ${lib_sources})
+list(APPEND all_sources ${lib_sources})
+
 list(REMOVE_ITEM all_sources ${QUICKLEARN_MAIN})
 list(REMOVE_ITEM all_sources ${QUICKSCORE_MAIN})
 file(GLOB_RECURSE all_headers ${CMAKE_SOURCE_DIR}/include/*.h)

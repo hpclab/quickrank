@@ -19,8 +19,7 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_IO_SVML_H_
-#define QUICKRANK_IO_SVML_H_
+#pragma once
 
 #include <string>
 
@@ -86,5 +85,3 @@ class Svml {
 
 }  // namespace io
 }  // namespace quickrank
-
-#endif

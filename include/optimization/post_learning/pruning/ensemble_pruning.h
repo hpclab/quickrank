@@ -21,8 +21,6 @@
  */
 #pragma once
 
-#include <boost/noncopyable.hpp>
-#include <boost/property_tree/ptree.hpp>
 #include <memory>
 #include <set>
 
@@ -32,6 +30,7 @@
 #include "learning/linear/line_search.h"
 #include "optimization/optimization.h"
 #include "optimization/post_learning/post_learning_opt.h"
+#include "pugixml/pugixml.hpp"
 
 namespace quickrank {
 namespace optimization {
@@ -52,8 +51,7 @@ class EnsemblePruning : public PostLearningOptimization {
   EnsemblePruning(double pruning_rate,
                   std::shared_ptr<learning::linear::LineSearch> lineSearch);
 
-  void load_model(const boost::property_tree::ptree &info_ptree,
-                  const boost::property_tree::ptree &model_ptree);
+  EnsemblePruning(const pugi::xml_document& model);
 
   /// Returns the name of the optimizer.
   std::string name() const {

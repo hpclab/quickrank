@@ -53,8 +53,7 @@ class Mart : public LTR_Algorithm {
   }
 
   /// Generates a LTR_Algorithm instance from a previously saved XML model.
-  Mart(const boost::property_tree::ptree &info_ptree,
-       const boost::property_tree::ptree &model_ptree);
+  Mart(const pugi::xml_document& model);
 
   virtual ~Mart() {
   }
