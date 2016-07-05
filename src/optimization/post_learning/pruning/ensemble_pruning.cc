@@ -19,12 +19,6 @@
  * Contributors:
  *  - Salvatore Trani (salvatore.trani@isti.cnr.it)
  */
-#include "optimization/post_learning/pruning/ensemble_pruning.h"
-
-#include "data/dataset.h"
-#include "metric/ir/metric.h"
-#include "learning/ltr_algorithm.h"
-
 #include <fstream>
 #include <iomanip>
 #include <chrono>
@@ -33,6 +27,13 @@
 #include <math.h>
 #include <cassert>
 #include <io/svml.h>
+#include <sstream>
+
+#include "optimization/post_learning/pruning/ensemble_pruning.h"
+
+#include "data/dataset.h"
+#include "metric/ir/metric.h"
+#include "learning/ltr_algorithm.h"
 
 namespace quickrank {
 namespace optimization {
@@ -61,6 +62,8 @@ EnsemblePruning::EnsemblePruning(const pugi::xml_document& model) {
   pugi::xml_node model_tree = model.child("optimizer").child("ensemble");
 
   pruning_rate_ = model_info.child("pruning-rate").text().as_double();
+
+  // TODO: read the line search parameters if available in the xml
 
   unsigned int max_feature = 0;
   for (const auto& couple: model_tree.children()) {
@@ -236,30 +239,41 @@ void EnsemblePruning::optimize(
       elapsed.count() << " seconds" << std::endl;
 }
 
-std::ofstream& EnsemblePruning::save_model_to_file(std::ofstream &os) const {
-  // write optimizer description
-  os << "\t<info>" << std::endl;
-  os << "\t\t<type>" << name() << "</type>" << std::endl;
-  os << "\t\t<pruning-pruning_method>" << getPruningMethod(pruning_method())
-     << "</pruning-pruning_method>" << std::endl;
-  os << "\t\t<pruning-rate>" << pruning_rate_ << "</pruning-rate>" << std::endl;
-  os << "\t</info>" << std::endl;
+std::shared_ptr<pugi::xml_document> EnsemblePruning::get_xml_model() const {
 
-  os << "\t<ensemble>" << std::endl;
-  auto old_precision = os.precision();
-  os.setf(std::ios::floatfield, std::ios::fixed);
-  for (unsigned int i = 0; i < weights_.size(); i++) {
-    os << "\t\t<tree>" << std::endl;
-    os << std::setprecision(3);
-    os << "\t\t\t<index>" << i + 1 << "</index>" << std::endl;
-    os << std::setprecision(std::numeric_limits<Score>::max_digits10);
-    os << "\t\t\t<weight>" << weights_[i] << "</weight>" <<
-    std::endl;
-    os << "\t\t</tree>" << std::endl;
+  pugi::xml_document* doc = new pugi::xml_document();
+  doc->set_name("optimizer");
+
+  pugi::xml_node info = doc->append_child("info");
+
+  info.append_child("opt-algo").text() = name().c_str();
+  info.append_child("opt-method").text() =
+      getPruningMethod(pruning_method()).c_str();
+  info.append_child("pruning-rate").text() = pruning_rate_;
+
+  if (lineSearch_) {
+    pugi::xml_document& ls_model = *lineSearch_->get_xml_model();
+    pugi::xml_node ls_info = ls_model.child("info");
+
+    // use the info section of the line search model to add a new node into
+    // the xml of the ensamble pruning model
+    ls_info.set_name("line-search");
+    doc->append_move(ls_info);
   }
-  os << "\t</ensemble>" << std::endl;
-  os << std::setprecision(old_precision);
-  return os;
+
+  std::stringstream ss;
+  ss << std::setprecision(std::numeric_limits<double>::digits10);
+
+  pugi::xml_node ensemble = doc->append_child("ensemble");
+  for (unsigned int i = 0; i < weights_.size(); i++) {
+    pugi::xml_node tree = ensemble.append_child("tree");
+    tree.append_child("index").text() = i + 1;
+
+    ss << weights_[i];
+    tree.append_child("weight").text() = ss.str().c_str();
+  }
+
+  return std::shared_ptr<pugi::xml_document>(doc);
 }
 
 void EnsemblePruning::score(data::Dataset *dataset, Score *scores) const {

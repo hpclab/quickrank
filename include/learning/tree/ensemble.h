@@ -23,6 +23,7 @@
 
 #include "learning/tree/rt.h"
 #include "types.h"
+#include "pugixml/src/pugixml.hpp"
 
 class Ensemble {
 
@@ -35,6 +36,7 @@ class Ensemble {
   size_t get_size() const {
     return size;
   }
+
   bool is_notempty() const {
     return size > 0;
   }
@@ -46,8 +48,7 @@ class Ensemble {
       detailed_scores_instance(const quickrank::Feature* d,
                                const size_t offset = 1) const;
 
-  void write_outputtofile(FILE *f);
-  std::ofstream& save_model_to_file(std::ofstream& os) const;
+  std::shared_ptr<pugi::xml_node> get_xml_model() const;
 
  private:
   struct wt {

@@ -66,22 +66,19 @@ std::shared_ptr<std::vector<quickrank::Score>>
   return std::make_shared<std::vector<quickrank::Score>>(std::move(scores));
 }
 
-std::ofstream& Ensemble::save_model_to_file(std::ofstream& os) const {
-  auto old_precision = os.precision();
-  os.setf(std::ios::floatfield, std::ios::fixed);
-  os << "\t<ensemble>" << std::endl;
+std::shared_ptr<pugi::xml_node> Ensemble::get_xml_model() const {
+  pugi::xml_node* ensemble = new pugi::xml_node();
+  ensemble->set_name("ensemble");
+
   for (size_t i = 0; i < size; ++i) {
-    os << std::setprecision(3);
-    os << "\t\t<tree id=\"" << i + 1 << "\" weight=\"" << arr[i].weight << "\">"
-       << std::endl;
+    pugi::xml_node tree = ensemble->append_child("tree");
+    tree.append_attribute("id") = i + 1;
+    tree.append_attribute("weight") = arr[i].weight;
     if (arr[i].root) {
-      os << "\t\t\t<split>" << std::endl;
-      arr[i].root->save_model_to_file(os, 3);
-      os << "\t\t\t</split>" << std::endl;
+      //pugi::xml_node split = ensemble.append_child("split");
+      ensemble->append_move(*arr[i].root->get_xml_model());
     }
-    os << "\t\t</tree>" << std::endl;
   }
-  os << "\t</ensemble>" << std::endl;
-  os << std::setprecision(old_precision);
-  return os;
+
+  return std::shared_ptr<pugi::xml_node>(ensemble);
 }

@@ -29,7 +29,6 @@
 #include "io/svml.h"
 
 #include "learning/ltr_algorithm_factory.h"
-#include "optimization/optimization.h"
 #include "optimization/optimization_factory.h"
 #include "metric/metric_factory.h"
 
@@ -51,19 +50,38 @@ int Driver::run(ParamsMap& pmap) {
     exit(EXIT_FAILURE);
   }
 
-  std::shared_ptr<quickrank::optimization::Optimization> opt_algorithm =
-      quickrank::optimization::optimization_factory(pmap);
-  if (!opt_algorithm) {
-    std::cerr << " !! Optimization Algorithm was not set properly" << std::endl;
-    exit(EXIT_FAILURE);
-  }
-
+  // If there is the training dataset, it means we have to execute
+  // the training phase and/or the optimization phase (at least one of them)
   if (pmap.count("train")) {
+
+    std::shared_ptr<quickrank::optimization::Optimization> opt_algorithm;
+    if (pmap.count("opt-algo")) {
+      opt_algorithm = quickrank::optimization::optimization_factory(pmap);
+      if (!opt_algorithm) {
+        std::cerr << " !! Optimization Algorithm was not set properly" << std::endl;
+        exit(EXIT_FAILURE);
+      }
+    }
+
     std::string training_filename = pmap.get<std::string>("train");
     std::string validation_filename = pmap.get<std::string>("valid");
     std::string features_filename = pmap.get<std::string>("features");
     std::string model_filename = pmap.get<std::string>("model");
+    std::string opt_model_filename = pmap.get<std::string>("opt-model");
     size_t partial_save = pmap.get<std::size_t>("partial");
+
+    std::shared_ptr<quickrank::data::Dataset> training_dataset;
+    std::shared_ptr<quickrank::data::Dataset> validation_dataset;
+
+    if (!training_filename.empty())
+      training_dataset = load_dataset(training_filename, "training");
+
+    if (!validation_filename.empty())
+      validation_dataset = load_dataset(validation_filename, "validation");
+
+    if (!features_filename.empty()) {
+      // TODO: filter features while loading dataset
+    }
 
     std::shared_ptr<quickrank::metric::ir::Metric> training_metric =
         quickrank::metric::ir::ir_metric_factory(
@@ -74,26 +92,54 @@ int Driver::run(ParamsMap& pmap) {
       exit(EXIT_FAILURE);
     }
 
-    //show ranker parameters
-    std::cout << "#" << std::endl << *ranking_algorithm;
-    std::cout << "#" << std::endl << "# training scorer: " << *training_metric
-    << std::endl;
+    if (opt_algorithm && opt_algorithm->is_pre_learning()) {
+      // We have to run the optimization process pre-training
+      optimization_phase(opt_algorithm,
+                         ranking_algorithm,
+                         training_metric,
+                         training_dataset,
+                         validation_dataset,
+                         opt_model_filename,
+                         partial_save);
+    }
 
-//    if (opt_algorithm && opt_algorithm.
+    // If the training algorithm has been created from scratch (not loaded
+    // from file), we have to run the training phase
+    if (pmap.count("opt-algo")) {
 
-    training_phase(ranking_algorithm,
-                   training_metric,
-                   training_filename,
-                   validation_filename,
-                   features_filename,
-                   model_filename,
-                   partial_save);
+      //show ranker parameters
+      std::cout << "#" << std::endl << *ranking_algorithm;
+      std::cout << "#" << std::endl << "# training scorer: " << *training_metric
+      << std::endl;
+
+      training_phase(ranking_algorithm,
+                     training_metric,
+                     training_dataset,
+                     validation_dataset,
+                     model_filename,
+                     partial_save);
+    }
+
+    if (opt_algorithm && !opt_algorithm->is_pre_learning()) {
+      // We have to run the optimization process post-training
+      optimization_phase(opt_algorithm,
+                         ranking_algorithm,
+                         training_metric,
+                         training_dataset,
+                         validation_dataset,
+                         opt_model_filename,
+                         partial_save);
+    }
   }
 
   if (pmap.isSet("test")) {
     std::string test_filename = pmap.get<std::string>("test");
     std::string scores_filename = pmap.get<std::string>("scores");
     bool detailed_testing = pmap.isSet("detailed");
+
+    std::shared_ptr<quickrank::data::Dataset> test_dataset;
+    if (!test_filename.empty())
+      test_dataset = load_dataset(test_filename, "testing");
 
     std::shared_ptr<quickrank::metric::ir::Metric> testing_metric =
         quickrank::metric::ir::ir_metric_factory(
@@ -104,11 +150,11 @@ int Driver::run(ParamsMap& pmap) {
       exit(EXIT_FAILURE);
     }
 
-    std::cout << "# test scorer: " << *testing_metric << std::endl << "#"
-    << std::endl;
+    std::cout << "# test scorer: " << *testing_metric << std::endl << "#" <<
+        std::endl;
     testing_phase(ranking_algorithm,
                   testing_metric,
-                  test_filename,
+                  test_dataset,
                   scores_filename,
                   detailed_testing);
   }
@@ -143,38 +189,10 @@ int Driver::run(ParamsMap& pmap) {
 void Driver::training_phase(
     std::shared_ptr<learning::LTR_Algorithm> algo,
     std::shared_ptr<quickrank::metric::ir::Metric> train_metric,
-    const std::string training_filename,
-    const std::string validation_filename,
-    const std::string feature_filename,
+    std::shared_ptr<quickrank::data::Dataset> training_dataset,
+    std::shared_ptr<quickrank::data::Dataset> validation_dataset,
     const std::string output_filename,
     const size_t npartialsave) {
-
-  // create reader: assum svml as ltr format
-  quickrank::io::Svml reader;
-
-  std::shared_ptr<quickrank::data::Dataset> training_dataset;
-  std::shared_ptr<quickrank::data::Dataset> validation_dataset;
-
-  if (!training_filename.empty()) {
-    std::cout << "# Reading training dataset: " << training_filename
-              << std::endl;
-    training_dataset = reader.read_horizontal(training_filename);
-    std::cout << reader << *training_dataset;
-  } else {
-    std::cerr << "!!! Error while loading training dataset" << std::endl;
-    exit(EXIT_FAILURE);
-  }
-
-  if (!validation_filename.empty()) {
-    std::cout << "# Reading validation dataset: " << validation_filename
-              << std::endl;
-    validation_dataset = reader.read_horizontal(validation_filename);
-    std::cout << reader << *validation_dataset;
-  }
-
-  if (!feature_filename.empty()) {
-    /// \todo TODO: filter features while loading dataset
-  }
 
   // run the learning process
   algo->learn(training_dataset, validation_dataset, train_metric, npartialsave,
@@ -187,24 +205,38 @@ void Driver::training_phase(
   }
 }
 
+void Driver::optimization_phase(
+    std::shared_ptr<quickrank::optimization::Optimization> opt_algorithm,
+    std::shared_ptr<learning::LTR_Algorithm> ranking_algo,
+    std::shared_ptr<quickrank::metric::ir::Metric> train_metric,
+    std::shared_ptr<quickrank::data::Dataset> training_dataset,
+    std::shared_ptr<quickrank::data::Dataset> validation_dataset,
+    const std::string output_filename,
+    const size_t npartialsave) {
+
+  // run the optimization process
+  opt_algorithm->optimize(ranking_algo,
+                          training_dataset,
+                          validation_dataset,
+                          train_metric,
+                          npartialsave,
+                          output_filename);
+
+  if (!output_filename.empty()) {
+    std::cout << std::endl;
+    std::cout << "# Writing model to file: " << output_filename << std::endl;
+    opt_algorithm->save(output_filename);
+  }
+}
+
 void Driver::testing_phase(
     std::shared_ptr<learning::LTR_Algorithm> algo,
-    std::shared_ptr<quickrank::metric::ir::Metric>
-    test_metric,
-    const std::string test_filename,
+    std::shared_ptr<quickrank::metric::ir::Metric> test_metric,
+    std::shared_ptr<quickrank::data::Dataset> test_dataset,
     const std::string scores_filename,
     const bool detailed_testing) {
 
-  if (test_metric and !test_filename.empty()) {
-
-    // create reader: assume svml as ltr format
-    quickrank::io::Svml svml;
-
-    std::cout << "# Reading test dataset: " << test_filename << std::endl;
-
-    std::shared_ptr<data::Dataset> test_dataset =
-        svml.read_horizontal(test_filename);
-    std::cout << svml << *test_dataset << std::endl;
+  if (test_metric and test_dataset) {
 
     std::vector<Score> scores(test_dataset->num_instances());
     if (detailed_testing) {
@@ -250,7 +282,7 @@ void Driver::testing_phase(
       std::cout << *test_metric << " on test data = " << std::setprecision(4)
         << test_score << std::endl << std::endl;
 
-
+      quickrank::io::Svml svml;
       svml.write(datasetPartScores, scores_filename);
 
     } else {
@@ -275,6 +307,30 @@ void Driver::testing_phase(
   }
 
   algo->print_additional_stats();
+}
+
+std::shared_ptr<quickrank::data::Dataset> Driver::load_dataset(
+    const std::string dataset_filename,
+    const std::string dataset_label) {
+
+  // create reader: assume svml as ltr format
+  quickrank::io::Svml reader;
+
+  std::shared_ptr<quickrank::data::Dataset> dataset = nullptr;
+  if (!dataset_filename.empty()) {
+    std::cout << "# Reading " + dataset_label + "  dataset: " <<
+        dataset_filename << std::endl;
+    dataset = reader.read_horizontal(dataset_filename);
+    std::cout << reader << *dataset;
+  }
+
+  if (!dataset) {
+    std::cerr << "!!! Error while loading " + dataset_label + " dataset" <<
+        std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  return dataset;
 }
 
 }  // namespace metric

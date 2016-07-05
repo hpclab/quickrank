@@ -124,7 +124,7 @@ class Mart : public LTR_Algorithm {
   virtual void update_modelscores(std::shared_ptr<data::VerticalDataset> dataset,
                                   Score *scores, RegressionTree* tree);
 
-  virtual std::ofstream& save_model_to_file(std::ofstream& os) const;
+  virtual std::shared_ptr<pugi::xml_document> get_xml_model() const;
 
  protected:
   float **thresholds_ = NULL;

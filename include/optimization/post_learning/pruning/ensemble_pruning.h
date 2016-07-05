@@ -79,6 +79,9 @@ class EnsemblePruning : public PostLearningOptimization {
       std::shared_ptr<data::Dataset> dataset,
       std::set<unsigned int>& pruned_estimators) const;
 
+  /// Return the xml model representing the current object
+  virtual std::shared_ptr<pugi::xml_document> get_xml_model() const;
+
   static const std::vector<std::string> pruningMethodNames;
 
   static PruningMethod getPruningMethod(std::string name) {
@@ -109,16 +112,8 @@ class EnsemblePruning : public PostLearningOptimization {
 
   std::vector<double> weights_;
 
-  /// The output stream operator.
-  friend std::ostream& operator<<(std::ostream& os, const EnsemblePruning& a) {
-    return a.put(os);
-  }
-
   /// Prints the description of Algorithm, including its parameters
   std::ostream& put(std::ostream& os) const;
-
-  /// Save the current model in the given output file stream.
-  std::ofstream& save_model_to_file(std::ofstream& of) const;
 
   virtual void score(data::Dataset *dataset, Score *scores) const;
 

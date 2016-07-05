@@ -73,6 +73,9 @@ class CustomLTR : public LTR_Algorithm {
   /// Returns the score of a given document.
   virtual Score score_document(const Feature* d) const;
 
+  /// Return the xml model representing the current object
+  virtual std::shared_ptr<pugi::xml_document> get_xml_model() const;
+
   /// \todo TODO: add load_model();
 
   const Score FIXED_SCORE = 666.0;
@@ -86,9 +89,6 @@ class CustomLTR : public LTR_Algorithm {
 
   /// Prints the description of Algorithm, including its parameters
   virtual std::ostream& put(std::ostream& os) const;
-
-  /// Save the current model in the given output file stream.
-  virtual std::ofstream& save_model_to_file(std::ofstream& of) const;
 };
 
 }  // namespace learning

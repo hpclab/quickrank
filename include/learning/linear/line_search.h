@@ -74,6 +74,9 @@ class LineSearch : public LTR_Algorithm {
     return best_weights_;
   }
 
+  /// Return the xml model representing the current object
+  virtual std::shared_ptr<pugi::xml_document> get_xml_model() const;
+
  private:
   unsigned int num_points_;
   double window_size_;
@@ -91,9 +94,6 @@ class LineSearch : public LTR_Algorithm {
 
   /// Prints the description of Algorithm, including its parameters
   virtual std::ostream& put(std::ostream& os) const;
-
-  /// Save the current model in the given output file stream.
-  virtual std::ofstream& save_model_to_file(std::ofstream& of) const;
 
   virtual void preCompute(Feature *training_dataset, unsigned int num_samples,
                           unsigned int num_features, Score *pre_sum, double *weights,

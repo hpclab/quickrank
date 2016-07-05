@@ -81,6 +81,11 @@ std::shared_ptr<quickrank::optimization::Optimization> optimization_factory(
           lineSearch
       );
     }
+  } else if (pmap.isSet("opt_model")) {
+    std::string opt_model = pmap.get<std::string>("opt_model");
+
+    optimizer =
+        quickrank::optimization::Optimization::load_model_from_file(opt_model);
   }
 
   return optimizer;

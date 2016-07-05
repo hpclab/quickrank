@@ -347,36 +347,35 @@ Score LineSearch::score_document(const Feature *d) const {
   return score;
 }
 
-std::ofstream& LineSearch::save_model_to_file(std::ofstream &os) const {
-  // write ranker description
-  os << "\t<info>" << std::endl;
-  os << "\t\t<type>" << name() << "</type>" << std::endl;
-  os << "\t\t<num-samples>" << num_points_ << "</num-samples>" << std::endl;
-  os << "\t\t<window-size>" << window_size_ << "</window-size>" << std::endl;
-  os << "\t\t<reduction-factor>" << reduction_factor_ <<
-    "</reduction-factor>" << std::endl;
-  os << "\t\t<max-iterations>" << max_iterations_ << "</max-iterations>"
-    << std::endl;
-  os << "\t\t<max-failed-vali>" << max_failed_vali_ <<
-    "</max-failed-vali>" << std::endl;
-  os << "\t\t<adaptive>" << adaptive_ << "</adaptive>" << std::endl;
-  os << "\t</info>" << std::endl;
+std::shared_ptr<pugi::xml_document> LineSearch::get_xml_model() const {
 
-  os << "\t<ensemble>" << std::endl;
-  auto old_precision = os.precision();
-  os.setf(std::ios::floatfield, std::ios::fixed);
+  pugi::xml_document *doc = new pugi::xml_document();
+  doc->set_name("ranker");
+
+  pugi::xml_node info = doc->append_child("info");
+
+  info.append_child("type").text() = name().c_str();
+  info.append_child("num-samples").text() = num_points_;
+  info.append_child("window-size").text() = window_size_;
+  info.append_child("reduction-factor").text() = reduction_factor_;
+  info.append_child("max-iterations").text() = max_iterations_;
+  info.append_child("max-failed-vali").text() = max_failed_vali_;
+  info.append_child("adaptive").text() = adaptive_;
+
+  std::stringstream ss;
+  ss << std::setprecision(std::numeric_limits<double>::digits10);
+
+  pugi::xml_node ensemble = doc->append_child("ensemble");
   for (unsigned int i = 0; i < best_weights_.size(); i++) {
-    os << "\t\t<tree>" << std::endl;
-    os << std::setprecision(3);
-    os << "\t\t\t<index>" << i + 1 << "</index>" << std::endl;
-    os << std::setprecision(std::numeric_limits<quickrank::Score>::digits10);
-    os << "\t\t\t<weight>" << best_weights_[i] << "</weight>" <<
-    std::endl;
-    os << "\t\t</tree>" << std::endl;
+
+    ss << best_weights_[i];
+
+    pugi::xml_node couple = ensemble.append_child("tree");
+    couple.append_child("index").text() = i + 1;
+    couple.append_child("weight").text() = ss.str().c_str();
   }
-  os << "\t</ensemble>" << std::endl;
-  os << std::setprecision(old_precision);
-  return os;
+
+  return std::shared_ptr<pugi::xml_document>(doc);
 }
 
 void LineSearch::preCompute(Feature *training_dataset, unsigned int num_samples,

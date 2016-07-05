@@ -22,6 +22,7 @@
 #include <fstream>
 #include <iomanip>
 #include <limits>
+#include <sstream>
 
 #include "learning/tree/rtnode.h"
 
@@ -43,46 +44,33 @@ void RTNode::save_leaves(RTNode **&leaves, size_t &nleaves,
   }
 }
 
-// TODO TO BE REMOVED
-void RTNode::write_outputtofile(FILE *f, const int indentsize) {
-  char* indent = new char[indentsize + 1];  // char indent[indentsize+1];
-  for (int i = 0; i < indentsize; indent[i++] = '\t')
-    ;
-  indent[indentsize] = '\0';
-  if (featureid == SIZE_MAX)
-    fprintf(f, "%s\t<output> %.15f </output>\n", indent, avglabel);
-  else {
-    fprintf(f, "%s\t<feature> %zu </feature>\n", indent, featureid);
-    fprintf(f, "%s\t<threshold> %.8f </threshold>\n", indent, threshold);
-    fprintf(f, "%s\t<split pos=\"left\">\n", indent);
-    left->write_outputtofile(f, indentsize + 1);
-    fprintf(f, "%s\t</split>\n", indent);
-    fprintf(f, "%s\t<split pos=\"right\">\n", indent);
-    right->write_outputtofile(f, indentsize + 1);
-    fprintf(f, "%s\t</split>\n", indent);
-  }
-  delete[] indent;
-}
+std::shared_ptr<pugi::xml_node> RTNode::get_xml_model(
+    const std::string& pos) const {
 
-std::ofstream& RTNode::save_model_to_file(std::ofstream& os,
-                                          const int indentsize) {
-  std::string indent = "";
-  for (int i = 0; i < indentsize; i++)
-    indent += "\t";
+  std::stringstream ss;
+  ss << std::setprecision(std::numeric_limits<double>::digits10);
+
+  pugi::xml_node* split = new pugi::xml_node();
+  split->set_name("split");
+
+  if (!pos.empty())
+    split->append_attribute("pos") = pos.c_str();
+
   if (featureid == uint_max) {
-    os << std::setprecision(std::numeric_limits<quickrank::Score>::digits10);
-    os << indent << "\t<output> " << avglabel << " </output>" << std::endl;
+
+    ss << avglabel;
+    split->append_child("output").text() = ss.str().c_str();
+
   } else {
-    os << indent << "\t<feature> " << featureid << " </feature>" << std::endl;
-    os << std::setprecision(std::numeric_limits<quickrank::Feature>::digits10);
-    os << indent << "\t<threshold> " << threshold << " </threshold>"
-       << std::endl;
-    os << indent << "\t<split pos=\"left\">" << std::endl;
-    left->save_model_to_file(os, indentsize + 1);
-    os << indent << "\t</split>" << std::endl;
-    os << indent << "\t<split pos=\"right\">" << std::endl;
-    right->save_model_to_file(os, indentsize + 1);
-    os << indent << "\t</split>" << std::endl;
+
+    split->append_child("feature").text() = featureid;
+
+    ss << threshold;
+    split->append_child("threshold").text() = ss.str().c_str();
+
+    split->append_move(*left->get_xml_model("left"));
+    split->append_move(*right->get_xml_model("right"));
   }
-  return os;
+
+  return std::shared_ptr<pugi::xml_node>(split);
 }

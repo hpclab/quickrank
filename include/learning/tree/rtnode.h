@@ -23,6 +23,7 @@
 
 #include "learning/tree/rtnode_histogram.h"
 #include "types.h"
+#include "pugixml/src/pugixml.hpp"
 
 #ifdef QUICKRANK_PERF_STATS
 #include <atomic>
@@ -157,6 +158,6 @@ class RTNode {
   }
 #endif
 
-  void write_outputtofile(FILE *f, const int indentsize);
-  std::ofstream& save_model_to_file(std::ofstream&, const int);
+  std::shared_ptr<pugi::xml_node> get_xml_model(const std::string& pos = "")
+      const;
 };

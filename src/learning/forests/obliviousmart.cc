@@ -68,21 +68,26 @@ std::unique_ptr<RegressionTree> ObliviousMart::fit_regressor_on_gradient(
   return std::unique_ptr<RegressionTree>(tree);
 }
 
-std::ofstream& ObliviousMart::save_model_to_file(std::ofstream& os) const {
-  // write ranker description
-  os << "\t<info>" << std::endl << "\t\t<type>" << name() << "</type>"
-     << std::endl << "\t\t<trees>" << ntrees_ << "</trees>" << std::endl
-     << "\t\t<leaves>" << nleaves_ << "</leaves>" << std::endl << "\t\t<depth>"
-     << treedepth_ << "</depth>" << std::endl << "\t\t<shrinkage>" << shrinkage_
-     << "</shrinkage>" << std::endl << "\t\t<leafsupport>" << minleafsupport_
-     << "</leafsupport>" << std::endl << "\t\t<discretization>" << nthresholds_
-     << "</discretization>" << std::endl << "\t\t<estop>" << valid_iterations_
-     << "</estop>" << std::endl << "\t</info>" << std::endl;
+std::shared_ptr<pugi::xml_document> ObliviousMart::get_xml_model() const {
 
-  // save xml model
-  ensemble_model_.save_model_to_file(os);
+  pugi::xml_document* doc = new pugi::xml_document();
+  doc->set_name("ranker");
 
-  return os;
+  pugi::xml_node info = doc->append_child("info");
+
+  info.append_child("type").text() = name().c_str();
+  info.append_child("trees").text() = ntrees_;
+  info.append_child("leaves").text() = nleaves_;
+  info.append_child("depth").text() = treedepth_;
+  info.append_child("shrinkage").text() = shrinkage_;
+  info.append_child("leafsupport").text() = minleafsupport_;
+  info.append_child("discretization").text() = nthresholds_;
+  info.append_child("estop").text() = nthresholds_;
+
+  pugi::xml_node ensemble = *ensemble_model_.get_xml_model();
+  doc->append_move(ensemble);
+
+  return std::shared_ptr<pugi::xml_document>(doc);
 }
 
 }  // namespace forests

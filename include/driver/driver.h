@@ -23,6 +23,7 @@
 
 #include "metric/ir/metric.h"
 #include "learning/ltr_algorithm.h"
+#include "optimization/optimization.h"
 
 #include "io/xml.h"
 #include "io/vpred.h"
@@ -59,13 +60,33 @@ class Driver {
   /// \param output_filename Model output file.
   /// If empty, no output file is written.
   /// \param npartialsave Allows to save a partial model every given number of iterations.
-  static void training_phase(std::shared_ptr<learning::LTR_Algorithm> algo,
-                             std::shared_ptr<metric::ir::Metric> train_metric,
-                             const std::string training_filename,
-                             const std::string validation_filename,
-                             const std::string feature_filename,
-                             const std::string output_filename,
-                             const size_t npartialsave);
+  static void training_phase(
+      std::shared_ptr<learning::LTR_Algorithm> algo,
+      std::shared_ptr<metric::ir::Metric> train_metric,
+      std::shared_ptr<quickrank::data::Dataset> training_dataset,
+      std::shared_ptr<quickrank::data::Dataset> validation_dataset,
+      const std::string output_filename,
+      const size_t npartialsave);
+
+  /// Runs train/validation of \a algo by optimizing \a train_metric
+  /// and then measures \a test_metric on the test data.
+  ///
+  /// \param algo The L-T-R algorithm to be tested.
+  /// \param train_metric The metric optimized during training.
+  /// \param training_filename The training dataset.
+  /// \param validation_filename The validation dataset.
+  /// If empty, validation is not used.
+  /// \param output_filename Model output file.
+  /// If empty, no output file is written.
+  /// \param npartialsave Allows to save a partial model every given number of iterations.
+  static void optimization_phase(
+      std::shared_ptr<quickrank::optimization::Optimization> opt_algorithm,
+      std::shared_ptr<learning::LTR_Algorithm> ranking_algo,
+      std::shared_ptr<metric::ir::Metric> train_metric,
+      std::shared_ptr<quickrank::data::Dataset> training_dataset,
+      std::shared_ptr<quickrank::data::Dataset> validation_dataset,
+      const std::string output_filename,
+      const size_t npartialsave);
 
   /// Runs the learned or loaded model on the test data
   /// and then measures \a test_metric on the test data.
@@ -78,11 +99,16 @@ class Driver {
   /// If set save the scores computed for the test set.
   /// \param verbose If True saves an SVML-like file with the score of each ranker in the ensemble.
   /// NB. Works only for ensembles.
-  static void testing_phase(std::shared_ptr<learning::LTR_Algorithm> algo,
-                       std::shared_ptr<metric::ir::Metric> test_metric,
-                       const std::string test_filename,
-                       const std::string scores_filename,
-                       const bool detailed_testing);
+  static void testing_phase(
+      std::shared_ptr<learning::LTR_Algorithm> algo,
+      std::shared_ptr<metric::ir::Metric> test_metric,
+      std::shared_ptr<quickrank::data::Dataset> test_dataset,
+      const std::string scores_filename,
+      const bool detailed_testing);
+
+  static std::shared_ptr<quickrank::data::Dataset> load_dataset(
+      const std::string dataset_filename,
+      const std::string dataset_label);
 };
 
 }  // namespace driver

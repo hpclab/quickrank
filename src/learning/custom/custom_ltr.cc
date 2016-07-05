@@ -84,12 +84,16 @@ Score CustomLTR::score_document(const quickrank::Feature* d) const {
   return FIXED_SCORE;
 }
 
-std::ofstream& CustomLTR::save_model_to_file(std::ofstream& os) const {
-  // write ranker description
-  os << *this;
-  // save xml model
-  // TODO: Save model to file
-  return os;
+std::shared_ptr<pugi::xml_document> CustomLTR::get_xml_model() const {
+
+  pugi::xml_document* doc = new pugi::xml_document();
+  doc->set_name("ranker");
+
+  pugi::xml_node info = doc->append_child("info");
+
+  info.append_child("type").text() = name().c_str();
+
+  return std::shared_ptr<pugi::xml_document>(doc);
 }
 
 }  // namespace learning

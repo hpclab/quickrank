@@ -38,17 +38,9 @@ void Optimization::save(std::string output_basename, int iteration) const {
     std::string filename(output_basename);
     if (iteration != -1)
       filename += ".T" + std::to_string(iteration) + ".xml";
-    std::ofstream output_stream;
-    output_stream.open(filename);
-    // Wrap actual model
-    output_stream << "<optimizer>" << std::endl;
 
-    // Save the actual model
-    save_model_to_file(output_stream);
-
-    output_stream << "</optimizer>" << std::endl;
-
-    output_stream.close();
+    pugi::xml_document& doc = *get_xml_model();
+    doc.save_file(filename.c_str());
   }
 }
 

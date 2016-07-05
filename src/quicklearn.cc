@@ -195,8 +195,6 @@ int main(int argc, char *argv[]) {
 
   pmap.addOptionWithArg<std::string>("valid", "set validation file");
 
-  pmap.addOptionWithArg<std::string>("valid", "set validation file");
-
   pmap.addOptionWithArg<std::string>("features", "set features file");
 
   pmap.addOptionWithArg<std::string>("model",
@@ -315,9 +313,13 @@ int main(int argc, char *argv[]) {
         quickrank::optimization::post_learning::pruning::EnsemblePruning::NAME_
         + " [" + pruningMethods  + "]");
 
+  pmap.addOptionWithArg<std::string>(
+      "opt-model",
+      "set output model file for optimization or input model file for testing");
+
 
   // --------------------------------------------------------
-  pmap.addMessage("Training options for Ensemble Pruning");
+  pmap.addMessage("Ensemble Pruning options");
   pmap.addOptionWithArg<double>("pruning-rate",
                                 "ensemble to prune (either as a ratio with "
                                     "respect to ensemble size or as an absolute "
@@ -342,19 +344,6 @@ int main(int argc, char *argv[]) {
     std::cout << pmap.help();
     return 1;
   }
-
-  pugi::xml_document doc;
-  pugi::xml_parse_result result = doc.load_file
-      ("/Users/Salvatore/Documents/eclipse/workspace/quickrank/modello.xml");
-  std::cout << "Load result: " << result.description() << std::endl;
-  std::cout << "1. " << doc.child("ranker").child("info").child("type")
-                            .child_value() << std::endl;
-
-  pugi::xml_node node = doc.child("ranker").child("info").child("type");
-  node.first_child().set_value("TRAM");
-  std::cout << "Saving result: " << doc.save_file
-      ("/Users/Salvatore/Documents/eclipse/workspace/quickrank/modello_new"
-           ".xml") << std::endl;
 
   return quickrank::driver::Driver::run(pmap);
 }

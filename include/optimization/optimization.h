@@ -73,8 +73,8 @@ class Optimization {
   /// \param suffix The suffix used to identify partial model saves.
   virtual void save(std::string model_filename, int suffix = -1) const;
 
-  /// Save the current model in the given output file stream.
-  virtual std::ofstream& save_model_to_file(std::ofstream& of) const = 0;
+  /// Return the xml model representing the current object
+  virtual std::shared_ptr<pugi::xml_document> get_xml_model() const = 0;
 
   virtual bool is_pre_learning() const = 0;
 

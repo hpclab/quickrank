@@ -512,26 +512,30 @@ std::shared_ptr<std::vector<Score>> Rankboost::detailed_scores_document(const Fe
     return std::make_shared<std::vector<quickrank::Score>>(std::move(scores));
 }
 
-std::ofstream & Rankboost::save_model_to_file(std::ofstream & os) const {
-    // write ranker description
-    os << "\t<info>" << std::endl;
-    os << "\t\t<type>" << name() << "</type>" << std::endl;
-    os << "\t\t<maxweakrankers>" << T << "</maxweakrankers>" << std::endl;
-    os << "\t</info>" << std::endl;
+std::shared_ptr<pugi::xml_document> Rankboost::get_xml_model() const {
 
-    os << "\t<ensemble>" << std::endl;
+    pugi::xml_document* doc = new pugi::xml_document();
+    doc->set_name("ranker");
+
+    pugi::xml_node info = doc->append_child("info");
+
+    info.append_child("type").text() = name().c_str();
+    info.append_child("maxweakrankers").text() = T;
+
+    pugi::xml_node ensemble = doc->append_child("ensemble");
     for (unsigned int t = 0; t < best_T; t++) {
-        os << "\t\t<weakranker>" << std::endl;
-        os << "\t\t\t<id>" << t << "</id>" << std::endl;
-        os << "\t\t\t<featureid>" << weak_rankers[t]->get_feature_id() << "</featureid>" << std::endl;
-        os << "\t\t\t<theta>" << weak_rankers[t]->get_theta() << "</theta>" << std::endl;
-        os << "\t\t\t<sign>" << weak_rankers[t]->get_sign() << "</sign>" << std::endl;
-        os << "\t\t\t<alpha>" << alphas[t] << "</alpha>" << std::endl;
-        os << "\t\t</weakranker>" << std::endl;
+
+        pugi::xml_node wr = ensemble.append_child("weakranker");
+        wr.append_child("id").text() = t;
+        wr.append_child("featureid").text() = weak_rankers[t]->get_feature_id();
+        wr.append_child("theta").text() = weak_rankers[t]->get_theta();
+        wr.append_child("sign").text() = weak_rankers[t]->get_sign();
+        wr.append_child("alpha").text() = alphas[t];
     }
-    os << "\t</ensemble>" << std::endl;
-    return os;
+
+    return std::shared_ptr<pugi::xml_document>(doc);
 }
+
 } // namespace forests
 } // namespace learning
 } // namespace quickrank

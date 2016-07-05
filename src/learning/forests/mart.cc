@@ -347,23 +347,25 @@ void Mart::update_modelscores(std::shared_ptr<data::VerticalDataset> dataset,
   }
 }
 
-std::ofstream& Mart::save_model_to_file(std::ofstream& os) const {
-  // write ranker description
-  os << "\t<info>" << std::endl;
-  os << "\t\t<type>" << name() << "</type>" << std::endl;
-  os << "\t\t<trees>" << ntrees_ << "</trees>" << std::endl;
-  os << "\t\t<leaves>" << nleaves_ << "</leaves>" << std::endl;
-  os << "\t\t<shrinkage>" << shrinkage_ << "</shrinkage>" << std::endl;
-  os << "\t\t<leafsupport>" << minleafsupport_ << "</leafsupport>" << std::endl;
-  os << "\t\t<discretization>" << nthresholds_ << "</discretization>"
-     << std::endl;
-  os << "\t\t<estop>" << valid_iterations_ << "</estop>" << std::endl;
-  os << "\t</info>" << std::endl;
+std::shared_ptr<pugi::xml_document> Mart::get_xml_model() const {
 
-  // save xml model
-  ensemble_model_.save_model_to_file(os);
+  pugi::xml_document* doc = new pugi::xml_document();
+  doc->set_name("ranker");
 
-  return os;
+  pugi::xml_node info = doc->append_child("info");
+
+  info.append_child("type").text() = name().c_str();
+  info.append_child("trees").text() = ntrees_;
+  info.append_child("leaves").text() = nleaves_;
+  info.append_child("shrinkage").text() = shrinkage_;
+  info.append_child("leafsupport").text() = minleafsupport_;
+  info.append_child("discretization").text() = nthresholds_;
+  info.append_child("estop").text() = valid_iterations_;
+
+  pugi::xml_node ensemble = *ensemble_model_.get_xml_model();
+  doc->append_move(ensemble);
+
+  return std::shared_ptr<pugi::xml_document>(doc);
 }
 
 void Mart::print_additional_stats(void) const {
