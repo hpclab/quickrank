@@ -20,6 +20,8 @@
  *  - Salvatore Trani(salvatore.trani@isti.cnr.it)
  */
 
+#include <numeric>
+
 #include "optimization/post_learning/pruning/LowWeightsPruning.h"
 
 namespace quickrank {

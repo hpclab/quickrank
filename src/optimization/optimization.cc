@@ -26,8 +26,6 @@
 #include "optimization/post_learning/pruning/ensemble_pruning.h"
 #include "optimization/post_learning/pruning/ensemble_pruning_factory.h"
 
-#include "pugixml/pugixml.hpp"
-
 namespace quickrank {
 namespace optimization {
 

@@ -25,7 +25,7 @@
 
 #include "data/dataset.h"
 #include "metric/ir/metric.h"
-#include "pugixml/pugixml.hpp"
+#include "pugixml/src/pugixml.hpp"
 
 namespace quickrank {
 namespace learning {

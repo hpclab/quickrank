@@ -1,24 +1,27 @@
-# compile with CMake.
-# G++ COMPILER OPTION (on Mac OS X, brew): -DCMAKE_CXX_COMPILER=/usr/local/bin/g++-5
-# GCC COMPILER OPTION (on Mac OS X, brew): -DCMAKE_C_COMPILER=/usr/local/bin/gcc-5
+# QuickRank - CMakeLists File.
+# GNU C++ COMPILER OPTION (on Mac OS X, brew): -DCMAKE_CXX_COMPILER=/usr/local/bin/g++-5
+# BUILD TYPE: -DCMAKE_BUILD_TYPE=[Release|Debug]
 
 cmake_minimum_required(VERSION 3.4)
-project(QUICKRANK)
+project(QUICKRANK CXX)
 
-# require support of c++11
+# require support of C++11
 set_property(GLOBAL PROPERTY CXX_STANDARD 11)
 set_property(GLOBAL PROPERTY CXX_STANDARD_REQUIRED ON)
 
-# require support of openmp
+# handling build type
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE "Release")
+endif()
+
+#set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE BOOL
+#   "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel." FORCE)
+
+# require support of OpenMP
 find_package(OpenMP REQUIRED)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 
-# Compiler flags (todo: fix release vs. debug)
-# SET(CMAKE_BUILD_TYPE Release CACHE STRING "Release is the default build type")
-# set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -std=c++11 -Wall -march=native -mtune=native -O3") # for franco  -Wa,-q
-# set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -std=c++11 -Wall -g") # for franco  -Wa,-q
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -march=native -mtune=native -O3") # for franco  -Wa,-q
-
+# Compiler flags
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -std=c++11 -Wall -march=native -mtune=native -O3 -Wa,-q")
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -std=c++11 -Wall -O0 -g -Wa,-q")
@@ -30,7 +33,7 @@ endif()
 # Binary output directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 
-# include files path
+# include header and lib paths
 include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(lib)
 
@@ -38,44 +41,58 @@ include_directories(lib)
 set(QUICKLEARN_MAIN "${CMAKE_SOURCE_DIR}/src/quicklearn.cc")
 set(QUICKSCORE_MAIN "${CMAKE_SOURCE_DIR}/src/quickscore.cc")
 file(GLOB_RECURSE all_sources ${CMAKE_SOURCE_DIR}/src/*.cc)
-
-file(GLOB_RECURSE lib_sources ${CMAKE_SOURCE_DIR}/lib/*.cpp)
-ADD_LIBRARY(libraries ${lib_sources})
-list(APPEND all_sources ${lib_sources})
-
 list(REMOVE_ITEM all_sources ${QUICKLEARN_MAIN})
 list(REMOVE_ITEM all_sources ${QUICKSCORE_MAIN})
-file(GLOB_RECURSE all_headers ${CMAKE_SOURCE_DIR}/include/*.h)
+
 file(GLOB_RECURSE unit_tests_sources ${CMAKE_SOURCE_DIR}/catch-unit-tests/*.cc)
+
+# external libraries
+file(GLOB_RECURSE pugixml_sources ${CMAKE_SOURCE_DIR}/lib/pugixml/src/*.cpp)
+add_library(pugixml STATIC ${pugixml_sources})
+
+# managing QuickRank headers and libraries
+file(GLOB_RECURSE all_headers ${CMAKE_SOURCE_DIR}/include/*.h)
+file(GLOB_RECURSE all_headers ${CMAKE_SOURCE_DIR}/lib/pugixml/src/*.hpp)
+file(GLOB_RECURSE all_headers ${CMAKE_SOURCE_DIR}/lib/Catch/include/catch.hpp)
+file(GLOB_RECURSE all_headers ${CMAKE_SOURCE_DIR}/lib/ParamsMap/*.h)
 
 # ---------------------------------
 # quicklearn target
 add_executable(quicklearn ${all_headers} ${all_sources} ${QUICKLEARN_MAIN})
-
+target_link_libraries(quicklearn pugixml)
+	
 # ---------------------------------
 # quickscore target
+# needs env variable "QUICKSCORE_RANKER_FILE_PATH" with absolute file path
+# (.cc extension) of the model to compile and link with QuickScore
+find_package(Boost COMPONENTS program_options REQUIRED)
+include_directories(${Boost_INCLUDE_DIRS})
+link_directories(${Boost_LIBRARY_DIRS})
+set(RANKER_FILE_PATH $ENV{QUICKSCORE_RANKER_FILE_PATH})
+list(APPEND all_sources ${RANKER_FILE_PATH})
+set_source_files_properties(${RANKER_FILE_PATH} PROPERTIES GENERATED)
+add_executable(quickscore ${all_headers} ${all_sources} ${QUICKSCORE_MAIN})
+target_link_libraries(quickscore ${Boost_LIBRARIES})
+target_link_libraries(quickscore pugixml)
 
 # ---------------------------------
-# download test data
-add_custom_command( OUTPUT ${CMAKE_SOURCE_DIR}/quickranktestdata
+# download test data for unit-testing
+add_custom_command(OUTPUT ${CMAKE_SOURCE_DIR}/quickranktestdata
     COMMAND git clone http://git.hpc.isti.cnr.it/quickrank/quickranktestdata.git ${CMAKE_SOURCE_DIR}/quickranktestdata
-    COMMENT "Cloning Quickrank small datasets repo"
-    )
-add_custom_target( quickranktestdata DEPENDS ${CMAKE_SOURCE_DIR}/quickranktestdata )
+    COMMENT "Cloning QuickRank small datasets repo"
+)
+add_custom_target(quickranktestdata DEPENDS ${CMAKE_SOURCE_DIR}/quickranktestdata)
 
 # ---------------------------------
 # unit-test target
 add_executable(unit-tests ${all_headers} ${all_sources} ${unit_tests_sources})
 add_dependencies(unit-tests quickranktestdata)
+target_link_libraries(unit-tests pugixml)
 
 # ---------------------------------
 # generate documentation
-add_custom_target( doc
+add_custom_target(doc
     COMMAND doxygen quickrank.doxygen
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/documentation
-    COMMENT "Creating the documentation with doxygen"
-    )
-
-
-
-
+	COMMENT "Creating the documentation with doxygen"
+)

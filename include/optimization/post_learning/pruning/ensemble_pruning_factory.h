@@ -21,7 +21,7 @@
 */
 #pragma once
 
-#include "pugixml/pugixml.hpp"
+#include "pugixml/src/pugixml.hpp"
 
 #include "optimization/optimization.h"
 #include "learning/linear/line_search.h"

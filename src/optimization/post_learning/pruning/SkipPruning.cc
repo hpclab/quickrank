@@ -20,6 +20,8 @@
  *  - Salvatore Trani(salvatore.trani@isti.cnr.it)
  */
 
+#include <math.h>
+
 #include "optimization/post_learning/pruning/SkipPruning.h"
 
 namespace quickrank {

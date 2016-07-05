@@ -23,7 +23,7 @@
 
 #include <memory>
 
-#include "utils/paramsmap.h"
+#include "ParamsMap/paramsmap.h"
 
 #include "optimization/optimization.h"
 #include "learning/linear/line_search.h"

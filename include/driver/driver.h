@@ -27,7 +27,7 @@
 #include "io/xml.h"
 #include "io/vpred.h"
 
-#include "utils/paramsmap.h"
+#include "ParamsMap/paramsmap.h"
 
 namespace quickrank {
 namespace driver {

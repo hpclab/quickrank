@@ -30,6 +30,7 @@
 #include <chrono>
 #include <set>
 #include <string.h>
+#include <math.h>
 #include <cassert>
 #include <io/svml.h>
 
@@ -110,7 +111,7 @@ void EnsemblePruning::optimize(
 
   if (pruning_rate_ < 1)
     estimators_to_prune_ = (unsigned int) round(
-        pruning_rate_ * training_dataset->num_features() );
+        pruning_rate_ * training_dataset->num_features());
   else {
     estimators_to_prune_ = pruning_rate_;
     if (estimators_to_prune_ >= training_dataset->num_features()) {

@@ -30,7 +30,7 @@
 #include "learning/linear/line_search.h"
 #include "optimization/optimization.h"
 #include "optimization/post_learning/post_learning_opt.h"
-#include "pugixml/pugixml.hpp"
+#include "pugixml/src/pugixml.hpp"
 
 namespace quickrank {
 namespace optimization {

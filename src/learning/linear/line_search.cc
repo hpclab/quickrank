@@ -24,6 +24,7 @@
 #include <fstream>
 #include <iomanip>
 #include <chrono>
+#include <numeric>
 
 #include <boost/property_tree/xml_parser.hpp>
 

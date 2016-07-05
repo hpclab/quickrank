@@ -68,7 +68,7 @@
 #include <unistd.h>
 #include <fstream>
 
-#include "utils/paramsmap.h"
+#include "ParamsMap/paramsmap.h"
 
 #include "learning/forests/mart.h"
 #include "learning/forests/lambdamart.h"
@@ -87,7 +87,7 @@
 
 #include "driver/driver.h"
 
-#include "pugixml/pugixml.hpp"
+#include "pugixml/src/pugixml.hpp"
 
 
 void print_logo() {

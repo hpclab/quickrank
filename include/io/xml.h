@@ -24,7 +24,7 @@
 #include <memory>
 #include <string>
 
-#include "pugixml/pugixml.hpp"
+#include "pugixml/src/pugixml.hpp"
 #include "learning/ltr_algorithm.h"
 #include "learning/tree/rt.h"
 

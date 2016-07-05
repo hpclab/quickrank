@@ -27,7 +27,7 @@
 #include <limits>
 #include <list>
 
-#include "pugixml/pugixml.hpp"
+#include "pugixml/src/pugixml.hpp"
 
 #include "io/xml.h"
 #include "utils/strutils.h"

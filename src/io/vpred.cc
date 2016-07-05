@@ -30,7 +30,7 @@
 #include <cmath>
 
 #include "io/vpred.h"
-#include "pugixml/pugixml.hpp"
+#include "pugixml/src/pugixml.hpp"
 #include "utils/strutils.h"
 
 namespace quickrank {

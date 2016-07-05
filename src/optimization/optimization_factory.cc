@@ -19,7 +19,6 @@
  * Contributors:
  *  - Salvatore Trani(salvatore.trani@isti.cnr.it)
  */
-#pragma once
 
 #include "optimization/optimization_factory.h"
 #include "optimization/post_learning/pruning/ensemble_pruning.h"

@@ -23,6 +23,7 @@
 #include <fstream>
 #include <limits>
 #include <memory>
+#include <numeric>
 
 #include "driver/driver.h"
 #include "io/svml.h"
