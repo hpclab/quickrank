@@ -53,8 +53,8 @@ add_library(pugixml STATIC ${pugixml_sources})
 # managing QuickRank headers and libraries
 file(GLOB_RECURSE all_headers ${CMAKE_SOURCE_DIR}/include/*.h)
 file(GLOB_RECURSE all_headers ${CMAKE_SOURCE_DIR}/lib/pugixml/src/*.hpp)
-file(GLOB_RECURSE all_headers ${CMAKE_SOURCE_DIR}/lib/Catch/include/catch.hpp)
-file(GLOB_RECURSE all_headers ${CMAKE_SOURCE_DIR}/lib/ParamsMap/*.h)
+file(GLOB_RECURSE all_headers ${CMAKE_SOURCE_DIR}/lib/catch/include/catch.hpp)
+file(GLOB_RECURSE all_headers ${CMAKE_SOURCE_DIR}/lib/paramsmap/*.h)
 
 # ---------------------------------
 # quicklearn target
@@ -70,7 +70,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
 set(RANKER_FILE_PATH $ENV{QUICKSCORE_RANKER_FILE_PATH})
 list(APPEND all_sources ${RANKER_FILE_PATH})
-set_source_files_properties(${RANKER_FILE_PATH} PROPERTIES GENERATED)
+set_source_files_properties(${RANKER_FILE_PATH} PROPERTIES GENERATED TRUE)
 add_executable(quickscore ${all_headers} ${all_sources} ${QUICKSCORE_MAIN})
 target_link_libraries(quickscore ${Boost_LIBRARIES})
 target_link_libraries(quickscore pugixml)
