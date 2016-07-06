@@ -39,48 +39,6 @@
 namespace quickrank {
 namespace io {
 
-RTNode* RTNode_parse_xml(const pugi::xml_node& split_xml) {
-  RTNode* model_node = NULL;
-  RTNode* left_child = NULL;
-  RTNode* right_child = NULL;
-
-  bool is_leaf = false;
-
-  unsigned int feature_id = 0;
-  Feature threshold = 0.0f;
-  Score prediction = 0.0;
-
-  for (const pugi::xml_node& split_child: split_xml.children()) {
-
-    //
-
-    if (strcmp(split_child.name(), "output") == 0) {
-      prediction = split_child.text().as_double();
-      is_leaf = true;
-      break;
-    } else if (strcmp(split_child.name(), "feature") == 0) {
-      feature_id = split_child.text().as_uint();
-    } else if (strcmp(split_child.name(), "threshold") == 0) {
-      threshold = split_child.text().as_float();
-    } else if (strcmp(split_child.name(), "split") == 0) {
-      std::string pos = split_child.attribute("pos").value();
-      if (pos == "left")
-        left_child = RTNode_parse_xml(split_child);
-      else
-        right_child = RTNode_parse_xml(split_child);
-    }
-  }
-
-  if (is_leaf)
-    model_node = new RTNode(prediction);
-  else
-    /// \todo TODO: this should be changed with item mapping
-    model_node = new RTNode(threshold, feature_id - 1, feature_id, left_child,
-                            right_child);
-
-  return model_node;
-}
-
 /**
 
 void model_node_to_c_baseline(const boost::property_tree::ptree &split_xml,

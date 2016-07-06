@@ -66,19 +66,17 @@ std::shared_ptr<std::vector<quickrank::Score>>
   return std::make_shared<std::vector<quickrank::Score>>(std::move(scores));
 }
 
-std::shared_ptr<pugi::xml_node> Ensemble::get_xml_model() const {
-  pugi::xml_node* ensemble = new pugi::xml_node();
-  ensemble->set_name("ensemble");
+pugi::xml_node Ensemble::append_xml_model(pugi::xml_node parent) const {
+  pugi::xml_node ensemble = parent.append_child("ensemble");
 
   for (size_t i = 0; i < size; ++i) {
-    pugi::xml_node tree = ensemble->append_child("tree");
+    pugi::xml_node tree = ensemble.append_child("tree");
     tree.append_attribute("id") = i + 1;
     tree.append_attribute("weight") = arr[i].weight;
     if (arr[i].root) {
-      //pugi::xml_node split = ensemble.append_child("split");
-      ensemble->append_move(*arr[i].root->get_xml_model());
+      arr[i].root->append_xml_model(ensemble);
     }
   }
 
-  return std::shared_ptr<pugi::xml_node>(ensemble);
+  return ensemble;
 }

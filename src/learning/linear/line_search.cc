@@ -347,12 +347,12 @@ Score LineSearch::score_document(const Feature *d) const {
   return score;
 }
 
-std::shared_ptr<pugi::xml_document> LineSearch::get_xml_model() const {
+pugi::xml_document* LineSearch::get_xml_model() const {
 
-  pugi::xml_document *doc = new pugi::xml_document();
-  doc->set_name("ranker");
+  pugi::xml_document* doc = new pugi::xml_document();
+  pugi::xml_node root = doc->append_child("ranker");
 
-  pugi::xml_node info = doc->append_child("info");
+  pugi::xml_node info = root.append_child("info");
 
   info.append_child("type").text() = name().c_str();
   info.append_child("num-samples").text() = num_points_;
@@ -365,7 +365,7 @@ std::shared_ptr<pugi::xml_document> LineSearch::get_xml_model() const {
   std::stringstream ss;
   ss << std::setprecision(std::numeric_limits<double>::digits10);
 
-  pugi::xml_node ensemble = doc->append_child("ensemble");
+  pugi::xml_node ensemble = root.append_child("ensemble");
   for (unsigned int i = 0; i < best_weights_.size(); i++) {
 
     ss << best_weights_[i];
@@ -375,7 +375,7 @@ std::shared_ptr<pugi::xml_document> LineSearch::get_xml_model() const {
     couple.append_child("weight").text() = ss.str().c_str();
   }
 
-  return std::shared_ptr<pugi::xml_document>(doc);
+  return doc;
 }
 
 void LineSearch::preCompute(Feature *training_dataset, unsigned int num_samples,

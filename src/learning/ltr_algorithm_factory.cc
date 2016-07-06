@@ -51,6 +51,8 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
             quickrank::learning::LTR_Algorithm::load_model_from_file(
                 model_filename));
 
+    std::cout << *ltr_algo << std::endl;
+
     if (verbose && !ltr_algo) {
       std::cerr << " !! Unable to load model from file." << std::endl;
     }
@@ -71,7 +73,7 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
               pmap.get<size_t>("min-leaf-support"),
               pmap.get<size_t>("end-after-rounds")
           ));
-    } else if (algo_name == quickrank::learning::forests::LambdaMart::NAME_) {
+    } else if (algo_name == quickrank::learning::forests::Mart::NAME_) {
       ltr_algo = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
           new quickrank::learning::forests::Mart(
               pmap.get<size_t>("num-trees"),

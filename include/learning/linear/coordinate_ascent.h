@@ -72,7 +72,7 @@ class CoordinateAscent : public LTR_Algorithm {
   virtual Score score_document(const Feature* d) const;
 
   /// Return the xml model representing the current object
-  virtual std::shared_ptr<pugi::xml_document> get_xml_model() const;
+  virtual pugi::xml_document* get_xml_model() const;
 
  private:
   std::vector<double> best_weights_;

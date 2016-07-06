@@ -51,7 +51,8 @@ Mart::Mart(const pugi::xml_document& model) {
   pugi::xml_node model_tree = model.child("ranker").child("ensemble");
 
   // read (training) info
-  nleaves_ = model_info.child("trees").text().as_int();
+  ntrees_ = model_info.child("trees").text().as_int();
+  nleaves_ = model_info.child("leaves").text().as_int();
   minleafsupport_ = model_info.child("leafsupport").text().as_int();
   nthresholds_ = model_info.child("discretization").text().as_int();
   valid_iterations_ = model_info.child("estop").text().as_int();
@@ -67,7 +68,7 @@ Mart::Mart(const pugi::xml_document& model) {
 
     const auto& root_split = tree.child("split");
     if (root_split)
-      root = io::RTNode_parse_xml(root_split);
+      root = RTNode::parse_xml(root_split);
 
     if (root == NULL) {
       std::cerr << "!!! Unable to parse tree from XML model." << std::endl;
@@ -79,10 +80,11 @@ Mart::Mart(const pugi::xml_document& model) {
 }
 
 std::ostream& Mart::put(std::ostream& os) const {
-  os << "# Ranker: " << name() << std::endl << "# max no. of trees = "
-     << ntrees_ << std::endl << "# no. of tree leaves = " << nleaves_
-     << std::endl << "# shrinkage = " << shrinkage_ << std::endl
-     << "# min leaf support = " << minleafsupport_ << std::endl;
+  os  << "# Ranker: " << name() << std::endl
+      << "# max no. of trees = " << ntrees_ << std::endl
+      << "# no. of tree leaves = " << nleaves_ << std::endl
+      << "# shrinkage = " << shrinkage_ << std::endl
+      << "# min leaf support = " << minleafsupport_ << std::endl;
   if (nthresholds_)
     os << "# no. of thresholds = " << nthresholds_ << std::endl;
   else
@@ -347,12 +349,12 @@ void Mart::update_modelscores(std::shared_ptr<data::VerticalDataset> dataset,
   }
 }
 
-std::shared_ptr<pugi::xml_document> Mart::get_xml_model() const {
+pugi::xml_document* Mart::get_xml_model() const {
 
   pugi::xml_document* doc = new pugi::xml_document();
-  doc->set_name("ranker");
+  pugi::xml_node root = doc->append_child("ranker");
 
-  pugi::xml_node info = doc->append_child("info");
+  pugi::xml_node info = root.append_child("info");
 
   info.append_child("type").text() = name().c_str();
   info.append_child("trees").text() = ntrees_;
@@ -362,10 +364,9 @@ std::shared_ptr<pugi::xml_document> Mart::get_xml_model() const {
   info.append_child("discretization").text() = nthresholds_;
   info.append_child("estop").text() = valid_iterations_;
 
-  pugi::xml_node ensemble = *ensemble_model_.get_xml_model();
-  doc->append_move(ensemble);
+  ensemble_model_.append_xml_model(root);
 
-  return std::shared_ptr<pugi::xml_document>(doc);
+  return doc;
 }
 
 void Mart::print_additional_stats(void) const {

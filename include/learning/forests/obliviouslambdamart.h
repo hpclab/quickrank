@@ -59,7 +59,7 @@ class ObliviousLambdaMart : public LambdaMart {
     return NAME_;
   }
 
-  virtual std::shared_ptr<pugi::xml_document> get_xml_model() const;
+  virtual pugi::xml_document* get_xml_model() const;
 
   static const std::string NAME_;
 

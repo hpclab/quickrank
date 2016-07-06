@@ -68,7 +68,7 @@ class ObliviousMart : public Mart {
   virtual std::unique_ptr<RegressionTree> fit_regressor_on_gradient(
       std::shared_ptr<data::VerticalDataset> training_dataset);
 
-  virtual std::shared_ptr<pugi::xml_document> get_xml_model() const;
+  virtual pugi::xml_document* get_xml_model() const;
 
   size_t treedepth_;  //>0
 

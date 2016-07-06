@@ -48,7 +48,7 @@ class Ensemble {
       detailed_scores_instance(const quickrank::Feature* d,
                                const size_t offset = 1) const;
 
-  std::shared_ptr<pugi::xml_node> get_xml_model() const;
+  pugi::xml_node append_xml_model(pugi::xml_node parent) const;
 
  private:
   struct wt {

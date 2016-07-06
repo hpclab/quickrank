@@ -99,7 +99,7 @@ class LTR_Algorithm {
       std::string model_filename);
 
   /// Return the xml model representing the current object
-  virtual std::shared_ptr<pugi::xml_document> get_xml_model() const = 0;
+  virtual pugi::xml_document* get_xml_model() const = 0;
 
   /// Print additional statistics.
   ///

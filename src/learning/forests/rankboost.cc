@@ -512,17 +512,17 @@ std::shared_ptr<std::vector<Score>> Rankboost::detailed_scores_document(const Fe
     return std::make_shared<std::vector<quickrank::Score>>(std::move(scores));
 }
 
-std::shared_ptr<pugi::xml_document> Rankboost::get_xml_model() const {
+pugi::xml_document* Rankboost::get_xml_model() const {
 
     pugi::xml_document* doc = new pugi::xml_document();
-    doc->set_name("ranker");
+    pugi::xml_node root = doc->append_child("ranker");
 
-    pugi::xml_node info = doc->append_child("info");
+    pugi::xml_node info = root.append_child("info");
 
     info.append_child("type").text() = name().c_str();
     info.append_child("maxweakrankers").text() = T;
 
-    pugi::xml_node ensemble = doc->append_child("ensemble");
+    pugi::xml_node ensemble = root.append_child("ensemble");
     for (unsigned int t = 0; t < best_T; t++) {
 
         pugi::xml_node wr = ensemble.append_child("weakranker");
@@ -533,7 +533,7 @@ std::shared_ptr<pugi::xml_document> Rankboost::get_xml_model() const {
         wr.append_child("alpha").text() = alphas[t];
     }
 
-    return std::shared_ptr<pugi::xml_document>(doc);
+    return doc;
 }
 
 } // namespace forests

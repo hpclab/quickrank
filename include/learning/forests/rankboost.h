@@ -130,7 +130,7 @@ public:
     virtual std::shared_ptr<std::vector<Score>> detailed_scores_document(const Feature* d) const;
 
     /// Return the xml model representing the current object
-    virtual std::shared_ptr<pugi::xml_document> get_xml_model() const;
+    virtual pugi::xml_document* get_xml_model() const;
 
 private:
     float*** D = NULL;

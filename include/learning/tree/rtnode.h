@@ -21,6 +21,8 @@
  */
 #pragma once
 
+#include <string>
+
 #include "learning/tree/rtnode_histogram.h"
 #include "types.h"
 #include "pugixml/src/pugixml.hpp"
@@ -158,6 +160,8 @@ class RTNode {
   }
 #endif
 
-  std::shared_ptr<pugi::xml_node> get_xml_model(const std::string& pos = "")
-      const;
+  pugi::xml_node append_xml_model(pugi::xml_node parent,
+                                  const std::string& pos = "") const;
+
+  static RTNode* parse_xml(const pugi::xml_node& split_xml);
 };

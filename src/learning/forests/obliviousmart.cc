@@ -68,12 +68,12 @@ std::unique_ptr<RegressionTree> ObliviousMart::fit_regressor_on_gradient(
   return std::unique_ptr<RegressionTree>(tree);
 }
 
-std::shared_ptr<pugi::xml_document> ObliviousMart::get_xml_model() const {
+pugi::xml_document* ObliviousMart::get_xml_model() const {
 
   pugi::xml_document* doc = new pugi::xml_document();
-  doc->set_name("ranker");
+  pugi::xml_node root = doc->append_child("ranker");
 
-  pugi::xml_node info = doc->append_child("info");
+  pugi::xml_node info = root.append_child("info");
 
   info.append_child("type").text() = name().c_str();
   info.append_child("trees").text() = ntrees_;
@@ -84,10 +84,9 @@ std::shared_ptr<pugi::xml_document> ObliviousMart::get_xml_model() const {
   info.append_child("discretization").text() = nthresholds_;
   info.append_child("estop").text() = nthresholds_;
 
-  pugi::xml_node ensemble = *ensemble_model_.get_xml_model();
-  doc->append_move(ensemble);
+  ensemble_model_.append_xml_model(root);
 
-  return std::shared_ptr<pugi::xml_document>(doc);
+  return doc;
 }
 
 }  // namespace forests

@@ -105,7 +105,7 @@ int Driver::run(ParamsMap& pmap) {
 
     // If the training algorithm has been created from scratch (not loaded
     // from file), we have to run the training phase
-    if (pmap.count("opt-algo")) {
+    if (pmap.count("algo")) {
 
       //show ranker parameters
       std::cout << "#" << std::endl << *ranking_algorithm;
@@ -318,7 +318,7 @@ std::shared_ptr<quickrank::data::Dataset> Driver::load_dataset(
 
   std::shared_ptr<quickrank::data::Dataset> dataset = nullptr;
   if (!dataset_filename.empty()) {
-    std::cout << "# Reading " + dataset_label + "  dataset: " <<
+    std::cout << "# Reading " + dataset_label + " dataset: " <<
         dataset_filename << std::endl;
     dataset = reader.read_horizontal(dataset_filename);
     std::cout << reader << *dataset;

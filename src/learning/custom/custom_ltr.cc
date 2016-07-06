@@ -84,7 +84,7 @@ Score CustomLTR::score_document(const quickrank::Feature* d) const {
   return FIXED_SCORE;
 }
 
-std::shared_ptr<pugi::xml_document> CustomLTR::get_xml_model() const {
+pugi::xml_document* CustomLTR::get_xml_model() const {
 
   pugi::xml_document* doc = new pugi::xml_document();
   doc->set_name("ranker");
@@ -93,7 +93,7 @@ std::shared_ptr<pugi::xml_document> CustomLTR::get_xml_model() const {
 
   info.append_child("type").text() = name().c_str();
 
-  return std::shared_ptr<pugi::xml_document>(doc);
+  return doc;
 }
 
 }  // namespace learning
