@@ -60,7 +60,7 @@ file(GLOB_RECURSE all_headers ${CMAKE_SOURCE_DIR}/lib/paramsmap/*.h)
 # quicklearn target
 add_executable(quicklearn ${all_headers} ${all_sources} ${QUICKLEARN_MAIN})
 target_link_libraries(quicklearn pugixml)
-	
+
 # ---------------------------------
 # quickscore target
 # needs env variable "QUICKSCORE_RANKER_FILE_PATH" with absolute file path
@@ -68,10 +68,10 @@ target_link_libraries(quicklearn pugixml)
 find_package(Boost COMPONENTS program_options REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
-set(RANKER_FILE_PATH $ENV{QUICKSCORE_RANKER_FILE_PATH})
-list(APPEND all_sources ${RANKER_FILE_PATH})
-set_source_files_properties(${RANKER_FILE_PATH} PROPERTIES GENERATED TRUE)
-add_executable(quickscore ${all_headers} ${all_sources} ${QUICKSCORE_MAIN})
+#set(RANKER_FILE_PATH $ENV{QUICKSCORE_RANKER_FILE_PATH})
+list(APPEND all_sources ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ranker.cc)
+set_source_files_properties(${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ranker.cc PROPERTIES GENERATED TRUE)
+add_executable(quickscore EXCLUDE_FROM_ALL ${all_headers} ${all_sources} ${QUICKSCORE_MAIN})
 target_link_libraries(quickscore ${Boost_LIBRARIES})
 target_link_libraries(quickscore pugixml)
 
@@ -85,7 +85,7 @@ add_custom_target(quickranktestdata DEPENDS ${CMAKE_SOURCE_DIR}/quickranktestdat
 
 # ---------------------------------
 # unit-test target
-add_executable(unit-tests ${all_headers} ${all_sources} ${unit_tests_sources})
+add_executable(unit-tests EXCLUDE_FROM_ALL ${all_headers} ${all_sources} ${unit_tests_sources})
 add_dependencies(unit-tests quickranktestdata)
 target_link_libraries(unit-tests pugixml)
 
@@ -94,5 +94,5 @@ target_link_libraries(unit-tests pugixml)
 add_custom_target(doc
     COMMAND doxygen quickrank.doxygen
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/documentation
-	COMMENT "Creating the documentation with doxygen"
+    COMMENT "Creating the documentation with doxygen"
 )
