@@ -41,7 +41,7 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
 
   // If there is the model (file) option from the CLI but not the train option
   // it means we have to load an existing model from file in place of saving it
-  if (pmap.isSet("model") && !pmap.isSet("train")) {
+  if (pmap.isSet("model") && !pmap.isSet("algo")) {
     std::string model_filename = pmap.get<std::string>("model");
 
     if (verbose)
@@ -50,8 +50,6 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
     ltr_algo = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
             quickrank::learning::LTR_Algorithm::load_model_from_file(
                 model_filename));
-
-    std::cout << *ltr_algo << std::endl;
 
     if (verbose && !ltr_algo) {
       std::cerr << " !! Unable to load model from file." << std::endl;
@@ -67,7 +65,7 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
       ltr_algo = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
           new quickrank::learning::forests::LambdaMart(
               pmap.get<size_t>("num-trees"),
-              pmap.get<size_t>("shrinkage"),
+              pmap.get<double>("shrinkage"),
               pmap.get<size_t>("num-thresholds"),
               pmap.get<size_t>("num-leaves"),
               pmap.get<size_t>("min-leaf-support"),
@@ -77,7 +75,7 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
       ltr_algo = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
           new quickrank::learning::forests::Mart(
               pmap.get<size_t>("num-trees"),
-              pmap.get<size_t>("shrinkage"),
+              pmap.get<double>("shrinkage"),
               pmap.get<size_t>("num-thresholds"),
               pmap.get<size_t>("num-leaves"),
               pmap.get<size_t>("min-leaf-support"),
@@ -87,7 +85,7 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
       ltr_algo = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
           new quickrank::learning::forests::ObliviousMart(
               pmap.get<size_t>("num-trees"),
-              pmap.get<size_t>("shrinkage"),
+              pmap.get<float>("shrinkage"),
               pmap.get<size_t>("num-thresholds"),
               pmap.get<size_t>("tree-depth"),
               pmap.get<size_t>("min-leaf-support"),
@@ -97,7 +95,7 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
       ltr_algo = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
           new quickrank::learning::forests::ObliviousLambdaMart(
               pmap.get<size_t>("num-trees"),
-              pmap.get<size_t>("shrinkage"),
+              pmap.get<float>("shrinkage"),
               pmap.get<size_t>("num-thresholds"),
               pmap.get<size_t>("tree-depth"),
               pmap.get<size_t>("min-leaf-support"),
@@ -111,20 +109,20 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
     } else if (algo_name == quickrank::learning::linear::CoordinateAscent::NAME_) {
       ltr_algo = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
           new quickrank::learning::linear::CoordinateAscent(
-              pmap.get<size_t>("num-samples"),
-              pmap.get<float>("window-size"),
-              pmap.get<float>("reduction-factor"),
-              pmap.get<size_t>("max-iterations"),
-              pmap.get<size_t>("max-failed-valid")
+              pmap.get<unsigned int>("num-samples"),
+              pmap.get<double>("window-size"),
+              pmap.get<double>("reduction-factor"),
+              pmap.get<unsigned int>("max-iterations"),
+              pmap.get<unsigned int>("max-failed-valid")
           ));
     } else if (algo_name == quickrank::learning::linear::LineSearch::NAME_) {
       ltr_algo = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
           new quickrank::learning::linear::LineSearch(
-              pmap.get<size_t>("num-samples"),
-              pmap.get<float>("window-size"),
-              pmap.get<float>("reduction-factor"),
-              pmap.get<size_t>("max-iterations"),
-              pmap.get<size_t>("max-failed-valid"),
+              pmap.get<unsigned int>("num-samples"),
+              pmap.get<double>("window-size"),
+              pmap.get<double>("reduction-factor"),
+              pmap.get<unsigned int>("max-iterations"),
+              pmap.get<unsigned int>("max-failed-valid"),
               pmap.isSet("adaptive")
           ));
     } else if (algo_name == quickrank::learning::CustomLTR::NAME_) {

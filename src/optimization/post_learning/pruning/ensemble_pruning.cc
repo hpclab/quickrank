@@ -77,11 +77,11 @@ EnsemblePruning::EnsemblePruning(const pugi::xml_document& model) {
   }
 
   estimators_to_prune_ = 0;
-  std::vector<double>(max_feature, 0.0).swap(weights_);
+  std::vector<float>(max_feature, 0.0).swap(weights_);
   for (const auto& tree: model_tree.children()) {
     if (strcmp(tree.name(), "tree") == 0) {
       unsigned int feature = tree.child("index").text().as_uint();
-      double weight = tree.child("weight").text().as_double();
+      float weight = tree.child("weight").text().as_float();
       weights_[feature - 1] = weight;
       if (weight > 0)
         estimators_to_prune_++;
@@ -116,7 +116,7 @@ void EnsemblePruning::optimize(
     estimators_to_prune_ = (unsigned int) round(
         pruning_rate_ * training_dataset->num_features());
   else {
-    estimators_to_prune_ = pruning_rate_;
+    estimators_to_prune_ = (unsigned int) pruning_rate_;
     if (estimators_to_prune_ >= training_dataset->num_features()) {
       std::cout << "Impossible to prune everything. Quit!" << std::endl;
       return;
@@ -127,7 +127,7 @@ void EnsemblePruning::optimize(
       training_dataset->num_features() - estimators_to_prune_;
 
   // Set all the weights to 1 (and initialize the vector)
-  std::vector<double>(training_dataset->num_features(), 1.0).swap(weights_);
+  std::vector<float>(training_dataset->num_features(), 1.0).swap(weights_);
 
   // compute training and validation scores using starting weights
   std::vector<Score> training_score(training_dataset->num_instances());
@@ -161,13 +161,13 @@ void EnsemblePruning::optimize(
           "This pruning pruning_method requires line search"));
     }
 
-    if (lineSearch_->get_weigths().empty()) {
+    if (lineSearch_->get_weights()->empty()) {
 
       // Need to do the line search pre pruning. The line search model is empty
       std::cout << "# LineSearch pre-pruning:" << std::endl;
       std::cout << "# --------------------------" << std::endl;
       lineSearch_->learn(training_dataset, validation_dataset, metric,
-                         partial_save, model_filename);
+                         0, std::string());
     } else {
       // The line search pre pruning is already done and the weights are in
       // the model. We just need to load them.
@@ -190,7 +190,7 @@ void EnsemblePruning::optimize(
   // Line search post pruning
   if (lineSearch_) {
 
-    // Filter the dataset by deleting the weight-0 features
+    // Filter the dataset by deleting features with 0 weight
     std::shared_ptr<data::Dataset> filtered_training_dataset;
     std::shared_ptr<data::Dataset> filtered_validation_dataset;
 
@@ -203,15 +203,19 @@ void EnsemblePruning::optimize(
     // Run the line search algorithm
     std::cout << "# LineSearch post-pruning:" << std::endl;
     std::cout << "# --------------------------" << std::endl;
+
     // On each learn call, line search internally resets the weights vector
     lineSearch_->learn(filtered_training_dataset, filtered_validation_dataset,
-                       metric, partial_save, model_filename);
+                       metric, 0, std::string());
     std::cout << std::endl;
 
     // Needs to import the line search learned weights into this model
     import_weights_from_line_search(pruned_estimators);
-
   }
+
+  // Put the new weights inside the ltr algorithm (including the pruned trees)
+  algo->update_weights(
+      std::shared_ptr<std::vector<float>>(new std::vector<float>(weights_)));
 
   score(training_dataset.get(), &training_score[0]);
   init_metric_on_training = metric->evaluate_dataset(training_dataset,
@@ -239,12 +243,12 @@ void EnsemblePruning::optimize(
       elapsed.count() << " seconds" << std::endl;
 }
 
-std::shared_ptr<pugi::xml_document> EnsemblePruning::get_xml_model() const {
+pugi::xml_document* EnsemblePruning::get_xml_model() const {
 
   pugi::xml_document* doc = new pugi::xml_document();
-  doc->set_name("optimizer");
+  pugi::xml_node root = doc->append_child("optimizer");
 
-  pugi::xml_node info = doc->append_child("info");
+  pugi::xml_node info = root.append_child("info");
 
   info.append_child("opt-algo").text() = name().c_str();
   info.append_child("opt-method").text() =
@@ -253,27 +257,29 @@ std::shared_ptr<pugi::xml_document> EnsemblePruning::get_xml_model() const {
 
   if (lineSearch_) {
     pugi::xml_document& ls_model = *lineSearch_->get_xml_model();
-    pugi::xml_node ls_info = ls_model.child("info");
+    pugi::xml_node ls_info = ls_model.child("ranker").child("info");
 
     // use the info section of the line search model to add a new node into
     // the xml of the ensamble pruning model
     ls_info.set_name("line-search");
-    doc->append_move(ls_info);
+    root.append_copy(ls_info);
   }
 
   std::stringstream ss;
-  ss << std::setprecision(std::numeric_limits<double>::digits10);
+  ss << std::setprecision(std::numeric_limits<float>::digits10);
 
-  pugi::xml_node ensemble = doc->append_child("ensemble");
+  pugi::xml_node ensemble = root.append_child("ensemble");
   for (unsigned int i = 0; i < weights_.size(); i++) {
     pugi::xml_node tree = ensemble.append_child("tree");
     tree.append_child("index").text() = i + 1;
 
     ss << weights_[i];
     tree.append_child("weight").text() = ss.str().c_str();
+    // reset ss
+    ss.str(std::string());
   }
 
-  return std::shared_ptr<pugi::xml_document>(doc);
+  return doc;
 }
 
 void EnsemblePruning::score(data::Dataset *dataset, Score *scores) const {
@@ -293,15 +299,15 @@ void EnsemblePruning::score(data::Dataset *dataset, Score *scores) const {
 void EnsemblePruning::import_weights_from_line_search(
     std::set<unsigned int>& pruned_estimators) {
 
-  std::vector<double> ls_weights = lineSearch_->get_weigths();
+  auto ls_weights = lineSearch_->get_weights();
 
   unsigned int ls_f = 0;
   for (unsigned int f = 0; f < weights_.size(); f++) {
     if (!pruned_estimators.count(f)) // skip weights-0 features (pruned by ls)
-      weights_[f] = ls_weights[ls_f++];
+      weights_[f] = (*ls_weights)[ls_f++];
   }
 
-  assert(ls_f == ls_weights.size());
+  assert(ls_f == ls_weights->size());
 }
 
 std::shared_ptr<data::Dataset> EnsemblePruning::filter_dataset(

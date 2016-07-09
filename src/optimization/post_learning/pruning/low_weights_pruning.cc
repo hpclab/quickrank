@@ -20,7 +20,9 @@
  *  - Salvatore Trani(salvatore.trani@isti.cnr.it)
  */
 
-#include "optimization/post_learning/pruning/RandomPruning.h"
+#include <numeric>
+
+#include "optimization/post_learning/pruning/low_weights_pruning.h"
 
 namespace quickrank {
 namespace optimization {
@@ -28,29 +30,30 @@ namespace post_learning {
 namespace pruning {
 
 /// Returns the pruning method of the algorithm.
-EnsemblePruning::PruningMethod RandomPruning::pruning_method() const {
-  return EnsemblePruning::PruningMethod::RANDOM;
+EnsemblePruning::PruningMethod LowWeightsPruning::pruning_method() const {
+  return EnsemblePruning::PruningMethod::LOW_WEIGHTS;
 }
 
-bool RandomPruning::line_search_pre_pruning() const {
-  return false;
+bool LowWeightsPruning::line_search_pre_pruning() const {
+  return true;
 }
 
-void RandomPruning::pruning(std::set<unsigned int>& pruned_estimators,
-                            std::shared_ptr<data::Dataset> dataset,
-                            std::shared_ptr<metric::ir::Metric> scorer) {
+void LowWeightsPruning::pruning(std::set<unsigned int>& pruned_estimators,
+                                    std::shared_ptr<data::Dataset> dataset,
+                                    std::shared_ptr<metric::ir::Metric> scorer) {
 
-  unsigned int num_features = (unsigned int) weights_.size();
+  std::vector<unsigned int> idx (weights_.size());
+  std::iota(idx.begin(), idx.end(), 0);
+  std::sort(idx.begin(), idx.end(),
+            [this] (const unsigned int& a, const unsigned int& b) {
+              return this->weights_[a] < this->weights_[b];
+            });
 
-  /* initialize random seed: */
-  srand (time(NULL));
-
-  while (pruned_estimators.size() < estimators_to_prune_) {
-    unsigned int index = rand() % num_features;
-    if (!pruned_estimators.count(index))
-      pruned_estimators.insert(index);
+  for (unsigned int f = 0; f < estimators_to_prune_; f++) {
+    pruned_estimators.insert(idx[f]);
   }
 }
+
 
 }  // namespace pruning
 }  // namespace post_learning

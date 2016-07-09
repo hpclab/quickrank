@@ -38,6 +38,9 @@ namespace post_learning {
 namespace pruning {
 
 /// This implements various strategies for pruning ensembles.
+/// This optimization algorithm expect the datasets to be in the partial
+/// scores format (i.e., a column for each ensemble, with the partial score
+/// returned by that ensamble on each document (row of the original dataset)
 class EnsemblePruning : public PostLearningOptimization {
 
  public:
@@ -63,6 +66,10 @@ class EnsemblePruning : public PostLearningOptimization {
 
   virtual bool line_search_pre_pruning() const = 0;
 
+  virtual bool need_partial_score_dataset() const {
+    return true;
+  };
+
   virtual void pruning(std::set<unsigned int>& pruned_estimators,
                        std::shared_ptr<data::Dataset> dataset,
                        std::shared_ptr<metric::ir::Metric> scorer) = 0;
@@ -80,7 +87,7 @@ class EnsemblePruning : public PostLearningOptimization {
       std::set<unsigned int>& pruned_estimators) const;
 
   /// Return the xml model representing the current object
-  virtual std::shared_ptr<pugi::xml_document> get_xml_model() const;
+  virtual pugi::xml_document* get_xml_model() const;
 
   static const std::vector<std::string> pruningMethodNames;
 
@@ -102,6 +109,11 @@ class EnsemblePruning : public PostLearningOptimization {
     return pruningMethodNames[static_cast<int>(pruningMethod)];
   }
 
+  /// Returns the learned weights
+  virtual std::vector<float>& get_weigths() {
+    return weights_;
+  }
+
   static const std::string NAME_;
 
  protected:
@@ -110,7 +122,7 @@ class EnsemblePruning : public PostLearningOptimization {
   unsigned int estimators_to_select_;
   std::shared_ptr<learning::linear::LineSearch> lineSearch_;
 
-  std::vector<double> weights_;
+  std::vector<float> weights_;
 
   /// Prints the description of Algorithm, including its parameters
   std::ostream& put(std::ostream& os) const;

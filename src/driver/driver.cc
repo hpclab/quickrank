@@ -22,7 +22,6 @@
 #include <iomanip>
 #include <fstream>
 #include <limits>
-#include <memory>
 #include <numeric>
 
 #include "driver/driver.h"
@@ -31,6 +30,7 @@
 #include "learning/ltr_algorithm_factory.h"
 #include "optimization/optimization_factory.h"
 #include "metric/metric_factory.h"
+#include "utils/fileutils.h"
 
 namespace quickrank {
 namespace driver {
@@ -55,7 +55,7 @@ int Driver::run(ParamsMap& pmap) {
   if (pmap.count("train")) {
 
     std::shared_ptr<quickrank::optimization::Optimization> opt_algorithm;
-    if (pmap.count("opt-algo")) {
+    if (pmap.count("opt-algo") || pmap.count("opt-model")) {
       opt_algorithm = quickrank::optimization::optimization_factory(pmap);
       if (!opt_algorithm) {
         std::cerr << " !! Optimization Algorithm was not set properly" << std::endl;
@@ -68,7 +68,15 @@ int Driver::run(ParamsMap& pmap) {
     std::string features_filename = pmap.get<std::string>("features");
     std::string model_filename = pmap.get<std::string>("model");
     std::string opt_model_filename = pmap.get<std::string>("opt-model");
+    std::string opt_algo_model_filename =
+        pmap.get<std::string>("opt-algo-model");
     size_t partial_save = pmap.get<std::size_t>("partial");
+    std::string training_partial_filename;
+    std::string validation_partial_filename;
+    if (pmap.count("train-partial"))
+      training_partial_filename = pmap.get<std::string>("train-partial");
+    if (pmap.count("valid-partial"))
+      validation_partial_filename = pmap.get<std::string>("valid-partial");
 
     std::shared_ptr<quickrank::data::Dataset> training_dataset;
     std::shared_ptr<quickrank::data::Dataset> validation_dataset;
@@ -99,7 +107,10 @@ int Driver::run(ParamsMap& pmap) {
                          training_metric,
                          training_dataset,
                          validation_dataset,
+                         training_partial_filename,
+                         validation_partial_filename,
                          opt_model_filename,
+                         opt_algo_model_filename,
                          partial_save);
     }
 
@@ -127,7 +138,10 @@ int Driver::run(ParamsMap& pmap) {
                          training_metric,
                          training_dataset,
                          validation_dataset,
+                         training_partial_filename,
+                         validation_partial_filename,
                          opt_model_filename,
+                         opt_algo_model_filename,
                          partial_save);
     }
   }
@@ -211,21 +225,72 @@ void Driver::optimization_phase(
     std::shared_ptr<quickrank::metric::ir::Metric> train_metric,
     std::shared_ptr<quickrank::data::Dataset> training_dataset,
     std::shared_ptr<quickrank::data::Dataset> validation_dataset,
+    std::string training_partial_filename,
+    std::string validation_partial_filename,
     const std::string output_filename,
+    const std::string opt_algo_model_filename,
     const size_t npartialsave) {
 
+  std::shared_ptr<quickrank::data::Dataset> training_partial_dataset;
+  std::shared_ptr<quickrank::data::Dataset> validation_partial_dataset;
+
+  bool need_ps = opt_algorithm->need_partial_score_dataset();
+
+  if (opt_algorithm && need_ps) {
+
+    if (!training_partial_filename.empty() &&
+        file_exist(training_partial_filename))
+      training_partial_dataset = load_dataset(training_partial_filename,
+                                              "training (partial)");
+
+    if (!validation_partial_filename.empty() &&
+        file_exist(validation_partial_filename))
+      validation_partial_dataset = load_dataset(validation_partial_filename,
+                                                "validation (partial)");
+
+    quickrank::io::Svml svml;
+    if (!training_partial_dataset && training_dataset) {
+
+      training_partial_dataset = Driver::extract_partial_scores(
+          ranking_algo,
+          training_dataset);
+
+      if (!training_partial_filename.empty())
+        svml.write(training_partial_dataset, training_partial_filename);
+    }
+
+    if (!validation_partial_dataset  && validation_dataset) {
+
+      validation_partial_dataset = Driver::extract_partial_scores(
+          ranking_algo,
+          validation_dataset);
+
+      if (!validation_partial_filename.empty())
+        svml.write(validation_partial_dataset, validation_partial_filename);
+    }
+  }
+
   // run the optimization process
-  opt_algorithm->optimize(ranking_algo,
-                          training_dataset,
-                          validation_dataset,
-                          train_metric,
-                          npartialsave,
-                          output_filename);
+  opt_algorithm->optimize(
+      ranking_algo,
+      need_ps ? training_partial_dataset : training_dataset,
+      need_ps ? validation_partial_dataset : validation_dataset,
+      train_metric,
+      npartialsave,
+      output_filename);
 
   if (!output_filename.empty()) {
     std::cout << std::endl;
-    std::cout << "# Writing model to file: " << output_filename << std::endl;
+    std::cout << "# Writing optimization model to file: "
+      << output_filename << std::endl;
     opt_algorithm->save(output_filename);
+  }
+
+  if (!opt_algo_model_filename.empty()) {
+    std::cout << std::endl;
+    std::cout << "# Writing optimized LTR algo model to file: "
+      << opt_algo_model_filename << std::endl << std::endl;
+    ranking_algo->save(opt_algo_model_filename);
   }
 }
 
@@ -240,41 +305,8 @@ void Driver::testing_phase(
 
     std::vector<Score> scores(test_dataset->num_instances());
     if (detailed_testing) {
-      size_t idx_query_scores = 0;
-      std::shared_ptr<data::Dataset> datasetPartScores = nullptr;
-
-      for (size_t q = 0; q < test_dataset->num_queries(); q++) {
-        std::shared_ptr<data::QueryResults> results =
-            test_dataset->getQueryResults(q);
-        // score_query_results(r, scores, 1, test_dataset->num_features());
-        const Feature* features = results->features();
-        const Label* labels = results->labels();
-        for (size_t i = 0; i < results->num_results(); i++) {
-          std::shared_ptr<std::vector<Score>> detailed_scores =
-              algo->detailed_scores_document(features);
-
-          if (detailed_scores == nullptr) {
-            std::cerr << "# ## ERROR!! Only Ensemble methods support the " <<
-                "export of detailed score tree by tree" << std::endl;
-            return;
-          }
-
-          // Initilized on iterating the first instance in the dataset
-          if (datasetPartScores == nullptr)
-            datasetPartScores = std::shared_ptr<data::Dataset>(
-                new data::Dataset(test_dataset->num_instances(),
-                                  detailed_scores->size()));
-          // It performs a copy for casting Score to Feature (double to float)
-          std::vector<Feature> featuresScore(detailed_scores->begin(),
-                                             detailed_scores->end());
-          datasetPartScores->addInstance(q, labels[i], featuresScore);
-
-          scores[idx_query_scores + i] = std::accumulate(
-              detailed_scores->begin(), detailed_scores->end(), 0.0);
-          features += test_dataset->num_features();
-        }
-        idx_query_scores += results->num_results();
-      }
+      std::shared_ptr<data::Dataset> datasetPartScores =
+          Driver::extract_partial_scores(algo, test_dataset);
 
       quickrank::MetricScore test_score = test_metric->evaluate_dataset(
               test_dataset, &scores[0]);
@@ -331,6 +363,42 @@ std::shared_ptr<quickrank::data::Dataset> Driver::load_dataset(
   }
 
   return dataset;
+}
+
+std::shared_ptr<data::Dataset> Driver::extract_partial_scores(
+    std::shared_ptr<learning::LTR_Algorithm> algo,
+    std::shared_ptr<data::Dataset> input_dataset) {
+
+  data::Dataset* datasetPartScores = nullptr;
+
+  for (size_t q = 0; q < input_dataset->num_queries(); q++) {
+    auto results = input_dataset->getQueryResults(q);
+    // score_query_results(r, scores, 1, test_dataset->num_features());
+    const Feature* features = results->features();
+    const Label* labels = results->labels();
+    for (size_t i = 0; i < results->num_results(); i++) {
+      auto detailed_scores = algo->partial_scores_document(features);
+
+      if (!detailed_scores) {
+        std::cerr << "# ## ERROR!! Only Ensemble methods support the "
+          << "export of detailed score tree by tree" << std::endl;
+        exit(EXIT_FAILURE);
+      }
+
+      // Initilized on iterating the first instance in the dataset
+      if (datasetPartScores == nullptr)
+        datasetPartScores = new data::Dataset(input_dataset->num_instances(),
+                                              detailed_scores->size());
+      // It performs a copy for casting Score to Feature (double to float)
+      std::vector<Feature> featuresScore(detailed_scores->begin(),
+                                         detailed_scores->end());
+      datasetPartScores->addInstance(q, labels[i], featuresScore);
+
+      features += input_dataset->num_features();
+    }
+  }
+
+  return std::shared_ptr<data::Dataset>(datasetPartScores);
 }
 
 }  // namespace metric

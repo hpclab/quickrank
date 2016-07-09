@@ -41,7 +41,7 @@ class Mart : public LTR_Algorithm {
   /// \param minleafsupport Minimum number of instances in each leaf.
   /// \param valid_iterations Early stopping if no improvement after \esr iterations
   /// on the validation set.
-  Mart(size_t ntrees, float shrinkage, size_t nthresholds,
+  Mart(size_t ntrees, double shrinkage, size_t nthresholds,
        size_t ntreeleaves, size_t minleafsupport,
        size_t valid_iterations)
       : ntrees_(ntrees),
@@ -76,8 +76,14 @@ class Mart : public LTR_Algorithm {
   /// \param d is a pointer to the document to be evaluated
   /// \param next_fx_offset The offset to the next feature in the data representation.
   /// \note   Each algorithm has a different implementation.
-  virtual std::shared_ptr<std::vector<Score>> detailed_scores_document(const Feature* d) const {
-    return ensemble_model_.detailed_scores_instance(d);
+  virtual std::shared_ptr<std::vector<Score>> partial_scores_document(
+      const Feature *d) const {
+    // TODO: remove the following code...
+    if (!ensemble_model_.get_size()) {
+      std::cerr << "Zero alberi nell'ensemble..." << std::endl;
+      exit(EXIT_FAILURE);
+    }
+    return ensemble_model_.partial_scores_instance(d);
   }
 
   /// Print additional statistics.
@@ -88,6 +94,12 @@ class Mart : public LTR_Algorithm {
   /// Returns the name of the ranker.
   virtual std::string name() const {
     return NAME_;
+  }
+
+  virtual bool update_weights(std::shared_ptr<std::vector<float>> weights);
+
+  virtual std::shared_ptr<std::vector<float>> get_weights() const {
+    return ensemble_model_.get_weights();
   }
 
   static const std::string NAME_;

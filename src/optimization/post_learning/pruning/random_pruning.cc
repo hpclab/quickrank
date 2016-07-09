@@ -20,7 +20,7 @@
  *  - Salvatore Trani(salvatore.trani@isti.cnr.it)
  */
 
-#include "optimization/post_learning/pruning/LastPruning.h"
+#include "optimization/post_learning/pruning/random_pruning.h"
 
 namespace quickrank {
 namespace optimization {
@@ -28,25 +28,29 @@ namespace post_learning {
 namespace pruning {
 
 /// Returns the pruning method of the algorithm.
-EnsemblePruning::PruningMethod LastPruning::pruning_method() const {
-  return EnsemblePruning::PruningMethod::LAST;
+EnsemblePruning::PruningMethod RandomPruning::pruning_method() const {
+  return EnsemblePruning::PruningMethod::RANDOM;
 }
 
-bool LastPruning::line_search_pre_pruning() const {
+bool RandomPruning::line_search_pre_pruning() const {
   return false;
 }
 
-void LastPruning::pruning(std::set<unsigned int>& pruned_estimators,
+void RandomPruning::pruning(std::set<unsigned int>& pruned_estimators,
                             std::shared_ptr<data::Dataset> dataset,
                             std::shared_ptr<metric::ir::Metric> scorer) {
 
   unsigned int num_features = (unsigned int) weights_.size();
 
-  for (unsigned int i=1; i <= estimators_to_prune_; i++) {
-    pruned_estimators.insert(num_features - i);
+  /* initialize random seed: */
+  srand (time(NULL));
+
+  while (pruned_estimators.size() < estimators_to_prune_) {
+    unsigned int index = rand() % num_features;
+    if (!pruned_estimators.count(index))
+      pruned_estimators.insert(index);
   }
 }
-
 
 }  // namespace pruning
 }  // namespace post_learning

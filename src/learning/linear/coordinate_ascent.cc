@@ -40,7 +40,7 @@ namespace learning {
 namespace linear {
 
 void preCompute(Feature* training_dataset, size_t num_docs,
-                size_t num_fx, Score* PreSum, double* weights,
+                size_t num_fx, Score* PreSum, float* weights,
                 Score* MyTrainingScore, size_t i) {
 
 #pragma omp parallel for
@@ -58,8 +58,8 @@ void preCompute(Feature* training_dataset, size_t num_docs,
 
 const std::string CoordinateAscent::NAME_ = "COORDASC";
 
-CoordinateAscent::CoordinateAscent(unsigned int num_points, double window_size,
-                                   double reduction_factor,
+CoordinateAscent::CoordinateAscent(unsigned int num_points, float window_size,
+                                   float reduction_factor,
                                    unsigned int max_iterations,
                                    unsigned int max_failed_vali)
     : num_samples_(num_points),
@@ -82,8 +82,8 @@ CoordinateAscent::CoordinateAscent(const pugi::xml_document& model) {
   pugi::xml_node model_ensemble = model.child("ranker").child("ensemble");
 
   num_samples_ = model_info.child("num-samples").text().as_uint();
-  window_size_ = model_info.child("window-size").text().as_double();
-  reduction_factor_ = model_info.child("reduction-factor").text().as_double();
+  window_size_ = model_info.child("window-size").text().as_float();
+  reduction_factor_ = model_info.child("reduction-factor").text().as_float();
   max_iterations_ = model_info.child("max-iterations").text().as_uint();
   max_failed_vali_ = model_info.child("max-failed-vali").text().as_uint();
 
@@ -98,12 +98,12 @@ CoordinateAscent::CoordinateAscent(const pugi::xml_document& model) {
     }
   }
 
-  std::vector<double>(max_feature, 0.0).swap(best_weights_);
+  std::vector<float>(max_feature, 0.0).swap(best_weights_);
 
   for (const auto& couple: model_ensemble.children()) {
     if (strcmp(couple.name(), "couple") == 0) {
       unsigned int feature = couple.child("feature").text().as_uint();
-      double weight = couple.child("weight").text().as_double();
+      float weight = couple.child("weight").text().as_float();
       best_weights_[feature - 1] = weight;
     }
   }
@@ -130,7 +130,8 @@ void CoordinateAscent::learn(
     size_t partial_save, const std::string output_basename) {
 
   auto begin = std::chrono::steady_clock::now();
-  double window_size = window_size_ / training_dataset->num_features();  //preserve original value of the window
+  float window_size = window_size_ / training_dataset->num_features();
+  //preserve original value of the window
 
   std::cout << "# Training:" << std::endl;
   std::cout << std::fixed << std::setprecision(4);
@@ -142,8 +143,8 @@ void CoordinateAscent::learn(
   const auto num_features = training_dataset->num_features();
   const auto n_train_instances = training_dataset->num_instances();
 
-  std::vector<double> weights(num_features, 1.0 / num_features);
-  std::vector<double>(num_features, 1.0 / num_features).swap(best_weights_);
+  std::vector<float> weights(num_features, 1.0f / num_features);
+  std::vector<float>(num_features, 1.0f / num_features).swap(best_weights_);
 
   // array of points in the window to be used to compute NDCG 
   std::vector<MetricScore> MyNDCGs(num_samples_ + 1);
@@ -161,7 +162,8 @@ void CoordinateAscent::learn(
   for (size_t b = 0; b < max_iterations_; b++) {
     MetricScore metric_on_training = 0;
 
-    double step = 2 * window_size / num_samples_;  // step to select points in the window
+    // step to select points in the window
+    float step = 2 * window_size / num_samples_;
     for (size_t i = 0; i < num_features; i++) {
       // compute feature*weight for all the feature different from i
       preCompute(training_dataset->at(0, 0), n_train_instances, num_features,
@@ -170,9 +172,9 @@ void CoordinateAscent::learn(
       metric_on_training = scorer->evaluate_dataset(training_dataset,
                                                     &MyTrainingScore[0]);
 
-      std::vector<double> points;
+      std::vector<float> points;
       points.reserve(num_samples_ + 1);
-      for (double lower_bound = weights[i] - window_size;
+      for (float lower_bound = weights[i] - window_size;
           lower_bound <= weights[i] + window_size; lower_bound += step) {
         if (lower_bound >= 0)
           points.push_back(lower_bound);
@@ -203,7 +205,7 @@ void CoordinateAscent::learn(
         double normalized_sum = std::accumulate(weights.cbegin(),
                                                 weights.cend(), 0.0);
         std::for_each(weights.begin(), weights.end(),
-                      [normalized_sum](double &x) {x/=normalized_sum;});
+                      [normalized_sum](float &x) {x/=normalized_sum;});
       }
 
     }  // end for i
@@ -263,6 +265,16 @@ Score CoordinateAscent::score_document(const Feature* d) const {
   return score;
 }
 
+bool CoordinateAscent::update_weights(
+    std::shared_ptr<std::vector<float>> weights) {
+
+  if(weights->size() != best_weights_.size())
+    return false;
+
+  best_weights_ = *weights;
+  return true;
+}
+
 pugi::xml_document* CoordinateAscent::get_xml_model() const {
 
   pugi::xml_document* doc = new pugi::xml_document();
@@ -278,7 +290,7 @@ pugi::xml_document* CoordinateAscent::get_xml_model() const {
   info.append_child("max-failed-vali").text() = max_failed_vali_;
 
   std::stringstream ss;
-  ss << std::setprecision(std::numeric_limits<double>::digits10);
+  ss << std::setprecision(std::numeric_limits<float>::digits10);
 
   pugi::xml_node ensemble = root.append_child("ensemble");
   for (size_t i = 0; i < best_weights_.size(); i++) {

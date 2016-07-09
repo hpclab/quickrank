@@ -21,6 +21,8 @@
  */
 #pragma once
 
+#include <memory>
+
 #include "metric/ir/metric.h"
 #include "learning/ltr_algorithm.h"
 #include "optimization/optimization.h"
@@ -85,7 +87,10 @@ class Driver {
       std::shared_ptr<metric::ir::Metric> train_metric,
       std::shared_ptr<quickrank::data::Dataset> training_dataset,
       std::shared_ptr<quickrank::data::Dataset> validation_dataset,
+      std::string training_partial_filename,
+      std::string validation_partial_filename,
       const std::string output_filename,
+      const std::string opt_algo_model_filename,
       const size_t npartialsave);
 
   /// Runs the learned or loaded model on the test data
@@ -109,6 +114,10 @@ class Driver {
   static std::shared_ptr<quickrank::data::Dataset> load_dataset(
       const std::string dataset_filename,
       const std::string dataset_label);
+
+  static std::shared_ptr<data::Dataset> extract_partial_scores(
+      std::shared_ptr<learning::LTR_Algorithm> algo,
+      std::shared_ptr<data::Dataset> input_dataset);
 };
 
 }  // namespace driver

@@ -82,7 +82,8 @@ class LTR_Algorithm {
   /// \param d is a pointer to the document to be evaluated
   /// \param next_fx_offset The offset to the next feature in the data representation.
   /// \note   Each algorithm has a different implementation.
-  virtual std::shared_ptr<std::vector<Score>> detailed_scores_document(const Feature* d) const {
+  virtual std::shared_ptr<std::vector<Score>> partial_scores_document(
+      const Feature *d) const {
     return nullptr;
   }
 
@@ -105,6 +106,20 @@ class LTR_Algorithm {
   ///
   /// At the moment this include only number of comparisons for tree-based algorithms.
   virtual void print_additional_stats(void) const {
+  }
+
+  /// Update the weights for the ensemble models (only).
+  ///
+  /// Default implementation will do nothing (default for non ensemble models).
+  virtual bool update_weights(std::shared_ptr<std::vector<float>> weights) {
+    return false;
+  }
+
+  /// Return the weights for the ensemble models (only).
+  ///
+  /// Default implementation will do nothing (default for non ensemble models).
+  virtual std::shared_ptr<std::vector<float>> get_weights() const {
+    return nullptr;
   }
 
  private:

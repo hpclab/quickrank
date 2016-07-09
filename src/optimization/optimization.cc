@@ -39,8 +39,10 @@ void Optimization::save(std::string output_basename, int iteration) const {
     if (iteration != -1)
       filename += ".T" + std::to_string(iteration) + ".xml";
 
-    pugi::xml_document& doc = *get_xml_model();
-    doc.save_file(filename.c_str());
+    pugi::xml_document* doc = get_xml_model();
+    doc->save_file(filename.c_str(), "\t",
+                   pugi::format_default | pugi::format_no_declaration);
+    delete(doc);
   }
 }
 

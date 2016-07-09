@@ -45,10 +45,16 @@ class Ensemble {
                                           const size_t offset = 1) const;
 
   virtual std::shared_ptr<std::vector<quickrank::Score>>
-      detailed_scores_instance(const quickrank::Feature* d,
-                               const size_t offset = 1) const;
+      partial_scores_instance(const quickrank::Feature *d,
+                              const size_t offset = 1) const;
 
-  pugi::xml_node append_xml_model(pugi::xml_node parent) const;
+  pugi::xml_node append_xml_model(pugi::xml_node parent,
+                                  bool skip_useless_trees = true) const;
+
+  virtual bool update_ensemble_weights(
+      std::shared_ptr<std::vector<float>> weights);
+
+  virtual std::shared_ptr<std::vector<float>> get_weights() const;
 
  private:
   struct wt {
@@ -58,7 +64,7 @@ class Ensemble {
           maxlabel(maxlabel) {
     }
     RTNode *root = NULL;
-    float weight = 0.0f;
+    float weight = 0.0;
     float maxlabel = 0.0f;
   };
   size_t size = 0;

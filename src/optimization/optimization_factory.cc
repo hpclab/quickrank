@@ -34,7 +34,7 @@ std::shared_ptr<learning::linear::LineSearch> linesearch_opt_factory(
   // Check if line search is to do...
   if (pmap.isSet("with-line-search")) {
 
-    if (pmap.isSet("line-search-model")) {
+    if (pmap.isSet("line-search-model") && !pmap.isSet("train")) {
       // We have to load the model from file
       std::string xml_linesearch_filename =
           pmap.get<std::string>("line-search-model");
@@ -48,11 +48,11 @@ std::shared_ptr<learning::linear::LineSearch> linesearch_opt_factory(
       // We have to create an empty model
       lineSearch = std::shared_ptr<learning::linear::LineSearch>(
           new quickrank::learning::linear::LineSearch(
-              pmap.get<size_t>("num-samples"),
-              pmap.get<float>("window-size"),
-              pmap.get<float>("reduction-factor"),
-              pmap.get<size_t>("max-iterations"),
-              pmap.get<size_t>("max-failed-valid"),
+              pmap.get<unsigned int>("num-samples"),
+              pmap.get<double>("window-size"),
+              pmap.get<double>("reduction-factor"),
+              pmap.get<unsigned int>("max-iterations"),
+              pmap.get<unsigned int>("max-failed-valid"),
               pmap.isSet("adaptive")
       ));
     }
@@ -68,9 +68,9 @@ std::shared_ptr<quickrank::optimization::Optimization> optimization_factory(
   std::shared_ptr<learning::linear::LineSearch> lineSearch =
       linesearch_opt_factory(pmap);
 
-  if (pmap.isSet("opt_algo")) {
+  if (pmap.isSet("opt-algo")) {
 
-    std::string opt_algo = pmap.get<std::string>("opt_algo");
+    std::string opt_algo = pmap.get<std::string>("opt-algo");
 
     if (opt_algo == quickrank::optimization::post_learning::pruning
                     ::EnsemblePruning::NAME_) {

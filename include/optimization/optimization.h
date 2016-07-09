@@ -53,6 +53,8 @@ class Optimization {
   /// Returns the name of the optimizer.
   virtual std::string name() const = 0;
 
+  virtual bool need_partial_score_dataset() const = 0;
+
   /// Executes the optimization process.
   ///
   /// \param training_dataset The training dataset.
@@ -74,7 +76,7 @@ class Optimization {
   virtual void save(std::string model_filename, int suffix = -1) const;
 
   /// Return the xml model representing the current object
-  virtual std::shared_ptr<pugi::xml_document> get_xml_model() const = 0;
+  virtual pugi::xml_document* get_xml_model() const = 0;
 
   virtual bool is_pre_learning() const = 0;
 

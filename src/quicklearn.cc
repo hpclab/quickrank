@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
   // default parameters
   std::string algorithm_string = quickrank::learning::forests::LambdaMart::NAME_;
   size_t ntrees = 1000;
-  float shrinkage = 0.10f;
+  double shrinkage = 0.10f;
   size_t nthresholds = 0;
   size_t minleafsupport = 1;
   size_t esr = 100;
@@ -149,11 +149,11 @@ int main(int argc, char *argv[]) {
 
   // ------------------------------------------
   // Coordinate ascent added by Chiara Pierucci
-  size_t num_points = 21;
-  size_t max_iterations = 100;
-  float window_size = 10.0;
-  float reduction_factor = 0.95;
-  size_t max_failed_vali = 20;
+  unsigned int num_points = 21;
+  unsigned int max_iterations = 100;
+  double window_size = 10.0;
+  double reduction_factor = 0.95;
+  unsigned int max_failed_vali = 20;
 
   // ------------------------------------------
   // Ensemble Pruning added by Salvatore Trani
@@ -291,6 +291,11 @@ int main(int argc, char *argv[]) {
   pmap.addOption("adaptive",
                  "enable adaptive reduction factor (based on last iteration "
                      "metric gain)");
+  pmap.addOptionWithArg<std::string>("train-partial",
+                                     "set training file with partial scores");
+  pmap.addOptionWithArg<std::string>("valid-partial",
+                                     "set validation file with partial scores");
+
 
   // --------------------------------------------------------
   // Optimization options add by Salvatore Trani
@@ -316,6 +321,10 @@ int main(int argc, char *argv[]) {
   pmap.addOptionWithArg<std::string>(
       "opt-model",
       "set output model file for optimization or input model file for testing");
+
+  pmap.addOptionWithArg<std::string>(
+      "opt-algo-model",
+      "set output algorithm model file post optimization");
 
 
   // --------------------------------------------------------

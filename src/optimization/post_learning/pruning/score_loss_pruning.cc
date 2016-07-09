@@ -22,7 +22,7 @@
 
 #include <numeric>
 
-#include "optimization/post_learning/pruning/ScoreLossPruning.h"
+#include "optimization/post_learning/pruning/score_loss_pruning.h"
 
 
 namespace quickrank {

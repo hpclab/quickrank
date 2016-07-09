@@ -184,8 +184,9 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   std::chrono::high_resolution_clock::time_point chrono_init_start =
       std::chrono::high_resolution_clock::now();
 
-  // create a compy of the training datasets and put it in vertical format
-  std::shared_ptr<quickrank::data::VerticalDataset> vertical_training ( new quickrank::data::VerticalDataset(training_dataset) );
+  // create a copy of the training datasets and put it in vertical format
+  std::shared_ptr<quickrank::data::VerticalDataset> vertical_training (
+      new quickrank::data::VerticalDataset(training_dataset) );
 
   init(vertical_training);
 
@@ -367,6 +368,10 @@ pugi::xml_document* Mart::get_xml_model() const {
   ensemble_model_.append_xml_model(root);
 
   return doc;
+}
+
+bool Mart::update_weights(std::shared_ptr<std::vector<float>> weights) {
+  return ensemble_model_.update_ensemble_weights(weights);
 }
 
 void Mart::print_additional_stats(void) const {

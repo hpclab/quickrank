@@ -34,17 +34,19 @@ namespace linear {
 
 const std::string LineSearch::NAME_ = "LINESEARCH";
 
-LineSearch::LineSearch(unsigned int num_points, double window_size,
-                       double reduction_factor,
+LineSearch::LineSearch(unsigned int num_points, float window_size,
+                       float reduction_factor,
                        unsigned int max_iterations,
                        unsigned int max_failed_vali,
-                       bool adaptive)
+                       bool adaptive,
+                       unsigned int last_only)
     : num_points_(num_points),
       window_size_(window_size),
       reduction_factor_(reduction_factor),
       max_iterations_(max_iterations),
       max_failed_vali_(max_failed_vali),
-      adaptive_(adaptive) {
+      adaptive_(adaptive),
+      train_only_last_(last_only) {
 }
 
 LineSearch::LineSearch(const pugi::xml_document& model) {
@@ -62,13 +64,16 @@ LineSearch::LineSearch(const pugi::xml_document& model) {
   pugi::xml_node model_ensemble = model.child("ranker").child("ensemble");
 
   num_points_ = model_info.child("num-samples").text().as_uint();
-  window_size_ = model_info.child("window-size").text().as_double();
-  reduction_factor_ = model_info.child("reduction-factor").text().as_double();
+  window_size_ = model_info.child("window-size").text().as_float();
+  reduction_factor_ = model_info.child("reduction-factor").text().as_float();
   max_iterations_ = model_info.child("max-iterations").text().as_uint();
   max_failed_vali_ = model_info.child("max-failed-vali").text().as_uint();
 
   if (model_info.child("adaptive"))
     adaptive_ = model_info.child("adaptive").text().as_bool();
+
+  if (model_info.child("train-only-last"))
+    train_only_last_ = model_info.child("train-only-last").text().as_uint();
 
   unsigned int max_feature = 0;
   for (const auto& couple: model_ensemble.children()) {
@@ -81,12 +86,12 @@ LineSearch::LineSearch(const pugi::xml_document& model) {
     }
   }
 
-  std::vector<double>(max_feature, 0.0).swap(best_weights_);
+  std::vector<float>(max_feature, 0.0).swap(best_weights_);
 
   for (const auto& tree: model_ensemble.children()) {
     if (strcmp(tree.name(), "tree") == 0) {
       unsigned int feature = tree.child("index").text().as_uint();
-      double weight = tree.child("weight").text().as_double();
+      float weight = tree.child("weight").text().as_float();
       best_weights_[feature - 1] = weight;
     }
   }
@@ -116,7 +121,7 @@ void LineSearch::learn(
 
   auto begin = std::chrono::steady_clock::now();
   // preserve original value of the window
-  double window_size = window_size_;
+  float window_size = window_size_;
 
   // We force num_points to be odd, so that the central point in step 1 is
   // included by default in searching the best weight for each feature
@@ -136,11 +141,18 @@ void LineSearch::learn(
   const auto num_features = training_dataset->num_features();
   const auto num_train_instances = training_dataset->num_instances();
 
-  // initialize weights, weights_prev and best_weights_ a 1
-  std::vector<double> weights(num_features, 1.0);
-  std::vector<double> weights_prev(num_features, 1.0);
-  // Need the swap pruning_method because best_weights_ is unitialized
-  std::vector<double>(num_features, 1.0).swap(best_weights_);
+  // initialize weights, weights_prev and best_weights_ a 1 (by default)
+  std::vector<float> weights(num_features, 1.0f);
+  std::vector<float> weights_prev(num_features, 1.0f);
+
+  // if weights were not set before by calling the set_weights method
+  if (!best_weights_.empty()) {
+    weights = best_weights_;
+    weights_prev = best_weights_;
+  } else {
+    // Need the swap method because best_weights_ is unitialized
+    std::vector<float>(num_features, 1.0f).swap(best_weights_);
+  }
 
   MetricScore best_metric_on_training = 0;
   MetricScore best_metric_on_validation = 0;
@@ -154,7 +166,7 @@ void LineSearch::learn(
   if (validation_dataset)
     validation_score.resize(num_train_instances, 0.0);
 
-  // compute training and validation scores using starting weights
+  // compute training and validatixon scores using starting weights
   score(training_dataset->at(0, 0), num_train_instances, num_features,
         &weights[0], &training_score[0]);
   best_metric_on_training = scorer->evaluate_dataset(training_dataset,
@@ -169,25 +181,29 @@ void LineSearch::learn(
   }
   std::cout << std::endl;
 
+  unsigned int starting_feature_idx = 0;
+  if (train_only_last_)
+    starting_feature_idx = num_features - train_only_last_ - 1;
+
   // counter of sequential iterations without improvement on validation
   unsigned int count_failed_vali = 0;
   // loop for max_iterations_
   for (unsigned int i = 0; i < max_iterations_; i++) {
 
     // step1 length used to select points in the window
-    double step1 = 2 * window_size / num_points;
+    float step1 = 2 * window_size / num_points;
 
     // Step 1: linear search on each feature (independently)
-    for (unsigned int f = 0; f < num_features; f++) {
+    for (unsigned int f = starting_feature_idx; f < num_features; f++) {
 
       // compute feature * weight for all the features different from f
       preCompute(training_dataset->at(0, 0), num_train_instances, num_features,
                  &pre_sum[0], &weights_prev[0], &training_score[0], f);
 
       // Compute the points (weights to try) related to feature f
-      std::vector<double> points;
+      std::vector<float> points;
       points.reserve(num_points + 1); // don't know the exact number of points
-      for (double point = weights_prev[f] - window_size;
+      for (float point = weights_prev[f] - window_size;
            point <= weights_prev[f] + window_size; point += step1) {
         if (point >= 0)
           points.push_back(point);
@@ -223,15 +239,15 @@ void LineSearch::learn(
     // Step 2: linear search on all features (between weights and weights_prev)
 
     // step2 length (different for each feature)
-    std::vector<double> step2(num_features);
+    std::vector<float> step2(num_features);
     std::transform(weights.begin(), weights.end(), weights_prev.begin(),
-                   step2.begin(), [&](double curr, double prev) {
+                   step2.begin(), [&](float curr, float prev) {
       return (curr - prev) / num_points;
     });
 
     // if step2 is a 0-vector, no way to improve in step2
     bool zeros = std::all_of(step2.begin(), step2.end(),
-                             [] (double s) { return s == 0; });
+                             [] (float s) { return s == 0; });
     double gain_on_training = 0;
     if (!zeros) {
 
@@ -278,7 +294,7 @@ void LineSearch::learn(
 
     auto cur_reduction_factor = reduction_factor_;
     if (adaptive_) {
-      double max_gain = 0.005;
+      float max_gain = 0.005;
       // At most double the reduction factor (2 * reduction_factor_ > 1)
       double relative_gain =
           std::min( (gain_on_training - max_gain) / max_gain, 1.);
@@ -324,6 +340,10 @@ void LineSearch::learn(
     if (adaptive_ && window_size < 0.01)
       break;
 
+    if (partial_save != 0 and !output_basename.empty()
+        and (i + 1) % partial_save == 0) {
+      save(output_basename, i + 1);
+    }
   }
   //end iterations
 
@@ -347,6 +367,15 @@ Score LineSearch::score_document(const Feature *d) const {
   return score;
 }
 
+bool LineSearch::update_weights(std::shared_ptr<std::vector<float>> weights) {
+
+  if(weights->size() != best_weights_.size())
+    return false;
+
+  best_weights_ = *weights;
+  return true;
+}
+
 pugi::xml_document* LineSearch::get_xml_model() const {
 
   pugi::xml_document* doc = new pugi::xml_document();
@@ -361,9 +390,10 @@ pugi::xml_document* LineSearch::get_xml_model() const {
   info.append_child("max-iterations").text() = max_iterations_;
   info.append_child("max-failed-vali").text() = max_failed_vali_;
   info.append_child("adaptive").text() = adaptive_;
+  info.append_child("train-only-last").text() = train_only_last_;
 
   std::stringstream ss;
-  ss << std::setprecision(std::numeric_limits<double>::digits10);
+  ss << std::setprecision(std::numeric_limits<float>::digits10);
 
   pugi::xml_node ensemble = root.append_child("ensemble");
   for (unsigned int i = 0; i < best_weights_.size(); i++) {
@@ -373,6 +403,9 @@ pugi::xml_document* LineSearch::get_xml_model() const {
     pugi::xml_node couple = ensemble.append_child("tree");
     couple.append_child("index").text() = i + 1;
     couple.append_child("weight").text() = ss.str().c_str();
+
+    // reset ss
+    ss.str(std::string());
   }
 
   return doc;
@@ -380,7 +413,7 @@ pugi::xml_document* LineSearch::get_xml_model() const {
 
 void LineSearch::preCompute(Feature *training_dataset, unsigned int num_samples,
                             unsigned int num_features, Score *pre_sum,
-                            double *weights, Score *training_score,
+                            float *weights, Score *training_score,
                             unsigned int feature_exclude) {
 
   #pragma omp parallel for
@@ -398,7 +431,7 @@ void LineSearch::preCompute(Feature *training_dataset, unsigned int num_samples,
 }
 
 void LineSearch::score(Feature *dataset, unsigned int num_samples,
-                       unsigned int num_features, double *weights,
+                       unsigned int num_features, float *weights,
                        Score *scores) {
 
   #pragma omp parallel for

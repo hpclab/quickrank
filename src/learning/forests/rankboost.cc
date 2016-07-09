@@ -504,7 +504,8 @@ Score Rankboost::score_document(const quickrank::Feature* d) const {
     return doc_score;
 }
 
-std::shared_ptr<std::vector<Score>> Rankboost::detailed_scores_document(const Feature* d) const {
+std::shared_ptr<std::vector<Score>> Rankboost::partial_scores_document(
+    const Feature *d) const {
     std::vector<quickrank::Score> scores(best_T);
     for (unsigned int t = 0; t < best_T; t++) {
         scores[t] = alphas[t] * weak_rankers[t]->score_document(d);
@@ -534,6 +535,27 @@ pugi::xml_document* Rankboost::get_xml_model() const {
     }
 
     return doc;
+}
+
+bool Rankboost::update_weights(std::vector<float>& weights) {
+
+    if (weights.size() != best_T) {
+        std::cerr << "# ## ERROR!! Weak ranker size does not match size of the "
+            "weight vector in updating the weights" << std::endl;
+        return false;
+    }
+
+    for (unsigned int t = 0; t < best_T; t++)
+        alphas[t] = weights[t];
+
+    return true;
+}
+
+std::shared_ptr<std::vector<float>> Rankboost::get_weights() const {
+    std::vector<float> weights(best_T);
+    for (unsigned int i = 0; i < best_T; ++i)
+        weights[i] = weights[i];
+    return std::make_shared<std::vector<float>>(std::move(weights));
 }
 
 } // namespace forests

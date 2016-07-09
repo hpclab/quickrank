@@ -21,12 +21,12 @@
 */
 #include "optimization/post_learning/pruning/ensemble_pruning_factory.h"
 
-#include "optimization/post_learning/pruning/RandomPruning.h"
-#include "optimization/post_learning/pruning/LastPruning.h"
-#include "optimization/post_learning/pruning/SkipPruning.h"
-#include "optimization/post_learning/pruning/ScoreLossPruning.h"
-#include "optimization/post_learning/pruning/LowWeightsPruning.h"
-#include "optimization/post_learning/pruning/QualityLossPruning.h"
+#include "optimization/post_learning/pruning/random_pruning.h"
+#include "optimization/post_learning/pruning/last_pruning.h"
+#include "optimization/post_learning/pruning/skip_pruning.h"
+#include "optimization/post_learning/pruning/score_loss_pruning.h"
+#include "optimization/post_learning/pruning/low_weights_pruning.h"
+#include "optimization/post_learning/pruning/quality_loss_pruning.h"
 
 namespace quickrank {
 namespace optimization {

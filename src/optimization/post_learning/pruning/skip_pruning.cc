@@ -20,9 +20,9 @@
  *  - Salvatore Trani(salvatore.trani@isti.cnr.it)
  */
 
-#include <numeric>
+#include <math.h>
 
-#include "optimization/post_learning/pruning/LowWeightsPruning.h"
+#include "optimization/post_learning/pruning/skip_pruning.h"
 
 namespace quickrank {
 namespace optimization {
@@ -30,27 +30,29 @@ namespace post_learning {
 namespace pruning {
 
 /// Returns the pruning method of the algorithm.
-EnsemblePruning::PruningMethod LowWeightsPruning::pruning_method() const {
-  return EnsemblePruning::PruningMethod::LOW_WEIGHTS;
+EnsemblePruning::PruningMethod SkipPruning::pruning_method() const {
+  return EnsemblePruning::PruningMethod::SKIP;
 }
 
-bool LowWeightsPruning::line_search_pre_pruning() const {
-  return true;
+bool SkipPruning::line_search_pre_pruning() const {
+  return false;
 }
 
-void LowWeightsPruning::pruning(std::set<unsigned int>& pruned_estimators,
-                                    std::shared_ptr<data::Dataset> dataset,
-                                    std::shared_ptr<metric::ir::Metric> scorer) {
+void SkipPruning::pruning(std::set<unsigned int>& pruned_estimators,
+                          std::shared_ptr<data::Dataset> dataset,
+                          std::shared_ptr<metric::ir::Metric> scorer) {
 
-  std::vector<unsigned int> idx (weights_.size());
-  std::iota(idx.begin(), idx.end(), 0);
-  std::sort(idx.begin(), idx.end(),
-            [this] (const unsigned int& a, const unsigned int& b) {
-              return this->weights_[a] < this->weights_[b];
-            });
+  unsigned int num_features = (unsigned int) weights_.size();
+  double step = (double)num_features / estimators_to_select_;
 
-  for (unsigned int f = 0; f < estimators_to_prune_; f++) {
-    pruned_estimators.insert(idx[f]);
+  std::set<unsigned int> selected_estimators;
+  for (unsigned int i = 0; i < estimators_to_select_; i++) {
+    selected_estimators.insert( (unsigned int) ceil(i * step) );
+  }
+
+  for (unsigned int f = 0; f < num_features; f++) {
+    if (!selected_estimators.count(f))
+      pruned_estimators.insert(f);
   }
 }
 

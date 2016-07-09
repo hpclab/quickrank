@@ -58,25 +58,52 @@ quickrank::Score Ensemble::score_instance(const quickrank::Feature* d,
 }
 
 std::shared_ptr<std::vector<quickrank::Score>>
-  Ensemble::detailed_scores_instance(const quickrank::Feature* d,
-                                     const size_t offset) const {
+  Ensemble::partial_scores_instance(const quickrank::Feature *d,
+                                    const size_t offset) const {
   std::vector<quickrank::Score> scores(size);
   for (unsigned int i = 0; i < size; ++i)
     scores[i] = arr[i].root->score_instance(d, offset) * arr[i].weight;
   return std::make_shared<std::vector<quickrank::Score>>(std::move(scores));
 }
 
-pugi::xml_node Ensemble::append_xml_model(pugi::xml_node parent) const {
+pugi::xml_node Ensemble::append_xml_model(pugi::xml_node parent,
+                                          bool skip_useless_trees) const {
+
   pugi::xml_node ensemble = parent.append_child("ensemble");
 
   for (size_t i = 0; i < size; ++i) {
+    // Use a small epsilon to check for null weights...
+    if (skip_useless_trees && arr[i].weight < 0.0000001)
+      continue;
     pugi::xml_node tree = ensemble.append_child("tree");
     tree.append_attribute("id") = i + 1;
     tree.append_attribute("weight") = arr[i].weight;
     if (arr[i].root) {
-      arr[i].root->append_xml_model(ensemble);
+      arr[i].root->append_xml_model(tree);
     }
   }
 
   return ensemble;
+}
+
+bool Ensemble::update_ensemble_weights(
+    std::shared_ptr<std::vector<float>> weights) {
+
+  if (weights->size() != get_size()) {
+    std::cerr << "# ## ERROR!! Ensemble size does not match size of the "
+                     "weight vector in updating the weights" << std::endl;
+    return false;
+  }
+
+  for (size_t i = 0; i < size; ++i)
+    arr[i].weight = (*weights)[i];
+
+  return true;
+}
+
+std::shared_ptr<std::vector<float>> Ensemble::get_weights() const {
+  std::vector<float>* weights = new std::vector<float>(size);
+  for (unsigned int i = 0; i < size; ++i)
+    (*weights)[i] = arr[i].weight;
+  return std::shared_ptr<std::vector<float>>(weights);
 }

@@ -127,10 +127,15 @@ public:
 
     /// Returns the partial scores of a given document, tree.
     /// \param d is a pointer to the document to be evaluated
-    virtual std::shared_ptr<std::vector<Score>> detailed_scores_document(const Feature* d) const;
+    virtual std::shared_ptr<std::vector<Score>> partial_scores_document(
+        const Feature *d) const;
 
     /// Return the xml model representing the current object
     virtual pugi::xml_document* get_xml_model() const;
+
+    virtual bool update_weights(std::vector<float>& weights);
+
+    virtual std::shared_ptr<std::vector<float>> get_weights() const;
 
 private:
     float*** D = NULL;

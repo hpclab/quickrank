@@ -41,9 +41,8 @@ class LambdaMart : public Mart {
   /// \param minleafsupport Minimum number of instances in each leaf.
   /// \param esr Early stopping if no improvement after \esr iterations
   /// on the validation set.
-  LambdaMart(size_t ntrees, float shrinkage, size_t nthresholds,
-             size_t ntreeleaves, size_t minleafsupport,
-             size_t esr)
+  LambdaMart(size_t ntrees, double shrinkage, size_t nthresholds,
+             size_t ntreeleaves, size_t minleafsupport, size_t esr)
       : Mart(ntrees, shrinkage, nthresholds, ntreeleaves, minleafsupport, esr) {
   }
 

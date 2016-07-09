@@ -54,8 +54,9 @@ void LTR_Algorithm::save(std::string output_basename, int iteration) const {
       filename += ".T" + std::to_string(iteration) + ".xml";
 
     pugi::xml_document* doc = get_xml_model();
-    doc->save_file(filename.c_str(), "\t", pugi::format_no_declaration);
-    // TODO: clean doc!
+    doc->save_file(filename.c_str(), "\t",
+                   pugi::format_default | pugi::format_no_declaration);
+    delete(doc);
   }
 }
 
@@ -69,7 +70,8 @@ std::shared_ptr<LTR_Algorithm> LTR_Algorithm::load_model_from_file(
   pugi::xml_document model;
   pugi::xml_parse_result result = model.load_file(model_filename.c_str());
   if (!result) {
-    std::cerr << "!!! Model filename is not parsed correctly." << std::endl;
+    std::cerr << "!!! Model " + model_filename +" is not parsed correctly."
+      << std::endl;
     exit(EXIT_FAILURE);
   }
 
