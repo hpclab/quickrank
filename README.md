@@ -10,7 +10,7 @@ The LtR algorithms currently implemented are:
  - **LamdaMART**: Q. Wu, C. Burges, K. Svore, and J. Gao. *Adapting boosting for information retrieval measures*. Information Retrieval, 2010.
  - **Oblivious GBRT / LamdaMART**: Inspired to I. Segalovich. *Machine learning in search quality at yandex*. Invited Talk, SIGIR, 2010.
  - **CoordinateAscent**: Metzler, D., Croft, W.B.. *Linear feature-based models for information retrieval*. Information Retrieval 10(3), pages 257–274, 2007.
- - **LineSearch**: **`INSERT CITATION!`**
+ - **LineSearch**: D. G. Luenberger. *Linear and nonlinear programming*. Addison Wesley, 1984.
  - **RankBoost**: Freund, Y., Iyer, R., Schapire, R. E., & Singer, Y. *An efficient boosting algorithm for combining preferences*. The Journal of machine learning research, 4, 933-969 (2003).
 
 QuickRank introduces also the concept of pre and post learning optimizations to run in pipeline with the LtR algorithms. Currently implemented optimizers are:
@@ -34,7 +34,7 @@ On Ubuntu Linux:
 
 Once the compiler and the build system are installed, you can get the latest stable source packages (including the dependencies) using git:
 
-	git clone git.hpc.isti.cnr.it/quickrank/quickrank
+	git clone http://git.hpc.isti.cnr.it/quickrank/quickrank.git
 	cd quickrank
 	git submodule init
 	git submodule update
@@ -50,7 +50,6 @@ The Makefile generator can build the project in only one configuration, so you n
 
 ```
 cmake \
--D CMAKE_C_COMPILER=/usr/local/bin/gcc-5 \
 -D CMAKE_CXX_COMPILER=/usr/local/bin/g++-5 \
 -D CMAKE_BUILD_TYPE=Release \
 ..
@@ -166,7 +165,7 @@ To test a model, you could specify the test option in the previous command, or l
   --scores scores.txt
 ```
 
-With the ```--detailed``` option, valid only for ensemble-based algorithms, QuickRank will save in a SVM-light format (which consequently can be used as input dataset for other learning algorithms) the partial scores given by each ensemble to the prediction of the documents (one row per document, a feature for each ensemble, preserving the order of the ensembles in the model and of the documents in the dataset).
+With the ```--detailed``` option, valid only for ensemble-based algorithms, QuickRank will save in a SVM-light format (which consequently can be used as input dataset for other learning algorithms) the partial scores given by each weak ranker to the prediction of the documents (one row per document, a feature for each ensemble, preserving the order of the ensembles in the model and of the documents in the dataset).
 
 ### Optimization
 
@@ -239,7 +238,7 @@ QuickRank is presented in:
  
 QuickRank has been used in:
  - C. Lucchese, F. M. Nardini, S. Orlando, R. Perego, N. Tonellotto, R. Venturini. **QuickScorer: a Fast Algorithm to Rank Documents with Additive Ensembles of Regression Trees**. Full Paper. SIGIR 2015: Proceedings of the 37th Annual International ACM SIGIR Conference on Research and Development in Information Retrieval, Santiago, Chile, August 2015. **BEST PAPER AWARD**.  [LINK](http://dl.acm.org/citation.cfm?id=2767733)
- - C. Lucchese, F. M. Nardini, S. Orlando, R. Perego, F. Silvestri, S. Trani **Post-Learning Optimization of Tree Ensembles for Efficient Ranking**. Short Paper. SIGIR 2016: Proceedings of the 38th Annual International ACM SIGIR Conference on Research and Development in Information Retrieval, Pisa, Italy, July 2016.
+ - C. Lucchese, F. M. Nardini, S. Orlando, R. Perego, F. Silvestri, S. Trani **Post-Learning Optimization of Tree Ensembles for Efficient Ranking**. Short Paper. SIGIR 2016: Proceedings of the 38th Annual International ACM SIGIR Conference on Research and Development in Information Retrieval, Pisa, Italy, July 2016. [LINK](http://dl.acm.org/citation.cfm?id=2914763)
 
 Tools and Libraries
 -------
