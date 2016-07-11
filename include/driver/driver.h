@@ -30,7 +30,7 @@
 #include "io/xml.h"
 #include "io/vpred.h"
 
-#include "ParamsMap/paramsmap.h"
+#include "paramsmap/paramsmap.h"
 
 namespace quickrank {
 namespace driver {

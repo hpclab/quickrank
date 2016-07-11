@@ -21,7 +21,7 @@
  */
 #pragma once
 
-#include "ParamsMap/paramsmap.h"
+#include "paramsmap/paramsmap.h"
 #include "learning/ltr_algorithm.h"
 
 #include <memory>

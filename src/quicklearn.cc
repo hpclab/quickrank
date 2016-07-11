@@ -68,7 +68,7 @@
 #include <unistd.h>
 #include <fstream>
 
-#include "ParamsMap/paramsmap.h"
+#include "paramsmap/paramsmap.h"
 
 #include "learning/forests/mart.h"
 #include "learning/forests/lambdamart.h"
