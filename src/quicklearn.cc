@@ -95,18 +95,18 @@ void print_logo() {
     std::string color_reset = "\033[0m";
     std::string color_logo = "\033[1m\033[32m";
     std::cout << color_logo << std::endl
-              << "      _____  _____" << std::endl
-              << "     /    / /____/"  << std::endl
-              << "    /____\\ /    \\          QuickRank has been developed by hpc.isti.cnr.it" << std::endl
-              << "    ::Quick:Rank::                                   quickrank@isti.cnr.it" << std::endl
-              << color_reset << std::endl;
+        << "      _____  _____" << std::endl
+        << "     /    / /____/" << std::endl
+        << "    /____\\ /    \\          QuickRank has been developed by hpc.isti.cnr.it" << std::endl
+        << "    ::Quick:Rank::                                   quickrank@isti.cnr.it" << std::endl
+        << color_reset << std::endl;
   } else {
     std::cout << std::endl
-              << "      _____  _____" << std::endl
-              << "     /    / /____/" << std::endl
-              << "    /____\\ /    \\          QuickRank has been developed by hpc.isti.cnr.it" << std::endl
-              << "    ::Quick:Rank::                                   quickrank@isti.cnr.it" << std::endl
-              << std::endl;
+        << "      _____  _____" << std::endl
+        << "     /    / /____/" << std::endl
+        << "    /____\\ /    \\          QuickRank has been developed by hpc.isti.cnr.it" << std::endl
+        << "    ::Quick:Rank::                                   quickrank@isti.cnr.it" << std::endl
+        << std::endl;
   }
 }
 
@@ -166,21 +166,21 @@ int main(int argc, char *argv[]) {
   pmap.addMessage("Training phase - general options:");
   pmap.addOptionWithArg("algo",
                         "LtR algorithm ["
-                          + quickrank::learning::forests::Mart::NAME_ + "|"
-                          + quickrank::learning::forests::LambdaMart::NAME_ + "|"
-                          + quickrank::learning::forests::ObliviousMart::NAME_ + "|"
-                          + quickrank::learning::forests::ObliviousLambdaMart::NAME_ + "|"
-                          + quickrank::learning::forests::Rankboost::NAME_ + "|"
-                          + quickrank::learning::linear::CoordinateAscent::NAME_ + "|"
-                          + quickrank::learning::linear::LineSearch::NAME_ + "|"
-                          + quickrank::learning::CustomLTR::NAME_ + "]",
+                            + quickrank::learning::forests::Mart::NAME_ + "|"
+                            + quickrank::learning::forests::LambdaMart::NAME_ + "|"
+                            + quickrank::learning::forests::ObliviousMart::NAME_ + "|"
+                            + quickrank::learning::forests::ObliviousLambdaMart::NAME_ + "|"
+                            + quickrank::learning::forests::Rankboost::NAME_ + "|"
+                            + quickrank::learning::linear::CoordinateAscent::NAME_ + "|"
+                            + quickrank::learning::linear::LineSearch::NAME_ + "|"
+                            + quickrank::learning::CustomLTR::NAME_ + "]",
                         algorithm_string);
 
   pmap.addOptionWithArg("train-metric",
                         "set train metric [" + quickrank::metric::ir::Dcg::NAME_ + "|"
-                          + quickrank::metric::ir::Ndcg::NAME_ + "|"
-                          + quickrank::metric::ir::Tndcg::NAME_ + "|"
-                          + quickrank::metric::ir::Map::NAME_ + "]",
+                            + quickrank::metric::ir::Ndcg::NAME_ + "|"
+                            + quickrank::metric::ir::Tndcg::NAME_ + "|"
+                            + quickrank::metric::ir::Map::NAME_ + "]",
                         train_metric_string);
 
   pmap.addOptionWithArg("train-cutoff",
@@ -263,23 +263,23 @@ int main(int argc, char *argv[]) {
   pmap.addMessage("Training phase - specific options for Line Search:");
   pmap.addOption("adaptive",
                  "enable adaptive reduction factor (based on last iteration "
-                         "metric gain)");
+                     "metric gain)");
   pmap.addOptionWithArg<std::string>("train-partial",
                                      "set training file with partial scores "
-                                             "(input for loading or output for "
-                                             "saving)");
+                                         "(input for loading or output for "
+                                         "saving)");
   pmap.addOptionWithArg<std::string>("valid-partial",
                                      "set validation file with partial scores "
-                                             "(input for loading or output for "
-                                             "saving)");
+                                         "(input for loading or output for "
+                                         "saving)");
 
 
   // --------------------------------------------------------
   // Optimization options add by Salvatore Trani
   pmap.addMessage("Optimization phase - general options:");
   pmap.addOptionWithArg<std::string>(
-          "opt-algo",
-          "Optimization alghoritm [" +
+      "opt-algo",
+      "Optimization alghoritm [" +
           quickrank::optimization::post_learning::pruning::EnsemblePruning::NAME_
           + "]");
 
@@ -290,44 +290,44 @@ int main(int argc, char *argv[]) {
   pruningMethods = pruningMethods.substr(0, pruningMethods.size() - 1);
 
   pmap.addOptionWithArg<std::string>(
-          "opt-method",
-          "Optimization method: " +
+      "opt-method",
+      "Optimization method: " +
           quickrank::optimization::post_learning::pruning::EnsemblePruning::NAME_
-          + " [" + pruningMethods  + "]");
+          + " [" + pruningMethods + "]");
 
   pmap.addOptionWithArg<std::string>(
-          "opt-model",
-          "set output model file for optimization or input model file for testing");
+      "opt-model",
+      "set output model file for optimization or input model file for testing");
 
   pmap.addOptionWithArg<std::string>(
-          "opt-algo-model",
-          "set output algorithm model file post optimization");
+      "opt-algo-model",
+      "set output algorithm model file post optimization");
 
 
   // --------------------------------------------------------
   pmap.addMessage("Optimization phase - specific options for ensemble pruning:");
   pmap.addOptionWithArg<double>("pruning-rate",
                                 "ensemble to prune (either as a ratio with "
-                                        "respect to ensemble size or as an absolute "
-                                        "number of estimators to prune)");
+                                    "respect to ensemble size or as an absolute "
+                                    "number of estimators to prune)");
 
   pmap.addOption("with-line-search",
                  "ensemble pruning is made in conjunction with line search "
-                         "[related parameters accepted]");
+                     "[related parameters accepted]");
 
   pmap.addOptionWithArg<std::string>("line-search-model",
                                      "set line search XML file path for "
-                                             "loading line search model (options "
-                                             "and already trained weights)");
+                                         "loading line search model (options "
+                                         "and already trained weights)");
 
 
   // --------------------------------------------------------
   pmap.addMessage("Test phase - general options:");
   pmap.addOptionWithArg("test-metric",
                         "set test metric [" + quickrank::metric::ir::Dcg::NAME_ + "|"
-                          + quickrank::metric::ir::Ndcg::NAME_ + "|"
-                          + quickrank::metric::ir::Tndcg::NAME_ + "|"
-                          + quickrank::metric::ir::Map::NAME_ + "]",
+                            + quickrank::metric::ir::Ndcg::NAME_ + "|"
+                            + quickrank::metric::ir::Tndcg::NAME_ + "|"
+                            + quickrank::metric::ir::Map::NAME_ + "]",
                         test_metric_string);
 
   pmap.addOptionWithArg("test-cutoff",

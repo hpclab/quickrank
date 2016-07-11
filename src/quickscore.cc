@@ -59,7 +59,7 @@ void print_logo() {
   }
 }
 
-double ranker(float* v);
+double ranker(float *v);
 
 int main(int argc, char *argv[]) {
   print_logo();
@@ -104,11 +104,11 @@ int main(int argc, char *argv[]) {
   std::cout << *dataset;
 
   // score dataset
-  double* scores = new double[dataset->num_instances()];
+  double *scores = new double[dataset->num_instances()];
   auto start_scoring = std::chrono::high_resolution_clock::now();
 
   for (size_t r = 0; r < rounds; r++) {
-    float* document = dataset->at(0, 0);
+    float *document = dataset->at(0, 0);
     for (size_t i = 0; i < dataset->num_instances(); i++) {
       scores[i] = ranker(document);
       document += dataset->num_features();
@@ -122,12 +122,12 @@ int main(int argc, char *argv[]) {
           end_scoring - start_scoring).count();
 
   std::cout << "       Total scoring time: " << scoring_time << " s."
-            << std::endl;
+      << std::endl;
   std::cout << "Avg. Dataset scoring time: " << scoring_time / rounds << " s."
-            << std::endl;
+      << std::endl;
   std::cout << "Avg.    Doc. scoring time: "
-            << scoring_time / dataset->num_instances() / rounds << " s."
-            << std::endl;
+      << scoring_time / dataset->num_instances() / rounds << " s."
+      << std::endl;
 
   // potentially save scores
   if (!scores_file.empty()) {
