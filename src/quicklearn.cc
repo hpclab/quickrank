@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
   ParamsMap pmap;
 
   // Declare the supported options.
-  pmap.addMessage("Training options");
+  pmap.addMessage("Training phase - general options:");
   pmap.addOptionWithArg("algo",
                         "LtR algorithm ["
                           + quickrank::learning::forests::Mart::NAME_ + "|"
@@ -201,8 +201,9 @@ int main(int argc, char *argv[]) {
                                      "set output model file for training or "
                                          "input model file for testing");
 
+
   // --------------------------------------------------------
-  pmap.addMessage("Training options for tree-based models");
+  pmap.addMessage("Training phase - specific options for tree-based models:");
   pmap.addOptionWithArg("num-trees",
                         "set number of trees",
                         ntrees);
@@ -231,40 +232,11 @@ int main(int argc, char *argv[]) {
                         "set tree depth [applies only to Oblivious Mart/LambdaMart]",
                         treedepth);
 
-  // --------------------------------------------------------
-  pmap.addMessage("Testing options");
-  pmap.addOptionWithArg("test-metric",
-                        "set test metric [" + quickrank::metric::ir::Dcg::NAME_ + "|"
-                          + quickrank::metric::ir::Ndcg::NAME_ + "|"
-                          + quickrank::metric::ir::Tndcg::NAME_ + "|"
-                          + quickrank::metric::ir::Map::NAME_ + "]",
-                        test_metric_string);
-
-  pmap.addOptionWithArg("test-cutoff",
-                        "set test metric cutoff",
-                        test_cutoff);
-
-  pmap.addOptionWithArg<std::string>("test", "set testing file");
-
-  pmap.addOptionWithArg<std::string>("scores", "set output scores file");
-
-  pmap.addOption("detailed",
-                 "enable detailed testing [applies only to ensemble models]");
-
-  pmap.addMessage("Fast Scoring options");
-  pmap.addOptionWithArg<std::string>("dump-model", "set XML model file path");
-
-  pmap.addOptionWithArg<std::string>("dump-code", "set C code file path");
-
-  pmap.addOptionWithArg("dump-type",
-                        "set C code generation strategy. Allowed options are:"
-                            " \"baseline\", \"oblivious\". \"vpred\".",
-                        std::string("baseline"));
 
   // --------------------------------------------------------
   // CoordinateAscent and LineSearch options
   // add by Chiara Pierucci and Salvatore Trani
-  pmap.addMessage("Training options for Coordinate Ascent and Line Search");
+  pmap.addMessage("Training phase - specific options for Coordinate Ascent and Line Search:");
   pmap.addOptionWithArg("num-samples",
                         "set number of samples in search window",
                         num_points);
@@ -285,30 +257,31 @@ int main(int argc, char *argv[]) {
                         "set number of fails on validation before exit",
                         max_failed_vali);
 
+
   // --------------------------------------------------------
   // LineSearch extra options add by Salvatore Trani
-  pmap.addMessage("Training options for Line Search");
+  pmap.addMessage("Training phase - specific options for Line Search:");
   pmap.addOption("adaptive",
                  "enable adaptive reduction factor (based on last iteration "
-                     "metric gain)");
+                         "metric gain)");
   pmap.addOptionWithArg<std::string>("train-partial",
                                      "set training file with partial scores "
-                                     "(input for loading or output for "
-                                     "saving)");
+                                             "(input for loading or output for "
+                                             "saving)");
   pmap.addOptionWithArg<std::string>("valid-partial",
                                      "set validation file with partial scores "
-                                     "(input for loading or output for "
-                                     "saving)");
+                                             "(input for loading or output for "
+                                             "saving)");
 
 
   // --------------------------------------------------------
   // Optimization options add by Salvatore Trani
-  pmap.addMessage("Optimization options");
+  pmap.addMessage("Optimization phase - general options:");
   pmap.addOptionWithArg<std::string>(
-      "opt-algo",
-      "Optimization alghoritm [" +
-        quickrank::optimization::post_learning::pruning::EnsemblePruning::NAME_
-        + "]");
+          "opt-algo",
+          "Optimization alghoritm [" +
+          quickrank::optimization::post_learning::pruning::EnsemblePruning::NAME_
+          + "]");
 
   std::string pruningMethods = "";
   for (auto i: quickrank::optimization::post_learning::pruning::EnsemblePruning::pruningMethodNames) {
@@ -317,35 +290,73 @@ int main(int argc, char *argv[]) {
   pruningMethods = pruningMethods.substr(0, pruningMethods.size() - 1);
 
   pmap.addOptionWithArg<std::string>(
-      "opt-method",
-      "Optimization method: " +
-        quickrank::optimization::post_learning::pruning::EnsemblePruning::NAME_
-        + " [" + pruningMethods  + "]");
+          "opt-method",
+          "Optimization method: " +
+          quickrank::optimization::post_learning::pruning::EnsemblePruning::NAME_
+          + " [" + pruningMethods  + "]");
 
   pmap.addOptionWithArg<std::string>(
-      "opt-model",
-      "set output model file for optimization or input model file for testing");
+          "opt-model",
+          "set output model file for optimization or input model file for testing");
 
   pmap.addOptionWithArg<std::string>(
-      "opt-algo-model",
-      "set output algorithm model file post optimization");
+          "opt-algo-model",
+          "set output algorithm model file post optimization");
 
 
   // --------------------------------------------------------
-  pmap.addMessage("Ensemble Pruning options");
+  pmap.addMessage("Optimization phase - specific options for ensemble pruning:");
   pmap.addOptionWithArg<double>("pruning-rate",
                                 "ensemble to prune (either as a ratio with "
-                                    "respect to ensemble size or as an absolute "
-                                    "number of estimators to prune)");
+                                        "respect to ensemble size or as an absolute "
+                                        "number of estimators to prune)");
 
   pmap.addOption("with-line-search",
                  "ensemble pruning is made in conjunction with line search "
-                     "[related parameters accepted]");
+                         "[related parameters accepted]");
 
   pmap.addOptionWithArg<std::string>("line-search-model",
                                      "set line search XML file path for "
-                                         "loading line search model (options "
-                                         "and already trained weights)");
+                                             "loading line search model (options "
+                                             "and already trained weights)");
+
+
+  // --------------------------------------------------------
+  pmap.addMessage("Test phase - general options:");
+  pmap.addOptionWithArg("test-metric",
+                        "set test metric [" + quickrank::metric::ir::Dcg::NAME_ + "|"
+                          + quickrank::metric::ir::Ndcg::NAME_ + "|"
+                          + quickrank::metric::ir::Tndcg::NAME_ + "|"
+                          + quickrank::metric::ir::Map::NAME_ + "]",
+                        test_metric_string);
+
+  pmap.addOptionWithArg("test-cutoff",
+                        "set test metric cutoff",
+                        test_cutoff);
+
+  pmap.addOptionWithArg<std::string>("test", "set testing file");
+
+  pmap.addOptionWithArg<std::string>("scores", "set output scores file");
+
+  pmap.addOption("detailed",
+                 "enable detailed testing [applies only to ensemble models]");
+
+
+  // --------------------------------------------------------
+  pmap.addMessage("Code generation - general options:");
+  pmap.addOptionWithArg<std::string>("dump-model", "set XML model file path");
+
+  pmap.addOptionWithArg<std::string>("dump-code", "set C code file path");
+
+  pmap.addOptionWithArg("dump-type",
+                        "set C code generation strategy. Allowed options are:"
+                            " \"baseline\", \"oblivious\". \"vpred\".",
+                        std::string("baseline"));
+
+
+
+
+
 
   // --------------------------------------------------------
   pmap.addMessage("Help options:");
