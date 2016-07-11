@@ -292,9 +292,13 @@ int main(int argc, char *argv[]) {
                  "enable adaptive reduction factor (based on last iteration "
                      "metric gain)");
   pmap.addOptionWithArg<std::string>("train-partial",
-                                     "set training file with partial scores");
+                                     "set training file with partial scores "
+                                     "(input for loading or output for "
+                                     "saving)");
   pmap.addOptionWithArg<std::string>("valid-partial",
-                                     "set validation file with partial scores");
+                                     "set validation file with partial scores "
+                                     "(input for loading or output for "
+                                     "saving)");
 
 
   // --------------------------------------------------------
