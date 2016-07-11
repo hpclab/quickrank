@@ -3,7 +3,7 @@
 	url = https://github.com/zeux/pugixml.git
 [submodule "lib/paramsmap"]
 	path = lib/paramsmap
-	url = git@git.hpc.isti.cnr.it:quickrank/ParamsMap.git
+	url = http://git.hpc.isti.cnr.it:quickrank/ParamsMap.git
 [submodule "lib/catch"]
 	path = lib/catch
 	url = https://github.com/philsquared/Catch.git
