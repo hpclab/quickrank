@@ -55,7 +55,7 @@ void QualityLossPruning::pruning(std::set<unsigned int>& pruned_estimators,
     score(dataset.get(), &dataset_score[0]);
     metric_scores[f] = scorer->evaluate_dataset(dataset, &dataset_score[0]);
 
-    // Reset the original weight to the feature
+    // Re set the original weight to the feature
     weights_[f] = weight_bkp;
   }
 

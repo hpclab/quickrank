@@ -34,7 +34,7 @@ namespace learning {
 namespace linear {
 
 /// This implements the Line Search algorithm.
-class LineSearch : public LTR_Algorithm {
+class LineSearch: public LTR_Algorithm {
 
  public:
 
@@ -43,7 +43,7 @@ class LineSearch : public LTR_Algorithm {
              unsigned int max_failed_vali, bool adaptive,
              unsigned int last_only = 0);
 
-  LineSearch(const pugi::xml_document& model);
+  LineSearch(const pugi::xml_document &model);
 
   virtual ~LineSearch();
 
@@ -58,6 +58,10 @@ class LineSearch : public LTR_Algorithm {
 
   void set_last_only(unsigned int last_only) {
     train_only_last_ = last_only;
+  }
+
+  void reset_weights() {
+    best_weights_.clear();
   }
 
   static const std::string NAME_;
@@ -76,7 +80,7 @@ class LineSearch : public LTR_Algorithm {
                      const std::string model_filename);
 
   /// Returns the score of a given document.
-  virtual Score score_document(const Feature* d) const;
+  virtual Score score_document(const Feature *d) const;
 
   /// Returns the learned weights
   virtual std::shared_ptr<std::vector<float>> get_weights() const {
@@ -87,7 +91,7 @@ class LineSearch : public LTR_Algorithm {
   virtual bool update_weights(std::shared_ptr<std::vector<float>> weights);
 
   /// Return the xml model representing the current object
-  virtual pugi::xml_document* get_xml_model() const;
+  virtual pugi::xml_document *get_xml_model() const;
 
  private:
   unsigned int num_points_;
@@ -101,19 +105,23 @@ class LineSearch : public LTR_Algorithm {
   std::vector<float> best_weights_;
 
   /// The output stream operator.
-  friend std::ostream& operator<<(std::ostream& os, const LineSearch& a) {
+  friend std::ostream &operator<<(std::ostream &os, const LineSearch &a) {
     return a.put(os);
   }
 
   /// Prints the description of Algorithm, including its parameters
-  virtual std::ostream& put(std::ostream& os) const;
+  virtual std::ostream &put(std::ostream &os) const;
 
-  virtual void preCompute(Feature *training_dataset, unsigned int num_samples,
-                          unsigned int num_features, Score *pre_sum, float *weights,
-                          Score *training_score, unsigned int feature_exclude);
+  virtual void preCompute(Feature *training_dataset,
+                          unsigned int num_samples,
+                          unsigned int num_features,
+                          Score *pre_sum,
+                          float *weights,
+                          Score *training_score,
+                          unsigned int feature_exclude);
 
   virtual void score(Feature *dataset, unsigned int num_samples,
-             unsigned int num_features, float *weights, Score *scores);
+                     unsigned int num_features, float *weights, Score *scores);
 };
 
 }  // namespace linear

@@ -31,9 +31,6 @@
 
 #include "optimization/post_learning/pruning/ensemble_pruning.h"
 
-#include "data/dataset.h"
-#include "metric/ir/metric.h"
-#include "learning/ltr_algorithm.h"
 
 namespace quickrank {
 namespace optimization {
@@ -163,7 +160,8 @@ void EnsemblePruning::optimize(
 
     if (lineSearch_->get_weights()->empty()) {
 
-      // Need to do the line search pre pruning. The line search model is empty
+      // Need to do the line search pre pruning.
+      // The line search weights inside the model are not set
       std::cout << "# LineSearch pre-pruning:" << std::endl;
       std::cout << "# --------------------------" << std::endl;
       lineSearch_->learn(training_dataset, validation_dataset, metric,
@@ -178,6 +176,9 @@ void EnsemblePruning::optimize(
     // Needs to import the line search learned weights into this model
     import_weights_from_line_search(pruned_estimators);
     std::cout << std::endl;
+
+    // Reset the weights for reusing the LS model in the post-pruning phase
+    lineSearch_->reset_weights();
   }
 
   pruning(pruned_estimators, training_dataset, metric);
@@ -303,7 +304,7 @@ void EnsemblePruning::import_weights_from_line_search(
 
   unsigned int ls_f = 0;
   for (unsigned int f = 0; f < weights_.size(); f++) {
-    if (!pruned_estimators.count(f)) // skip weights-0 features (pruned by ls)
+    if (!pruned_estimators.count(f)) // skip pruned estimators
       weights_[f] = (*ls_weights)[ls_f++];
   }
 
