@@ -145,8 +145,10 @@ void LineSearch::learn(
   std::vector<float> weights(num_features, 1.0f);
   std::vector<float> weights_prev(num_features, 1.0f);
 
-  // if weights were not set before by calling the set_weights method
-  if (!best_weights_.empty()) {
+  // If weights were set before by calling the set_weights method, copy them
+  // The check on the number of features is needed because the line search model
+  // could be reused on a different dataset (size)
+  if (!best_weights_.empty() && best_weights_.size() == num_features) {
     weights = best_weights_;
     weights_prev = best_weights_;
   } else {

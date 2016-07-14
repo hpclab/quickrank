@@ -50,6 +50,8 @@ int Driver::run(ParamsMap &pmap) {
     exit(EXIT_FAILURE);
   }
 
+  std::cout << std::endl << *ranking_algorithm << std::endl;
+
   // If there is the training dataset, it means we have to execute
   // the training phase and/or the optimization phase (at least one of them)
   if (pmap.count("train")) {
@@ -351,7 +353,7 @@ std::shared_ptr<quickrank::data::Dataset> Driver::load_dataset(
     std::cout << "# Reading " + dataset_label + " dataset: " <<
         dataset_filename << std::endl;
     dataset = reader.read_horizontal(dataset_filename);
-    std::cout << reader << *dataset;
+    std::cout << reader << *dataset << std::endl;
   }
 
   if (!dataset) {
