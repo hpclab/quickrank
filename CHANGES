@@ -1,3 +1,7 @@
+2016 July
+ - Adding CLEAVER, optimization step for pruning ensembles of regression trees.
+ - Several refactoring and optimizations.
+
 2015 Sep. 8.
  - Cleaning up of part of the code related to document scoring
 

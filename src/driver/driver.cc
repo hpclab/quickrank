@@ -26,7 +26,7 @@
 
 #include "driver/driver.h"
 #include "io/svml.h"
-
+#include "io/generate_conditional_operators.h"
 #include "learning/ltr_algorithm_factory.h"
 #include "optimization/optimization_factory.h"
 #include "metric/metric_factory.h"
@@ -38,10 +38,10 @@ namespace driver {
 Driver::Driver() {
 }
 
-  Driver::~Driver() {
+Driver::~Driver() {
 }
 
-int Driver::run(ParamsMap& pmap) {
+int Driver::run(ParamsMap &pmap) {
 
   std::shared_ptr<quickrank::learning::LTR_Algorithm> ranking_algorithm =
       quickrank::learning::ltr_algorithm_factory(pmap);
@@ -121,7 +121,7 @@ int Driver::run(ParamsMap& pmap) {
       //show ranker parameters
       std::cout << "#" << std::endl << *ranking_algorithm;
       std::cout << "#" << std::endl << "# training scorer: " << *training_metric
-      << std::endl;
+          << std::endl;
 
       training_phase(ranking_algorithm,
                      training_metric,
@@ -157,8 +157,8 @@ int Driver::run(ParamsMap& pmap) {
 
     std::shared_ptr<quickrank::metric::ir::Metric> testing_metric =
         quickrank::metric::ir::ir_metric_factory(
-          pmap.get<std::string>("test-metric"),
-          pmap.get<size_t>("test-cutoff"));
+            pmap.get<std::string>("test-metric"),
+            pmap.get<size_t>("test-cutoff"));
     if (!testing_metric) {
       std::cerr << " !! Train Metric was not set properly" << std::endl;
       exit(EXIT_FAILURE);
@@ -174,18 +174,16 @@ int Driver::run(ParamsMap& pmap) {
   }
 
   // Fast Scoring
-
   // if the dump files are set, it proceeds to dump the model by following a given strategy.
   if (pmap.count("dump-model") && pmap.count("dump-code")) {
     std::string xml_filename = pmap.get<std::string>("dump-model");
     std::string c_filename = pmap.get<std::string>("dump-code");
     std::string model_code_type = pmap.get<std::string>("dump-type");
 
-    quickrank::io::Xml xml;
-//    if (model_code_type == "baseline") {
-//      std::cout << "applying baseline strategy (conditional operators) for C code generation to: "
-//        << xml_filename << std::endl;
-//      xml.generate_c_code_baseline(xml_filename, c_filename);
+    if (model_code_type == "condop") {
+      quickrank::io::GenOpCond conditional_operator_generator;
+      std::cout << "applying conditional operators strategy for C code generation to: " << xml_filename << std::endl;
+      conditional_operator_generator.generate_conditional_operators_code(xml_filename, c_filename);
 //    } else if (model_code_type == "oblivious") {
 //      std::cout << "applying oblivious strategy for C code generation to: "
 //        << xml_filename << std::endl;
@@ -194,7 +192,7 @@ int Driver::run(ParamsMap& pmap) {
 //      std::cout << "generating VPred input file from: " << xml_filename
 //        << std::endl;
 //      quickrank::io::generate_vpred_input(xml_filename, c_filename);
-//    }
+    }
   }
 
   return EXIT_SUCCESS;
@@ -259,7 +257,7 @@ void Driver::optimization_phase(
         svml.write(training_partial_dataset, training_partial_filename);
     }
 
-    if (!validation_partial_dataset  && validation_dataset) {
+    if (!validation_partial_dataset && validation_dataset) {
 
       validation_partial_dataset = Driver::extract_partial_scores(
           ranking_algo,
@@ -282,14 +280,14 @@ void Driver::optimization_phase(
   if (!output_filename.empty()) {
     std::cout << std::endl;
     std::cout << "# Writing optimization model to file: "
-      << output_filename << std::endl;
+        << output_filename << std::endl;
     opt_algorithm->save(output_filename);
   }
 
   if (!opt_algo_model_filename.empty()) {
     std::cout << std::endl;
     std::cout << "# Writing optimized LTR algo model to file: "
-      << opt_algo_model_filename << std::endl << std::endl;
+        << opt_algo_model_filename << std::endl << std::endl;
     ranking_algo->save(opt_algo_model_filename);
   }
 }
@@ -309,10 +307,10 @@ void Driver::testing_phase(
           Driver::extract_partial_scores(algo, test_dataset);
 
       quickrank::MetricScore test_score = test_metric->evaluate_dataset(
-              test_dataset, &scores[0]);
+          test_dataset, &scores[0]);
 
       std::cout << *test_metric << " on test data = " << std::setprecision(4)
-        << test_score << std::endl << std::endl;
+          << test_score << std::endl << std::endl;
 
       quickrank::io::Svml svml;
       svml.write(datasetPartScores, scores_filename);
@@ -320,11 +318,11 @@ void Driver::testing_phase(
     } else {
       algo->score_dataset(test_dataset, &scores[0]);
       quickrank::MetricScore test_score = test_metric->evaluate_dataset(
-              test_dataset, &scores[0]);
+          test_dataset, &scores[0]);
 
       std::cout << std::endl;
       std::cout << *test_metric << " on test data = " << std::setprecision(4)
-      << test_score << std::endl << std::endl;
+          << test_score << std::endl << std::endl;
 
       if (!scores_filename.empty()) {
         std::ofstream os;
@@ -369,19 +367,19 @@ std::shared_ptr<data::Dataset> Driver::extract_partial_scores(
     std::shared_ptr<learning::LTR_Algorithm> algo,
     std::shared_ptr<data::Dataset> input_dataset) {
 
-  data::Dataset* datasetPartScores = nullptr;
+  data::Dataset *datasetPartScores = nullptr;
 
   for (size_t q = 0; q < input_dataset->num_queries(); q++) {
     auto results = input_dataset->getQueryResults(q);
     // score_query_results(r, scores, 1, test_dataset->num_features());
-    const Feature* features = results->features();
-    const Label* labels = results->labels();
+    const Feature *features = results->features();
+    const Label *labels = results->labels();
     for (size_t i = 0; i < results->num_results(); i++) {
       auto detailed_scores = algo->partial_scores_document(features);
 
       if (!detailed_scores) {
         std::cerr << "# ## ERROR!! Only Ensemble methods support the "
-          << "export of detailed score tree by tree" << std::endl;
+            << "export of detailed score tree by tree" << std::endl;
         exit(EXIT_FAILURE);
       }
 

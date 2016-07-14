@@ -19,7 +19,7 @@ QuickRank introduces also the concept of pre and post learning optimizations to 
 How to build
 -------
 
-QuickRank needs [gcc](https://gcc.gnu.org/) 4.9 (or above), [CMake](http://www.cmake.org/) 3.4 (or above) and [git](https://git-scm.com/). Follow the instructions below to install the required tools.
+QuickRank needs [gcc](https://gcc.gnu.org/) 4.9 (or above), [CMake](http://www.cmake.org/) 2.8 (or above) and [git](https://git-scm.com/). Follow the instructions below to install the required tools.
 
 On Mac OS X (HomeBrew and XCode command line tools are required):
 
@@ -243,7 +243,7 @@ QuickRank has been used in:
 Tools and Libraries
 -------
 
-We thank the developers of the following toosl and libraries:
+We thank the developers of the following tools and libraries:
  - [Catch](https://github.com/philsquared/Catch): C++ Automated Test Cases in Headers
  - [PugiXML](https://github.com/zeux/pugixml): Lightweight C++ XML processing library
  - [ParamsMap](http://git.hpc.isti.cnr.it/quickrank/ParamsMap): Simple command line parser adopting easily accessible program options

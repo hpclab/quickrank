@@ -64,7 +64,6 @@
 #include <iostream>
 #include <iomanip>
 #include <memory>
-#include <stdio.h>
 #include <unistd.h>
 #include <fstream>
 
@@ -86,8 +85,6 @@
 #include "metric/ir/map.h"
 
 #include "driver/driver.h"
-
-#include "pugixml/src/pugixml.hpp"
 
 
 void print_logo() {
@@ -350,12 +347,8 @@ int main(int argc, char *argv[]) {
 
   pmap.addOptionWithArg("dump-type",
                         "set C code generation strategy. Allowed options are:"
-                            " \"baseline\", \"oblivious\". \"vpred\".",
-                        std::string("baseline"));
-
-
-
-
+                            " \"condop\", \"oblivious\". \"vpred\".",
+                        std::string("condop"));
 
 
   // --------------------------------------------------------
