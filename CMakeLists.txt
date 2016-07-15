@@ -3,7 +3,7 @@
 # BUILD TYPE: -DCMAKE_BUILD_TYPE=[Release|Debug]
 
 cmake_minimum_required(VERSION 2.8)
-project(QUICKRANK C CXX)
+project(QUICKRANK CXX)
 
 # require support of C++11
 set_property(GLOBAL PROPERTY CXX_STANDARD 11)
@@ -13,11 +13,6 @@ set_property(GLOBAL PROPERTY CXX_STANDARD_REQUIRED ON)
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release")
 endif()
-
-#set(CMAKE_VERBOSE_MAKEFILE ON)
-
-#set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE BOOL
-#   "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel." FORCE)
 
 # require support of OpenMP
 find_package(OpenMP REQUIRED)
@@ -105,6 +100,6 @@ target_link_libraries(unit-tests -quickrank_common)
 # generate documentation
 add_custom_target(doc
     COMMAND doxygen quickrank.doxygen
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/documentation
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/api-documentation
     COMMENT "Creating the documentation with doxygen"
 )

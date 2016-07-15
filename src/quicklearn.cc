@@ -23,37 +23,8 @@
 /**
  * \mainpage QuickRank: A C++ suite of Learning to Rank algorithms
  *
- * \section nutshell QuickRank in a nutshell
- *
- * QuickRank is an efficient Learning-to-Rank (L-t-R) Toolkit providing several
- * C++ implementation of L-t-R algorithms.
- *
- * The algorithms currently implemented are:
- *   - \b GBRT: J. H. Friedman. Greedy function approximation: a gradient boosting machine.
- *   Annals of Statistics, pages 1189–1232,
- 2001.
- *   - \b LamdaMART: Q. Wu, C. Burges, K. Svore, and J. Gao.
- *   Adapting boosting for information retrieval measures.
- *   Information Retrieval, 2010.
- *   - \b Oblivious \b GBRT / \b LambdaMart: Inspired to I. Segalovich. Machine learning in search quality at Yandex.
- *   Invited Talk, ACM SIGIR, 2010.
- *   - \b CoordinateAscent: Metzler, D., Croft, W.B.: Linear feature-based models for information retrieval.
- *   Information Retrieval 10(3), 257–274 (2007).
- *   - \b RankBoost: Freund, Y., Iyer, R., Schapire, R. E., & Singer, Y. An efficient boosting algorithm
- *   for combining preferences. The Journal of machine learning research, 4, 933-969 (2003).
- *
- * \subsection download Get QuickRank
- * The homepage of QuickRank is available at: <a href="http://quickrank.isti.cnr.it">http://quickrank.isti.cnr.it</a>.
- *
- * \subsection compile Compile and Use QuickRank
- *
- * - clone the GitHub repository as shown in the dedicated section of the QuickRank homepage.
- *
- * - run "make";
- *
- * - run "bin/quicklearn -h" to have the list of command line options.
- *
- * - have fun! :)
+ * Please refer to <a href="https://github.com/hpclab/quickrank">https://github.com/hpclab/quickrank</a>
+ * for information about compiling, using, and acknowledging QuickRank.
  */
 
 /// \todo TODO: (by cla) Decide on outpuformat, logging and similar.
