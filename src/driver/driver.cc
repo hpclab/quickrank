@@ -23,6 +23,7 @@
 #include <fstream>
 #include <limits>
 #include <numeric>
+#include <io/generate_oblivious.h>
 
 #include "driver/driver.h"
 #include "io/svml.h"
@@ -190,16 +191,22 @@ int Driver::run(ParamsMap &pmap) {
 
     if (model_code_type == "condop") {
       quickrank::io::GenOpCond conditional_operator_generator;
-      std::cout << "applying conditional operators strategy for C code generation to: " << xml_filename << std::endl;
-      conditional_operator_generator.generate_conditional_operators_code(xml_filename, c_filename);
-//    } else if (model_code_type == "oblivious") {
-//      std::cout << "applying oblivious strategy for C code generation to: "
-//        << xml_filename << std::endl;
-//      xml.generate_c_code_oblivious_trees(xml_filename, c_filename);
-//    } else if (model_code_type == "vpred") {
-//      std::cout << "generating VPred input file from: " << xml_filename
-//        << std::endl;
-//      quickrank::io::generate_vpred_input(xml_filename, c_filename);
+      std::cout
+          << "applying conditional operators strategy for C code generation to: "
+          << xml_filename << std::endl;
+      conditional_operator_generator.generate_conditional_operators_code(
+          xml_filename,
+          c_filename);
+    } else if (model_code_type == "oblivious") {
+      quickrank::io::GenOblivious oblivious_generator;
+      std::cout << "applying oblivious strategy for C code generation to: "
+        << xml_filename << std::endl;
+      oblivious_generator.generate_oblivious_code(xml_filename, c_filename);
+    } else if (model_code_type == "vpred") {
+      quickrank::io::GenVpred vpred_generator;
+      std::cout << "generating VPred input file from: " << xml_filename
+        << std::endl;
+      vpred_generator.generate_vpred_input(xml_filename, c_filename);
     }
   }
 

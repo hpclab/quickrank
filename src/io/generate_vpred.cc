@@ -28,7 +28,7 @@
 #include <queue>
 #include <cmath>
 
-#include "io/vpred.h"
+#include "io/generate_vpred.h"
 #include "pugixml/src/pugixml.hpp"
 #include "utils/strutils.h"
 
@@ -87,7 +87,7 @@ struct tree_node {
   }
 };
 
-void generate_vpred_input(const std::string &ensemble_file,
+void GenVpred::generate_vpred_input(const std::string &ensemble_file,
                           const std::string &output_file) {
 
   if (ensemble_file.empty()) {

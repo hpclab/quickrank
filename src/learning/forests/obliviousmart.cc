@@ -26,9 +26,6 @@
 #include <iomanip>
 #include <cfloat>
 #include <cmath>
-#include <boost/foreach.hpp>
-
-#include "io/xml.h"
 
 namespace quickrank {
 namespace learning {

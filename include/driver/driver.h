@@ -27,8 +27,9 @@
 #include "learning/ltr_algorithm.h"
 #include "optimization/optimization.h"
 
-#include "io/xml.h"
-#include "io/vpred.h"
+#include "io/generate_vpred.h"
+#include "io/generate_conditional_operators.h"
+#include "io/generate_oblivious.h"
 
 #include "paramsmap/paramsmap.h"
 

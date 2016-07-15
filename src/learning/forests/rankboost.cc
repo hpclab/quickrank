@@ -31,8 +31,6 @@
 #include <chrono>
 #include <sstream>
 #include <string.h>
-
-
 #include <omp.h>
 
 namespace quickrank {

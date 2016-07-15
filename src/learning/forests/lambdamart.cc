@@ -28,7 +28,6 @@
 #include <cmath>
 
 #include "data/rankedresults.h"
-#include "io/xml.h"
 
 namespace quickrank {
 namespace learning {

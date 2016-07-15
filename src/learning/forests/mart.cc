@@ -30,7 +30,6 @@
 
 #include "data/vertical_dataset.h"
 #include "data/rankedresults.h"
-#include "io/xml.h"
 #include "utils/radix.h"
 
 namespace quickrank {

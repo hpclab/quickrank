@@ -43,9 +43,6 @@ list(REMOVE_ITEM all_sources ${QUICKLEARN_MAIN})
 list(REMOVE_ITEM all_sources ${QUICKSCORE_MAIN})
 list(REMOVE_ITEM all_sources ${RANKER_CC})
 
-set(XML_PROVA "${CMAKE_SOURCE_DIR}/src/provaXML.cc")
-list(REMOVE_ITEM all_sources ${XML_PROVA})
-
 file(GLOB_RECURSE unit_tests_sources ${CMAKE_SOURCE_DIR}/catch-unit-tests/*.cc)
 
 # external libraries
@@ -59,10 +56,6 @@ file(GLOB_RECURSE all_headers ${CMAKE_SOURCE_DIR}/lib/pugixml/src/*.hpp)
 file(GLOB_RECURSE all_headers ${CMAKE_SOURCE_DIR}/lib/catch/include/catch.hpp)
 file(GLOB_RECURSE all_headers ${CMAKE_SOURCE_DIR}/lib/paramsmap/*.h)
 
-add_executable(prova ${all_headers} ${XML_PROVA})
-target_link_libraries(prova -pugixml)
-target_link_libraries(prova -quickrank_common)
-
 # ---------------------------------
 # quicklearn target
 add_executable(quicklearn ${all_headers} ${QUICKLEARN_MAIN})
@@ -71,13 +64,7 @@ target_link_libraries(quicklearn -quickrank_common)
 
 # ---------------------------------
 # quickscore target
-# needs env variable "QUICKSCORE_RANKER_FILE_PATH" with absolute file path
-# (.cc extension) of the model to compile and link with QuickScore
-find_package(Boost COMPONENTS program_options REQUIRED)
-include_directories(${Boost_INCLUDE_DIRS})
-link_directories(${Boost_LIBRARY_DIRS})
 add_executable(quickscore EXCLUDE_FROM_ALL ${all_headers} ${RANKER_CC} ${QUICKSCORE_MAIN})
-target_link_libraries(quickscore ${Boost_LIBRARIES})
 target_link_libraries(quickscore -pugixml)
 target_link_libraries(quickscore -quickrank_common)
 
