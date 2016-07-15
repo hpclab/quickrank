@@ -19,45 +19,42 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_LEARNING_TREE_HISTOGRAM_H_
-#define QUICKRANK_LEARNING_TREE_HISTOGRAM_H_
+#pragma once
 
-#include "data/dataset.h"
+#include "data/vertical_dataset.h"
 
 class RTNodeHistogram {
  public:
   float **thresholds = NULL;  //[0..nfeatures-1]x[0..thresholds_size[i]-1]
-  unsigned int const *thresholds_size = NULL;
-  unsigned int **stmap = NULL;  //[0..nfeatures-1]x[0..nthresholds-1]
-  const unsigned int nfeatures = 0;
+  size_t const *thresholds_size = NULL;
+  size_t **stmap = NULL;  //[0..nfeatures-1]x[0..nthresholds-1]
+  const size_t nfeatures = 0;
   double **sumlbl = NULL;  //[0..nfeatures-1]x[0..nthresholds-1]
-  unsigned int **count = NULL;  //[0..nfeatures-1]x[0..nthresholds-1]
+  size_t **count = NULL;  //[0..nfeatures-1]x[0..nthresholds-1]
   double squares_sum_ = 0.0;
  public:
-  RTNodeHistogram(float **thresholds, unsigned int const *thresholds_size,
-                  unsigned int nfeatures);
+  RTNodeHistogram(float **thresholds, size_t const *thresholds_size,
+                  size_t nfeatures);
 
-  RTNodeHistogram(RTNodeHistogram const* parent, unsigned int const* sampleids,
-                  const unsigned int nsampleids, double const* labels);
+  RTNodeHistogram(RTNodeHistogram const* parent, size_t const* sampleids,
+                  const size_t nsampleids, double const* labels);
 
   RTNodeHistogram(RTNodeHistogram const* parent, RTNodeHistogram const* left);
 
   ~RTNodeHistogram();
 
-  void update(double *labels, const unsigned int nlabels);
+  void update(double *labels, const size_t nlabels);
 
   void transform_intorightchild(RTNodeHistogram const* left);
 
-  void quick_dump(unsigned int f, unsigned int num_t);
+  void quick_dump(size_t f, size_t num_t);
 };
 
 class RTRootHistogram : public RTNodeHistogram {
  public:
-  RTRootHistogram(quickrank::data::Dataset *dps, unsigned int **sortedidx,
-                  unsigned int sortedidxsize, float **thresholds,
-                  unsigned int const *thresholds_size);
+  RTRootHistogram(quickrank::data::VerticalDataset *dps, size_t **sortedidx,
+                  size_t sortedidxsize, float **thresholds,
+                  size_t const *thresholds_size);
 
   ~RTRootHistogram();
 };
-
-#endif

@@ -19,8 +19,7 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_IO_VPRED_CONVERTER_H
-#define QUICKRANK_IO_VPRED_CONVERTER_H
+#pragma once
 
 namespace quickrank {
 namespace io {
@@ -30,5 +29,3 @@ void generate_vpred_input(const std::string &ensemble_file,
 
 }  // namespace io
 }  // namesapce quickrank
-
-#endif // QUICKRANK_IO_VPRED_CONVERTER_H

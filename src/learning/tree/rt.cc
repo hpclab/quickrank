@@ -21,6 +21,12 @@
  */
 #include "learning/tree/rt.h"
 
+#ifdef _OPENMP
+#include <omp.h>
+#else
+#include "utils/omp-stubs.h"
+#endif
+
 void DevianceMaxHeap::push_chidrenof(RTNode *parent) {
   push(parent->left->deviance, parent->left);
   push(parent->right->deviance, parent->right);
@@ -39,7 +45,7 @@ RegressionTree::~RegressionTree() {
     root->sampleids = NULL, root->nsampleids = 0;
   }
   //if leaves[0] is the root, hist cannot be deallocated and sampleids has been already deallocated
-  for (unsigned int i = 0; i < nleaves; ++i)
+  for (size_t i = 0; i < nleaves; ++i)
     if (leaves[i] != root) {
       delete[] leaves[i]->sampleids, delete leaves[i]->hist;
       leaves[i]->hist = NULL, leaves[i]->sampleids = NULL, leaves[i]->nsampleids =
@@ -50,11 +56,11 @@ RegressionTree::~RegressionTree() {
 
 void RegressionTree::fit(RTNodeHistogram *hist) {
   DevianceMaxHeap heap(nrequiredleaves);
-  unsigned int taken = 0;
-  unsigned int nsampleids = training_dataset->num_instances();  //set->get_ndatapoints();
-  unsigned int *sampleids = new unsigned int[nsampleids];
+  size_t taken = 0;
+  size_t nsampleids = training_dataset->num_instances();  //set->get_ndatapoints();
+  size_t *sampleids = new size_t[nsampleids];
 #pragma omp parallel for
-  for (unsigned int i = 0; i < nsampleids; ++i)
+  for (size_t i = 0; i < nsampleids; ++i)
     sampleids[i] = i;
 
   root = new RTNode(sampleids, hist);
@@ -74,7 +80,7 @@ void RegressionTree::fit(RTNodeHistogram *hist) {
     heap.pop();
   }
   //visit tree and save leaves in a leaves[] array
-  unsigned int capacity = nrequiredleaves;
+  size_t capacity = nrequiredleaves;
   leaves = capacity ? (RTNode**) malloc(sizeof(RTNode*) * capacity) : NULL, nleaves =
       0;
   root->save_leaves(leaves, nleaves, capacity);
@@ -85,12 +91,12 @@ void RegressionTree::fit(RTNodeHistogram *hist) {
 double RegressionTree::update_output(double const *pseudoresponses) {
   double maxlabel = -DBL_MAX;
 #pragma omp parallel for reduction(max:maxlabel)
-  for (unsigned int i = 0; i < nleaves; ++i) {
+  for (size_t i = 0; i < nleaves; ++i) {
     double psum = 0.0f;
-    const unsigned int nsampleids = leaves[i]->nsampleids;
-    const unsigned int *sampleids = leaves[i]->sampleids;
-    for (unsigned int j = 0; j < nsampleids; ++j) {
-      unsigned int k = sampleids[j];
+    const size_t nsampleids = leaves[i]->nsampleids;
+    const size_t *sampleids = leaves[i]->sampleids;
+    for (size_t j = 0; j < nsampleids; ++j) {
+      size_t k = sampleids[j];
       psum += pseudoresponses[k];
     }
     leaves[i]->avglabel = psum / nsampleids;
@@ -105,13 +111,13 @@ double RegressionTree::update_output(double const *pseudoresponses,
                                      double const *cachedweights) {
   double maxlabel = -DBL_MAX;
 #pragma omp parallel for reduction(max:maxlabel)
-  for (unsigned int i = 0; i < nleaves; ++i) {
+  for (size_t i = 0; i < nleaves; ++i) {
     double s1 = 0.0;
     double s2 = 0.0;
-    const unsigned int nsampleids = leaves[i]->nsampleids;
-    const unsigned int *sampleids = leaves[i]->sampleids;
-    for (unsigned int j = 0; j < nsampleids; ++j) {
-      unsigned int k = sampleids[j];
+    const size_t nsampleids = leaves[i]->nsampleids;
+    const size_t *sampleids = leaves[i]->sampleids;
+    for (size_t j = 0; j < nsampleids; ++j) {
+      size_t k = sampleids[j];
       s1 += pseudoresponses[k];
       s2 += cachedweights[k];
       //					printf("## %d: %.15f \t %.15f \n", k, pseudoresponses[k], cachedweights[k]);
@@ -137,18 +143,18 @@ bool RegressionTree::split(RTNode *node, const float featuresamplingrate,
     //get current nod hidtogram pointer
     RTNodeHistogram *h = node->hist;
     //featureidxs to be used for tree splitnodeting
-    unsigned int nfeaturesamples = training_dataset->num_features();  //training_set->get_nfeatures();
-    unsigned int *featuresamples = NULL;
+    size_t nfeaturesamples = training_dataset->num_features();  //training_set->get_nfeatures();
+    size_t *featuresamples = NULL;
     //need to make a sub-sampling
     if (featuresamplingrate < 1.0f) {
-      featuresamples = new unsigned int[nfeaturesamples];
-      for (unsigned int i = 0; i < nfeaturesamples; ++i)
+      featuresamples = new size_t[nfeaturesamples];
+      for (size_t i = 0; i < nfeaturesamples; ++i)
         featuresamples[i] = i;
       //need to make a sub-sampling
-      const unsigned int reduced_nfeaturesamples = floor(
+      const size_t reduced_nfeaturesamples = floor(
           featuresamplingrate * nfeaturesamples);
       while (nfeaturesamples > reduced_nfeaturesamples && nfeaturesamples > 1) {
-        const unsigned int i = rand() % nfeaturesamples;
+        const size_t i = rand() % nfeaturesamples;
         featuresamples[i] = featuresamples[--nfeaturesamples];
       }
     }
@@ -156,30 +162,30 @@ bool RegressionTree::split(RTNode *node, const float featuresamplingrate,
     // find best split
     const int nth = omp_get_num_procs();
     double* thread_best_score = new double[nth];  // double thread_minvar[nth];
-    unsigned int* thread_best_featureidx = new unsigned int[nth];  // unsigned int thread_best_featureidx[nth];
-    unsigned int* thread_best_thresholdid = new unsigned int[nth];  // unsigned int thread_best_thresholdid[nth];
+    size_t* thread_best_featureidx = new size_t[nth];  // size_t thread_best_featureidx[nth];
+    size_t* thread_best_thresholdid = new size_t[nth];  // size_t thread_best_thresholdid[nth];
     for (int i = 0; i < nth; ++i)
       thread_best_score[i] = initvar, thread_best_featureidx[i] = uint_max, thread_best_thresholdid[i] =
           uint_max;
 
 #pragma omp parallel for
-    for (unsigned int i = 0; i < nfeaturesamples; ++i) {
+    for (size_t i = 0; i < nfeaturesamples; ++i) {
       //get feature idx
-      const unsigned int f = featuresamples ? featuresamples[i] : i;
+      const size_t f = featuresamples ? featuresamples[i] : i;
       //get thread identification number
       const int ith = omp_get_thread_num();
       //define pointer shortcuts
       double *sumlabels = h->sumlbl[f];
-      unsigned int *samplecount = h->count[f];
+      size_t *samplecount = h->count[f];
       //get last elements
-      unsigned int threshold_size = h->thresholds_size[f];
+      size_t threshold_size = h->thresholds_size[f];
       double s = sumlabels[threshold_size - 1];
-      unsigned int c = samplecount[threshold_size - 1];
+      size_t c = samplecount[threshold_size - 1];
 
       //looking for the feature that minimizes sumvar
-      for (unsigned int t = 0; t < threshold_size; ++t) {
-        unsigned int lcount = samplecount[t];
-        unsigned int rcount = c - lcount;
+      for (size_t t = 0; t < threshold_size; ++t) {
+        size_t lcount = samplecount[t];
+        size_t rcount = c - lcount;
         if (lcount >= minls && rcount >= minls) {
           double lsum = sumlabels[t];
           double rsum = s - lsum;
@@ -197,8 +203,8 @@ bool RegressionTree::split(RTNode *node, const float featuresamplingrate,
     delete[] featuresamples;
     //get best minvar among thread partial results
     double best_score = thread_best_score[0];
-    unsigned int best_featureidx = thread_best_featureidx[0];
-    unsigned int best_thresholdid = thread_best_thresholdid[0];
+    size_t best_featureidx = thread_best_featureidx[0];
+    size_t best_thresholdid = thread_best_thresholdid[0];
     for (int i = 1; i < nth; ++i)
       if (thread_best_score[i] > best_score)
         best_score = thread_best_score[i], best_featureidx =
@@ -214,22 +220,22 @@ bool RegressionTree::split(RTNode *node, const float featuresamplingrate,
       return false;
 
     //set some result values related to minvar
-    const unsigned int last_thresholdidx = h->thresholds_size[best_featureidx]
+    const size_t last_thresholdidx = h->thresholds_size[best_featureidx]
         - 1;
     const float best_threshold =
         h->thresholds[best_featureidx][best_thresholdid];
 
-    const unsigned int count = h->count[best_featureidx][last_thresholdidx];
-    const unsigned int lcount = h->count[best_featureidx][best_thresholdid];
-    const unsigned int rcount = count - lcount;
+    const size_t count = h->count[best_featureidx][last_thresholdidx];
+    const size_t lcount = h->count[best_featureidx][best_thresholdid];
+    const size_t rcount = count - lcount;
 
     //split samples between left and right child
-    unsigned int *lsamples = new unsigned int[lcount], lsize = 0;
-    unsigned int *rsamples = new unsigned int[rcount], rsize = 0;
+    size_t *lsamples = new size_t[lcount], lsize = 0;
+    size_t *rsamples = new size_t[rcount], rsize = 0;
     float const* features = training_dataset->at(0, best_featureidx);  //training_set->get_fvector(best_featureidx);
-    for (unsigned int i = 0, nsampleids = node->nsampleids; i < nsampleids;
+    for (size_t i = 0, nsampleids = node->nsampleids; i < nsampleids;
         ++i) {
-      unsigned int k = node->sampleids[i];
+      size_t k = node->sampleids[i];
       if (features[k] <= best_threshold)
         lsamples[lsize++] = k;
       else

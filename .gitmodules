@@ -1,0 +1,9 @@
+[submodule "lib/pugixml"]
+	path = lib/pugixml
+	url = https://github.com/zeux/pugixml.git
+[submodule "lib/paramsmap"]
+	path = lib/paramsmap
+	url = http://git.hpc.isti.cnr.it/quickrank/ParamsMap.git
+[submodule "lib/catch"]
+	path = lib/catch
+	url = https://github.com/philsquared/Catch.git

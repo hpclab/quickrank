@@ -19,11 +19,9 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_LEARNING_CUSTOM_LTR_H_
-#define QUICKRANK_LEARNING_CUSTOM_LTR_H_
 
-#include <boost/noncopyable.hpp>
-#include <boost/property_tree/ptree.hpp>
+#pragma once
+
 #include <memory>
 
 #include "data/dataset.h"
@@ -47,8 +45,7 @@ class CustomLTR : public LTR_Algorithm {
  public:
   CustomLTR();
 
-  CustomLTR(const boost::property_tree::ptree &info_ptree,
-            const boost::property_tree::ptree &model_ptree) {
+  CustomLTR(const pugi::xml_document& model) {
   }
 
   virtual ~CustomLTR();
@@ -70,25 +67,18 @@ class CustomLTR : public LTR_Algorithm {
   virtual void learn(std::shared_ptr<data::Dataset> training_dataset,
                      std::shared_ptr<data::Dataset> validation_dataset,
                      std::shared_ptr<metric::ir::Metric> metric,
-                     unsigned int partial_save,
+                     size_t partial_save,
                      const std::string model_filename);
 
   /// Returns the score of a given document.
-  virtual Score score_document(const Feature* d,
-                               const unsigned int offset = 1) const;
+  virtual Score score_document(const Feature* d) const;
+
+  /// Return the xml model representing the current object
+  virtual pugi::xml_document* get_xml_model() const;
 
   /// \todo TODO: add load_model();
 
   const Score FIXED_SCORE = 666.0;
-
- protected:
-
-  /// Prepare the dataset before training or scoring takes place.
-  ///
-  /// Different algorithms might modify the data representation
-  /// to improve efficacy or efficiency,
-  /// This is also used to make sure dataset is in the right vertical vs. horizontal format.
-  virtual void preprocess_dataset(std::shared_ptr<data::Dataset> dataset) const;
 
  private:
 
@@ -99,12 +89,7 @@ class CustomLTR : public LTR_Algorithm {
 
   /// Prints the description of Algorithm, including its parameters
   virtual std::ostream& put(std::ostream& os) const;
-
-  /// Save the current model in the given output file stream.
-  virtual std::ofstream& save_model_to_file(std::ofstream& of) const;
 };
 
 }  // namespace learning
 }  // namespace quickrank
-
-#endif

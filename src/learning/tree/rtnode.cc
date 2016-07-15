@@ -22,6 +22,8 @@
 #include <fstream>
 #include <iomanip>
 #include <limits>
+#include <sstream>
+#include <cstring>
 
 #include "learning/tree/rtnode.h"
 
@@ -29,8 +31,8 @@
 std::atomic<std::uint_fast64_t>RTNode::_internal_nodes_traversed = {0};
 #endif
 
-void RTNode::save_leaves(RTNode **&leaves, unsigned int &nleaves,
-                         unsigned int &capacity) {
+void RTNode::save_leaves(RTNode **&leaves, size_t &nleaves,
+                         size_t &capacity) {
   if (featureidx == uint_max) {
     if (nleaves == capacity) {
       capacity = 2 * capacity + 1;
@@ -43,46 +45,72 @@ void RTNode::save_leaves(RTNode **&leaves, unsigned int &nleaves,
   }
 }
 
-// TODO TO BE REMOVED
-void RTNode::write_outputtofile(FILE *f, const int indentsize) {
-  char* indent = new char[indentsize + 1];  // char indent[indentsize+1];
-  for (int i = 0; i < indentsize; indent[i++] = '\t')
-    ;
-  indent[indentsize] = '\0';
-  if (featureid == uint_max)
-    fprintf(f, "%s\t<output> %.15f </output>\n", indent, avglabel);
-  else {
-    fprintf(f, "%s\t<feature> %u </feature>\n", indent, featureid);
-    fprintf(f, "%s\t<threshold> %.8f </threshold>\n", indent, threshold);
-    fprintf(f, "%s\t<split pos=\"left\">\n", indent);
-    left->write_outputtofile(f, indentsize + 1);
-    fprintf(f, "%s\t</split>\n", indent);
-    fprintf(f, "%s\t<split pos=\"right\">\n", indent);
-    right->write_outputtofile(f, indentsize + 1);
-    fprintf(f, "%s\t</split>\n", indent);
+pugi::xml_node RTNode::append_xml_model(pugi::xml_node parent,
+                                        const std::string& pos) const {
+
+  std::stringstream ss;
+  ss << std::setprecision(std::numeric_limits<double>::digits10);
+
+  pugi::xml_node split = parent.append_child("split");
+
+  if (!pos.empty())
+    split.append_attribute("pos") = pos.c_str();
+
+  if (featureid == uint_max) {
+
+    ss << avglabel;
+    split.append_child("output").text() = ss.str().c_str();
+
+  } else {
+
+    split.append_child("feature").text() = featureid;
+
+    ss << threshold;
+    split.append_child("threshold").text() = ss.str().c_str();
+
+    left->append_xml_model(split, "left");
+    right->append_xml_model(split, "right");
   }
-  delete[] indent;
+
+  return split;
 }
 
-std::ofstream& RTNode::save_model_to_file(std::ofstream& os,
-                                          const int indentsize) {
-  std::string indent = "";
-  for (int i = 0; i < indentsize; i++)
-    indent += "\t";
-  if (featureid == uint_max) {
-    os << std::setprecision(std::numeric_limits<quickrank::Score>::digits10);
-    os << indent << "\t<output> " << avglabel << " </output>" << std::endl;
-  } else {
-    os << indent << "\t<feature> " << featureid << " </feature>" << std::endl;
-    os << std::setprecision(std::numeric_limits<quickrank::Feature>::digits10);
-    os << indent << "\t<threshold> " << threshold << " </threshold>"
-       << std::endl;
-    os << indent << "\t<split pos=\"left\">" << std::endl;
-    left->save_model_to_file(os, indentsize + 1);
-    os << indent << "\t</split>" << std::endl;
-    os << indent << "\t<split pos=\"right\">" << std::endl;
-    right->save_model_to_file(os, indentsize + 1);
-    os << indent << "\t</split>" << std::endl;
+RTNode* RTNode::parse_xml(const pugi::xml_node& split_xml) {
+  RTNode* model_node = NULL;
+  RTNode* left_child = NULL;
+  RTNode* right_child = NULL;
+
+  bool is_leaf = false;
+
+  unsigned int feature_id = 0;
+  quickrank::Feature threshold = 0.0f;
+  quickrank::Score prediction = 0.0;
+
+  for (const pugi::xml_node& split_child: split_xml.children()) {
+
+    if (strcmp(split_child.name(), "output") == 0) {
+      prediction = split_child.text().as_double();
+      is_leaf = true;
+      break;
+    } else if (strcmp(split_child.name(), "feature") == 0) {
+      feature_id = split_child.text().as_uint();
+    } else if (strcmp(split_child.name(), "threshold") == 0) {
+      threshold = split_child.text().as_float();
+    } else if (strcmp(split_child.name(), "split") == 0) {
+      std::string pos = split_child.attribute("pos").value();
+      if (pos == "left")
+        left_child = RTNode::parse_xml(split_child);
+      else
+        right_child = RTNode::parse_xml(split_child);
+    }
   }
-  return os;
+
+  if (is_leaf)
+    model_node = new RTNode(prediction);
+  else
+    /// \todo TODO: this should be changed with item mapping
+    model_node = new RTNode(threshold, feature_id - 1, feature_id, left_child,
+                            right_child);
+
+  return model_node;
 }

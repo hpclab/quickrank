@@ -19,8 +19,7 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_LEARNING_FORESTS_OBLIVIOUSLAMBDAMART_H_
-#define QUICKRANK_LEARNING_FORESTS_OBLIVIOUSLAMBDAMART_H_
+#pragma once
 
 #include "types.h"
 #include "learning/forests/lambdamart.h"
@@ -42,16 +41,15 @@ class ObliviousLambdaMart : public LambdaMart {
   /// \param minleafsupport Minimum number of instances in each leaf.
   /// \param esr Early stopping if no improvement after \esr iterations
   /// on the validation set.
-  ObliviousLambdaMart(unsigned int ntrees, float shrinkage,
-                      unsigned int nthresholds, unsigned int treedepth,
-                      unsigned int minleafsupport, unsigned int esr)
+  ObliviousLambdaMart(size_t ntrees, double shrinkage,
+                      size_t nthresholds, size_t treedepth,
+                      size_t minleafsupport, size_t esr)
       : LambdaMart(ntrees, shrinkage, nthresholds, 1 << treedepth,
                    minleafsupport, esr),
         treedepth_(treedepth) {
   }
 
-  ObliviousLambdaMart(const boost::property_tree::ptree &info_ptree,
-                      const boost::property_tree::ptree &model_ptree);
+  ObliviousLambdaMart(const pugi::xml_document& model);
 
   virtual ~ObliviousLambdaMart() {
   }
@@ -61,6 +59,8 @@ class ObliviousLambdaMart : public LambdaMart {
     return NAME_;
   }
 
+  virtual pugi::xml_document* get_xml_model() const;
+
   static const std::string NAME_;
 
  protected:
@@ -68,11 +68,9 @@ class ObliviousLambdaMart : public LambdaMart {
   ///
   /// \param training_dataset The dataset used for training
   virtual std::unique_ptr<RegressionTree> fit_regressor_on_gradient(
-      std::shared_ptr<data::Dataset> training_dataset);
+      std::shared_ptr<data::VerticalDataset> training_dataset);
 
-  virtual std::ofstream& save_model_to_file(std::ofstream& os) const;
-
-  unsigned int treedepth_;  //>0
+  size_t treedepth_;  //>0
 
  private:
   /// The output stream operator.
@@ -89,5 +87,3 @@ class ObliviousLambdaMart : public LambdaMart {
 }  // namespace forests
 }  // namespace learning
 }  // namespace quickrank
-
-#endif

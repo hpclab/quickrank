@@ -43,21 +43,11 @@ std::ostream& CustomLTR::put(std::ostream& os) const {
   return os;
 }
 
-void CustomLTR::preprocess_dataset(
-    std::shared_ptr<data::Dataset> dataset) const {
-  if (dataset->format() != data::Dataset::HORIZ)
-    dataset->transpose();
-}
-
 void CustomLTR::learn(
     std::shared_ptr<quickrank::data::Dataset> training_dataset,
     std::shared_ptr<quickrank::data::Dataset> validation_dataset,
     std::shared_ptr<quickrank::metric::ir::Metric> scorer,
-    unsigned int partial_save, const std::string output_basename) {
-
-  // Do some initialization
-  preprocess_dataset(training_dataset);
-  preprocess_dataset(validation_dataset);
+    size_t partial_save, const std::string output_basename) {
 
   std::cout << "# Training..." << std::endl;
   std::cout << std::fixed << std::setprecision(4);
@@ -67,7 +57,7 @@ void CustomLTR::learn(
   Score* validation_scores = new Score[validation_dataset->num_instances()];
 
   // set scores equal to fixed value
-  for (unsigned int i = 0; i < training_dataset->num_instances(); i++)
+  for (size_t i = 0; i < training_dataset->num_instances(); i++)
     training_scores[i] = FIXED_SCORE;
 
   MetricScore metric_on_training = scorer->evaluate_dataset(training_dataset,
@@ -75,7 +65,7 @@ void CustomLTR::learn(
 
   std::cout << *scorer << " on training: " << metric_on_training << std::endl;
 
-  for (unsigned int i = 0; i < validation_dataset->num_instances(); i++)
+  for (size_t i = 0; i < validation_dataset->num_instances(); i++)
     validation_scores[i] = FIXED_SCORE;
 
   MetricScore metric_on_validation = scorer->evaluate_dataset(
@@ -90,18 +80,20 @@ void CustomLTR::learn(
   delete[] validation_scores;
 }
 
-// assumes vertical dataset
-Score CustomLTR::score_document(const quickrank::Feature* d,
-                                const unsigned int offset) const {
+Score CustomLTR::score_document(const quickrank::Feature* d) const {
   return FIXED_SCORE;
 }
 
-std::ofstream& CustomLTR::save_model_to_file(std::ofstream& os) const {
-  // write ranker description
-  os << *this;
-  // save xml model
-  // TODO: Save model to file
-  return os;
+pugi::xml_document* CustomLTR::get_xml_model() const {
+
+  pugi::xml_document* doc = new pugi::xml_document();
+  doc->set_name("ranker");
+
+  pugi::xml_node info = doc->append_child("info");
+
+  info.append_child("type").text() = name().c_str();
+
+  return doc;
 }
 
 }  // namespace learning

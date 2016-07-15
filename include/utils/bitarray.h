@@ -45,18 +45,18 @@ class BitArray {
   }
   /** \brief set the \a i-th bit (the data structure is reallocated to store the \a i-th bit if needed)
    */
-  void set_up(const unsigned int i);
+  void set_up(const size_t i);
 
   /** \brief return true the \a i-th bit is set (no check is made on the size of the array)
    */
-  bool is_up(const unsigned int i) const;
+  bool is_up(const size_t i) const;
   /** \brief return the number of set bit in the array
    */
-  unsigned int get_upcounter();
+  size_t get_upcounter();
 
   /** \brief return an array of integers made up of the set bits positions
    */
-  unsigned int *get_uparray(const unsigned int n);
+  size_t *get_uparray(const size_t n);
 
   /** \brief compute bitwse OR of two bit arrays and store the result in the left operand
    */
@@ -64,7 +64,7 @@ class BitArray {
 
  private:
   int32_t *data;
-  unsigned int datasize;
+  size_t datasize;
 };
 
 #endif

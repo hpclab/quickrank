@@ -21,54 +21,60 @@
  */
 #include "learning/tree/ot.h"
 
+#ifdef _OPENMP
+#include <omp.h>
+#else
+#include "utils/omp-stubs.h"
+#endif
+
 #define POWTWO(e) (1<<(e))
 
 void ObliviousRT::fit(RTNodeHistogram *hist) {
   //by default get all sampleids in the training set
-  unsigned int nsampleids = training_dataset->num_instances();
-  unsigned int *sampleids = new unsigned int[nsampleids];
+  size_t nsampleids = training_dataset->num_instances();
+  size_t *sampleids = new size_t[nsampleids];
 #pragma omp parallel for
-  for (unsigned int i = 0; i < nsampleids; ++i)
+  for (size_t i = 0; i < nsampleids; ++i)
     sampleids[i] = i;
   //featureidxs to be used for "tree"
-  unsigned int nfeaturesamples = training_dataset->num_features();
+  size_t nfeaturesamples = training_dataset->num_features();
   //histarray and nodearray store histograms and treenodes used in the entire procedure (i.e. the entire tree)
   RTNode **nodearray = new RTNode*[POWTWO(treedepth + 1)]();  //initialized NULL
   //init tree root
   nodearray[0] = root = new RTNode(sampleids, hist);
   //allocate a matrix for each (feature,threshold)
   double **sum_scores = new double*[nfeaturesamples];
-  for (unsigned int i = 0; i < nfeaturesamples; ++i)
+  for (size_t i = 0; i < nfeaturesamples; ++i)
     sum_scores[i] = new double[hist->thresholds_size[i]];
   //tree computation
-  for (unsigned int depth = 0; depth < treedepth; ++depth) {
-    const unsigned int lbegin = POWTWO(depth) - 1;  //index of first histogram belonging to the current level
-    const unsigned int lend = POWTWO(depth+1) - 1;  //index of first histogram belonging to the next level
+  for (size_t depth = 0; depth < treedepth; ++depth) {
+    const size_t lbegin = POWTWO(depth) - 1;  //index of first histogram belonging to the current level
+    const size_t lend = POWTWO(depth+1) - 1;  //index of first histogram belonging to the next level
     //init matrix to zero
 #pragma omp parallel for
-    for (unsigned int i = 0; i < nfeaturesamples; ++i) {
-      const unsigned int thresholds_size = hist->thresholds_size[i];
-      for (unsigned int j = 0; j < thresholds_size; ++j)
+    for (size_t i = 0; i < nfeaturesamples; ++i) {
+      const size_t thresholds_size = hist->thresholds_size[i];
+      for (size_t j = 0; j < thresholds_size; ++j)
         sum_scores[i][j] = 0.0;
     }
     //for each histogram on the current depth (i.e. fringe) add variance of each (feature,threshold) in sumvar matrix
-    for (unsigned int i = lbegin; i < lend; ++i)
+    for (size_t i = lbegin; i < lend; ++i)
       fill(sum_scores, nfeaturesamples, nodearray[i]->hist);
     //find best split in the matrix
     const int nth = omp_get_num_procs();
     double* thread_maxscore = new double[nth];  // double thread_minvar[nth];
-    unsigned int* thread_best_featureidx = new unsigned int[nth];  // unsigned int thread_best_featureidx[nth];
-    unsigned int* thread_best_thresholdid = new unsigned int[nth];  // unsigned int thread_best_thresholdid[nth];
+    size_t* thread_best_featureidx = new size_t[nth];  // size_t thread_best_featureidx[nth];
+    size_t* thread_best_thresholdid = new size_t[nth];  // size_t thread_best_thresholdid[nth];
     for (int i = 0; i < nth; ++i) {
       thread_maxscore[i] = 0.0;
       thread_best_featureidx[i] = uint_max;
       thread_best_thresholdid[i] = uint_max;
     }
 #pragma omp parallel for
-    for (unsigned int f = 0; f < nfeaturesamples; ++f) {
+    for (size_t f = 0; f < nfeaturesamples; ++f) {
       const int ith = omp_get_thread_num();
-      const unsigned int threshold_size = hist->thresholds_size[f];
-      for (unsigned int t = 0; t < threshold_size; ++t)
+      const size_t threshold_size = hist->thresholds_size[f];
+      for (size_t t = 0; t < threshold_size; ++t)
         if (sum_scores[f][t] != invalid
             && sum_scores[f][t] > thread_maxscore[ith]) {
           thread_maxscore[ith] = sum_scores[f][t];
@@ -77,8 +83,8 @@ void ObliviousRT::fit(RTNodeHistogram *hist) {
         }
     }
     double max_score = thread_maxscore[0];
-    unsigned int best_featureidx = thread_best_featureidx[0];
-    unsigned int best_thresholdid = thread_best_thresholdid[0];
+    size_t best_featureidx = thread_best_featureidx[0];
+    size_t best_thresholdid = thread_best_thresholdid[0];
     for (int i = 1; i < nth; ++i)
       if (thread_maxscore[i] > max_score) {
         max_score = thread_maxscore[i];
@@ -92,24 +98,24 @@ void ObliviousRT::fit(RTNodeHistogram *hist) {
       break;  //node is unsplittable
     //init next depth
 #pragma omp parallel for
-    for (unsigned int i = lbegin; i < lend; ++i) {
+    for (size_t i = lbegin; i < lend; ++i) {
       RTNode *node = nodearray[i];
       //calculate some values related to best_featureidx and best_thresholdid
-      const unsigned int last_thresholdid =
+      const size_t last_thresholdid =
           node->hist->thresholds_size[best_featureidx] - 1;
-      const unsigned int lcount =
+      const size_t lcount =
           node->hist->count[best_featureidx][best_thresholdid];
-      const unsigned int rcount =
+      const size_t rcount =
           node->hist->count[best_featureidx][last_thresholdid] - lcount;
       const float best_threshold =
           node->hist->thresholds[best_featureidx][best_thresholdid];
       //split samples between left and right child
-      unsigned int *lsamples = new unsigned int[lcount], lsize = 0;
-      unsigned int *rsamples = new unsigned int[rcount], rsize = 0;
+      size_t *lsamples = new size_t[lcount], lsize = 0;
+      size_t *rsamples = new size_t[rcount], rsize = 0;
       float const* features = training_dataset->at(0, best_featureidx);  //training_set->get_fvector(best_featureidx);
-      for (unsigned int j = 0, nsampleids = node->nsampleids; j < nsampleids;
+      for (size_t j = 0, nsampleids = node->nsampleids; j < nsampleids;
           ++j) {
-        const unsigned int k = node->sampleids[j];
+        const size_t k = node->sampleids[j];
         if (features[k] <= best_threshold)
           lsamples[lsize++] = k;
         else
@@ -155,34 +161,34 @@ void ObliviousRT::fit(RTNodeHistogram *hist) {
     }
   }
   //visit tree and save leaves in a leaves[] array
-  unsigned int capacity = nrequiredleaves;
+  size_t capacity = nrequiredleaves;
   leaves = capacity ? (RTNode**) malloc(sizeof(RTNode*) * capacity) : NULL, nleaves =
       0;
   root->save_leaves(leaves, nleaves, capacity);
   //free mem allocated for sumvar[][]
-  for (unsigned int i = 0; i < nfeaturesamples; ++i)
+  for (size_t i = 0; i < nfeaturesamples; ++i)
     delete[] sum_scores[i];
   delete[] sum_scores,
   //delete temp data
   delete[] nodearray;
 }
 
-void ObliviousRT::fill(double **sumvar, const unsigned int nfeaturesamples,
+void ObliviousRT::fill(double **sumvar, const size_t nfeaturesamples,
                        RTNodeHistogram const *hist) {
 #pragma omp parallel for
-  for (unsigned int f = 0; f < nfeaturesamples; ++f) {
+  for (size_t f = 0; f < nfeaturesamples; ++f) {
     //define pointer shortcuts
     double *sumlabels = hist->sumlbl[f];
-    unsigned int *samplecount = hist->count[f];
+    size_t *samplecount = hist->count[f];
     //get last elements
-    unsigned int threshold_size = hist->thresholds_size[f];
+    size_t threshold_size = hist->thresholds_size[f];
     double s = sumlabels[threshold_size - 1];
-    unsigned int c = samplecount[threshold_size - 1];
+    size_t c = samplecount[threshold_size - 1];
     //looking for the feature that minimizes sum of lvar+rvar
-    for (unsigned int t = 0; t < threshold_size; ++t)
+    for (size_t t = 0; t < threshold_size; ++t)
       if (sumvar[f][t] != invalid) {
-        unsigned int lcount = samplecount[t];
-        unsigned int rcount = c - lcount;
+        size_t lcount = samplecount[t];
+        size_t rcount = c - lcount;
         if (lcount >= minls && rcount >= minls) {
           double lsum = sumlabels[t];
           double rsum = s - lsum;

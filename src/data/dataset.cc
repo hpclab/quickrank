@@ -23,20 +23,18 @@
 
 #include <iomanip>
 #include <stdlib.h>
+#include <cstring>
 
 namespace quickrank {
 namespace data {
 
-Dataset::Dataset(unsigned int n_instances, unsigned int n_features) {
+Dataset::Dataset(size_t n_instances, size_t n_features) {
   max_instances_ = n_instances;
   num_features_ = n_features;
   num_instances_ = 0;
   num_queries_ = 0;
   last_instance_id_ = 0;
 
-  format_ = HORIZ;
-  // data_ = new quickrank::Feature[max_instances_ * num_features_]();  // 0 initialization
-  // labels_ = new quickrank::Label[max_instances_];           // no initialization
   if (posix_memalign((void**) &data_, 16,
                      max_instances_ * num_features_ * sizeof(Feature)) != 0) {
     std::cerr << "!!! Impossible to allocate memory for dataset storage."
@@ -57,8 +55,6 @@ Dataset::Dataset(unsigned int n_instances, unsigned int n_features) {
 }
 
 Dataset::~Dataset() {
-  // delete[] data_;
-  // delete[] labels_;
   if (data_)
     free(data_);
   if (labels_)
@@ -66,7 +62,7 @@ Dataset::~Dataset() {
 }
 
 void Dataset::addInstance(QueryID q_id, Label i_label,
-                          boost::container::vector<Feature> i_features) {
+                          std::vector<Feature> i_features) {
 
   if (i_features.size() > num_features_ || num_instances_ == max_instances_) {
     std::cerr << "!!! Impossible to add a new instance to the dataset."
@@ -77,7 +73,7 @@ void Dataset::addInstance(QueryID q_id, Label i_label,
   // update label and features
   labels_[num_instances_] = i_label;
   quickrank::Feature* new_instance = data_ + (num_instances_ * num_features_);
-  for (unsigned int i = 0; i < i_features.size(); i++)
+  for (size_t i = 0; i < i_features.size(); i++)
     new_instance[i] = i_features[i];
 
   // update offset of last query result
@@ -90,45 +86,14 @@ void Dataset::addInstance(QueryID q_id, Label i_label,
   offsets_.back() = num_instances_;
 }
 
-std::unique_ptr<QueryResults> Dataset::getQueryResults(unsigned int i) const {
-  unsigned int num_results = offsets_[i + 1] - offsets_[i];
-  quickrank::Feature* start_data = data_
-      + ((format_ == HORIZ) ? (offsets_[i] * num_features_) : (offsets_[i]));
+std::unique_ptr<QueryResults> Dataset::getQueryResults(size_t i) const {
+  size_t num_results = offsets_[i + 1] - offsets_[i];
+  quickrank::Feature* start_data = data_ + offsets_[i] * num_features_;
   quickrank::Label* start_label = labels_ + offsets_[i];
 
   QueryResults* qr = new QueryResults(num_results, start_label, start_data);
 
   return std::unique_ptr<QueryResults>(qr);
-}
-
-// TODO: in-place block-based transpose?
-void Dataset::transpose() {
-  quickrank::Feature* transposed;  // = new quickrank::Feature[max_instances_ * num_features_];
-  if (posix_memalign((void**) &transposed, 16,
-                     max_instances_ * num_features_ * sizeof(Feature)) != 0) {
-    std::cerr
-        << "!!! Impossible to allocate memory for transposed dataset storage."
-        << std::endl;
-    exit(EXIT_FAILURE);
-  }
-
-  for (unsigned int i = 0; i < num_instances_; i++) {
-    for (unsigned int f = 0; f < num_features_; f++) {
-      if (format_ == HORIZ)
-        transposed[f * num_instances_ + i] = data_[i * num_features_ + f];
-      else
-        transposed[i * num_features_ + f] = data_[f * num_instances_ + i];
-    }
-  }
-
-  if (format_ == HORIZ)
-    format_ = VERT;
-  else
-    format_ = HORIZ;
-
-  // delete[] data_;
-  free(data_);
-  data_ = transposed;
 }
 
 std::ostream& Dataset::put(std::ostream& os) const {

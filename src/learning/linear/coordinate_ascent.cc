@@ -32,24 +32,23 @@
 #include <vector>
 #include <numeric>
 #include <algorithm>
-
-#include <boost/property_tree/xml_parser.hpp>
-#include <boost/foreach.hpp>
+#include <string.h>
+#include <sstream>
 
 namespace quickrank {
 namespace learning {
 namespace linear {
 
-void preCompute(Feature* training_dataset, unsigned int num_docs,
-                unsigned int num_fx, Score* PreSum, double* weights,
-                Score* MyTrainingScore, unsigned int i) {
+void preCompute(Feature* training_dataset, size_t num_docs,
+                size_t num_fx, Score* PreSum, double* weights,
+                Score* MyTrainingScore, size_t i) {
 
 #pragma omp parallel for
-  for (unsigned int j = 0; j < num_docs; j++) {
+  for (size_t j = 0; j < num_docs; j++) {
     PreSum[j] = 0;
     MyTrainingScore[j] = 0;
     // compute feature*weight for all the feature different from i
-    for (unsigned int k = 0; k < num_fx; k++) {
+    for (size_t k = 0; k < num_fx; k++) {
       MyTrainingScore[j] += weights[k] * training_dataset[j * num_fx + k];
     }
     PreSum[j] = MyTrainingScore[j]
@@ -70,9 +69,7 @@ CoordinateAscent::CoordinateAscent(unsigned int num_points, double window_size,
       max_failed_vali_(max_failed_vali) {
 }
 
-CoordinateAscent::CoordinateAscent(
-    const boost::property_tree::ptree &info_ptree,
-    const boost::property_tree::ptree &model_ptree) {
+CoordinateAscent::CoordinateAscent(const pugi::xml_document& model) {
 
   num_samples_ = 0;
   window_size_ = 0.0;
@@ -81,31 +78,29 @@ CoordinateAscent::CoordinateAscent(
   max_failed_vali_ = 0;
 
   //read (training) info
-  num_samples_ = info_ptree.get<unsigned int>("num-samples");
-  window_size_ = info_ptree.get<double>("window-size");
-  reduction_factor_ = info_ptree.get<double>("reduction-factor");
-  max_iterations_ = info_ptree.get<unsigned int>("max-iterations");
-  max_failed_vali_ = info_ptree.get<unsigned int>("max-failed-vali");
+  pugi::xml_node model_info = model.child("ranker").child("info");
+  pugi::xml_node model_ensemble = model.child("ranker").child("model");
+
+  num_samples_ = model_info.child("num-samples").text().as_uint();
+  window_size_ = model_info.child("window-size").text().as_double();
+  reduction_factor_ = model_info.child("reduction-factor").text().as_double();
+  max_iterations_ = model_info.child("max-iterations").text().as_uint();
+  max_failed_vali_ = model_info.child("max-failed-vali").text().as_uint();
 
   unsigned int max_feature = 0;
-  BOOST_FOREACH(const boost::property_tree::ptree::value_type &couple, model_ptree) {
-
-    if (couple.first == "couple") {
-      unsigned int feature = couple.second.get<unsigned int>("feature");
-      if (feature > max_feature) {
-        max_feature = feature;
-      }
+  for (const auto& feature: model_ensemble.children("feature")) {
+    unsigned int featureId = feature.attribute("id").as_uint();
+    if (featureId > max_feature) {
+      max_feature = featureId;
     }
   }
 
   std::vector<double>(max_feature, 0.0).swap(best_weights_);
 
-  BOOST_FOREACH(const boost::property_tree::ptree::value_type &couple, model_ptree) {
-    if (couple.first == "couple") {
-      int feature = couple.second.get<int>("feature");
-      double weight = couple.second.get<double>("weight");
-      best_weights_[feature - 1] = weight;
-    }
+  for (const auto& feature: model_ensemble.children("feature")) {
+    unsigned int featureId = feature.attribute("id").as_uint();
+    double weight = feature.attribute("weight").as_double();
+    best_weights_[featureId - 1] = weight;
   }
 }
 
@@ -122,25 +117,15 @@ std::ostream& CoordinateAscent::put(std::ostream& os) const {
   return os;
 }
 
-void CoordinateAscent::preprocess_dataset(
-    std::shared_ptr<data::Dataset> dataset) const {
-  if (dataset->format() != data::Dataset::HORIZ)
-    dataset->transpose();
-}
 
 void CoordinateAscent::learn(
     std::shared_ptr<quickrank::data::Dataset> training_dataset,
     std::shared_ptr<quickrank::data::Dataset> validation_dataset,
     std::shared_ptr<quickrank::metric::ir::Metric> scorer,
-    unsigned int partial_save, const std::string output_basename) {
+    size_t partial_save, const std::string output_basename) {
 
   auto begin = std::chrono::steady_clock::now();
   double window_size = window_size_ / training_dataset->num_features();  //preserve original value of the window
-
-      // Do some initialization
-  preprocess_dataset(training_dataset);
-  if (validation_dataset)
-    preprocess_dataset(validation_dataset);
 
   std::cout << "# Training:" << std::endl;
   std::cout << std::fixed << std::setprecision(4);
@@ -166,13 +151,13 @@ void CoordinateAscent::learn(
     MyValidationScore.resize(n_train_instances);
 
   // counter of sequential iterations without improvement on validation
-  unsigned int count_failed_vali = 0;
+  size_t count_failed_vali = 0;
   // loop for max_iterations_
-  for (unsigned int b = 0; b < max_iterations_; b++) {
+  for (size_t b = 0; b < max_iterations_; b++) {
     MetricScore metric_on_training = 0;
 
     double step = 2 * window_size / num_samples_;  // step to select points in the window
-    for (unsigned int i = 0; i < num_features; i++) {
+    for (size_t i = 0; i < num_features; i++) {
       // compute feature*weight for all the feature different from i
       preCompute(training_dataset->at(0, 0), n_train_instances, num_features,
                  &PreSum[0], &weights[0], &MyTrainingScore[0], i);
@@ -189,9 +174,9 @@ void CoordinateAscent::learn(
       }
 
 #pragma omp parallel for
-      for (unsigned int p = 0; p < points.size(); p++) {
+      for (size_t p = 0; p < points.size(); p++) {
         //loop to add partial scores to the total score of the feature i
-        for (unsigned int j = 0; j < n_train_instances; j++) {
+        for (size_t j = 0; j < n_train_instances; j++) {
           MyTrainingScore[j + (n_train_instances * p)] = points[p]
               * training_dataset->at(j, i)[0] + PreSum[j];
         }
@@ -223,7 +208,7 @@ void CoordinateAscent::learn(
     // check if there is validation_dataset
     if (validation_dataset) {
       //compute scores of validation documents
-      for (unsigned int j = 0; j < validation_dataset->num_instances(); j++)
+      for (size_t j = 0; j < validation_dataset->num_instances(); j++)
         MyValidationScore[j] = std::inner_product(weights.cbegin(),
                                                   weights.cend(),
                                                   validation_dataset->at(j, 0),
@@ -265,44 +250,59 @@ void CoordinateAscent::learn(
 
 }
 
-Score CoordinateAscent::score_document(
-    const Feature* d, const unsigned int next_fx_offset) const {
-  // next_fx_offset is ignored as it is equal to 1 for horizontal dataset
+Score CoordinateAscent::score_document(const Feature* d) const {
   Score score = 0;
-  for (unsigned int k = 0; k < best_weights_.size(); k++) {
+  for (size_t k = 0; k < best_weights_.size(); k++) {
     score += best_weights_[k] * d[k];
   }
   return score;
 }
 
-std::ofstream& CoordinateAscent::save_model_to_file(std::ofstream& os) const {
-  // write ranker description
-  os << "\t<info>" << std::endl;
-  os << "\t\t<type>" << name() << "</type>" << std::endl;
-  os << "\t\t<num-samples>" << num_samples_ << "</num-samples>" << std::endl;
-  os << "\t\t<window-size>" << window_size_ << "</window-size>" << std::endl;
-  os << "\t\t<reduction-factor>" << reduction_factor_ << "</reduction-factor>"
-     << std::endl;
-  os << "\t\t<max-iterations>" << max_iterations_ << "</max-iterations>"
-     << std::endl;
-  os << "\t\t<max-failed-vali>" << max_failed_vali_ << "</max-failed-vali>"
-     << std::endl;
-  os << "\t</info>" << std::endl;
+bool CoordinateAscent::update_weights(
+    std::shared_ptr<std::vector<double>> weights) {
 
-  os << "\t<ensemble>" << std::endl;
-  auto old_precision = os.precision();
-  os.setf(std::ios::floatfield, std::ios::fixed);
-  for (unsigned int i = 0; i < best_weights_.size(); i++) {
-    os << "\t\t<couple>" << std::endl;
-    os << std::setprecision(3);
-    os << "\t\t\t<feature>" << i + 1 << "</feature>" << std::endl;
-    os << std::setprecision(std::numeric_limits<quickrank::Score>::digits10);
-    os << "\t\t\t<weight>" << best_weights_[i] << "</weight>" << std::endl;
-    os << "\t\t</couple>" << std::endl;
+  if(weights->size() != best_weights_.size())
+    return false;
+
+  for (size_t k = 0; k < weights->size(); k++) {
+    best_weights_[k] = (*weights)[k];
   }
-  os << "\t</ensemble>" << std::endl;
-  os << std::setprecision(old_precision);
-  return os;
+
+  return true;
+}
+
+pugi::xml_document* CoordinateAscent::get_xml_model() const {
+
+  pugi::xml_document* doc = new pugi::xml_document();
+  pugi::xml_node root = doc->append_child("ranker");
+
+  pugi::xml_node info = root.append_child("info");
+
+  info.append_child("type").text() = name().c_str();
+  info.append_child("num-samples").text() = num_samples_;
+  info.append_child("window-size").text() = window_size_;
+  info.append_child("reduction-factor").text() = reduction_factor_;
+  info.append_child("max-iterations").text() = max_iterations_;
+  info.append_child("max-failed-vali").text() = max_failed_vali_;
+
+  std::stringstream ss;
+  ss << std::setprecision(std::numeric_limits<double>::digits10);
+
+  pugi::xml_node model = root.append_child("model");
+  for (size_t i = 0; i < best_weights_.size(); i++) {
+
+    ss << best_weights_[i];
+
+    pugi::xml_node feature = model.append_child("feature");
+
+    feature.append_attribute("id") = i + 1;
+    feature.append_attribute("weight") = ss.str().c_str();
+
+    // reset ss
+    ss.str(std::string());
+  }
+
+  return doc;
 }
 
 }  // namespace linear

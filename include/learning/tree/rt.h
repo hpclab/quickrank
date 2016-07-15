@@ -19,21 +19,14 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_LEARNING_TREE_RT_H_
-#define QUICKRANK_LEARNING_TREE_RT_H_
+#pragma once
 
 #include <cfloat>
 #include <cmath>
 #include <cstring>
 
-#ifdef _OPENMP
-#include <omp.h>
-#else
-#include "utils/omp-stubs.h"
-#endif
-
 #include "utils/maxheap.h"
-#include "data/dataset.h"
+#include "data/vertical_dataset.h"
 #include "learning/tree/rtnode.h"
 #include "learning/tree/rtnode_histogram.h"
 
@@ -50,16 +43,16 @@ class DevianceMaxHeap : public rt_maxheap {
 
 class RegressionTree {
  protected:
-  const unsigned int nrequiredleaves;  //0 for unlimited number of nodes (the size of the tree will then be controlled only by minls)
-  const unsigned int minls;  //minls>0
-  quickrank::data::Dataset* training_dataset = NULL;
+  const size_t nrequiredleaves;  //0 for unlimited number of nodes (the size of the tree will then be controlled only by minls)
+  const size_t minls;  //minls>0
+  quickrank::data::VerticalDataset* training_dataset = NULL;
   double *training_labels = NULL;
   RTNode **leaves = NULL;
-  unsigned int nleaves = 0;
+  size_t nleaves = 0;
   RTNode *root = NULL;
  public:
-  RegressionTree(unsigned int nrequiredleaves, quickrank::data::Dataset *dps,
-                 double *labels, unsigned int minls)
+  RegressionTree(size_t nrequiredleaves, quickrank::data::VerticalDataset *dps,
+                 double *labels, size_t minls)
       : nrequiredleaves(nrequiredleaves),
         minls(minls),
         training_dataset(dps),
@@ -85,4 +78,3 @@ class RegressionTree {
 
 };
 
-#endif

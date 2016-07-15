@@ -19,31 +19,33 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_LEARNING_LTR_ALGORITHM_H_
-#define QUICKRANK_LEARNING_LTR_ALGORITHM_H_
+#pragma once
 
-#include <boost/noncopyable.hpp>
-#include <boost/property_tree/ptree.hpp>
 #include <memory>
 
 #include "data/dataset.h"
 #include "metric/ir/metric.h"
+#include "pugixml/src/pugixml.hpp"
 
 namespace quickrank {
 namespace learning {
 
-class LTR_Algorithm : private boost::noncopyable {
+class LTR_Algorithm {
 
  public:
   LTR_Algorithm() {
   }
 
   /// Generates a LTR_Algorithm instance from a previously saved XML model.
-  LTR_Algorithm(const boost::property_tree::ptree &info_ptree,
-                const boost::property_tree::ptree &model_ptree);
+  LTR_Algorithm(const pugi::xml_document& model);
 
   virtual ~LTR_Algorithm() {
   }
+
+  /// Avoid inefficient copy constructor
+  LTR_Algorithm( const LTR_Algorithm& other ) = delete;
+  /// Avoid inefficient copy assignment
+  LTR_Algorithm& operator=( const LTR_Algorithm& ) = delete;
 
   /// Returns the name of the ranker.
   virtual std::string name() const = 0;
@@ -58,7 +60,7 @@ class LTR_Algorithm : private boost::noncopyable {
   virtual void learn(std::shared_ptr<data::Dataset> training_dataset,
                      std::shared_ptr<data::Dataset> validation_dataset,
                      std::shared_ptr<metric::ir::Metric> metric,
-                     unsigned int partial_save,
+                     size_t partial_save,
                      const std::string model_filename) = 0;
 
   /// Given and input \a dateset, the current ranker generates
@@ -71,23 +73,19 @@ class LTR_Algorithm : private boost::noncopyable {
   virtual void score_dataset(std::shared_ptr<data::Dataset> dataset,
                              Score* scores) const;
 
-  /// Computes \a scores for a given set of documents.
-  ///
-  /// \param results The results list to be evaluated
-  /// \param scores The vector where scores are stored.
-  /// \param next_fx_offset The offset to the next feature in the data representation.
-  /// \param next_d_offset The offset to the next document in the data representation.
-  /// \note  Usually this does not need to be overridden.
-  virtual void score_query_results(std::shared_ptr<data::QueryResults> results,
-                                   Score* scores, unsigned int next_fx_offset,
-                                   unsigned int next_d_offset) const;
-
   /// Returns the score of a given document.
+  /// \param d is a pointer to the document to be evaluated
+  /// \note   Each algorithm has a different implementation.
+  virtual Score score_document(const Feature* d) const = 0;
+
+  /// Returns the partial score of a given document, tree by tree.
   /// \param d is a pointer to the document to be evaluated
   /// \param next_fx_offset The offset to the next feature in the data representation.
   /// \note   Each algorithm has a different implementation.
-  virtual Score score_document(const Feature* d,
-                               const unsigned int next_fx_offset) const = 0;
+  virtual std::shared_ptr<std::vector<Score>> partial_scores_document(
+      const Feature *d) const {
+    return nullptr;
+  }
 
   /// Save the current model to the output_file.
   ///
@@ -101,8 +99,8 @@ class LTR_Algorithm : private boost::noncopyable {
   static std::shared_ptr<LTR_Algorithm> load_model_from_file(
       std::string model_filename);
 
-  /// Save the current model in the given output file stream.
-  virtual std::ofstream& save_model_to_file(std::ofstream& of) const = 0;
+  /// Return the xml model representing the current object
+  virtual pugi::xml_document* get_xml_model() const = 0;
 
   /// Print additional statistics.
   ///
@@ -110,15 +108,19 @@ class LTR_Algorithm : private boost::noncopyable {
   virtual void print_additional_stats(void) const {
   }
 
- protected:
-
-  /// Prepare the dataset before training or scoring takes place.
+  /// Update the weights for the ensemble models (only).
   ///
-  /// Different algorithms might modify the data representation
-  /// to improve efficacy or efficiency,
-  /// This is also used to make sure dataset is in the right vertical vs. horizontal format.
-  virtual void preprocess_dataset(
-      std::shared_ptr<data::Dataset> dataset) const = 0;
+  /// Default implementation will do nothing (default for non ensemble models).
+  virtual bool update_weights(std::shared_ptr<std::vector<double>> weights) {
+    return false;
+  }
+
+  /// Return the weights for the ensemble models (only).
+  ///
+  /// Default implementation will do nothing (default for non ensemble models).
+  virtual std::shared_ptr<std::vector<double>> get_weights() const {
+    return nullptr;
+  }
 
  private:
 
@@ -134,5 +136,3 @@ class LTR_Algorithm : private boost::noncopyable {
 
 }  // namespace learning
 }  // namespace quickrank
-
-#endif

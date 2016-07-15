@@ -22,43 +22,44 @@
 #include "learning/tree/rtnode_histogram.h"
 
 RTNodeHistogram::RTNodeHistogram(float **thresholds,
-                                 unsigned int const *thresholds_size,
-                                 unsigned int nfeatures)
+                                 size_t const *thresholds_size,
+                                 size_t nfeatures)
     : thresholds(thresholds),
       thresholds_size(thresholds_size),
       nfeatures(nfeatures),
       squares_sum_(0.0) {
   sumlbl = new double*[nfeatures];
-  count = new unsigned int*[nfeatures];
-  for (unsigned int i = 0; i < nfeatures; ++i) {
-    const unsigned int threshold_size = thresholds_size[i];
+  count = new size_t*[nfeatures];
+  for (size_t i = 0; i < nfeatures; ++i) {
+    const size_t threshold_size = thresholds_size[i];
     sumlbl[i] = new double[threshold_size]();
-    count[i] = new unsigned int[threshold_size]();
+    count[i] = new size_t[threshold_size]();
   }
 }
+
 RTNodeHistogram::RTNodeHistogram(RTNodeHistogram const* parent,
-                                 unsigned int const* sampleids,
-                                 const unsigned int nsampleids,
+                                 size_t const* sampleids,
+                                 const size_t nsampleids,
                                  double const* labels)
     : RTNodeHistogram(parent->thresholds, parent->thresholds_size,
                       parent->nfeatures) {
   stmap = parent->stmap;
 #pragma omp parallel for
-  for (unsigned int i = 0; i < nfeatures; ++i) {
-    for (unsigned int j = 0; j < nsampleids; ++j) {
-      const unsigned int k = sampleids[j];
-      const unsigned int t = stmap[i][k];
+  for (size_t i = 0; i < nfeatures; ++i) {
+    for (size_t j = 0; j < nsampleids; ++j) {
+      const size_t k = sampleids[j];
+      const size_t t = stmap[i][k];
       sumlbl[i][t] += labels[k];
       count[i][t]++;
     }
-    for (unsigned int t = 1; t < thresholds_size[i]; ++t) {
+    for (size_t t = 1; t < thresholds_size[i]; ++t) {
       sumlbl[i][t] += sumlbl[i][t - 1];
       count[i][t] += count[i][t - 1];
     }
   }
   squares_sum_ = 0.0;
-  for (unsigned int j = 0; j < nsampleids; ++j) {
-    const unsigned int k = sampleids[j];
+  for (size_t j = 0; j < nsampleids; ++j) {
+    const size_t k = sampleids[j];
     squares_sum_ += labels[k] * labels[k];
   }
 }
@@ -69,9 +70,9 @@ RTNodeHistogram::RTNodeHistogram(RTNodeHistogram const* parent,
                       parent->nfeatures) {
   stmap = parent->stmap;
 #pragma omp parallel for
-  for (unsigned int i = 0; i < nfeatures; ++i) {
-    const unsigned int nthresholds = thresholds_size[i];
-    for (unsigned int t = 0; t < nthresholds; ++t) {
+  for (size_t i = 0; i < nfeatures; ++i) {
+    const size_t nthresholds = thresholds_size[i];
+    for (size_t t = 0; t < nthresholds; ++t) {
       sumlbl[i][t] = parent->sumlbl[i][t] - left->sumlbl[i][t];
       count[i][t] = parent->count[i][t] - left->count[i][t];
     }
@@ -80,31 +81,31 @@ RTNodeHistogram::RTNodeHistogram(RTNodeHistogram const* parent,
 }
 
 RTNodeHistogram::~RTNodeHistogram() {
-  for (unsigned int i = 0; i < nfeatures; ++i)
+  for (size_t i = 0; i < nfeatures; ++i)
     delete[] sumlbl[i], delete[] count[i];
   delete[] sumlbl, delete[] count;
 }
 
-void RTNodeHistogram::update(double *labels, const unsigned int nlabels) {
+void RTNodeHistogram::update(double *labels, const size_t nlabels) {
 #pragma omp parallel for
-  for (unsigned int i = 0; i < nfeatures; ++i)
-    for (unsigned int t = 0; t < thresholds_size[i]; ++t) {
+  for (size_t i = 0; i < nfeatures; ++i)
+    for (size_t t = 0; t < thresholds_size[i]; ++t) {
       sumlbl[i][t] = 0.0;
     }
 #pragma omp parallel for
-  for (unsigned int i = 0; i < nfeatures; ++i)
-    for (unsigned int j = 0; j < nlabels; ++j) {
-      const unsigned int t = stmap[i][j];
+  for (size_t i = 0; i < nfeatures; ++i)
+    for (size_t j = 0; j < nlabels; ++j) {
+      const size_t t = stmap[i][j];
       sumlbl[i][t] += labels[j];
       //count doesn't change, so no need to re-compute
     }
 #pragma omp parallel for
-  for (unsigned int i = 0; i < nfeatures; ++i)
-    for (unsigned int t = 1; t < thresholds_size[i]; ++t) {
+  for (size_t i = 0; i < nfeatures; ++i)
+    for (size_t t = 1; t < thresholds_size[i]; ++t) {
       sumlbl[i][t] += sumlbl[i][t - 1];
     }
   squares_sum_ = 0.0;
-  for (unsigned int k = 0; k < nlabels; ++k) {
+  for (size_t k = 0; k < nlabels; ++k) {
     squares_sum_ += labels[k] * labels[k];
   }
 }
@@ -112,37 +113,39 @@ void RTNodeHistogram::update(double *labels, const unsigned int nlabels) {
 void RTNodeHistogram::transform_intorightchild(RTNodeHistogram const* left) {
   squares_sum_ = squares_sum_ - left->squares_sum_;
 #pragma omp parallel for
-  for (unsigned int i = 0; i < nfeatures; ++i) {
-    const unsigned int nthresholds = thresholds_size[i];
-    for (unsigned int t = 0; t < nthresholds; ++t) {
+  for (size_t i = 0; i < nfeatures; ++i) {
+    const size_t nthresholds = thresholds_size[i];
+    for (size_t t = 0; t < nthresholds; ++t) {
       sumlbl[i][t] -= left->sumlbl[i][t];
       count[i][t] -= left->count[i][t];
     }
   }
 }
-void RTNodeHistogram::quick_dump(unsigned int f, unsigned int num_t) {
-  printf("### Hist fx %d :", f);
-  for (unsigned int t = 0; t < num_t && t < thresholds_size[f]; t++)
+
+void RTNodeHistogram::quick_dump(size_t f, size_t num_t) {
+  printf("### Hist fx %zu :", f);
+  for (size_t t = 0; t < num_t && t < thresholds_size[f]; t++)
     printf(" %f", sumlbl[f][t]);
   printf("\n");
 }
 
-RTRootHistogram::RTRootHistogram(quickrank::data::Dataset *dps,
-                                 unsigned int **sortedidx,
-                                 unsigned int sortedidxsize, float **thresholds,
-                                 unsigned int const *thresholds_size)
+
+RTRootHistogram::RTRootHistogram(quickrank::data::VerticalDataset *dps,
+                                 size_t **sortedidx,
+                                 size_t sortedidxsize, float **thresholds,
+                                 size_t const *thresholds_size)
     : RTNodeHistogram(thresholds, thresholds_size, dps->num_features()) {
-  stmap = new unsigned int*[nfeatures];
+  stmap = new size_t*[nfeatures];
 #pragma omp parallel for
-  for (unsigned int i = 0; i < nfeatures; ++i) {
-    stmap[i] = new unsigned int[sortedidxsize];
-    unsigned int threshold_size = thresholds_size[i];
+  for (size_t i = 0; i < nfeatures; ++i) {
+    stmap[i] = new size_t[sortedidxsize];
+    size_t threshold_size = thresholds_size[i];
     float *features = dps->at(0, i);
     float *threshold = thresholds[i];
-    for (unsigned int last = -1, j, t = 0; t < threshold_size; ++t) {
+    for (size_t last = -1, j, t = 0; t < threshold_size; ++t) {
       //find the first sample exceeding the current threshold
       for (j = last + 1; j < sortedidxsize; ++j) {
-        unsigned int k = sortedidx[i][j];
+        size_t k = sortedidx[i][j];
         if (features[k] > threshold[t])
           break;
         stmap[i][k] = t;
@@ -154,7 +157,7 @@ RTRootHistogram::RTRootHistogram(quickrank::data::Dataset *dps,
 }
 
 RTRootHistogram::~RTRootHistogram() {
-  for (unsigned int i = 0; i < nfeatures; ++i)
+  for (size_t i = 0; i < nfeatures; ++i)
     delete[] stmap[i];
   delete[] stmap;
 }

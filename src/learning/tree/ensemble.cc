@@ -25,21 +25,21 @@
 #include "learning/tree/ensemble.h"
 
 Ensemble::~Ensemble() {
-  for (unsigned int i = 0; i < size; ++i)
+  for (size_t i = 0; i < size; ++i)
     delete arr[i].root;
   free(arr);
 }
 
-void Ensemble::set_capacity(const unsigned int n) {
+void Ensemble::set_capacity(const size_t n) {
   if (arr) {
-    for (unsigned int i = 0; i < size; ++i)
+    for (size_t i = 0; i < size; ++i)
       delete arr[i].root;
     free(arr);
   }
   arr = (wt*) malloc(sizeof(wt) * n), size = 0;
 }
 
-void Ensemble::push(RTNode *root, const float weight, const float maxlabel) {
+void Ensemble::push(RTNode *root, const double weight, const float maxlabel) {
   arr[size++] = wt(root, weight, maxlabel);
 }
 
@@ -49,45 +49,61 @@ void Ensemble::pop() {
 
 // assumes vertical dataset
 quickrank::Score Ensemble::score_instance(const quickrank::Feature* d,
-                                          const unsigned int offset) const {
+                                          const size_t offset) const {
   double sum = 0.0f;
 // #pragma omp parallel for reduction(+:sum)
-  for (unsigned int i = 0; i < size; ++i)
+  for (size_t i = 0; i < size; ++i)
     sum += arr[i].root->score_instance(d, offset) * arr[i].weight;
   return sum;
 }
 
-// TODO TO BE REMOVED
-void Ensemble::write_outputtofile(FILE *f) {
-  fprintf(f, "\n<ensemble>\n");
-  for (unsigned int i = 0; i < size; ++i) {
-    fprintf(f, "\t<tree id=\"%u\" weight=\"%.8f\">\n", i + 1, arr[i].weight);
-    if (arr[i].root) {
-      fprintf(f, "\t\t<split>\n");
-      arr[i].root->write_outputtofile(f, 2);
-      fprintf(f, "\t\t</split>\n");
-    }
-    fprintf(f, "\t</tree>\n");
-  }
-  fprintf(f, "</ensemble>\n");
+std::shared_ptr<std::vector<quickrank::Score>>
+  Ensemble::partial_scores_instance(const quickrank::Feature *d,
+                                    const size_t offset) const {
+  std::vector<quickrank::Score> scores(size);
+  for (unsigned int i = 0; i < size; ++i)
+    scores[i] = arr[i].root->score_instance(d, offset) * arr[i].weight;
+  return std::make_shared<std::vector<quickrank::Score>>(std::move(scores));
 }
 
-std::ofstream& Ensemble::save_model_to_file(std::ofstream& os) const {
-  auto old_precision = os.precision();
-  os.setf(std::ios::floatfield, std::ios::fixed);
-  os << "\t<ensemble>" << std::endl;
-  for (unsigned int i = 0; i < size; ++i) {
-    os << std::setprecision(3);
-    os << "\t\t<tree id=\"" << i + 1 << "\" weight=\"" << arr[i].weight << "\">"
-       << std::endl;
+pugi::xml_node Ensemble::append_xml_model(pugi::xml_node parent,
+                                          bool skip_useless_trees) const {
+
+  pugi::xml_node ensemble = parent.append_child("ensemble");
+
+  for (size_t i = 0; i < size; ++i) {
+    // Use a small epsilon to check for null weights...
+    if (skip_useless_trees && arr[i].weight < 0.0000001)
+      continue;
+    pugi::xml_node tree = ensemble.append_child("tree");
+    tree.append_attribute("id") = i + 1;
+    tree.append_attribute("weight") = arr[i].weight;
     if (arr[i].root) {
-      os << "\t\t\t<split>" << std::endl;
-      arr[i].root->save_model_to_file(os, 3);
-      os << "\t\t\t</split>" << std::endl;
+      arr[i].root->append_xml_model(tree);
     }
-    os << "\t\t</tree>" << std::endl;
   }
-  os << "\t</ensemble>" << std::endl;
-  os << std::setprecision(old_precision);
-  return os;
+
+  return ensemble;
+}
+
+bool Ensemble::update_ensemble_weights(
+    std::shared_ptr<std::vector<double>> weights) {
+
+  if (weights->size() != get_size()) {
+    std::cerr << "# ## ERROR!! Ensemble size does not match size of the "
+                     "weight vector in updating the weights" << std::endl;
+    return false;
+  }
+
+  for (size_t i = 0; i < size; ++i)
+    arr[i].weight = (*weights)[i];
+
+  return true;
+}
+
+std::shared_ptr<std::vector<double>> Ensemble::get_weights() const {
+  std::vector<double>* weights = new std::vector<double>(size);
+  for (unsigned int i = 0; i < size; ++i)
+    (*weights)[i] = arr[i].weight;
+  return std::shared_ptr<std::vector<double>>(weights);
 }

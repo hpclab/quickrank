@@ -28,8 +28,8 @@
  * \brief Set of functions implementing descending radix sort for floating point values (ideal for long array)
  */
 
-std::unique_ptr<unsigned int[]> idx_radixsort(float const* fvalues,
-                                              const unsigned int nvalues);
+std::unique_ptr<size_t[]> idx_radixsort(float const* fvalues,
+                                              const size_t nvalues);
 
 //
 // Functions belows are not used

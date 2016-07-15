@@ -19,11 +19,9 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_IO_SVML_H_
-#define QUICKRANK_IO_SVML_H_
+#pragma once
 
 #include <string>
-#include <boost/noncopyable.hpp>
 
 #include "data/dataset.h"
 
@@ -45,20 +43,28 @@ namespace io {
 
  \todo TODO: handle feature filtering
  */
-class Svml : private boost::noncopyable {
+class Svml {
  public:
   /// Creates a new Svml IO reader/writer.
   ///
   /// \param k The cut-off threshold.
   Svml() {
   }
+
   virtual ~Svml() {
   }
 
   /// Reads the input dataset and returns in horizontal format.
-  /// \param filename the input filename.
+  /// \param file the input filename.
   /// \return The svml dataset in horizontal format.
   virtual std::unique_ptr<data::Dataset> read_horizontal(
+      const std::string &file);
+
+  /// Write the dataset to an output file.
+  /// \param file the output filename.
+  /// \return The svml dataset in horizontal format.
+  virtual void write(
+      std::shared_ptr<data::Dataset>,
       const std::string &file);
 
  private:
@@ -79,5 +85,3 @@ class Svml : private boost::noncopyable {
 
 }  // namespace io
 }  // namespace quickrank
-
-#endif

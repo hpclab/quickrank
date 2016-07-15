@@ -21,9 +21,7 @@
  */
 #include <fstream>
 
-#include <boost/property_tree/xml_parser.hpp>
-#include <boost/foreach.hpp>
-
+#include "pugixml/src/pugixml.hpp"
 #include "learning/ltr_algorithm.h"
 
 #include "learning/forests/mart.h"
@@ -32,36 +30,20 @@
 #include "learning/forests/obliviousmart.h"
 // Added by Chiara Pierucci Andrea Battistini
 #include "learning/linear/coordinate_ascent.h"
-
-#ifdef _OPENMP
-#include <omp.h>
-#else
-#include "utils/omp-stubs.h"
-#endif
+// Added by Tommaso Papini and Gabriele Bani
+#include "learning/forests/rankboost.h"
+// Added by Salvatore Trani
+#include "learning/linear/line_search.h"
+#include "optimization/post_learning/pruning/ensemble_pruning.h"
 
 namespace quickrank {
 namespace learning {
 
-void LTR_Algorithm::score_dataset(std::shared_ptr<data::Dataset> dataset,
-                                  Score* scores) const {
-  preprocess_dataset(dataset);
-  for (unsigned int q = 0; q < dataset->num_queries(); q++) {
-    std::shared_ptr<data::QueryResults> r = dataset->getQueryResults(q);
-    if (dataset->format() == quickrank::data::Dataset::HORIZ)
-      score_query_results(r, scores, 1, dataset->num_features());
-    else
-      score_query_results(r, scores, dataset->num_instances(), 1);
-    scores += r->num_results();
-  }
-}
-
-void LTR_Algorithm::score_query_results(
-    std::shared_ptr<data::QueryResults> results, Score* scores,
-    unsigned int next_fx_offset, unsigned int next_d_offset) const {
-  const quickrank::Feature* d = results->features();
-  for (unsigned int i = 0; i < results->num_results(); i++) {
-    scores[i] = score_document(d, next_fx_offset);
-    d += next_d_offset;
+void LTR_Algorithm::score_dataset(std::shared_ptr<data::Dataset> dataset, Score* scores) const {
+  const quickrank::Feature* d = dataset->at(0,0);
+  for (size_t i = 0; i < dataset->num_instances(); i++) {
+    scores[i] = score_document(d);
+    d += dataset->num_features();
   }
 }
 
@@ -70,17 +52,11 @@ void LTR_Algorithm::save(std::string output_basename, int iteration) const {
     std::string filename(output_basename);
     if (iteration != -1)
       filename += ".T" + std::to_string(iteration) + ".xml";
-    std::ofstream output_stream;
-    output_stream.open(filename);
-    // Wrap actual model
-    output_stream << "<ranker>" << std::endl;
 
-    // Save the actual model
-    save_model_to_file(output_stream);
-
-    output_stream << "</ranker>" << std::endl;
-
-    output_stream.close();
+    pugi::xml_document* doc = get_xml_model();
+    doc->save_file(filename.c_str(), "\t",
+                   pugi::format_default | pugi::format_no_declaration);
+    delete(doc);
   }
 }
 
@@ -91,44 +67,45 @@ std::shared_ptr<LTR_Algorithm> LTR_Algorithm::load_model_from_file(
     exit(EXIT_FAILURE);
   }
 
-  boost::property_tree::ptree xml_tree;
-
-  std::ifstream is;
-  is.open(model_filename, std::ifstream::in);
-
-  boost::property_tree::read_xml(is, xml_tree);
-
-  is.close();
-
-  boost::property_tree::ptree info_ptree;
-  boost::property_tree::ptree ensemble_ptree;
-
-  BOOST_FOREACH(const boost::property_tree::ptree::value_type& node, xml_tree.get_child("ranker")) {
-    if (node.first == "info")
-      info_ptree = node.second;
-    else if (node.first == "ensemble")
-      ensemble_ptree = node.second;
+  pugi::xml_document model;
+  pugi::xml_parse_result result = model.load_file(model_filename.c_str());
+  if (!result) {
+    std::cerr << "!!! Model " + model_filename +" is not parsed correctly."
+      << std::endl;
+    exit(EXIT_FAILURE);
   }
 
-  std::string ranker_type = info_ptree.get<std::string>("type");
+  std::string ranker_type =
+      model.child("ranker").child("info").child("type").child_value();
+
   if (ranker_type == forests::Mart::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
-        new forests::Mart(info_ptree, ensemble_ptree));
-  if (ranker_type == forests::LambdaMart::NAME_)
+        new forests::Mart(model));
+  else if (ranker_type == forests::LambdaMart::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
-        new forests::LambdaMart(info_ptree, ensemble_ptree));
-  if (ranker_type == forests::ObliviousMart::NAME_)
+        new forests::LambdaMart(model));
+  else if (ranker_type == forests::ObliviousMart::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
-        new forests::ObliviousMart(info_ptree, ensemble_ptree));
-  if (ranker_type == forests::ObliviousLambdaMart::NAME_)
+        new forests::ObliviousMart(model));
+  else if (ranker_type == forests::ObliviousLambdaMart::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
-        new forests::ObliviousLambdaMart(info_ptree, ensemble_ptree));
-  //Coordinate Ascent added by Chiara Pierucci Andrea Battistini
-  if (ranker_type == linear::CoordinateAscent::NAME_)
+        new forests::ObliviousLambdaMart(model));
+    // Coordinate Ascent added by Chiara Pierucci and Andrea Battistini
+  else if (ranker_type == linear::CoordinateAscent::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
-        new linear::CoordinateAscent(info_ptree, ensemble_ptree));
+        new linear::CoordinateAscent(model));
+  // Rankboost added by Tommaso Papini and Gabriele Bani
+  else if (ranker_type == forests::Rankboost::NAME_)
+    return std::shared_ptr<LTR_Algorithm>(
+        new forests::Rankboost(model));
+    // Line Search added by Salvatore Trani
+  else if (ranker_type == linear::LineSearch::NAME_)
+    return std::shared_ptr<LTR_Algorithm>(
+        new linear::LineSearch(model));
 
-  return NULL;
+  return nullptr;
+//  else
+//    throw std::invalid_argument("Model type not supported for loading");
 }
 
 }  // namespace learning

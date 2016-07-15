@@ -2,9 +2,11 @@ bin
 tests
 _deps
 _build
+build
 .cproject
 .project
 .settings
+.idea/
 documentation/html
 *~
 *.d
@@ -22,3 +24,4 @@ quickranktestdata
 .Trashes
 ehthumbs.db
 Thumbs.db
+.idea

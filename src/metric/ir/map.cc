@@ -32,13 +32,13 @@ const std::string Map::NAME_ = "MAP";
 
 MetricScore Map::evaluate_result_list(const quickrank::data::QueryResults* rl,
                                       const Score* scores) const {
-  unsigned int size = std::min(cutoff(), rl->num_results());
+  size_t size = std::min(cutoff(), rl->num_results());
   if (size == 0)
     return 0.0;
 
   MetricScore ap = 0.0f;
   MetricScore count = 0.0f;
-  for (unsigned int i = 0; i < size; ++i)
+  for (size_t i = 0; i < size; ++i)
     if (rl->labels()[i] > 0.0f)
       ap += (++count) / (i + 1.0f);
   return count > 0 ? ap / count : 0.0;
@@ -49,7 +49,7 @@ std::unique_ptr<Jacobian> Map::jacobian(
   int* labels = new int[ranked->num_results()];  // int labels[ql.size];
   int* relcount = new int[ranked->num_results()];  // int relcount[ql.size];
   MetricScore count = 0;
-  for (unsigned int i = 0; i < ranked->num_results(); ++i) {
+  for (size_t i = 0; i < ranked->num_results(); ++i) {
     if (ranked->sorted_labels()[i] > 0.0f)  //relevant if true
       labels[i] = 1, ++count;
     else
@@ -61,13 +61,13 @@ std::unique_ptr<Jacobian> Map::jacobian(
       new Jacobian(ranked->num_results()));
   if (count != 0) {
 #pragma omp parallel for
-    for (unsigned int i = 0; i < ranked->num_results() - 1; ++i)
-      for (unsigned int j = i + 1; j < ranked->num_results(); ++j)
+    for (size_t i = 0; i < ranked->num_results() - 1; ++i)
+      for (size_t j = i + 1; j < ranked->num_results(); ++j)
         if (labels[i] != labels[j]) {
           const int diff = labels[j] - labels[i];
           MetricScore change = ((relcount[i] + diff) * labels[j]
               - relcount[i] * labels[i]) / (i + 1.0f);
-          for (unsigned int k = i + 1; k < j; ++k)
+          for (size_t k = i + 1; k < j; ++k)
             if (labels[k] > 0)
               change += (relcount[k] + diff) / (k + 1.0f);
           change += (-relcount[j] * diff) / (j + 1.0f);

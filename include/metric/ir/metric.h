@@ -25,11 +25,13 @@
 #include <iostream>
 #include <climits>
 #include <memory>
-#include <boost/noncopyable.hpp>
+
+#include <stdint.h>
 
 #include "data/queryresults.h"
 #include "data/rankedresults.h"
 #include "data/dataset.h"
+#include "data/vertical_dataset.h"
 #include "types.h"
 
 namespace quickrank {
@@ -39,15 +41,15 @@ namespace ir {
 /**
  * This class implements the basic functionalities of an IR evaluation metric.
  */
-class Metric : private boost::noncopyable {
+class Metric {
  public:
   /// This should be used when no cut-off on the results list is required.
-  static const unsigned int NO_CUTOFF = UINT_MAX;
+  static const size_t NO_CUTOFF = SIZE_MAX;
 
   /// Creates a new metric with the specified cut-off threshold.
   ///
   /// \param k The cut-off threshold.
-  explicit Metric(unsigned int k = NO_CUTOFF) {
+  explicit Metric(size_t k = NO_CUTOFF) {
     set_cutoff(k);
   }
   virtual ~Metric() {
@@ -57,11 +59,11 @@ class Metric : private boost::noncopyable {
   virtual std::string name() const = 0;
 
   /// Returns the current cut-off of the Metric.
-  unsigned int cutoff() const {
+  size_t cutoff() const {
     return cutoff_;
   }
   /// Updates the cut-off of the Metric.
-  void set_cutoff(unsigned int k) {
+  void set_cutoff(size_t k) {
     cutoff_ = k == 0 ? NO_CUTOFF : k;
   }
 
@@ -72,8 +74,23 @@ class Metric : private boost::noncopyable {
   /// \return The quality score of the result list.
   virtual MetricScore evaluate_result_list(
       const quickrank::data::QueryResults* rl, const Score* scores) const = 0;
+
   virtual MetricScore evaluate_dataset(
       const std::shared_ptr<data::Dataset> dataset, const Score* scores) const {
+    if (dataset->num_queries() == 0)
+      return 0.0;
+    MetricScore avg_score = 0.0;
+    for (size_t q = 0; q < dataset->num_queries(); q++) {
+      std::shared_ptr<data::QueryResults> r = dataset->getQueryResults(q);
+      avg_score += evaluate_result_list(r.get(), scores);
+      scores += r->num_results();
+    }
+    avg_score /= (MetricScore) dataset->num_queries();
+    return avg_score;
+  }
+
+  virtual MetricScore evaluate_dataset(
+      const std::shared_ptr<data::VerticalDataset> dataset, const Score* scores) const {
     if (dataset->num_queries() == 0)
       return 0.0;
     MetricScore avg_score = 0.0;
@@ -102,10 +119,10 @@ class Metric : private boost::noncopyable {
 
     MetricScore orig_score = evaluate_result_list(results.get(),
                                                   ranked->sorted_scores());
-    const unsigned int size = std::min(cutoff(), results->num_results());
-    for (unsigned int i = 0; i < size; ++i) {
+    const size_t size = std::min(cutoff(), results->num_results());
+    for (size_t i = 0; i < size; ++i) {
       double *p_jacobian = jacobian->vectat(i, i + 1);
-      for (unsigned int j = i + 1; j < results->num_results(); ++j) {
+      for (size_t j = i + 1; j < results->num_results(); ++j) {
         std::swap(ranked->sorted_scores()[i], ranked->sorted_scores()[j]);
         MetricScore new_score = evaluate_result_list(results.get(),
                                                      ranked->sorted_scores());
@@ -120,7 +137,7 @@ class Metric : private boost::noncopyable {
  private:
 
   /// The metric cutoff.
-  unsigned int cutoff_;
+  size_t cutoff_;
 
   /// The output stream operator.
   friend std::ostream& operator<<(std::ostream& os, const Metric& m) {

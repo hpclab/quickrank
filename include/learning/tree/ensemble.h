@@ -19,47 +19,54 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_LEARNING_TREE_ENSEMBLE_H_
-#define QUICKRANK_LEARNING_TREE_ENSEMBLE_H_
+#pragma once
 
 #include "learning/tree/rt.h"
 #include "types.h"
+#include "pugixml/src/pugixml.hpp"
 
 class Ensemble {
 
  public:
   virtual ~Ensemble();
-  void set_capacity(const unsigned int n);
-  void push(RTNode *root, const float weight, const float maxlabel);
+  void set_capacity(const size_t n);
+  void push(RTNode *root, const double weight, const float maxlabel);
   void pop();
 
-  unsigned int get_size() const {
+  size_t get_size() const {
     return size;
   }
+
   bool is_notempty() const {
     return size > 0;
   }
 
-  // assumes vertical dataset
   virtual quickrank::Score score_instance(const quickrank::Feature* d,
-                                          const unsigned int offset = 1) const;
+                                          const size_t offset = 1) const;
 
-  void write_outputtofile(FILE *f);
-  std::ofstream& save_model_to_file(std::ofstream& os) const;
+  virtual std::shared_ptr<std::vector<quickrank::Score>>
+      partial_scores_instance(const quickrank::Feature *d,
+                              const size_t offset = 1) const;
+
+  pugi::xml_node append_xml_model(pugi::xml_node parent,
+                                  bool skip_useless_trees = true) const;
+
+  virtual bool update_ensemble_weights(
+      std::shared_ptr<std::vector<double>> weights);
+
+  virtual std::shared_ptr<std::vector<double>> get_weights() const;
 
  private:
   struct wt {
-    wt(RTNode *root, float weight, float maxlabel)
+    wt(RTNode *root, double weight, float maxlabel)
         : root(root),
           weight(weight),
           maxlabel(maxlabel) {
     }
     RTNode *root = NULL;
-    float weight = 0.0f;
+    double weight = 0.0;
     float maxlabel = 0.0f;
   };
-  unsigned int size = 0;
+  size_t size = 0;
   wt *arr = NULL;
 };
-
-#endif

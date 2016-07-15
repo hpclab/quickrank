@@ -19,8 +19,9 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_UTILS_TRANSPOSE_H_
-#define QUICKRANK_UTILS_TRANSPOSE_H_
+#pragma once
+
+#include <stdlib.h>
 
 /*! \file transpose.h
  * \brief transpose matrix
@@ -32,8 +33,6 @@
  *  @param n number of rows of input matrix
  *  @param m number of columns of input matrix
  */
-void transpose(float **output, float **input, const unsigned int n,
-               const unsigned int m);
-
-#endif
+void transpose(float **output, float **input, const size_t n,
+               const size_t m);
 

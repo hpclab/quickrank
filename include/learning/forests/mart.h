@@ -19,8 +19,7 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_LEARNING_FORESTS_MART_H_
-#define QUICKRANK_LEARNING_FORESTS_MART_H_
+#pragma once
 
 #include "types.h"
 #include "learning/ltr_algorithm.h"
@@ -42,9 +41,9 @@ class Mart : public LTR_Algorithm {
   /// \param minleafsupport Minimum number of instances in each leaf.
   /// \param valid_iterations Early stopping if no improvement after \esr iterations
   /// on the validation set.
-  Mart(unsigned int ntrees, float shrinkage, unsigned int nthresholds,
-       unsigned int ntreeleaves, unsigned int minleafsupport,
-       unsigned int valid_iterations)
+  Mart(size_t ntrees, double shrinkage, size_t nthresholds,
+       size_t ntreeleaves, size_t minleafsupport,
+       size_t valid_iterations)
       : ntrees_(ntrees),
         shrinkage_(shrinkage),
         nthresholds_(nthresholds),
@@ -54,8 +53,7 @@ class Mart : public LTR_Algorithm {
   }
 
   /// Generates a LTR_Algorithm instance from a previously saved XML model.
-  Mart(const boost::property_tree::ptree &info_ptree,
-       const boost::property_tree::ptree &model_ptree);
+  Mart(const pugi::xml_document& model);
 
   virtual ~Mart() {
   }
@@ -64,16 +62,28 @@ class Mart : public LTR_Algorithm {
   virtual void learn(std::shared_ptr<data::Dataset> training_dataset,
                      std::shared_ptr<data::Dataset> validation_dataset,
                      std::shared_ptr<metric::ir::Metric> training_metric,
-                     unsigned int partial_save,
+                     size_t partial_save,
                      const std::string output_basename);
 
   /// Returns the score by the current ranker
   ///
   /// \param d Document to be scored.
-  /// \param next_fx_offset Offset to the next feature from \a d.
-  virtual Score score_document(const Feature* d,
-                               const unsigned int next_fx_offset) const {
-    return ensemble_model_.score_instance(d, next_fx_offset);
+  virtual Score score_document(const Feature* d) const {
+    return ensemble_model_.score_instance(d, 1);
+  }
+
+  /// Returns the partial scores of a given document, tree.
+  /// \param d is a pointer to the document to be evaluated
+  /// \param next_fx_offset The offset to the next feature in the data representation.
+  /// \note   Each algorithm has a different implementation.
+  virtual std::shared_ptr<std::vector<Score>> partial_scores_document(
+      const Feature *d) const {
+    // TODO: remove the following code...
+    if (!ensemble_model_.get_size()) {
+      std::cerr << "Zero alberi nell'ensemble..." << std::endl;
+      exit(EXIT_FAILURE);
+    }
+    return ensemble_model_.partial_scores_instance(d);
   }
 
   /// Print additional statistics.
@@ -86,32 +96,35 @@ class Mart : public LTR_Algorithm {
     return NAME_;
   }
 
+  virtual bool update_weights(std::shared_ptr<std::vector<double>> weights);
+
+  virtual std::shared_ptr<std::vector<double>> get_weights() const {
+    return ensemble_model_.get_weights();
+  }
+
   static const std::string NAME_;
 
  protected:
-  /// Makes sure the dataset in in vertical format.
-  virtual void preprocess_dataset(std::shared_ptr<data::Dataset> dataset) const;
 
   /// Prepares private data structures before training takes place.
-  virtual void init(std::shared_ptr<data::Dataset> training_dataset,
-                    std::shared_ptr<data::Dataset> validation_dataset);
+  virtual void init(std::shared_ptr<data::VerticalDataset> training_dataset);
 
   /// De-allocates private data structure after training has taken place.
-  virtual void clear(std::shared_ptr<data::Dataset> training_dataset);
+  virtual void clear(size_t num_features);
 
   /// Computes pseudo responses.
   ///
   /// \param training_dataset The training data.
   /// \param metric The metric to be optimized.
   virtual void compute_pseudoresponses(
-      std::shared_ptr<data::Dataset> training_dataset,
+      std::shared_ptr<data::VerticalDataset> training_dataset,
       metric::ir::Metric* metric);
 
   /// Fits a regression tree on the gradient given by the pseudo residuals
   ///
   /// \param training_dataset The dataset used for training
   virtual std::unique_ptr<RegressionTree> fit_regressor_on_gradient(
-      std::shared_ptr<data::Dataset> training_dataset);
+      std::shared_ptr<data::VerticalDataset> training_dataset);
 
   /// Updates scores with the last learnt regression tree.
   ///
@@ -120,27 +133,29 @@ class Mart : public LTR_Algorithm {
   /// \param tree Last regression tree leartn.
   virtual void update_modelscores(std::shared_ptr<data::Dataset> dataset,
                                   Score *scores, RegressionTree* tree);
+  virtual void update_modelscores(std::shared_ptr<data::VerticalDataset> dataset,
+                                  Score *scores, RegressionTree* tree);
 
-  virtual std::ofstream& save_model_to_file(std::ofstream& os) const;
+  virtual pugi::xml_document* get_xml_model() const;
 
  protected:
   float **thresholds_ = NULL;
-  unsigned int *thresholds_size_ = NULL;
+  size_t *thresholds_size_ = NULL;
   double *scores_on_training_ = NULL;  //[0..nentries-1]
   quickrank::Score* scores_on_validation_ = NULL;  //[0..nentries-1]
-  unsigned int validation_bestmodel_ = 0;
+  size_t validation_bestmodel_ = 0;
   double *pseudoresponses_ = NULL;  //[0..nentries-1]
   Ensemble ensemble_model_;
 
-  unsigned int ntrees_;  //>0
+  size_t ntrees_;  //>0
   double shrinkage_;  //>0.0f
-  unsigned int nthresholds_;  //if ==0 then no. of thresholds is not limited
-  unsigned int nleaves_;  //>0
-  unsigned int minleafsupport_;  //>0
-  unsigned int valid_iterations_;  //If no performance gain on validation data is observed in 'esr' rounds, stop the training process right away (if esr==0 feature is disabled).
+  size_t nthresholds_;  //if ==0 then no. of thresholds is not limited
+  size_t nleaves_;  //>0
+  size_t minleafsupport_;  //>0
+  size_t valid_iterations_;  //If no performance gain on validation data is observed in 'esr' rounds, stop the training process right away (if esr==0 feature is disabled).
 
-  unsigned int **sortedsid_ = NULL;
-  unsigned int sortedsize_ = 0;
+  size_t **sortedsid_ = NULL;
+  size_t sortedsize_ = 0;
   RTRootHistogram *hist_ = NULL;
 
  private:
@@ -158,4 +173,3 @@ class Mart : public LTR_Algorithm {
 }  // namespace learning
 }  // namespace quickrank
 
-#endif

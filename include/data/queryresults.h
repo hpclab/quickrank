@@ -19,12 +19,9 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_DATA_QUERYRESULTS_H_
-#define QUICKRANK_DATA_QUERYRESULTS_H_
+#pragma once
 
 #include <algorithm>
-#include <boost/noncopyable.hpp>
-#include <boost/container/vector.hpp>
 
 #include "types.h"
 
@@ -36,7 +33,7 @@ namespace data {
 /// The internal data representation is the same as the
 /// \a Dataset it comes from.
 /// \todo TODO: it seems we need also a class withouth features
-class QueryResults : private boost::noncopyable {
+class QueryResults {
  public:
 
   /// Allocates an Query Results Object.
@@ -45,7 +42,7 @@ class QueryResults : private boost::noncopyable {
   /// related to a specific query.
   /// \param n_instances The number of training instances (lines) in the dataset.
   /// \param n_features The number of features.
-  QueryResults(unsigned int n_results, Label* new_labels,
+  QueryResults(size_t n_results, Label* new_labels,
                Feature* new_features);
   virtual ~QueryResults();
 
@@ -55,7 +52,7 @@ class QueryResults : private boost::noncopyable {
   Label* labels() const {
     return labels_;
   }
-  unsigned int num_results() const {
+  size_t num_results() const {
     return num_results_;
   }
 
@@ -65,7 +62,7 @@ class QueryResults : private boost::noncopyable {
   ///
   /// \param scores vector of scores used for reverse sorting.
   /// \param dest output of the sorting indexing.
-  void indexing_of_sorted_labels(const Score* scores, unsigned int* dest) const;
+  void indexing_of_sorted_labels(const Score* scores, size_t* dest) const;
 
   /// Sorts the element of the current result list
   /// in descending order of the given \a scores vector
@@ -75,16 +72,14 @@ class QueryResults : private boost::noncopyable {
   /// \param dest output of the labels sorting.
   /// \param cutoff number of labels of interest, i.e., length of \a dest.
   void sorted_labels(const Score* scores, Label* dest,
-                     const unsigned int cutoff) const;
+                     const size_t cutoff) const;
 
  private:
   Label* labels_;
   Feature* features_;
-  unsigned int num_results_;
+  size_t num_results_;
 
 };
 
 }  // namespace data
 }  // namespace quickrank
-
-#endif

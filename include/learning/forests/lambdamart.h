@@ -19,8 +19,7 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_LEARNING_FORESTS_LMART_H_
-#define QUICKRANK_LEARNING_FORESTS_LMART_H_
+#pragma once
 
 #include "types.h"
 #include "learning/forests/mart.h"
@@ -42,16 +41,14 @@ class LambdaMart : public Mart {
   /// \param minleafsupport Minimum number of instances in each leaf.
   /// \param esr Early stopping if no improvement after \esr iterations
   /// on the validation set.
-  LambdaMart(unsigned int ntrees, float shrinkage, unsigned int nthresholds,
-             unsigned int ntreeleaves, unsigned int minleafsupport,
-             unsigned int esr)
+  LambdaMart(size_t ntrees, double shrinkage, size_t nthresholds,
+             size_t ntreeleaves, size_t minleafsupport, size_t esr)
       : Mart(ntrees, shrinkage, nthresholds, ntreeleaves, minleafsupport, esr) {
   }
 
   /// Generates a LTR_Algorithm instance from a previously saved XML model.
-  LambdaMart(const boost::property_tree::ptree &info_ptree,
-             const boost::property_tree::ptree &model_ptree)
-      : Mart(info_ptree, model_ptree) {
+  LambdaMart(const pugi::xml_document& model)
+      : Mart(model) {
   }
 
   virtual ~LambdaMart() {
@@ -66,25 +63,24 @@ class LambdaMart : public Mart {
 
  protected:
   /// Prepares private data structurs befor training takes place.
-  virtual void init(std::shared_ptr<data::Dataset> training_dataset,
-                    std::shared_ptr<data::Dataset> validation_dataset);
+  virtual void init(std::shared_ptr<data::VerticalDataset> training_dataset);
 
   /// De-allocates private data structure after training has taken place.
-  virtual void clear(std::shared_ptr<data::Dataset> training_dataset);
+  virtual void clear(size_t num_features);
 
   /// Computes pseudo responses.
   ///
   /// \param training_dataset The training data.
   /// \param metric The metric to be optimized.
   virtual void compute_pseudoresponses(
-      std::shared_ptr<data::Dataset> training_dataset,
+      std::shared_ptr<data::VerticalDataset> training_dataset,
       metric::ir::Metric* metric);
 
   /// Fits a regression tree on the gradient given by the pseudo residuals
   ///
   /// \param training_dataset The dataset used for training
   virtual std::unique_ptr<RegressionTree> fit_regressor_on_gradient(
-      std::shared_ptr<data::Dataset> training_dataset);
+      std::shared_ptr<data::VerticalDataset> training_dataset);
 
  protected:
   double* instance_weights_ = NULL;  //corresponds to datapoint.cache
@@ -94,5 +90,3 @@ class LambdaMart : public Mart {
 }  // namespace forests
 }  // namespace learning
 }  // namespace quickrank
-
-#endif

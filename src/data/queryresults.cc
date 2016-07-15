@@ -24,7 +24,7 @@
 namespace quickrank {
 namespace data {
 
-QueryResults::QueryResults(unsigned int n_results, quickrank::Label* new_labels,
+QueryResults::QueryResults(size_t n_results, quickrank::Label* new_labels,
                            quickrank::Feature* new_features) {
   num_results_ = n_results;
   labels_ = new_labels;
@@ -45,18 +45,18 @@ struct external_sort_op_t {
 };
 
 void QueryResults::indexing_of_sorted_labels(const Score* scores,
-                                             unsigned int* dest) const {
+                                             size_t* dest) const {
   external_sort_op_t comp(scores);
-  for (unsigned int i = 0; i < num_results_; ++i)
+  for (size_t i = 0; i < num_results_; ++i)
     dest[i] = i;
   std::sort(dest, dest + num_results_, comp);
 }
 
 void QueryResults::sorted_labels(const Score* scores, Label* dest,
-                                 const unsigned int cutoff) const {
-  unsigned int* idx = new unsigned int[num_results_];
+                                 const size_t cutoff) const {
+  size_t* idx = new size_t[num_results_];
   indexing_of_sorted_labels(scores, idx);
-  for (unsigned int i = 0; i < num_results_ && i < cutoff; ++i)
+  for (size_t i = 0; i < num_results_ && i < cutoff; ++i)
     dest[i] = labels_[idx[i]];
   delete[] idx;
 }

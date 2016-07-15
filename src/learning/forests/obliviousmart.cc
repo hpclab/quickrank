@@ -36,10 +36,10 @@ namespace forests {
 
 const std::string ObliviousMart::NAME_ = "OBVMART";
 
-ObliviousMart::ObliviousMart(const boost::property_tree::ptree &info_ptree,
-                             const boost::property_tree::ptree &model_ptree)
-    : Mart(info_ptree, model_ptree) {
-  treedepth_ = info_ptree.get<double>("depth");
+ObliviousMart::ObliviousMart(const pugi::xml_document& model) : Mart(model) {
+
+  treedepth_ = model.child("ranker").child("info").child("depth").text()
+      .as_int();
 }
 
 std::ostream& ObliviousMart::put(std::ostream& os) const {
@@ -58,31 +58,35 @@ std::ostream& ObliviousMart::put(std::ostream& os) const {
 }
 
 std::unique_ptr<RegressionTree> ObliviousMart::fit_regressor_on_gradient(
-    std::shared_ptr<data::Dataset> training_dataset) {
+    std::shared_ptr<data::VerticalDataset> training_dataset) {
   ObliviousRT* tree = new ObliviousRT(nleaves_, training_dataset.get(),
                                       pseudoresponses_, minleafsupport_,
                                       treedepth_);
   tree->fit(hist_);
-  //update the outputs of the tree (with gamma computed using the Newton-Raphson method)
+  //update the outputs of the tree (with gamma computed using the Newton-Raphson pruning_method)
   tree->update_output(pseudoresponses_);
   return std::unique_ptr<RegressionTree>(tree);
 }
 
-std::ofstream& ObliviousMart::save_model_to_file(std::ofstream& os) const {
-  // write ranker description
-  os << "\t<info>" << std::endl << "\t\t<type>" << name() << "</type>"
-     << std::endl << "\t\t<trees>" << ntrees_ << "</trees>" << std::endl
-     << "\t\t<leaves>" << nleaves_ << "</leaves>" << std::endl << "\t\t<depth>"
-     << treedepth_ << "</depth>" << std::endl << "\t\t<shrinkage>" << shrinkage_
-     << "</shrinkage>" << std::endl << "\t\t<leafsupport>" << minleafsupport_
-     << "</leafsupport>" << std::endl << "\t\t<discretization>" << nthresholds_
-     << "</discretization>" << std::endl << "\t\t<estop>" << valid_iterations_
-     << "</estop>" << std::endl << "\t</info>" << std::endl;
+pugi::xml_document* ObliviousMart::get_xml_model() const {
 
-  // save xml model
-  ensemble_model_.save_model_to_file(os);
+  pugi::xml_document* doc = new pugi::xml_document();
+  pugi::xml_node root = doc->append_child("ranker");
 
-  return os;
+  pugi::xml_node info = root.append_child("info");
+
+  info.append_child("type").text() = name().c_str();
+  info.append_child("trees").text() = ntrees_;
+  info.append_child("leaves").text() = nleaves_;
+  info.append_child("depth").text() = treedepth_;
+  info.append_child("shrinkage").text() = shrinkage_;
+  info.append_child("leafsupport").text() = minleafsupport_;
+  info.append_child("discretization").text() = nthresholds_;
+  info.append_child("estop").text() = nthresholds_;
+
+  ensemble_model_.append_xml_model(root);
+
+  return doc;
 }
 
 }  // namespace forests

@@ -19,6 +19,7 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
+
 #include "utils/transpose.h"
 
 /*! \def TRNSP_BLOCKSIZE
@@ -32,27 +33,27 @@
  *  @param n number of rows of input matrix
  *  @param m number of columns of input matrix
  */
-void transpose(float **output, float **input, const unsigned int n,
-               const unsigned int m) {
+void transpose(float **output, float **input, const size_t n,
+               const size_t m) {
 #pragma omp parallel for
-  for (unsigned int rbegin = 0; rbegin < n; rbegin += TRNSP_BLOCKSIZE) {
+  for (size_t rbegin = 0; rbegin < n; rbegin += TRNSP_BLOCKSIZE) {
     if (rbegin + TRNSP_BLOCKSIZE < n) {
-      for (unsigned int cbegin = 0; cbegin < m; cbegin += TRNSP_BLOCKSIZE)
+      for (size_t cbegin = 0; cbegin < m; cbegin += TRNSP_BLOCKSIZE)
         if (cbegin + TRNSP_BLOCKSIZE < m) {
-          for (unsigned int r = 0; r < TRNSP_BLOCKSIZE; ++r)
-            for (unsigned int c = 0; c < TRNSP_BLOCKSIZE; ++c)
+          for (size_t r = 0; r < TRNSP_BLOCKSIZE; ++r)
+            for (size_t c = 0; c < TRNSP_BLOCKSIZE; ++c)
               output[cbegin + c][rbegin + r] = input[rbegin + r][cbegin + c];
         } else {
-          for (unsigned int r = 0; r < TRNSP_BLOCKSIZE; ++r)
-            for (unsigned int c = cbegin; c < m; ++c)
+          for (size_t r = 0; r < TRNSP_BLOCKSIZE; ++r)
+            for (size_t c = cbegin; c < m; ++c)
               output[c][rbegin + r] = input[rbegin + r][c];
         }
     } else {
-      for (unsigned int cbegin = 0; cbegin < m; cbegin += TRNSP_BLOCKSIZE) {
-        unsigned int cend =
+      for (size_t cbegin = 0; cbegin < m; cbegin += TRNSP_BLOCKSIZE) {
+        size_t cend =
             cbegin + TRNSP_BLOCKSIZE < m ? cbegin + TRNSP_BLOCKSIZE : m;
-        for (unsigned int r = rbegin; r < n; ++r)
-          for (unsigned int c = cbegin; c < cend; ++c)
+        for (size_t r = rbegin; r < n; ++r)
+          for (size_t c = cbegin; c < cend; ++c)
             output[c][r] = input[r][c];
       }
     }

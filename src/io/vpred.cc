@@ -24,42 +24,38 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <string>
 #include <vector>
 #include <queue>
-
-#include <boost/algorithm/string.hpp>
-#include <boost/program_options.hpp>
-#include <boost/property_tree/xml_parser.hpp>
-#include <boost/property_tree/detail/ptree_utils.hpp>
+#include <cmath>
 
 #include "io/vpred.h"
+#include "pugixml/src/pugixml.hpp"
+#include "utils/strutils.h"
 
 namespace quickrank {
 namespace io {
 
-std::string trim(const boost::property_tree::ptree& node,
-                 const std::string& label) {
-  std::string res = node.get_child(label).data();
-  boost::algorithm::trim(res);
-  return res;
+std::string trim_node_value(const pugi::xml_node &node,
+                            const std::string &label) {
+  std::string res = node.child_value(label.c_str());
+  return trim(res);
 }
 
-bool is_leaf(const boost::property_tree::ptree& node) {
-  return node.find("output") != node.not_found();
+bool is_leaf(const pugi::xml_node &node) {
+  return !node.child("output").empty();
 }
 
-uint32_t find_depth(const boost::property_tree::ptree& split) {
+uint32_t find_depth(const pugi::xml_node &split) {
   uint32_t ld = 0, rd = 0;
-  for (auto node : split) {
-    if (node.first == "output")
+  for (auto split_child : split.children()) {
+    if (strcmp(split_child.name(), "output") == 0)
       return 1;
-    else if (node.first == "split") {
-      std::string pos = node.second.get<std::string>("<xmlattr>.pos");
+    else if (strcmp(split_child.name(), "split") == 0) {
+      std::string pos = split_child.attribute("pos").value();
       if (pos == "left") {
-        ld = 1 + find_depth(node.second);
+        ld = 1 + find_depth(split_child);
       } else {
-        rd = 1 + find_depth(node.second);
+        rd = 1 + find_depth(split_child);
       }
     }
   }
@@ -67,58 +63,68 @@ uint32_t find_depth(const boost::property_tree::ptree& split) {
 }
 
 struct tree_node {
-  boost::property_tree::ptree pnode;
+  const pugi::xml_node node;
   uint32_t id, pid;
   bool left;
 
   std::string feature, theta, leaf;
 
-  tree_node(const boost::property_tree::ptree& pnode, uint32_t id, uint32_t pid,
-            bool left, const std::string& parent_f = "")
-      : pnode(pnode),
+  tree_node(const pugi::xml_node &node, uint32_t id, uint32_t pid,
+            bool left, const std::string &parent_f = "")
+      : node(node),
         id(id),
         pid(pid),
         left(left) {
-    if (is_leaf(pnode)) {
+    if (is_leaf(node)) {
       this->feature = parent_f;
       this->theta = "";
-      this->leaf = trim(pnode, "output");
+      this->leaf = trim_node_value(node, "output");
     } else {
-      this->feature = trim(pnode, "feature");
-      this->theta = trim(pnode, "threshold");
+      this->feature = trim_node_value(node, "feature");
+      this->theta = trim_node_value(node, "threshold");
       this->leaf = "";
     }
   }
 };
 
-void generate_vpred_input(const std::string& ensemble_file,
-                          const std::string& output_file) {
+void generate_vpred_input(const std::string &ensemble_file,
+                          const std::string &output_file) {
+
+  if (ensemble_file.empty()) {
+    std::cerr << "!!! Model filename is empty." << std::endl;
+    exit(EXIT_FAILURE);
+  }
 
   // parse XML
-  boost::property_tree::ptree xml_tree;
-  std::ifstream is;
-  is.open(ensemble_file, std::ifstream::in);
-  boost::property_tree::read_xml(is, xml_tree);
-  is.close();
+  pugi::xml_document model;
+  pugi::xml_parse_result result = model.load_file(ensemble_file.c_str());
+  if (!result) {
+    std::cerr << "!!! Model filename is not parsed correctly." << std::endl;
+    exit(EXIT_FAILURE);
+  }
 
   std::ofstream output;
   output.open(output_file, std::ofstream::out);
 
-  double learning_rate = xml_tree.get_child("ranker.info").get<double>(
-      "shrinkage");
-  uint32_t num_trees = xml_tree.get_child("ranker.ensemble").count("tree");
+  double learning_rate = model.select_node("/ranker/info/shrinkage").node()
+      .text().as_double();
+
+  auto trees = model.select_nodes("/ranker/ensemble/tree");
+  size_t num_trees = trees.size();
 
   output << num_trees << std::endl;  // print number of trees in the ensemble
 
   // for each tree
-  for (const auto& tree_it : xml_tree.get_child("ranker.ensemble")) {
+  for (const auto &tree_it : trees) {
 
-    uint32_t depth = find_depth(tree_it.second.get_child("split")) - 1;
+    auto tree = tree_it.node();
+
+    auto split_node = tree.child("split");
+    uint32_t depth = find_depth(split_node) - 1;
+
     output << (depth) << std::endl;  // print the tree depth
 
     uint32_t tree_size = std::pow(2, depth) - 1;
-    auto split_node = tree_it.second.get_child("split");
-
     uint32_t local_id = 0;
 
     std::queue<tree_node> node_queue;
@@ -126,33 +132,34 @@ void generate_vpred_input(const std::string& ensemble_file,
     // breadth first visit
     // TODO: Remove object copies with references
     for (node_queue.push(tree_node(split_node, local_id++, -1, false));
-        !node_queue.empty(); node_queue.pop()) {
+         !node_queue.empty(); node_queue.pop()) {
       auto node = node_queue.front();
-      if (is_leaf(node.pnode)) {
+      if (is_leaf(node.node)) {
         if (node.id >= tree_size) {
           output << "leaf" << " " << node.id << " " << node.pid << " "
-                 << node.left << " " << (learning_rate * std::stod(node.leaf))
-                 << std::endl;
+              << node.left << " " << (learning_rate * std::stod(node.leaf))
+              << std::endl;
         } else {
           output << "node" << " " << node.id << " " << node.pid << " "
-                 << (std::stoi(node.feature) - 1) << " " << node.left << " "
-                 << (learning_rate * std::stod(node.leaf)) << std::endl;
+              << (std::stoi(node.feature) - 1) << " " << node.left << " "
+              << (learning_rate * std::stod(node.leaf)) << std::endl;
         }
       } else {
         if (node.id == 0) {
           output << "root" << " " << node.id << " "
-                 << (std::stoi(node.feature) - 1) << " " << node.theta
-                 << std::endl;  // print the root info
+              << (std::stoi(node.feature) - 1) << " " << node.theta
+              << std::endl;  // print the root info
         } else {
           output << "node" << " " << node.id << " " << node.pid << " "
-                 << (std::stoi(node.feature) - 1) << " " << node.left << " "
-                 << node.theta << std::endl;
+              << (std::stoi(node.feature) - 1) << " " << node.left << " "
+              << node.theta << std::endl;
         }
-        for (const auto& split_it : node.pnode) {
-          if (split_it.first == "split") {
-            std::string pos = split_it.second.get<std::string>("<xmlattr>.pos");
+        for (const auto &split_child : node.node.children()) {
+
+          if (strcmp(split_child.name(), "split") == 0) {
+            std::string pos = split_child.attribute("pos").value();
             node_queue.push(
-                tree_node(split_it.second, local_id++, node.id, (pos == "left"),
+                tree_node(split_child, local_id++, node.id, (pos == "left"),
                           node.feature));
           }
         }

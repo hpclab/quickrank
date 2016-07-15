@@ -19,28 +19,26 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_IO_XML_H_
-#define QUICKRANK_IO_XML_H_
-
-#include <boost/property_tree/ptree.hpp>
+#pragma once
 
 #include <memory>
 #include <string>
 
+#include "pugixml/src/pugixml.hpp"
 #include "learning/ltr_algorithm.h"
 #include "learning/tree/rt.h"
 
 namespace quickrank {
 namespace io {
 
-RTNode* RTNode_parse_xml(const boost::property_tree::ptree &split_xml);
+RTNode* RTNode_parse_xml(const pugi::xml_node& split_xml);
 
 /**
  * This class implements IO on Xml files.
  *
  * The XML format is used for loading and storing ranking models
  */
-class Xml : private boost::noncopyable {
+class Xml {
  public:
   /// Creates a new Svml IO reader/writer.
   ///
@@ -86,17 +84,13 @@ class Xml : private boost::noncopyable {
       std::string model_filename);
 
   /// Generates the C++ implementation of the model scoring function.
-  /// This is en experimental method.
+  /// This is en experimental pruning_method.
   ///
   /// \param model_filename Previously saved xml ranker model.
   /// \param code_filename Output source code file name.
   void generate_c_code_vectorized(std::string model_filename,
                                   std::string code_filename);
- private:
-
 };
 
 }  // namespace io
 }  // namespace quickrank
-
-#endif

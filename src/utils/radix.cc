@@ -32,9 +32,9 @@ inline unsigned int iflip(unsigned int x) {
   return x ^ (((x >> 31) - 1) | 0x80000000);
 }  //!<flip a float back (invert flip)
 
-std::unique_ptr<unsigned int[]> idx_radixsort(float const* fvalues,
-                                              const unsigned int nvalues) {
-  unsigned int *ivalues = new unsigned int[nvalues];
+std::unique_ptr<size_t[]> idx_radixsort(float const* fvalues,
+                                              const size_t nvalues) {
+  size_t *ivalues = new size_t[nvalues];
   unsigned int* lbucket = new unsigned int[65536]();
   unsigned int* hbucket = new unsigned int[65536]();
   for (unsigned int i = 0; i < nvalues; ++i) {
@@ -44,6 +44,7 @@ std::unique_ptr<unsigned int[]> idx_radixsort(float const* fvalues,
     ++lbucket[flippedvalue & 0xFFFF];
     ++hbucket[flippedvalue >> 16];
   }
+
   // prefixsum on histograms
   for (unsigned int ltmp, htmp, lsum = -1, hsum = -1, i = 0; i < 65536; ++i) {
     ltmp = lbucket[i];
@@ -53,18 +54,22 @@ std::unique_ptr<unsigned int[]> idx_radixsort(float const* fvalues,
     lsum += ltmp;
     hsum += htmp;
   }
+
   // final pass
   struct pair_t {
-    unsigned int value, id;
-  }*aux = new pair_t[nvalues];
+    size_t value, id;
+  } *aux = new pair_t[nvalues];
+
   for (unsigned int i = 0; i < nvalues; ++i)
-    aux[++lbucket[ivalues[i]&0xFFFF]] = {ivalues[i], i};
+    aux[++lbucket[ivalues[i] & 0xFFFF]] = {ivalues[i], i};
+
   for (unsigned int i = 0; i < nvalues; ++i)
     ivalues[++hbucket[aux[i].value >> 16]] = aux[i].id;
+
   delete[] aux;
   delete[] lbucket;
   delete[] hbucket;
-  return std::unique_ptr<unsigned int[]>(ivalues);
+  return std::unique_ptr<size_t[]>(ivalues);
 }
 
 /*! sort an array of float values without modifing the input array and returning permuted indexes of the sorted items
