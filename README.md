@@ -165,6 +165,11 @@ To test a model, you could specify the test option in the previous command, or l
 
 With the ```--detailed``` option, valid only for ensemble-based algorithms, QuickRank will save in a SVM-light format (which consequently can be used as input dataset for other learning algorithms) the partial scores given by each weak ranker to the prediction of the documents (one row per document, a feature for each ensemble, preserving the order of the ensembles in the model and of the documents in the dataset).
 
+
+### Efficient Scoring
+
+QuickRank can translate learnt tree-based models into efficient C++ source code that can be used to score documents efficiently. See a more detailed description [here](documentation/quickscore.md).
+
 ### Optimization
 
 QuickRank introduces the concept of optimizers, i.e., algorithms than are executed before or after the training phase is executed. An optimizer could process either the dataset or the model, depending from its definition. Currently in QuickRank there is a single optimizer which acts in post learning by pruning an ensamble model, improving consequently its efficiency, without hindering its effectiveness.
