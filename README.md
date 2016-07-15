@@ -1,9 +1,9 @@
 <img src=http://quickrank.isti.cnr.it/doxygen/quickrank.png>
 
-QuickRank: A C++ suite of Learning to Rank algorithms
+QuickRank: A C++ suite of Learning-to-Rank algorithms
 ===========
 
-QuickRank is an efficient Learning to Rank toolkit providing several C++ implementation of LtR algorithms. QuickRank was designed and developed with efficiency in mind. 
+QuickRank is an efficient Learning-to-Rank toolkit providing several C++ implementation of LtR algorithms. QuickRank was designed and developed with efficiency in mind.
 
 The LtR algorithms currently implemented are:
  - **GBRT**: J. H. Friedman. *Greedy function approximation: a gradient boosting machine*. Annals of Statistics, pages 1189–1232, 2001.
@@ -13,7 +13,7 @@ The LtR algorithms currently implemented are:
  - **LineSearch**: D. G. Luenberger. *Linear and nonlinear programming*. Addison Wesley, 1984.
  - **RankBoost**: Freund, Y., Iyer, R., Schapire, R. E., & Singer, Y. *An efficient boosting algorithm for combining preferences*. The Journal of machine learning research, 4, 933-969 (2003).
 
-QuickRank introduces also the concept of pre and post learning optimizations to run in pipeline with the LtR algorithms. Currently implemented optimizers are:
+QuickRank introduces also the concept of pre and post learning optimizations which are pipelined with the LtR algorithms. Currently implemented optimizers are:
  - **CLEAVER**: C. Lucchese, F. M. Nardini, S. Orlando, R. Perego, F. Silvestri, S. Trani. *Post-Learning Optimization of Tree Ensembles for Efficient Ranking*. ACM SIGIR, 2016.
 
 How to build
@@ -60,7 +60,7 @@ Finally to compile Quickrank:
 
 And wait for the compilation to finish. The result will be the QuickRank executable placed in the bin directory of the project root.
 
-If you would like to execute the unit-tests, you need to run in the main QuickRank directory:
+If you would like to execute the unit-tests, you need to run in the root directory:
 
 	./bin/unit-test
 
@@ -169,7 +169,7 @@ With the ```--detailed``` option, valid only for ensemble-based algorithms, Quic
 
 ### Optimization
 
-QuickRank introduces the concept of optimizers, i.e., algorithms than are executed before or after the training phase is executed. An optimizer could *"work"* either on the dataset or on the model, depending from its definition. Currently in QuickRank there is a single optimizer which acts in post learning by pruning an ensamble model, improving consequently its efficiency, without hindering its effectiveness.
+QuickRank introduces the concept of optimizers, i.e., algorithms than are executed before or after the training phase is executed. An optimizer could process either the dataset or the model, depending from its definition. Currently in QuickRank there is a single optimizer which acts in post learning by pruning an ensamble model, improving consequently its efficiency, without hindering its effectiveness.
 
 The optimizer can be executed in pipeline with the training phase by setting the corresponding options, or as a standalone process which works on an previously trained model (or dataset). 
 
