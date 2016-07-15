@@ -12,7 +12,7 @@ QuickRanks implements three translation strategies:
 The optimized source code is generated as follows:
 
     ./bin/quicklearn --dump-model model.xml \
-                     --dump-code ranker.cc \
+                     --dump-code model.cc \
                      --dump-type condop
 
 After the source code was generated it is possible to test its efficiency.
@@ -22,7 +22,7 @@ Upon termination a new binary is compiled `bin/quickscore` implementing the orig
 
     ./bin/quickscore  -r 10 -d dataset.test
 
-The result shows the time need by the model to score the document in the input dataset.
+The result shows the time need by the model to score the document in the input dataset averaged over 10 rounds.
 
 ```
       _____  _____
