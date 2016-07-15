@@ -330,7 +330,7 @@ int main(int argc, char *argv[]) {
   bool parse_status = pmap.parse(argc, argv);
   if (!parse_status || pmap.isSet("help")) {
     std::cout << pmap.help();
-    return 1;
+    return EXIT_FAILURE;
   }
 
   return quickrank::driver::Driver::run(pmap);

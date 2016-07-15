@@ -78,7 +78,7 @@ Running the QuickRank binary with the `-h` option, it shows the help:
     ::Quick:Rank::                                   quickrank@isti.cnr.it
 
 
-Training options
+Training phase - general options:
   --algo <arg> (LAMBDAMART)             LtR algorithm [MART|LAMBDAMART|OBVMART|OBVLAMBDAMART|RANKBOOST|COORDASC|LINESEARCH|CUSTOM]
   --train-metric <arg> (NDCG)           set train metric [DCG|NDCG|TNDCG|MAP]
   --train-cutoff <arg> (10)             set train metric cutoff
@@ -88,7 +88,7 @@ Training options
   --features <arg>                      set features file
   --model <arg>                         set output model file for training or input model file for testing
 
-Training options for tree-based models
+Training phase - specific options for tree-based models:
   --num-trees <arg> (1000)              set number of trees
   --shrinkage <arg> (0.1)               set shrinkage
   --num-thresholds <arg> (0)            set number of thresholds
@@ -97,40 +97,40 @@ Training options for tree-based models
   --num-leaves <arg> (10)               set number of leaves [applies only to Mart/LambdaMart]
   --tree-depth <arg> (3)                set tree depth [applies only to Oblivious Mart/LambdaMart]
 
-Testing options
-  --test-metric <arg> (NDCG)            set test metric [DCG|NDCG|TNDCG|MAP]
-  --test-cutoff <arg> (10)              set test metric cutoff
-  --test <arg>                          set testing file
-  --scores <arg>                        set output scores file
-  --detailed                            enable detailed testing [applies only to ensemble models]
-
-Fast Scoring options
-  --dump-model <arg>                    set XML model file path
-  --dump-code <arg>                     set C code file path
-  --dump-type <arg> (baseline)          set C code generation strategy. Allowed options are: "baseline", "oblivious". "vpred".
-
-Training options for Coordinate Ascent and Line Search
+Training phase - specific options for Coordinate Ascent and Line Search:
   --num-samples <arg> (21)              set number of samples in search window
   --window-size <arg> (10)              set search window size
   --reduction-factor <arg> (0.95)       set window reduction factor
   --max-iterations <arg> (100)          set number of max iterations
   --max-failed-valid <arg> (20)         set number of fails on validation before exit
 
-Training options for Line Search
+Training phase - specific options for Line Search:
   --adaptive                            enable adaptive reduction factor (based on last iteration metric gain)
   --train-partial <arg>                 set training file with partial scores (input for loading or output for saving)
   --valid-partial <arg>                 set validation file with partial scores (input for loading or output for saving)
 
-Optimization options
+Optimization phase - general options:
   --opt-algo <arg>                      Optimization alghoritm [EPRUNING]
   --opt-method <arg>                    Optimization method: EPRUNING [RANDOM|LOW_WEIGHTS|SKIP|LAST|QUALITY_LOSS|SCORE_LOSS]
   --opt-model <arg>                     set output model file for optimization or input model file for testing
   --opt-algo-model <arg>                set output algorithm model file post optimization
 
-Ensemble Pruning options
+Optimization phase - specific options for ensemble pruning:
   --pruning-rate <arg>                  ensemble to prune (either as a ratio with respect to ensemble size or as an absolute number of estimators to prune)
   --with-line-search                    ensemble pruning is made in conjunction with line search [related parameters accepted]
   --line-search-model <arg>             set line search XML file path for loading line search model (options and already trained weights)
+
+Test phase - general options:
+  --test-metric <arg> (NDCG)            set test metric [DCG|NDCG|TNDCG|MAP]
+  --test-cutoff <arg> (10)              set test metric cutoff
+  --test <arg>                          set testing file
+  --scores <arg>                        set output scores file
+  --detailed                            enable detailed testing [applies only to ensemble models]
+
+Code generation - general options:
+  --dump-model <arg>                    set XML model file path
+  --dump-code <arg>                     set C code file path
+  --dump-type <arg> (condop)            set C code generation strategy. Allowed options are: "condop", "oblivious". "vpred".
 
 Help options:
   -h,--help                             print help message

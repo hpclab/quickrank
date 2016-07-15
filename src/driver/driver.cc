@@ -43,6 +43,12 @@ Driver::~Driver() {
 
 int Driver::run(ParamsMap &pmap) {
 
+
+  if (!pmap.isSet("train") && !pmap.isSet("test")) {
+    std::cout << pmap.help();
+    exit(EXIT_FAILURE);
+  }
+
   std::shared_ptr<quickrank::learning::LTR_Algorithm> ranking_algorithm =
       quickrank::learning::ltr_algorithm_factory(pmap);
   if (!ranking_algorithm) {
