@@ -230,15 +230,17 @@ Documentation
 
 Check out further [information](http://quickrank.isti.cnr.it) and [code documentation](http://quickrank.isti.cnr.it/doxygen/index.html).  
 
-References
+Acknowledgements
 -------
 
-QuickRank is presented in:
- - Gabriele Capannini, Domenico Dato, Claudio Lucchese, Monica Mori, Franco Maria Nardini, Salvatore Orlando, Raffaele Perego, Nicola Tonellotto. **QuickRank: a C++ Suite of Learning to Rank Algorithms**.  Proceedings of the 6th Italian Information Retrieval Workshop (IIR 2015). Cagliari (Italy). [LINK](http://ceur-ws.org/Vol-1404/)
- 
-QuickRank has been used in:
- - C. Lucchese, F. M. Nardini, S. Orlando, R. Perego, N. Tonellotto, R. Venturini. **QuickScorer: a Fast Algorithm to Rank Documents with Additive Ensembles of Regression Trees**. Full Paper. SIGIR 2015: Proceedings of the 37th Annual International ACM SIGIR Conference on Research and Development in Information Retrieval, Santiago, Chile, August 2015. **BEST PAPER AWARD**.  [LINK](http://dl.acm.org/citation.cfm?id=2767733)
- - C. Lucchese, F. M. Nardini, S. Orlando, R. Perego, F. Silvestri, S. Trani **Post-Learning Optimization of Tree Ensembles for Efficient Ranking**. Short Paper. SIGIR 2016: Proceedings of the 38th Annual International ACM SIGIR Conference on Research and Development in Information Retrieval, Pisa, Italy, July 2016. [LINK](http://dl.acm.org/citation.cfm?id=2914763)
+If you use QuickRank, please acknowledge the following paper:
+ - Capannini, G., Lucchese, C., Nardini, F. M., Orlando, S., Perego, R., and Tonellotto, N.
+ **Quality versus efficiency in document scoring with learning-to-rank models.**
+ *Information Processing & Management* (2016).
+ [LINK](http://dx.doi.org/10.1016/j.ipm.2016.05.004).
+
+We will be happy to know that you are using QuickRank and to acknowledge you.
+[Check the list of works using QuickRank](documentation/usedby.md)
 
 Tools and Libraries
 -------
