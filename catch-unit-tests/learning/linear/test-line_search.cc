@@ -31,7 +31,7 @@
 #include <cmath>
 #include <iomanip>
 
-TEST_CASE( "Testing LineSearch", "[learning][linear][linesearch]" ) {
+TEST_CASE( "Testing LineSearch", "[linear][learning][linesearch]" ) {
 
   std::string training_filename =
       "quickranktestdata/msn1/msn1.fold1.train.5k.txt";
@@ -118,17 +118,17 @@ TEST_CASE( "Testing LineSearch", "[learning][linear][linesearch]" ) {
   auto model_reloaded =
       quickrank::learning::LTR_Algorithm::load_model_from_file(model_filename);
   model_reloaded->score_dataset(test_dataset, &test_scores[0]);
-  quickrank::MetricScore test_score_reloaded = testing_metric->evaluate_dataset(
-      test_dataset, &test_scores[0]);
+  quickrank::MetricScore test_score_reloaded =
+      testing_metric->evaluate_dataset(test_dataset, &test_scores[0]);
 
   std::cout << *testing_metric << " on test data (reloading the model) = " <<
       std::setprecision(4) << test_score_reloaded << std::endl;
 
-  std::remove(model_filename.c_str());
+  //std::remove(model_filename.c_str());
 
   REQUIRE( Approx( test_score ) == test_score_reloaded);
 
-  REQUIRE(training_score >= 0.2334);
-  REQUIRE(validation_score >= 0.2307);
-  REQUIRE(test_score >= 0.2484);
+  REQUIRE( training_score >= 0.2334);
+  REQUIRE( validation_score >= 0.2307);
+  REQUIRE( test_score >= 0.2484);
 }

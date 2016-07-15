@@ -96,9 +96,9 @@ class Mart : public LTR_Algorithm {
     return NAME_;
   }
 
-  virtual bool update_weights(std::shared_ptr<std::vector<float>> weights);
+  virtual bool update_weights(std::shared_ptr<std::vector<double>> weights);
 
-  virtual std::shared_ptr<std::vector<float>> get_weights() const {
+  virtual std::shared_ptr<std::vector<double>> get_weights() const {
     return ensemble_model_.get_weights();
   }
 

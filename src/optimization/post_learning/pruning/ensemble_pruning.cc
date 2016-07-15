@@ -216,7 +216,8 @@ void EnsemblePruning::optimize(
 
   // Put the new weights inside the ltr algorithm (including the pruned trees)
   algo->update_weights(
-      std::shared_ptr<std::vector<float>>(new std::vector<float>(weights_)));
+      std::shared_ptr<std::vector<double>>(
+          new std::vector<double>(weights_.cbegin(), weights_.cend())));
 
   score(training_dataset.get(), &training_score[0]);
   init_metric_on_training = metric->evaluate_dataset(training_dataset,

@@ -32,7 +32,7 @@
 #include <cmath>
 #include <iomanip>
 
-TEST_CASE( "Testing CoordinateAscent", "[learning][linear][ca]" ) {
+TEST_CASE( "Testing CoordinateAscent", "[linear][learning][ca]" ) {
 
   std::string training_filename =
       "quickranktestdata/msn1/msn1.fold1.train.5k.txt";
@@ -133,7 +133,7 @@ TEST_CASE( "Testing CoordinateAscent", "[learning][linear][ca]" ) {
   // NDCG@10 on validation data: 0.4181
   // NDCG@10 on test data: 0.4033
 
-  REQUIRE( training_score >= 0.4467);
+  REQUIRE( training_score >= 0.4563);
   REQUIRE( validation_score >= 0.3981);
   REQUIRE( test_score >= 0.3721);
 }

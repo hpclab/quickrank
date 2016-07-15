@@ -38,8 +38,8 @@ class LineSearch: public LTR_Algorithm {
 
  public:
 
-  LineSearch(unsigned int num_points, float window_size,
-             float reduction_factor, unsigned int max_iterations,
+  LineSearch(unsigned int num_points, double window_size,
+             double reduction_factor, unsigned int max_iterations,
              unsigned int max_failed_vali, bool adaptive,
              unsigned int last_only = 0);
 
@@ -83,26 +83,27 @@ class LineSearch: public LTR_Algorithm {
   virtual Score score_document(const Feature *d) const;
 
   /// Returns the learned weights
-  virtual std::shared_ptr<std::vector<float>> get_weights() const {
-    return std::shared_ptr<std::vector<float>>(
-        new std::vector<float>(best_weights_));
+  virtual std::shared_ptr<std::vector<double>> get_weights() const {
+
+    return std::shared_ptr<std::vector<double>>(
+        new std::vector<double>(best_weights_));
   }
 
-  virtual bool update_weights(std::shared_ptr<std::vector<float>> weights);
+  virtual bool update_weights(std::shared_ptr<std::vector<double>> weights);
 
   /// Return the xml model representing the current object
   virtual pugi::xml_document *get_xml_model() const;
 
  private:
   unsigned int num_points_;
-  float window_size_;
-  float reduction_factor_;
+  double window_size_;
+  double reduction_factor_;
   unsigned int max_iterations_;
   unsigned int max_failed_vali_;
   bool adaptive_;
   unsigned int train_only_last_;
 
-  std::vector<float> best_weights_;
+  std::vector<double> best_weights_;
 
   /// The output stream operator.
   friend std::ostream &operator<<(std::ostream &os, const LineSearch &a) {
@@ -116,12 +117,12 @@ class LineSearch: public LTR_Algorithm {
                           unsigned int num_samples,
                           unsigned int num_features,
                           Score *pre_sum,
-                          float *weights,
+                          double *weights,
                           Score *training_score,
                           unsigned int feature_exclude);
 
   virtual void score(Feature *dataset, unsigned int num_samples,
-                     unsigned int num_features, float *weights, Score *scores);
+                     unsigned int num_features, double *weights, Score *scores);
 };
 
 }  // namespace linear

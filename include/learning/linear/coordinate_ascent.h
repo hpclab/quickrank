@@ -40,8 +40,8 @@ namespace linear {
 class CoordinateAscent : public LTR_Algorithm {
 
  public:
-  CoordinateAscent(unsigned int num_points, float window_size,
-                   float reduction_factor, unsigned int max_iterations,
+  CoordinateAscent(unsigned int num_points, double window_size,
+                   double reduction_factor, unsigned int max_iterations,
                    unsigned int max_failed_vali);
 
   CoordinateAscent(const pugi::xml_document& model);
@@ -75,19 +75,20 @@ class CoordinateAscent : public LTR_Algorithm {
   virtual pugi::xml_document* get_xml_model() const;
 
   /// Returns the learned weights
-  virtual std::shared_ptr<std::vector<float>> get_weights() const {
-    return std::shared_ptr<std::vector<float>>(
-        new std::vector<float>(best_weights_));
+  virtual std::shared_ptr<std::vector<double>> get_weights() const {
+
+    return std::shared_ptr<std::vector<double>>(
+        new std::vector<double>(best_weights_));
   }
 
-  virtual bool update_weights(std::shared_ptr<std::vector<float>> weights);
+  virtual bool update_weights(std::shared_ptr<std::vector<double>> weights);
 
  private:
-  std::vector<float> best_weights_;
+  std::vector<double> best_weights_;
 
   unsigned int num_samples_;
-  float window_size_;
-  float reduction_factor_;
+  double window_size_;
+  double reduction_factor_;
   unsigned int max_iterations_;
   unsigned int max_failed_vali_;
 

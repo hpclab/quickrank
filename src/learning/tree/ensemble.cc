@@ -39,7 +39,7 @@ void Ensemble::set_capacity(const size_t n) {
   arr = (wt*) malloc(sizeof(wt) * n), size = 0;
 }
 
-void Ensemble::push(RTNode *root, const float weight, const float maxlabel) {
+void Ensemble::push(RTNode *root, const double weight, const float maxlabel) {
   arr[size++] = wt(root, weight, maxlabel);
 }
 
@@ -87,7 +87,7 @@ pugi::xml_node Ensemble::append_xml_model(pugi::xml_node parent,
 }
 
 bool Ensemble::update_ensemble_weights(
-    std::shared_ptr<std::vector<float>> weights) {
+    std::shared_ptr<std::vector<double>> weights) {
 
   if (weights->size() != get_size()) {
     std::cerr << "# ## ERROR!! Ensemble size does not match size of the "
@@ -101,9 +101,9 @@ bool Ensemble::update_ensemble_weights(
   return true;
 }
 
-std::shared_ptr<std::vector<float>> Ensemble::get_weights() const {
-  std::vector<float>* weights = new std::vector<float>(size);
+std::shared_ptr<std::vector<double>> Ensemble::get_weights() const {
+  std::vector<double>* weights = new std::vector<double>(size);
   for (unsigned int i = 0; i < size; ++i)
     (*weights)[i] = arr[i].weight;
-  return std::shared_ptr<std::vector<float>>(weights);
+  return std::shared_ptr<std::vector<double>>(weights);
 }

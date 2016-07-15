@@ -133,9 +133,9 @@ public:
     /// Return the xml model representing the current object
     virtual pugi::xml_document* get_xml_model() const;
 
-    virtual bool update_weights(std::vector<float>& weights);
+    virtual bool update_weights(std::vector<double>& weights);
 
-    virtual std::shared_ptr<std::vector<float>> get_weights() const;
+    virtual std::shared_ptr<std::vector<double>> get_weights() const;
 
 private:
     float*** D = NULL;

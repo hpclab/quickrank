@@ -537,7 +537,7 @@ pugi::xml_document* Rankboost::get_xml_model() const {
     return doc;
 }
 
-bool Rankboost::update_weights(std::vector<float>& weights) {
+bool Rankboost::update_weights(std::vector<double>& weights) {
 
     if (weights.size() != best_T) {
         std::cerr << "# ## ERROR!! Weak ranker size does not match size of the "
@@ -551,11 +551,11 @@ bool Rankboost::update_weights(std::vector<float>& weights) {
     return true;
 }
 
-std::shared_ptr<std::vector<float>> Rankboost::get_weights() const {
-    std::vector<float> weights(best_T);
+std::shared_ptr<std::vector<double>> Rankboost::get_weights() const {
+    std::vector<double> weights(best_T);
     for (unsigned int i = 0; i < best_T; ++i)
         weights[i] = weights[i];
-    return std::make_shared<std::vector<float>>(std::move(weights));
+    return std::make_shared<std::vector<double>>(std::move(weights));
 }
 
 } // namespace forests

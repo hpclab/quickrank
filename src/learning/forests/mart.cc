@@ -370,7 +370,7 @@ pugi::xml_document* Mart::get_xml_model() const {
   return doc;
 }
 
-bool Mart::update_weights(std::shared_ptr<std::vector<float>> weights) {
+bool Mart::update_weights(std::shared_ptr<std::vector<double>> weights) {
   return ensemble_model_.update_ensemble_weights(weights);
 }
 

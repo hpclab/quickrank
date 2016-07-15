@@ -30,7 +30,7 @@ class Ensemble {
  public:
   virtual ~Ensemble();
   void set_capacity(const size_t n);
-  void push(RTNode *root, const float weight, const float maxlabel);
+  void push(RTNode *root, const double weight, const float maxlabel);
   void pop();
 
   size_t get_size() const {
@@ -52,19 +52,19 @@ class Ensemble {
                                   bool skip_useless_trees = true) const;
 
   virtual bool update_ensemble_weights(
-      std::shared_ptr<std::vector<float>> weights);
+      std::shared_ptr<std::vector<double>> weights);
 
-  virtual std::shared_ptr<std::vector<float>> get_weights() const;
+  virtual std::shared_ptr<std::vector<double>> get_weights() const;
 
  private:
   struct wt {
-    wt(RTNode *root, float weight, float maxlabel)
+    wt(RTNode *root, double weight, float maxlabel)
         : root(root),
           weight(weight),
           maxlabel(maxlabel) {
     }
     RTNode *root = NULL;
-    float weight = 0.0;
+    double weight = 0.0;
     float maxlabel = 0.0f;
   };
   size_t size = 0;

@@ -111,14 +111,14 @@ class LTR_Algorithm {
   /// Update the weights for the ensemble models (only).
   ///
   /// Default implementation will do nothing (default for non ensemble models).
-  virtual bool update_weights(std::shared_ptr<std::vector<float>> weights) {
+  virtual bool update_weights(std::shared_ptr<std::vector<double>> weights) {
     return false;
   }
 
   /// Return the weights for the ensemble models (only).
   ///
   /// Default implementation will do nothing (default for non ensemble models).
-  virtual std::shared_ptr<std::vector<float>> get_weights() const {
+  virtual std::shared_ptr<std::vector<double>> get_weights() const {
     return nullptr;
   }
 
