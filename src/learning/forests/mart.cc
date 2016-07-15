@@ -354,7 +354,6 @@ pugi::xml_document* Mart::get_xml_model() const {
 
   pugi::xml_document* doc = new pugi::xml_document();
   pugi::xml_node root = doc->append_child("ranker");
-
   pugi::xml_node info = root.append_child("info");
 
   info.append_child("type").text() = name().c_str();

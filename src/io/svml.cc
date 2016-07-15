@@ -41,7 +41,7 @@ std::unique_ptr<data::Dataset> Svml::read_horizontal(
   FILE *f = fopen(filename.c_str(), "r");
   if (!f) {
     std::cerr << "!!! Error while opening file " << filename << "."
-              << std::endl;
+        << std::endl;
     exit(EXIT_FAILURE);
   }
 
@@ -137,7 +137,7 @@ std::unique_ptr<data::Dataset> Svml::read_horizontal(
       std::chrono::high_resolution_clock::now();
 
   // put partial data in final data structure
-  data::Dataset* dataset = new data::Dataset(data_qids.size(), maxfid);
+  data::Dataset *dataset = new data::Dataset(data_qids.size(), maxfid);
   auto i_q = data_qids.begin();
   auto i_l = data_labels.begin();
   auto i_x = data_instances.begin();
@@ -160,35 +160,35 @@ std::unique_ptr<data::Dataset> Svml::read_horizontal(
   return std::unique_ptr<data::Dataset>(dataset);
 }
 
-  void Svml::write(std::shared_ptr<data::Dataset> dataset,
-                   const std::string &file) {
+void Svml::write(std::shared_ptr<data::Dataset> dataset,
+                 const std::string &file) {
 
-    std::ofstream outFile(file, std::ofstream::out | std::ofstream::trunc);
+  std::ofstream outFile(file, std::ofstream::out | std::ofstream::trunc);
 
-    for (size_t q = 0; q < dataset->num_queries(); q++) {
-      std::shared_ptr<data::QueryResults> results = dataset->getQueryResults(q);
-      const Feature* features = results->features();
-      const Label* labels = results->labels();
+  for (size_t q = 0; q < dataset->num_queries(); q++) {
+    std::shared_ptr<data::QueryResults> results = dataset->getQueryResults(q);
+    const Feature *features = results->features();
+    const Label *labels = results->labels();
 
-      for (size_t r = 0; r < results->num_results(); r++) {
-        outFile << std::setprecision(0) << labels[r] << " qid:" << q+1;
-        for (size_t f = 0; f < dataset->num_features(); f++) {
-          outFile << " " << f+1 << ":" <<
-              std::fixed << std::setprecision(8) << features[f];
-        }
-        outFile << std::endl;
-        features += dataset->num_features();
+    for (size_t r = 0; r < results->num_results(); r++) {
+      outFile << std::setprecision(0) << labels[r] << " qid:" << q + 1;
+      for (size_t f = 0; f < dataset->num_features(); f++) {
+        outFile << " " << f + 1 << ":" <<
+            std::fixed << std::setprecision(8) << features[f];
       }
+      outFile << std::endl;
+      features += dataset->num_features();
     }
-
-    outFile.close();
   }
 
-std::ostream& Svml::put(std::ostream& os) const {
+  outFile.close();
+}
+
+std::ostream &Svml::put(std::ostream &os) const {
   // num threads is not reported here.
   os << std::setprecision(2) << "#\t Reading time: " << reading_time_
-     << " s. @ " << file_size_ / 1024 / 1024 / reading_time_ << " MB/s "
-     << " (post-proc.: " << processing_time_ << " s.)" << std::endl;
+      << " s. @ " << file_size_ / 1024 / 1024 / reading_time_ << " MB/s "
+      << " (post-proc.: " << processing_time_ << " s.)" << std::endl;
   return os;
 }
 

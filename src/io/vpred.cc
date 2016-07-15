@@ -24,7 +24,6 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <string>
 #include <vector>
 #include <queue>
 #include <cmath>
@@ -36,17 +35,17 @@
 namespace quickrank {
 namespace io {
 
-std::string trim_node_value(const pugi::xml_node& node,
-                 const std::string& label) {
+std::string trim_node_value(const pugi::xml_node &node,
+                            const std::string &label) {
   std::string res = node.child_value(label.c_str());
   return trim(res);
 }
 
-bool is_leaf(const pugi::xml_node& node) {
+bool is_leaf(const pugi::xml_node &node) {
   return !node.child("output").empty();
 }
 
-uint32_t find_depth(const pugi::xml_node& split) {
+uint32_t find_depth(const pugi::xml_node &split) {
   uint32_t ld = 0, rd = 0;
   for (auto split_child : split.children()) {
     if (strcmp(split_child.name(), "output") == 0)
@@ -70,8 +69,8 @@ struct tree_node {
 
   std::string feature, theta, leaf;
 
-  tree_node(const pugi::xml_node& node, uint32_t id, uint32_t pid,
-            bool left, const std::string& parent_f = "")
+  tree_node(const pugi::xml_node &node, uint32_t id, uint32_t pid,
+            bool left, const std::string &parent_f = "")
       : node(node),
         id(id),
         pid(pid),
@@ -88,8 +87,8 @@ struct tree_node {
   }
 };
 
-void generate_vpred_input(const std::string& ensemble_file,
-                          const std::string& output_file) {
+void generate_vpred_input(const std::string &ensemble_file,
+                          const std::string &output_file) {
 
   if (ensemble_file.empty()) {
     std::cerr << "!!! Model filename is empty." << std::endl;
@@ -116,7 +115,7 @@ void generate_vpred_input(const std::string& ensemble_file,
   output << num_trees << std::endl;  // print number of trees in the ensemble
 
   // for each tree
-  for (const auto& tree_it : trees) {
+  for (const auto &tree_it : trees) {
 
     auto tree = tree_it.node();
 
@@ -133,29 +132,29 @@ void generate_vpred_input(const std::string& ensemble_file,
     // breadth first visit
     // TODO: Remove object copies with references
     for (node_queue.push(tree_node(split_node, local_id++, -1, false));
-        !node_queue.empty(); node_queue.pop()) {
+         !node_queue.empty(); node_queue.pop()) {
       auto node = node_queue.front();
       if (is_leaf(node.node)) {
         if (node.id >= tree_size) {
           output << "leaf" << " " << node.id << " " << node.pid << " "
-                 << node.left << " " << (learning_rate * std::stod(node.leaf))
-                 << std::endl;
+              << node.left << " " << (learning_rate * std::stod(node.leaf))
+              << std::endl;
         } else {
           output << "node" << " " << node.id << " " << node.pid << " "
-                 << (std::stoi(node.feature) - 1) << " " << node.left << " "
-                 << (learning_rate * std::stod(node.leaf)) << std::endl;
+              << (std::stoi(node.feature) - 1) << " " << node.left << " "
+              << (learning_rate * std::stod(node.leaf)) << std::endl;
         }
       } else {
         if (node.id == 0) {
           output << "root" << " " << node.id << " "
-                 << (std::stoi(node.feature) - 1) << " " << node.theta
-                 << std::endl;  // print the root info
+              << (std::stoi(node.feature) - 1) << " " << node.theta
+              << std::endl;  // print the root info
         } else {
           output << "node" << " " << node.id << " " << node.pid << " "
-                 << (std::stoi(node.feature) - 1) << " " << node.left << " "
-                 << node.theta << std::endl;
+              << (std::stoi(node.feature) - 1) << " " << node.left << " "
+              << node.theta << std::endl;
         }
-        for (const auto& split_child : node.node.children()) {
+        for (const auto &split_child : node.node.children()) {
 
           if (strcmp(split_child.name(), "split") == 0) {
             std::string pos = split_child.attribute("pos").value();

@@ -14,9 +14,6 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release")
 endif()
 
-#set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE BOOL
-#   "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel." FORCE)
-
 # require support of OpenMP
 find_package(OpenMP REQUIRED)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
@@ -46,6 +43,9 @@ list(REMOVE_ITEM all_sources ${QUICKLEARN_MAIN})
 list(REMOVE_ITEM all_sources ${QUICKSCORE_MAIN})
 list(REMOVE_ITEM all_sources ${RANKER_CC})
 
+set(XML_PROVA "${CMAKE_SOURCE_DIR}/src/provaXML.cc")
+list(REMOVE_ITEM all_sources ${XML_PROVA})
+
 file(GLOB_RECURSE unit_tests_sources ${CMAKE_SOURCE_DIR}/catch-unit-tests/*.cc)
 
 # external libraries
@@ -58,6 +58,10 @@ file(GLOB_RECURSE all_headers ${CMAKE_SOURCE_DIR}/include/*.h)
 file(GLOB_RECURSE all_headers ${CMAKE_SOURCE_DIR}/lib/pugixml/src/*.hpp)
 file(GLOB_RECURSE all_headers ${CMAKE_SOURCE_DIR}/lib/catch/include/catch.hpp)
 file(GLOB_RECURSE all_headers ${CMAKE_SOURCE_DIR}/lib/paramsmap/*.h)
+
+add_executable(prova ${all_headers} ${XML_PROVA})
+target_link_libraries(prova -pugixml)
+target_link_libraries(prova -quickrank_common)
 
 # ---------------------------------
 # quicklearn target
@@ -96,6 +100,6 @@ target_link_libraries(unit-tests -quickrank_common)
 # generate documentation
 add_custom_target(doc
     COMMAND doxygen quickrank.doxygen
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/documentation
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/api-documentation
     COMMENT "Creating the documentation with doxygen"
 )
