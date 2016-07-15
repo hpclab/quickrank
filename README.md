@@ -238,6 +238,13 @@ If you use QuickRank, please acknowledge the following paper:
  *Information Processing & Management* (2016).
  [LINK](http://dx.doi.org/10.1016/j.ipm.2016.05.004).
 
+If you use the **CLEAVER**, please acknowledge the following paper:
+ - C. Lucchese, F. M. Nardini, S. Orlando, R. Perego, F. Silvestri, S. Trani.
+ **Post-Learning Optimization of Tree Ensembles for Efficient Ranking**.
+ *ACM SIGIR Conference on Research and Development in Information Retrieval*, (2016).
+ [LINK](http://dx.doi.org/10.1145/2911451.2914763).
+
+
 We will be happy to know that you are using QuickRank and to acknowledge you.
 [Check the list of works using QuickRank](documentation/usedby.md)
 
