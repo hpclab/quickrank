@@ -3,7 +3,7 @@
 # BUILD TYPE: -DCMAKE_BUILD_TYPE=[Release|Debug]
 
 cmake_minimum_required(VERSION 2.8)
-project(QUICKRANK CXX)
+project(QUICKRANK C CXX)
 
 # require support of C++11
 set_property(GLOBAL PROPERTY CXX_STANDARD 11)
@@ -13,6 +13,8 @@ set_property(GLOBAL PROPERTY CXX_STANDARD_REQUIRED ON)
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release")
 endif()
+
+#set(CMAKE_VERBOSE_MAKEFILE ON)
 
 #set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE BOOL
 #   "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel." FORCE)
@@ -46,6 +48,9 @@ list(REMOVE_ITEM all_sources ${QUICKLEARN_MAIN})
 list(REMOVE_ITEM all_sources ${QUICKSCORE_MAIN})
 list(REMOVE_ITEM all_sources ${RANKER_CC})
 
+set(XML_PROVA "${CMAKE_SOURCE_DIR}/src/provaXML.cc")
+list(REMOVE_ITEM all_sources ${XML_PROVA})
+
 file(GLOB_RECURSE unit_tests_sources ${CMAKE_SOURCE_DIR}/catch-unit-tests/*.cc)
 
 # external libraries
@@ -58,6 +63,10 @@ file(GLOB_RECURSE all_headers ${CMAKE_SOURCE_DIR}/include/*.h)
 file(GLOB_RECURSE all_headers ${CMAKE_SOURCE_DIR}/lib/pugixml/src/*.hpp)
 file(GLOB_RECURSE all_headers ${CMAKE_SOURCE_DIR}/lib/catch/include/catch.hpp)
 file(GLOB_RECURSE all_headers ${CMAKE_SOURCE_DIR}/lib/paramsmap/*.h)
+
+add_executable(prova ${all_headers} ${XML_PROVA})
+target_link_libraries(prova -pugixml)
+target_link_libraries(prova -quickrank_common)
 
 # ---------------------------------
 # quicklearn target
