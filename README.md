@@ -34,15 +34,13 @@ On Ubuntu Linux:
 
 Once the compiler and the build system are installed, you can get the latest stable source packages (including the dependencies) using git:
 
-	git clone http://git.hpc.isti.cnr.it/quickrank/quickrank.git
-	cd quickrank
-	git submodule init
-	git submodule update
+	git clone --recursive https://github.com/hpclab/quickrank.git
 
 QuickRank relies on the CMake build system. The root directory contains CMake files that can be used to build the project from the command line or using an IDE which supports CMake. The instructions which follows describe how to build the project from the command line, but the same actions can be performed using appropriate GUI tools. 
 
 Create a temporary build folder and change your working directory to it:
 
+	cd quickrank
 	mkdir build_
 	cd build_
 
