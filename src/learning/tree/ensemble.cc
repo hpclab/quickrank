@@ -36,7 +36,7 @@ void Ensemble::set_capacity(const size_t n) {
       delete arr[i].root;
     free(arr);
   }
-  arr = (wt*) malloc(sizeof(wt) * n), size = 0;
+  arr = (wt *) malloc(sizeof(wt) * n), size = 0;
 }
 
 void Ensemble::push(RTNode *root, const double weight, const float maxlabel) {
@@ -48,7 +48,7 @@ void Ensemble::pop() {
 }
 
 // assumes vertical dataset
-quickrank::Score Ensemble::score_instance(const quickrank::Feature* d,
+quickrank::Score Ensemble::score_instance(const quickrank::Feature *d,
                                           const size_t offset) const {
   double sum = 0.0f;
 // #pragma omp parallel for reduction(+:sum)
@@ -58,8 +58,8 @@ quickrank::Score Ensemble::score_instance(const quickrank::Feature* d,
 }
 
 std::shared_ptr<std::vector<quickrank::Score>>
-  Ensemble::partial_scores_instance(const quickrank::Feature *d,
-                                    const size_t offset) const {
+Ensemble::partial_scores_instance(const quickrank::Feature *d,
+                                  const size_t offset) const {
   std::vector<quickrank::Score> scores(size);
   for (unsigned int i = 0; i < size; ++i)
     scores[i] = arr[i].root->score_instance(d, offset) * arr[i].weight;
@@ -91,7 +91,7 @@ bool Ensemble::update_ensemble_weights(
 
   if (weights->size() != get_size()) {
     std::cerr << "# ## ERROR!! Ensemble size does not match size of the "
-                     "weight vector in updating the weights" << std::endl;
+        "weight vector in updating the weights" << std::endl;
     return false;
   }
 
@@ -102,7 +102,7 @@ bool Ensemble::update_ensemble_weights(
 }
 
 std::shared_ptr<std::vector<double>> Ensemble::get_weights() const {
-  std::vector<double>* weights = new std::vector<double>(size);
+  std::vector<double> *weights = new std::vector<double>(size);
   for (unsigned int i = 0; i < size; ++i)
     (*weights)[i] = arr[i].weight;
   return std::shared_ptr<std::vector<double>>(weights);

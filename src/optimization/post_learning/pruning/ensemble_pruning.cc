@@ -40,7 +40,7 @@ namespace pruning {
 const std::string EnsemblePruning::NAME_ = "EPRUNING";
 
 const std::vector<std::string> EnsemblePruning::pruningMethodNames = {
-  "RANDOM", "LOW_WEIGHTS", "SKIP", "LAST", "QUALITY_LOSS", "SCORE_LOSS"
+    "RANDOM", "LOW_WEIGHTS", "SKIP", "LAST", "QUALITY_LOSS", "SCORE_LOSS"
 };
 
 EnsemblePruning::EnsemblePruning(double pruning_rate) :
@@ -49,12 +49,13 @@ EnsemblePruning::EnsemblePruning(double pruning_rate) :
 }
 
 EnsemblePruning::EnsemblePruning(double pruning_rate,
-                                 std::shared_ptr<learning::linear::LineSearch> lineSearch) :
+                                 std::shared_ptr<learning::linear::LineSearch> lineSearch)
+    :
     pruning_rate_(pruning_rate),
     lineSearch_(lineSearch) {
 }
 
-EnsemblePruning::EnsemblePruning(const pugi::xml_document& model) {
+EnsemblePruning::EnsemblePruning(const pugi::xml_document &model) {
   pugi::xml_node model_info = model.child("optimizer").child("info");
   pugi::xml_node model_tree = model.child("optimizer").child("ensemble");
 
@@ -63,7 +64,7 @@ EnsemblePruning::EnsemblePruning(const pugi::xml_document& model) {
   // TODO: read the line search parameters if available in the xml
 
   unsigned int max_feature = 0;
-  for (const auto& couple: model_tree.children()) {
+  for (const auto &couple: model_tree.children()) {
 
     if (strcmp(couple.name(), "tree") == 0) {
       unsigned int feature = couple.child("index").text().as_uint();
@@ -75,7 +76,7 @@ EnsemblePruning::EnsemblePruning(const pugi::xml_document& model) {
 
   estimators_to_prune_ = 0;
   std::vector<float>(max_feature, 0.0).swap(weights_);
-  for (const auto& tree: model_tree.children()) {
+  for (const auto &tree: model_tree.children()) {
     if (strcmp(tree.name(), "tree") == 0) {
       unsigned int feature = tree.child("index").text().as_uint();
       float weight = tree.child("weight").text().as_float();
@@ -86,12 +87,12 @@ EnsemblePruning::EnsemblePruning(const pugi::xml_document& model) {
   }
 }
 
-std::ostream& EnsemblePruning::put(std::ostream &os) const {
+std::ostream &EnsemblePruning::put(std::ostream &os) const {
   os << "# Optimizer: " << name() << std::endl
-    << "# pruning rate = " << pruning_rate_ << std::endl
-    << "# pruning pruning_method = " << EnsemblePruning::getPruningMethod(
+      << "# pruning rate = " << pruning_rate_ << std::endl
+      << "# pruning pruning_method = " << EnsemblePruning::getPruningMethod(
       pruning_method())
-    << std::endl;
+      << std::endl;
   if (lineSearch_)
     os << "# Line Search Parameters: " << std::endl << *lineSearch_;
   else
@@ -130,7 +131,7 @@ void EnsemblePruning::optimize(
   std::vector<Score> training_score(training_dataset->num_instances());
   score(training_dataset.get(), &training_score[0]);
   auto init_metric_on_training = metric->evaluate_dataset(training_dataset,
-                                                     &training_score[0]);
+                                                          &training_score[0]);
 
   std::cout << std::endl;
   std::cout << "# Without pruning:" << std::endl;
@@ -245,9 +246,9 @@ void EnsemblePruning::optimize(
       elapsed.count() << " seconds" << std::endl;
 }
 
-pugi::xml_document* EnsemblePruning::get_xml_model() const {
+pugi::xml_document *EnsemblePruning::get_xml_model() const {
 
-  pugi::xml_document* doc = new pugi::xml_document();
+  pugi::xml_document *doc = new pugi::xml_document();
   pugi::xml_node root = doc->append_child("optimizer");
 
   pugi::xml_node info = root.append_child("info");
@@ -258,7 +259,7 @@ pugi::xml_document* EnsemblePruning::get_xml_model() const {
   info.append_child("pruning-rate").text() = pruning_rate_;
 
   if (lineSearch_) {
-    pugi::xml_document& ls_model = *lineSearch_->get_xml_model();
+    pugi::xml_document &ls_model = *lineSearch_->get_xml_model();
     pugi::xml_node ls_info = ls_model.child("ranker").child("info");
 
     // use the info section of the line search model to add a new node into
@@ -286,8 +287,8 @@ pugi::xml_document* EnsemblePruning::get_xml_model() const {
 
 void EnsemblePruning::score(data::Dataset *dataset, Score *scores) const {
 
-  Feature* features = dataset->at(0,0);
-  #pragma omp parallel for
+  Feature *features = dataset->at(0, 0);
+#pragma omp parallel for
   for (unsigned int s = 0; s < dataset->num_instances(); s++) {
     unsigned int offset_feature = s * dataset->num_features();
     scores[s] = 0;
@@ -299,7 +300,7 @@ void EnsemblePruning::score(data::Dataset *dataset, Score *scores) const {
 }
 
 void EnsemblePruning::import_weights_from_line_search(
-    std::set<unsigned int>& pruned_estimators) {
+    std::set<unsigned int> &pruned_estimators) {
 
   auto ls_weights = lineSearch_->get_weights();
 
@@ -313,10 +314,10 @@ void EnsemblePruning::import_weights_from_line_search(
 }
 
 std::shared_ptr<data::Dataset> EnsemblePruning::filter_dataset(
-      std::shared_ptr<data::Dataset> dataset,
-      std::set<unsigned int>& pruned_estimators) const {
+    std::shared_ptr<data::Dataset> dataset,
+    std::set<unsigned int> &pruned_estimators) const {
 
-  data::Dataset* filt_dataset = new data::Dataset(dataset->num_instances(),
+  data::Dataset *filt_dataset = new data::Dataset(dataset->num_instances(),
                                                   estimators_to_select_);
 
   // allocate feature vector
@@ -325,8 +326,8 @@ std::shared_ptr<data::Dataset> EnsemblePruning::filter_dataset(
 
   for (unsigned int q = 0; q < dataset->num_queries(); q++) {
     std::shared_ptr<data::QueryResults> results = dataset->getQueryResults(q);
-    const Feature* features = results->features();
-    const Label* labels = results->labels();
+    const Feature *features = results->features();
+    const Label *labels = results->labels();
 
     for (unsigned int r = 0; r < results->num_results(); r++) {
       skipped = 0;

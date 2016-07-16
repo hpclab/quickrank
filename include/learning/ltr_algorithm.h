@@ -37,15 +37,15 @@ class LTR_Algorithm {
   }
 
   /// Generates a LTR_Algorithm instance from a previously saved XML model.
-  LTR_Algorithm(const pugi::xml_document& model);
+  LTR_Algorithm(const pugi::xml_document &model);
 
   virtual ~LTR_Algorithm() {
   }
 
   /// Avoid inefficient copy constructor
-  LTR_Algorithm( const LTR_Algorithm& other ) = delete;
+  LTR_Algorithm(const LTR_Algorithm &other) = delete;
   /// Avoid inefficient copy assignment
-  LTR_Algorithm& operator=( const LTR_Algorithm& ) = delete;
+  LTR_Algorithm &operator=(const LTR_Algorithm &) = delete;
 
   /// Returns the name of the ranker.
   virtual std::string name() const = 0;
@@ -71,12 +71,12 @@ class LTR_Algorithm {
   /// \note Before scoring it invokes the function \a preprocess_dataset.
   ///       Usually this does not need to be overridden.
   virtual void score_dataset(std::shared_ptr<data::Dataset> dataset,
-                             Score* scores) const;
+                             Score *scores) const;
 
   /// Returns the score of a given document.
   /// \param d is a pointer to the document to be evaluated
   /// \note   Each algorithm has a different implementation.
-  virtual Score score_document(const Feature* d) const = 0;
+  virtual Score score_document(const Feature *d) const = 0;
 
   /// Returns the partial score of a given document, tree by tree.
   /// \param d is a pointer to the document to be evaluated
@@ -100,7 +100,7 @@ class LTR_Algorithm {
       std::string model_filename);
 
   /// Return the xml model representing the current object
-  virtual pugi::xml_document* get_xml_model() const = 0;
+  virtual pugi::xml_document *get_xml_model() const = 0;
 
   /// Print additional statistics.
   ///
@@ -125,12 +125,12 @@ class LTR_Algorithm {
  private:
 
   /// The output stream operator.
-  friend std::ostream& operator<<(std::ostream& os, const LTR_Algorithm& a) {
+  friend std::ostream &operator<<(std::ostream &os, const LTR_Algorithm &a) {
     return a.put(os);
   }
 
   /// Prints the description of Algorithm, including its parameters
-  virtual std::ostream& put(std::ostream& os) const = 0;
+  virtual std::ostream &put(std::ostream &os) const = 0;
 
 };
 

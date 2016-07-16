@@ -41,7 +41,7 @@ namespace pruning {
 /// This optimization algorithm expect the datasets to be in the partial
 /// scores format (i.e., a column for each ensemble, with the partial score
 /// returned by that ensamble on each document (row of the original dataset)
-class EnsemblePruning : public PostLearningOptimization {
+class EnsemblePruning: public PostLearningOptimization {
 
  public:
 
@@ -54,7 +54,7 @@ class EnsemblePruning : public PostLearningOptimization {
   EnsemblePruning(double pruning_rate,
                   std::shared_ptr<learning::linear::LineSearch> lineSearch);
 
-  EnsemblePruning(const pugi::xml_document& model);
+  EnsemblePruning(const pugi::xml_document &model);
 
   /// Returns the name of the optimizer.
   std::string name() const {
@@ -70,7 +70,7 @@ class EnsemblePruning : public PostLearningOptimization {
     return true;
   };
 
-  virtual void pruning(std::set<unsigned int>& pruned_estimators,
+  virtual void pruning(std::set<unsigned int> &pruned_estimators,
                        std::shared_ptr<data::Dataset> dataset,
                        std::shared_ptr<metric::ir::Metric> scorer) = 0;
 
@@ -84,10 +84,10 @@ class EnsemblePruning : public PostLearningOptimization {
   /// Process the dataset filtering out features with 0-weight
   virtual std::shared_ptr<data::Dataset> filter_dataset(
       std::shared_ptr<data::Dataset> dataset,
-      std::set<unsigned int>& pruned_estimators) const;
+      std::set<unsigned int> &pruned_estimators) const;
 
   /// Return the xml model representing the current object
-  virtual pugi::xml_document* get_xml_model() const;
+  virtual pugi::xml_document *get_xml_model() const;
 
   static const std::vector<std::string> pruningMethodNames;
 
@@ -110,7 +110,7 @@ class EnsemblePruning : public PostLearningOptimization {
   }
 
   /// Returns the learned weights
-  virtual std::vector<float>& get_weigths() {
+  virtual std::vector<float> &get_weigths() {
     return weights_;
   }
 
@@ -125,12 +125,12 @@ class EnsemblePruning : public PostLearningOptimization {
   std::vector<float> weights_;
 
   /// Prints the description of Algorithm, including its parameters
-  std::ostream& put(std::ostream& os) const;
+  std::ostream &put(std::ostream &os) const;
 
   virtual void score(data::Dataset *dataset, Score *scores) const;
 
   virtual void import_weights_from_line_search(
-      std::set<unsigned int>& pruned_estimators);
+      std::set<unsigned int> &pruned_estimators);
 };
 
 }  // namespace pruning

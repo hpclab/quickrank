@@ -30,7 +30,7 @@ namespace quickrank {
 namespace learning {
 namespace forests {
 
-class LambdaMart : public Mart {
+class LambdaMart: public Mart {
  public:
   /// Initializes a new LambdaMart instance with the given learning parameters.
   ///
@@ -47,7 +47,7 @@ class LambdaMart : public Mart {
   }
 
   /// Generates a LTR_Algorithm instance from a previously saved XML model.
-  LambdaMart(const pugi::xml_document& model)
+  LambdaMart(const pugi::xml_document &model)
       : Mart(model) {
   }
 
@@ -74,7 +74,7 @@ class LambdaMart : public Mart {
   /// \param metric The metric to be optimized.
   virtual void compute_pseudoresponses(
       std::shared_ptr<data::VerticalDataset> training_dataset,
-      metric::ir::Metric* metric);
+      metric::ir::Metric *metric);
 
   /// Fits a regression tree on the gradient given by the pseudo residuals
   ///
@@ -83,7 +83,7 @@ class LambdaMart : public Mart {
       std::shared_ptr<data::VerticalDataset> training_dataset);
 
  protected:
-  double* instance_weights_ = NULL;  //corresponds to datapoint.cache
+  double *instance_weights_ = NULL;  //corresponds to datapoint.cache
 
 };
 

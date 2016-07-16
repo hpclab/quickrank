@@ -19,24 +19,20 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_UTILS_SYMMATRIX_H_
-#define QUICKRANK_UTILS_SYMMATRIX_H_
-
-/*! \file symmatrix.hpp
- * \brief implement a symetric matrix of order n by using n(n+1)/2 elements
- */
+#pragma once
 
 #include <cstdlib>
 
 /*! \def sm2v(i,j,size)
  * \brief map a 2D square matrix coorinate pair (\a i, \a j) into a 1D array coordinate; \a size denotes the size of the matrix.
  */
-#define sm2v(i,j,size) ((i)*(size)-((i)-1)*(i)/2+(j)-(i))
+#define sm2v(i, j, size) ((i)*(size)-((i)-1)*(i)/2+(j)-(i))
 
 /*! \class symmatrix
  *  \brief symmetric matrix implementation
  */
-template<typename T> class SymMatrix {
+template<typename T>
+class SymMatrix {
  public:
   /** \brief default constructor: allocate an array of size \a size*(\a size+1)/2.
    * @param size order of the matrix.
@@ -92,5 +88,3 @@ template<typename T> class SymMatrix {
 };
 
 #undef sm2v
-
-#endif

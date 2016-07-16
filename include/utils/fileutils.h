@@ -25,7 +25,7 @@
 #include <iostream>
 #include <sys/stat.h>
 
-inline bool file_exist(const std::string& filename) {
+inline bool file_exist(const std::string &filename) {
   struct stat buffer;
-  return (stat (filename.c_str(), &buffer) == 0);
+  return (stat(filename.c_str(), &buffer) == 0);
 }

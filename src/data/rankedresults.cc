@@ -25,7 +25,7 @@ namespace quickrank {
 namespace data {
 
 RankedResults::RankedResults(std::shared_ptr<QueryResults> results,
-                             Score* scores) {
+                             Score *scores) {
 
   num_results_ = results->num_results();
   unmap_ = new size_t[num_results_];

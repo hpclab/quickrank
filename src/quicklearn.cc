@@ -51,8 +51,6 @@
 #include "optimization/post_learning/pruning/ensemble_pruning.h"
 
 #include "metric/ir/tndcg.h"
-#include "metric/ir/ndcg.h"
-#include "metric/ir/dcg.h"
 #include "metric/ir/map.h"
 
 #include "driver/driver.h"
@@ -65,15 +63,19 @@ void print_logo() {
     std::cout << color_logo << std::endl
         << "      _____  _____" << std::endl
         << "     /    / /____/" << std::endl
-        << "    /____\\ /    \\          QuickRank has been developed by hpc.isti.cnr.it" << std::endl
-        << "    ::Quick:Rank::                                   quickrank@isti.cnr.it" << std::endl
+        << "    /____\\ /    \\          QuickRank has been developed by hpc.isti.cnr.it"
+        << std::endl
+        << "    ::Quick:Rank::                                   quickrank@isti.cnr.it"
+        << std::endl
         << color_reset << std::endl;
   } else {
     std::cout << std::endl
         << "      _____  _____" << std::endl
         << "     /    / /____/" << std::endl
-        << "    /____\\ /    \\          QuickRank has been developed by hpc.isti.cnr.it" << std::endl
-        << "    ::Quick:Rank::                                   quickrank@isti.cnr.it" << std::endl
+        << "    /____\\ /    \\          QuickRank has been developed by hpc.isti.cnr.it"
+        << std::endl
+        << "    ::Quick:Rank::                                   quickrank@isti.cnr.it"
+        << std::endl
         << std::endl;
   }
 }
@@ -86,7 +88,8 @@ int main(int argc, char *argv[]) {
   srand(time(NULL));
 
   // default parameters
-  std::string algorithm_string = quickrank::learning::forests::LambdaMart::NAME_;
+  std::string
+      algorithm_string = quickrank::learning::forests::LambdaMart::NAME_;
   size_t ntrees = 1000;
   double shrinkage = 0.10f;
   size_t nthresholds = 0;
@@ -135,17 +138,24 @@ int main(int argc, char *argv[]) {
   pmap.addOptionWithArg("algo",
                         "LtR algorithm ["
                             + quickrank::learning::forests::Mart::NAME_ + "|"
-                            + quickrank::learning::forests::LambdaMart::NAME_ + "|"
-                            + quickrank::learning::forests::ObliviousMart::NAME_ + "|"
-                            + quickrank::learning::forests::ObliviousLambdaMart::NAME_ + "|"
-                            + quickrank::learning::forests::Rankboost::NAME_ + "|"
-                            + quickrank::learning::linear::CoordinateAscent::NAME_ + "|"
-                            + quickrank::learning::linear::LineSearch::NAME_ + "|"
+                            + quickrank::learning::forests::LambdaMart::NAME_
+                            + "|"
+                            + quickrank::learning::forests::ObliviousMart::NAME_
+                            + "|"
+                            + quickrank::learning::forests::ObliviousLambdaMart::NAME_
+                            + "|"
+                            + quickrank::learning::forests::Rankboost::NAME_
+                            + "|"
+                            + quickrank::learning::linear::CoordinateAscent::NAME_
+                            + "|"
+                            + quickrank::learning::linear::LineSearch::NAME_
+                            + "|"
                             + quickrank::learning::CustomLTR::NAME_ + "]",
                         algorithm_string);
 
   pmap.addOptionWithArg("train-metric",
-                        "set train metric [" + quickrank::metric::ir::Dcg::NAME_ + "|"
+                        "set train metric [" + quickrank::metric::ir::Dcg::NAME_
+                            + "|"
                             + quickrank::metric::ir::Ndcg::NAME_ + "|"
                             + quickrank::metric::ir::Tndcg::NAME_ + "|"
                             + quickrank::metric::ir::Map::NAME_ + "]",
@@ -204,7 +214,8 @@ int main(int argc, char *argv[]) {
   // --------------------------------------------------------
   // CoordinateAscent and LineSearch options
   // add by Chiara Pierucci and Salvatore Trani
-  pmap.addMessage("Training phase - specific options for Coordinate Ascent and Line Search:");
+  pmap.addMessage(
+      "Training phase - specific options for Coordinate Ascent and Line Search:");
   pmap.addOptionWithArg("num-samples",
                         "set number of samples in search window",
                         num_points);
@@ -252,7 +263,8 @@ int main(int argc, char *argv[]) {
           + "]");
 
   std::string pruningMethods = "";
-  for (auto i: quickrank::optimization::post_learning::pruning::EnsemblePruning::pruningMethodNames) {
+  for (auto
+        i: quickrank::optimization::post_learning::pruning::EnsemblePruning::pruningMethodNames) {
     pruningMethods += i + "|";
   }
   pruningMethods = pruningMethods.substr(0, pruningMethods.size() - 1);
@@ -292,7 +304,8 @@ int main(int argc, char *argv[]) {
   // --------------------------------------------------------
   pmap.addMessage("Test phase - general options:");
   pmap.addOptionWithArg("test-metric",
-                        "set test metric [" + quickrank::metric::ir::Dcg::NAME_ + "|"
+                        "set test metric [" + quickrank::metric::ir::Dcg::NAME_
+                            + "|"
                             + quickrank::metric::ir::Ndcg::NAME_ + "|"
                             + quickrank::metric::ir::Tndcg::NAME_ + "|"
                             + quickrank::metric::ir::Map::NAME_ + "]",

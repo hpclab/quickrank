@@ -38,7 +38,7 @@ void GenOblivious::model_tree_get_leaves(pugi::xml_node &split_xml,
 
   for (pugi::xml_node &node : split_xml.children()) {
     if (strcmp(node.name(), "output") == 0) {
-      prediction = node.child_value();
+      prediction = node.text().as_string();
       trim(prediction);
       is_leaf = true;
       break;
@@ -103,7 +103,7 @@ void GenOblivious::model_tree_get_thresholds(pugi::xml_node &split_xml,
 
   for (pugi::xml_node &node : split_xml.children()) {
     if (strcmp(node.name(), "threshold") == 0) {
-      threshold = node.child_value();
+      threshold = node.text().as_string();
       trim(threshold);
       is_leaf = true;
       break;

@@ -23,25 +23,20 @@
  */
 #include "learning/linear/coordinate_ascent.h"
 
-#include <iostream>
 #include <fstream>
 #include <iomanip>
-#include <cfloat>
 #include <cmath>
 #include <chrono>
-#include <vector>
 #include <numeric>
-#include <algorithm>
-#include <string.h>
 #include <sstream>
 
 namespace quickrank {
 namespace learning {
 namespace linear {
 
-void preCompute(Feature* training_dataset, size_t num_docs,
-                size_t num_fx, Score* PreSum, double* weights,
-                Score* MyTrainingScore, size_t i) {
+void preCompute(Feature *training_dataset, size_t num_docs,
+                size_t num_fx, Score *PreSum, double *weights,
+                Score *MyTrainingScore, size_t i) {
 
 #pragma omp parallel for
   for (size_t j = 0; j < num_docs; j++) {
@@ -69,7 +64,7 @@ CoordinateAscent::CoordinateAscent(unsigned int num_points, double window_size,
       max_failed_vali_(max_failed_vali) {
 }
 
-CoordinateAscent::CoordinateAscent(const pugi::xml_document& model) {
+CoordinateAscent::CoordinateAscent(const pugi::xml_document &model) {
 
   num_samples_ = 0;
   window_size_ = 0.0;
@@ -88,7 +83,7 @@ CoordinateAscent::CoordinateAscent(const pugi::xml_document& model) {
   max_failed_vali_ = model_info.child("max-failed-vali").text().as_uint();
 
   unsigned int max_feature = 0;
-  for (const auto& feature: model_ensemble.children("feature")) {
+  for (const auto &feature: model_ensemble.children("feature")) {
     unsigned int featureId = feature.attribute("id").as_uint();
     if (featureId > max_feature) {
       max_feature = featureId;
@@ -97,7 +92,7 @@ CoordinateAscent::CoordinateAscent(const pugi::xml_document& model) {
 
   std::vector<double>(max_feature, 0.0).swap(best_weights_);
 
-  for (const auto& feature: model_ensemble.children("feature")) {
+  for (const auto &feature: model_ensemble.children("feature")) {
     unsigned int featureId = feature.attribute("id").as_uint();
     double weight = feature.attribute("weight").as_double();
     best_weights_[featureId - 1] = weight;
@@ -107,13 +102,13 @@ CoordinateAscent::CoordinateAscent(const pugi::xml_document& model) {
 CoordinateAscent::~CoordinateAscent() {
 }
 
-std::ostream& CoordinateAscent::put(std::ostream& os) const {
+std::ostream &CoordinateAscent::put(std::ostream &os) const {
   os << "# Ranker: " << name() << std::endl << "# number of samples = "
-     << num_samples_ << std::endl << "# window size = " << window_size_
-     << std::endl << "# window reduction factor = " << reduction_factor_
-     << std::endl << "# number of max iterations = " << max_iterations_
-     << std::endl << "# number of fails on validation before exit = "
-     << max_failed_vali_ << std::endl;
+      << num_samples_ << std::endl << "# window size = " << window_size_
+      << std::endl << "# window reduction factor = " << reduction_factor_
+      << std::endl << "# number of max iterations = " << max_iterations_
+      << std::endl << "# number of fails on validation before exit = "
+      << max_failed_vali_ << std::endl;
   return os;
 }
 
@@ -125,7 +120,8 @@ void CoordinateAscent::learn(
     size_t partial_save, const std::string output_basename) {
 
   auto begin = std::chrono::steady_clock::now();
-  double window_size = window_size_ / training_dataset->num_features();  //preserve original value of the window
+  double window_size = window_size_
+      / training_dataset->num_features();  //preserve original value of the window
 
   std::cout << "# Training:" << std::endl;
   std::cout << std::fixed << std::setprecision(4);
@@ -156,7 +152,8 @@ void CoordinateAscent::learn(
   for (size_t b = 0; b < max_iterations_; b++) {
     MetricScore metric_on_training = 0;
 
-    double step = 2 * window_size / num_samples_;  // step to select points in the window
+    double step =
+        2 * window_size / num_samples_;  // step to select points in the window
     for (size_t i = 0; i < num_features; i++) {
       // compute feature*weight for all the feature different from i
       preCompute(training_dataset->at(0, 0), n_train_instances, num_features,
@@ -168,7 +165,7 @@ void CoordinateAscent::learn(
       std::vector<double> points;
       points.reserve(num_samples_ + 1);
       for (double lower_bound = weights[i] - window_size;
-          lower_bound <= weights[i] + window_size; lower_bound += step) {
+           lower_bound <= weights[i] + window_size; lower_bound += step) {
         if (lower_bound >= 0)
           points.push_back(lower_bound);
       }
@@ -198,7 +195,7 @@ void CoordinateAscent::learn(
         double normalized_sum = std::accumulate(weights.cbegin(),
                                                 weights.cend(), 0.0);
         std::for_each(weights.begin(), weights.end(),
-                      [normalized_sum](double &x) {x/=normalized_sum;});
+                      [normalized_sum](double &x) { x /= normalized_sum; });
       }
 
     }  // end for i
@@ -246,11 +243,11 @@ void CoordinateAscent::learn(
       std::chrono::duration<double>>(end - begin);
   std::cout << std::endl;
   std::cout << "# \t Training time: " << std::setprecision(2) << elapsed.count()
-            << " seconds" << std::endl;
+      << " seconds" << std::endl;
 
 }
 
-Score CoordinateAscent::score_document(const Feature* d) const {
+Score CoordinateAscent::score_document(const Feature *d) const {
   Score score = 0;
   for (size_t k = 0; k < best_weights_.size(); k++) {
     score += best_weights_[k] * d[k];
@@ -261,7 +258,7 @@ Score CoordinateAscent::score_document(const Feature* d) const {
 bool CoordinateAscent::update_weights(
     std::shared_ptr<std::vector<double>> weights) {
 
-  if(weights->size() != best_weights_.size())
+  if (weights->size() != best_weights_.size())
     return false;
 
   for (size_t k = 0; k < weights->size(); k++) {
@@ -271,9 +268,9 @@ bool CoordinateAscent::update_weights(
   return true;
 }
 
-pugi::xml_document* CoordinateAscent::get_xml_model() const {
+pugi::xml_document *CoordinateAscent::get_xml_model() const {
 
-  pugi::xml_document* doc = new pugi::xml_document();
+  pugi::xml_document *doc = new pugi::xml_document();
   pugi::xml_node root = doc->append_child("ranker");
 
   pugi::xml_node info = root.append_child("info");

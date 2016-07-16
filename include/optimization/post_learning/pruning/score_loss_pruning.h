@@ -29,27 +29,26 @@ namespace post_learning {
 namespace pruning {
 
 /// This implements random pruning strategy for pruning ensembles.
-class ScoreLossPruning : public EnsemblePruning {
+class ScoreLossPruning: public EnsemblePruning {
 
-  public:
-    ScoreLossPruning(double pruning_rate) : EnsemblePruning(pruning_rate) {};
+ public:
+  ScoreLossPruning(double pruning_rate) : EnsemblePruning(pruning_rate) { };
 
-    ScoreLossPruning(double pruning_rate,
-                std::shared_ptr<learning::linear::LineSearch> lineSearch) :
-        EnsemblePruning(pruning_rate, lineSearch) {};
+  ScoreLossPruning(double pruning_rate,
+                   std::shared_ptr<learning::linear::LineSearch> lineSearch) :
+      EnsemblePruning(pruning_rate, lineSearch) { };
 
-    ScoreLossPruning(const pugi::xml_document& model) :
-        EnsemblePruning(model) {};
+  ScoreLossPruning(const pugi::xml_document &model) :
+      EnsemblePruning(model) { };
 
-    EnsemblePruning::PruningMethod pruning_method() const;
+  EnsemblePruning::PruningMethod pruning_method() const;
 
-    bool line_search_pre_pruning() const;
+  bool line_search_pre_pruning() const;
 
-    void pruning(std::set<unsigned int>& pruned_estimators,
-                 std::shared_ptr<data::Dataset> dataset,
-                 std::shared_ptr<metric::ir::Metric> scorer);
+  void pruning(std::set<unsigned int> &pruned_estimators,
+               std::shared_ptr<data::Dataset> dataset,
+               std::shared_ptr<metric::ir::Metric> scorer);
 };
-
 
 }  // namespace pruning
 }  // namespace post_learning

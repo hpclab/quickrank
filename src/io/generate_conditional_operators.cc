@@ -25,8 +25,9 @@
 namespace quickrank {
 namespace io {
 
-void model_node_to_conditional_operators(pugi::xml_node& nodes, std::stringstream &os) {
-  int feature_id = 0;
+void model_node_to_conditional_operators(pugi::xml_node &nodes,
+                                         std::stringstream &os) {
+  unsigned int feature_id = 0;
   std::string threshold;
   std::string prediction;
   bool is_leaf = false;
@@ -35,15 +36,15 @@ void model_node_to_conditional_operators(pugi::xml_node& nodes, std::stringstrea
 
   for (pugi::xml_node &node : nodes.children()) {
     if (strcmp(node.name(), "output") == 0) {
-      prediction = node.child_value();
+      prediction = node.text().as_string();
       trim(prediction);
       os << prediction;
       is_leaf = true;
       break;
     } else if (strcmp(node.name(), "feature") == 0) {
-      feature_id = atoi(node.child_value());
+      feature_id = node.text().as_uint();
     } else if (strcmp(node.name(), "threshold") == 0) {
-      threshold = node.child_value();
+      threshold = node.text().as_string();
       trim(threshold);
     } else if (strcmp(node.name(), "split") == 0) {
       std::string pos = node.attribute("pos").as_string();
@@ -71,7 +72,8 @@ void model_node_to_conditional_operators(pugi::xml_node& nodes, std::stringstrea
   }
 }
 
-void GenOpCond::generate_conditional_operators_code(const std::string model_filename, const std::string code_filename) {
+void GenOpCond::generate_conditional_operators_code(const std::string model_filename,
+                                                    const std::string code_filename) {
   if (model_filename.empty()) {
     std::cerr << "!!! Model filename is empty." << std::endl;
     exit(EXIT_FAILURE);
@@ -91,11 +93,12 @@ void GenOpCond::generate_conditional_operators_code(const std::string model_file
 
   // let's navigate the ensemble, for each tree...
   pugi::xml_node ensemble = xml_document.child("ranker").child("ensemble");
-  for (pugi::xml_node& tree : ensemble.children("tree")) {
+  for (pugi::xml_node &tree : ensemble.children("tree")) {
     float tree_weight = tree.attribute("weight").as_float();
     pugi::xml_node tree_content = tree.child("split");
     if (tree_content) {
-      source_code << std::endl << "\t\t + " << std::setprecision(3) << tree_weight << "f * ";
+      source_code << std::endl << "\t\t + " << std::setprecision(3)
+          << tree_weight << "f * ";
       model_node_to_conditional_operators(tree_content, source_code);
     }
   }

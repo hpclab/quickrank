@@ -30,8 +30,8 @@ namespace ir {
 
 const std::string Map::NAME_ = "MAP";
 
-MetricScore Map::evaluate_result_list(const quickrank::data::QueryResults* rl,
-                                      const Score* scores) const {
+MetricScore Map::evaluate_result_list(const quickrank::data::QueryResults *rl,
+                                      const Score *scores) const {
   size_t size = std::min(cutoff(), rl->num_results());
   if (size == 0)
     return 0.0;
@@ -46,8 +46,8 @@ MetricScore Map::evaluate_result_list(const quickrank::data::QueryResults* rl,
 
 std::unique_ptr<Jacobian> Map::jacobian(
     std::shared_ptr<data::RankedResults> ranked) const {
-  int* labels = new int[ranked->num_results()];  // int labels[ql.size];
-  int* relcount = new int[ranked->num_results()];  // int relcount[ql.size];
+  int *labels = new int[ranked->num_results()];  // int labels[ql.size];
+  int *relcount = new int[ranked->num_results()];  // int relcount[ql.size];
   MetricScore count = 0;
   for (size_t i = 0; i < ranked->num_results(); ++i) {
     if (ranked->sorted_labels()[i] > 0.0f)  //relevant if true
@@ -80,7 +80,7 @@ std::unique_ptr<Jacobian> Map::jacobian(
 
 }
 
-std::ostream& Map::put(std::ostream& os) const {
+std::ostream &Map::put(std::ostream &os) const {
   if (cutoff() != Metric::NO_CUTOFF)
     return os << name() << "@" << cutoff();
   else

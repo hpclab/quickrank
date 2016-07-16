@@ -40,12 +40,12 @@ namespace learning {
  --model model.xml
  */
 
-class CustomLTR : public LTR_Algorithm {
+class CustomLTR: public LTR_Algorithm {
 
  public:
   CustomLTR();
 
-  CustomLTR(const pugi::xml_document& model) {
+  CustomLTR(const pugi::xml_document &model) {
   }
 
   virtual ~CustomLTR();
@@ -71,10 +71,10 @@ class CustomLTR : public LTR_Algorithm {
                      const std::string model_filename);
 
   /// Returns the score of a given document.
-  virtual Score score_document(const Feature* d) const;
+  virtual Score score_document(const Feature *d) const;
 
   /// Return the xml model representing the current object
-  virtual pugi::xml_document* get_xml_model() const;
+  virtual pugi::xml_document *get_xml_model() const;
 
   /// \todo TODO: add load_model();
 
@@ -83,12 +83,12 @@ class CustomLTR : public LTR_Algorithm {
  private:
 
   /// The output stream operator.
-  friend std::ostream& operator<<(std::ostream& os, const CustomLTR& a) {
+  friend std::ostream &operator<<(std::ostream &os, const CustomLTR &a) {
     return a.put(os);
   }
 
   /// Prints the description of Algorithm, including its parameters
-  virtual std::ostream& put(std::ostream& os) const;
+  virtual std::ostream &put(std::ostream &os) const;
 };
 
 }  // namespace learning

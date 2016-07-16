@@ -19,8 +19,7 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_METRIC_IR_DCG_H_
-#define QUICKRANK_METRIC_IR_DCG_H_
+#pragma once
 
 #include "types.h"
 #include "metric.h"
@@ -35,7 +34,7 @@ namespace ir {
  * DCG is measured as: \f$ DCG_k = \sum_{i=1}^k \frac{2^{l_i}-1}{\log_2 (i+1)}\f$,
  * where \f$l_i\f$ is the relevance label of the i-th document.
  */
-class Dcg : public Metric {
+class Dcg: public Metric {
  public:
   explicit Dcg(size_t k = NO_CUTOFF)
       : Metric(k) {
@@ -51,7 +50,7 @@ class Dcg : public Metric {
   static const std::string NAME_;
 
   virtual MetricScore evaluate_result_list(
-      const quickrank::data::QueryResults* rl, const Score* scores) const;
+      const quickrank::data::QueryResults *rl, const Score *scores) const;
 
   virtual std::unique_ptr<Jacobian> jacobian(
       std::shared_ptr<data::RankedResults> ranked) const;
@@ -60,18 +59,16 @@ class Dcg : public Metric {
   /// Computes the DCG\@K of a given array of labels.
   /// \param rl The given array of labels.
   /// \return DCG\@K for computed on the given labels.
-  MetricScore compute_dcg(const Label* labels, size_t len) const;
+  MetricScore compute_dcg(const Label *labels, size_t len) const;
 
  private:
-  friend std::ostream& operator<<(std::ostream& os, const Dcg& ndcg) {
+  friend std::ostream &operator<<(std::ostream &os, const Dcg &ndcg) {
     return ndcg.put(os);
   }
-  virtual std::ostream& put(std::ostream& os) const;
+  virtual std::ostream &put(std::ostream &os) const;
 
 };
 
 }  // namespace ir
 }  // namespace metric
 }  // namespace quickrank
-
-#endif // QUICKRANK_DCG_H_

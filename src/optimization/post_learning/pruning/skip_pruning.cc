@@ -38,16 +38,16 @@ bool SkipPruning::line_search_pre_pruning() const {
   return false;
 }
 
-void SkipPruning::pruning(std::set<unsigned int>& pruned_estimators,
+void SkipPruning::pruning(std::set<unsigned int> &pruned_estimators,
                           std::shared_ptr<data::Dataset> dataset,
                           std::shared_ptr<metric::ir::Metric> scorer) {
 
   unsigned int num_features = (unsigned int) weights_.size();
-  double step = (double)num_features / estimators_to_select_;
+  double step = (double) num_features / estimators_to_select_;
 
   std::set<unsigned int> selected_estimators;
   for (unsigned int i = 0; i < estimators_to_select_; i++) {
-    selected_estimators.insert( (unsigned int) ceil(i * step) );
+    selected_estimators.insert((unsigned int) ceil(i * step));
   }
 
   for (unsigned int f = 0; f < num_features; f++) {
@@ -55,7 +55,6 @@ void SkipPruning::pruning(std::set<unsigned int>& pruned_estimators,
       pruned_estimators.insert(f);
   }
 }
-
 
 }  // namespace pruning
 }  // namespace post_learning

@@ -24,7 +24,6 @@
 #include <iomanip>
 #include <chrono>
 #include <vector>
-#include <string>
 
 #include "paramsmap/paramsmap.h"
 
@@ -70,12 +69,16 @@ int main(int argc, char *argv[]) {
   // Declare the supported options.
   pmap.addMessage("QuickScore options:");
   pmap.addOption("help", "h", "print help message");
-  pmap.addOptionWithArg<std::string>("dataset", "d", "Input dataset in SVML format");
+  pmap.addOptionWithArg<std::string>("dataset",
+                                     "d",
+                                     "Input dataset in SVML format");
   pmap.addOptionWithArg<int>("rounds", "r", "Number of test repetitions", 10);
-  pmap.addOptionWithArg<std::string>("scores", "s", "File where scores are saved (Optional).");
+  pmap.addOptionWithArg<std::string>("scores",
+                                     "s",
+                                     "File where scores are saved (Optional).");
 
   bool parse_status = pmap.parse(argc, argv);
-  if (!parse_status || pmap.isSet("help") || !pmap.isSet("dataset") ) {
+  if (!parse_status || pmap.isSet("help") || !pmap.isSet("dataset")) {
     std::cout << pmap.help();
     return EXIT_FAILURE;
   }

@@ -48,8 +48,9 @@ RegressionTree::~RegressionTree() {
   for (size_t i = 0; i < nleaves; ++i)
     if (leaves[i] != root) {
       delete[] leaves[i]->sampleids, delete leaves[i]->hist;
-      leaves[i]->hist = NULL, leaves[i]->sampleids = NULL, leaves[i]->nsampleids =
-          0;
+      leaves[i]->hist = NULL, leaves[i]->sampleids = NULL,
+          leaves[i]->nsampleids =
+              0;
     }
   free(leaves);
 }
@@ -57,7 +58,8 @@ RegressionTree::~RegressionTree() {
 void RegressionTree::fit(RTNodeHistogram *hist) {
   DevianceMaxHeap heap(nrequiredleaves);
   size_t taken = 0;
-  size_t nsampleids = training_dataset->num_instances();  //set->get_ndatapoints();
+  size_t
+      nsampleids = training_dataset->num_instances();  //set->get_ndatapoints();
   size_t *sampleids = new size_t[nsampleids];
 #pragma omp parallel for
   for (size_t i = 0; i < nsampleids; ++i)
@@ -81,8 +83,9 @@ void RegressionTree::fit(RTNodeHistogram *hist) {
   }
   //visit tree and save leaves in a leaves[] array
   size_t capacity = nrequiredleaves;
-  leaves = capacity ? (RTNode**) malloc(sizeof(RTNode*) * capacity) : NULL, nleaves =
-      0;
+  leaves = capacity ? (RTNode **) malloc(sizeof(RTNode *) * capacity) : NULL,
+      nleaves =
+          0;
   root->save_leaves(leaves, nleaves, capacity);
 
   // TODO: (by cla) is memory of "unpopped" de-allocated?
@@ -143,7 +146,8 @@ bool RegressionTree::split(RTNode *node, const float featuresamplingrate,
     //get current nod hidtogram pointer
     RTNodeHistogram *h = node->hist;
     //featureidxs to be used for tree splitnodeting
-    size_t nfeaturesamples = training_dataset->num_features();  //training_set->get_nfeatures();
+    size_t nfeaturesamples =
+        training_dataset->num_features();  //training_set->get_nfeatures();
     size_t *featuresamples = NULL;
     //need to make a sub-sampling
     if (featuresamplingrate < 1.0f) {
@@ -161,11 +165,14 @@ bool RegressionTree::split(RTNode *node, const float featuresamplingrate,
     // ---------------------------
     // find best split
     const int nth = omp_get_num_procs();
-    double* thread_best_score = new double[nth];  // double thread_minvar[nth];
-    size_t* thread_best_featureidx = new size_t[nth];  // size_t thread_best_featureidx[nth];
-    size_t* thread_best_thresholdid = new size_t[nth];  // size_t thread_best_thresholdid[nth];
+    double *thread_best_score = new double[nth];  // double thread_minvar[nth];
+    size_t *thread_best_featureidx =
+        new size_t[nth];  // size_t thread_best_featureidx[nth];
+    size_t *thread_best_thresholdid =
+        new size_t[nth];  // size_t thread_best_thresholdid[nth];
     for (int i = 0; i < nth; ++i)
-      thread_best_score[i] = initvar, thread_best_featureidx[i] = uint_max, thread_best_thresholdid[i] =
+      thread_best_score[i] = initvar, thread_best_featureidx[i] = uint_max,
+      thread_best_thresholdid[i] =
           uint_max;
 
 #pragma omp parallel for
@@ -232,9 +239,10 @@ bool RegressionTree::split(RTNode *node, const float featuresamplingrate,
     //split samples between left and right child
     size_t *lsamples = new size_t[lcount], lsize = 0;
     size_t *rsamples = new size_t[rcount], rsize = 0;
-    float const* features = training_dataset->at(0, best_featureidx);  //training_set->get_fvector(best_featureidx);
+    float const *features = training_dataset->at(0,
+                                                 best_featureidx);  //training_set->get_fvector(best_featureidx);
     for (size_t i = 0, nsampleids = node->nsampleids; i < nsampleids;
-        ++i) {
+         ++i) {
       size_t k = node->sampleids[i];
       if (features[k] <= best_threshold)
         lsamples[lsize++] = k;

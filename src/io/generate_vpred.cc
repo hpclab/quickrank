@@ -88,7 +88,7 @@ struct tree_node {
 };
 
 void GenVpred::generate_vpred_input(const std::string &ensemble_file,
-                          const std::string &output_file) {
+                                    const std::string &output_file) {
 
   if (ensemble_file.empty()) {
     std::cerr << "!!! Model filename is empty." << std::endl;

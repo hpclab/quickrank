@@ -39,10 +39,10 @@ void Optimization::save(std::string output_basename, int iteration) const {
     if (iteration != -1)
       filename += ".T" + std::to_string(iteration) + ".xml";
 
-    pugi::xml_document* doc = get_xml_model();
+    pugi::xml_document *doc = get_xml_model();
     doc->save_file(filename.c_str(), "\t",
                    pugi::format_default | pugi::format_no_declaration);
-    delete(doc);
+    delete (doc);
   }
 }
 
@@ -65,13 +65,14 @@ std::shared_ptr<Optimization> Optimization::load_model_from_file(
       model.child("optimizer").child("info").child("opt-algo").child_value();
 
   // Ensemble Pruning added by Salvatore Trani
-  if (optimizer_type == optimization::post_learning::pruning::EnsemblePruning::NAME_)
+  if (optimizer_type
+      == optimization::post_learning::pruning::EnsemblePruning::NAME_)
     return optimization::post_learning::pruning::create_pruner(model);
 
   return nullptr;
 //  else
 //    throw std::invalid_argument("Model type not supported for loading");
-  }
+}
 
 }  // namespace optimization
 }  // namespace quickrank

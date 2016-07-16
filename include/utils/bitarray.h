@@ -19,12 +19,7 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_UTILS_BITARRAY_H_
-#define QUICKRANK_UTILS_BITARRAY_H_
-
-/*! \file bitarray.hpp
- * \brief Implementation of a bit array
- */
+#pragma once
 
 #include <cstdlib>
 #include <cstdint>
@@ -60,11 +55,9 @@ class BitArray {
 
   /** \brief compute bitwse OR of two bit arrays and store the result in the left operand
    */
-  BitArray& operator|=(const BitArray& other);
+  BitArray &operator|=(const BitArray &other);
 
  private:
   int32_t *data;
   size_t datasize;
 };
-
-#endif

@@ -49,7 +49,7 @@ class Driver {
   /// Returns the exit code of the application
   ///
   /// \param, vm The Variable mapping of CLI options (boost object)
-  static int run(ParamsMap& pmap);
+  static int run(ParamsMap &pmap);
 
  private:
   /// Runs train/validation of \a algo by optimizing \a train_metric

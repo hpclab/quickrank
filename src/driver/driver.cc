@@ -27,7 +27,6 @@
 
 #include "driver/driver.h"
 #include "io/svml.h"
-#include "io/generate_conditional_operators.h"
 #include "learning/ltr_algorithm_factory.h"
 #include "optimization/optimization_factory.h"
 #include "metric/metric_factory.h"
@@ -67,7 +66,8 @@ int Driver::run(ParamsMap &pmap) {
       if (pmap.count("opt-algo") || pmap.count("opt-model")) {
         opt_algorithm = quickrank::optimization::optimization_factory(pmap);
         if (!opt_algorithm) {
-          std::cerr << " !! Optimization Algorithm was not set properly" << std::endl;
+          std::cerr << " !! Optimization Algorithm was not set properly"
+              << std::endl;
           exit(EXIT_FAILURE);
         }
       }
@@ -129,7 +129,8 @@ int Driver::run(ParamsMap &pmap) {
 
         //show ranker parameters
         std::cout << "#" << std::endl << *ranking_algorithm;
-        std::cout << "#" << std::endl << "# training scorer: " << *training_metric
+        std::cout << "#" << std::endl << "# training scorer: "
+            << *training_metric
             << std::endl;
 
         training_phase(ranking_algorithm,
@@ -201,12 +202,12 @@ int Driver::run(ParamsMap &pmap) {
     } else if (model_code_type == "oblivious") {
       quickrank::io::GenOblivious oblivious_generator;
       std::cout << "applying oblivious strategy for C code generation to: "
-        << xml_filename << std::endl;
+          << xml_filename << std::endl;
       oblivious_generator.generate_oblivious_code(xml_filename, c_filename);
     } else if (model_code_type == "vpred") {
       quickrank::io::GenVpred vpred_generator;
       std::cout << "generating VPred input file from: " << xml_filename
-        << std::endl;
+          << std::endl;
       vpred_generator.generate_vpred_input(xml_filename, c_filename);
     }
   }
@@ -347,7 +348,8 @@ void Driver::testing_phase(
         for (size_t i = 0; i < test_dataset->num_instances(); ++i)
           os << scores[i] << std::endl;
         os.close();
-        std::cout << "# Scores written to file: " << scores_filename << std::endl;
+        std::cout << "# Scores written to file: " << scores_filename
+            << std::endl;
       }
     }
   }

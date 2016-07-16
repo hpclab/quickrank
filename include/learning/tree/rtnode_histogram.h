@@ -36,21 +36,21 @@ class RTNodeHistogram {
   RTNodeHistogram(float **thresholds, size_t const *thresholds_size,
                   size_t nfeatures);
 
-  RTNodeHistogram(RTNodeHistogram const* parent, size_t const* sampleids,
-                  const size_t nsampleids, double const* labels);
+  RTNodeHistogram(RTNodeHistogram const *parent, size_t const *sampleids,
+                  const size_t nsampleids, double const *labels);
 
-  RTNodeHistogram(RTNodeHistogram const* parent, RTNodeHistogram const* left);
+  RTNodeHistogram(RTNodeHistogram const *parent, RTNodeHistogram const *left);
 
   ~RTNodeHistogram();
 
   void update(double *labels, const size_t nlabels);
 
-  void transform_intorightchild(RTNodeHistogram const* left);
+  void transform_intorightchild(RTNodeHistogram const *left);
 
   void quick_dump(size_t f, size_t num_t);
 };
 
-class RTRootHistogram : public RTNodeHistogram {
+class RTRootHistogram: public RTNodeHistogram {
  public:
   RTRootHistogram(quickrank::data::VerticalDataset *dps, size_t **sortedidx,
                   size_t sortedidxsize, float **thresholds,

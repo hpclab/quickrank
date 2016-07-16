@@ -19,12 +19,7 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_UTILS_MAXHEAP_H_
-#define QUICKRANK_UTILS_MAXHEAP_H_
-
-/*! \file maxheap.hpp
- * \brief Implementation of max-heap data structure
- */
+#pragma once
 
 #include <cstdlib>
 #include <cfloat>
@@ -32,14 +27,15 @@
 /*! \class mahheap
  *  \brief max-heap implementation with key of type float
  */
-template<typename val_t> class MaxHeap {
+template<typename val_t>
+class MaxHeap {
  public:
   /** \brief default constructor
    * @param initsize set the initial size of the data structure if available
    */
   MaxHeap(size_t initsize = 0)
       : maxsize(initsize + 2) {
-    arr = (item*) malloc(sizeof(item) * maxsize);
+    arr = (item *) malloc(sizeof(item) * maxsize);
     arrsize = 0, arr[0] = item(DBL_MAX);
   }
   ~MaxHeap() {
@@ -62,7 +58,7 @@ template<typename val_t> class MaxHeap {
   void push(const double &key, const val_t &val) {
     if (++arrsize == maxsize) {
       maxsize = 2 * maxsize + 1;
-      arr = (item*) realloc(arr, sizeof(item) * maxsize);
+      arr = (item *) realloc(arr, sizeof(item) * maxsize);
     }
     size_t p = arrsize;
     while (key > arr[p >> 1].key) {
@@ -108,5 +104,3 @@ template<typename val_t> class MaxHeap {
   item *arr;
   size_t arrsize, maxsize;
 };
-
-#endif

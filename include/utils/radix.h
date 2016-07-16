@@ -19,17 +19,12 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_UTILS_RADIX_H_
-#define QUICKRANK_UTILS_RADIX_H_
+#pragma once
 
 #include <memory>
 
-/*! \file radix.hpp
- * \brief Set of functions implementing descending radix sort for floating point values (ideal for long array)
- */
-
-std::unique_ptr<size_t[]> idx_radixsort(float const* fvalues,
-                                              const size_t nvalues);
+std::unique_ptr<size_t[]> idx_radixsort(float const *fvalues,
+                                        const size_t nvalues);
 
 //
 // Functions belows are not used
@@ -40,7 +35,7 @@ std::unique_ptr<size_t[]> idx_radixsort(float const* fvalues,
  *  @param nvalues length of \a fvalues
  *  @return indexes of ascending sorted \a fvalues
  */
-unsigned int *idxfloat_radixsort(float const* fvalues,
+unsigned int *idxfloat_radixsort(float const *fvalues,
                                  const unsigned int nvalues);
 
 enum sortorder {
@@ -52,7 +47,8 @@ enum sortorder {
  *  @param fvalues input float array
  *  @param nvalues length of \a fvalues
  */
-template<sortorder const order> void float_radixsort(
+template<sortorder const order>
+void float_radixsort(
     float *fvalues, const unsigned int nvalues);
 
 /*! sort an array of float values with respect to another one without modifing the input array and returning permuted indexes of the sorted items
@@ -61,8 +57,6 @@ template<sortorder const order> void float_radixsort(
  *  @param nvalues length of \a fvalues
  *  @return a sorted copy of \a extvalues wrt \a fvalues
  */
-template<sortorder const order> float *copyextfloat_radixsort(
-    float const* extvalues, float const* fvalues, const unsigned int nvalues);
-
-#endif
-
+template<sortorder const order>
+float *copyextfloat_radixsort(
+    float const *extvalues, float const *fvalues, const unsigned int nvalues);

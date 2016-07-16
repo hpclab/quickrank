@@ -26,11 +26,14 @@
 
 #include "learning/tree/rt.h"
 
-class ObliviousRT : public RegressionTree {
+class ObliviousRT: public RegressionTree {
  public:
 
-  ObliviousRT(size_t nodes, quickrank::data::VerticalDataset *dps, double *labels,
-              size_t minls, size_t treedepth)
+  ObliviousRT(size_t nodes,
+              quickrank::data::VerticalDataset *dps,
+              double *labels,
+              size_t minls,
+              size_t treedepth)
       : RegressionTree(nodes, dps, labels, minls),
         treedepth(treedepth) {
   }

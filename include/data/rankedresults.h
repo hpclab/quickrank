@@ -46,16 +46,16 @@ class RankedResults {
   /// It also provides an un-mapping function.
   /// \param n_instances The number of training instances (lines) in the dataset.
   /// \param n_features The number of features.
-  RankedResults(std::shared_ptr<QueryResults> results, Score* scores);
+  RankedResults(std::shared_ptr<QueryResults> results, Score *scores);
   virtual ~RankedResults();
 
   // provide some kinf od unmap function ?
 
-  Label* sorted_labels() const {
+  Label *sorted_labels() const {
     return labels_;
   }
 
-  Score* sorted_scores() const {
+  Score *sorted_scores() const {
     return scores_;
   }
 
@@ -68,10 +68,10 @@ class RankedResults {
   }
 
  private:
-  Label* labels_ = NULL;
-  Score* scores_ = NULL;
+  Label *labels_ = NULL;
+  Score *scores_ = NULL;
   size_t num_results_;
-  size_t* unmap_ = NULL;
+  size_t *unmap_ = NULL;
 };
 
 }  // namespace data

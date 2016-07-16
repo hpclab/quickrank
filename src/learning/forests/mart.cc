@@ -23,13 +23,8 @@
 
 #include <fstream>
 #include <iomanip>
-#include <cfloat>
-#include <cmath>
 #include <chrono>
-#include <string>
 
-#include "data/vertical_dataset.h"
-#include "data/rankedresults.h"
 #include "utils/radix.h"
 
 namespace quickrank {
@@ -38,7 +33,7 @@ namespace forests {
 
 const std::string Mart::NAME_ = "MART";
 
-Mart::Mart(const pugi::xml_document& model) {
+Mart::Mart(const pugi::xml_document &model) {
   ntrees_ = 0;
   shrinkage_ = 0;
   nthresholds_ = 0;
@@ -61,11 +56,11 @@ Mart::Mart(const pugi::xml_document& model) {
   ensemble_model_.set_capacity(ntrees_);
 
   // loop over trees
-  for (const auto& tree: model_tree.children()) {
-    RTNode* root = NULL;
+  for (const auto &tree: model_tree.children()) {
+    RTNode *root = NULL;
     float tree_weight = tree.attribute("weight").as_float();
 
-    const auto& root_split = tree.child("split");
+    const auto &root_split = tree.child("split");
     if (root_split)
       root = RTNode::parse_xml(root_split);
 
@@ -78,8 +73,8 @@ Mart::Mart(const pugi::xml_document& model) {
   }
 }
 
-std::ostream& Mart::put(std::ostream& os) const {
-  os  << "# Ranker: " << name() << std::endl
+std::ostream &Mart::put(std::ostream &os) const {
+  os << "# Ranker: " << name() << std::endl
       << "# max no. of trees = " << ntrees_ << std::endl
       << "# no. of tree leaves = " << nleaves_ << std::endl
       << "# shrinkage = " << shrinkage_ << std::endl
@@ -90,7 +85,7 @@ std::ostream& Mart::put(std::ostream& os) const {
     os << "# no. of thresholds = unlimited" << std::endl;
   if (valid_iterations_)
     os << "# no. of no gain rounds before early stop = " << valid_iterations_
-       << std::endl;
+        << std::endl;
   return os;
 }
 
@@ -100,7 +95,7 @@ void Mart::init(std::shared_ptr<quickrank::data::VerticalDataset> training_datas
   scores_on_training_ = new double[nentries]();  //0.0f initialized
   pseudoresponses_ = new double[nentries]();  //0.0f initialized
   const size_t nfeatures = training_dataset->num_features();
-  sortedsid_ = new size_t*[nfeatures];
+  sortedsid_ = new size_t *[nfeatures];
   sortedsize_ = nentries;
 
 #pragma omp parallel for
@@ -108,24 +103,26 @@ void Mart::init(std::shared_ptr<quickrank::data::VerticalDataset> training_datas
     sortedsid_[i] = idx_radixsort(training_dataset->at(0, i),
                                   training_dataset->num_instances()).release();
 
-  thresholds_ = new float*[nfeatures];
+  thresholds_ = new float *[nfeatures];
   thresholds_size_ = new size_t[nfeatures];
 
 #pragma omp parallel for
   for (size_t i = 0; i < nfeatures; ++i) {
     //select feature array realted to the current feature index
-    float const* features = training_dataset->at(0, i);  // ->get_fvector(i);
+    float const *features = training_dataset->at(0, i);  // ->get_fvector(i);
     //init with values with the 1st sample
     size_t *idx = sortedsid_[i];
     //get_ sample indexes sorted by the fid-th feature
     size_t uniqs_size = 0;
-    float *uniqs = (float*) malloc(
-        sizeof(float) * (nthresholds_ == 0 ? sortedsize_ + 1 : nthresholds_ + 1));
+    float *uniqs = (float *) malloc(
+        sizeof(float)
+            * (nthresholds_ == 0 ? sortedsize_ + 1 : nthresholds_ + 1));
     //skip samples with the same feature value. early stop for if nthresholds!=size_max
     uniqs[uniqs_size++] = features[idx[0]];
     for (size_t j = 1;
-        j < sortedsize_ && (nthresholds_ == 0 || uniqs_size != nthresholds_ + 1);
-        ++j) {
+         j < sortedsize_
+             && (nthresholds_ == 0 || uniqs_size != nthresholds_ + 1);
+         ++j) {
       const float fval = features[idx[j]];
       if (uniqs[uniqs_size - 1] < fval)
         uniqs[uniqs_size++] = fval;
@@ -134,11 +131,14 @@ void Mart::init(std::shared_ptr<quickrank::data::VerticalDataset> training_datas
     //define thresholds
     if (uniqs_size <= nthresholds_ || nthresholds_ == 0) {
       uniqs[uniqs_size++] = FLT_MAX;
-      thresholds_size_[i] = uniqs_size, thresholds_[i] = (float*) realloc(uniqs, sizeof(float) * uniqs_size);
+      thresholds_size_[i] = uniqs_size, thresholds_[i] =
+                                            (float *) realloc(uniqs,
+                                                              sizeof(float)
+                                                                  * uniqs_size);
     } else {
       free(uniqs);
       thresholds_size_[i] = nthresholds_ + 1;
-      thresholds_[i] = (float*) malloc(sizeof(float) * (nthresholds_ + 1));
+      thresholds_[i] = (float *) malloc(sizeof(float) * (nthresholds_ + 1));
       float t = features[idx[0]];  //equals fmin
       const float step = fabs(features[idx[sortedsize_ - 1]] - t)
           / nthresholds_;  //(fmax-fmin)/nthresholds
@@ -184,8 +184,8 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
       std::chrono::high_resolution_clock::now();
 
   // create a copy of the training datasets and put it in vertical format
-  std::shared_ptr<quickrank::data::VerticalDataset> vertical_training (
-      new quickrank::data::VerticalDataset(training_dataset) );
+  std::shared_ptr<quickrank::data::VerticalDataset> vertical_training(
+      new quickrank::data::VerticalDataset(training_dataset));
 
   init(vertical_training);
 
@@ -227,7 +227,8 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     hist_->update(pseudoresponses_, training_dataset->num_instances());
 
     //Fit a regression tree
-    std::unique_ptr<RegressionTree> tree = fit_regressor_on_gradient( vertical_training );
+    std::unique_ptr<RegressionTree>
+        tree = fit_regressor_on_gradient(vertical_training);
 
     //add this tree to the ensemble (our model)
     ensemble_model_.push(tree->get_proot(), shrinkage_, 0);  // maxlabel);
@@ -281,23 +282,23 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   //Finishing up
   std::cout << std::endl;
   std::cout << *scorer << " on training data = " << best_metric_on_training
-            << std::endl;
+      << std::endl;
 
   if (validation_dataset) {
     std::cout << *scorer << " on validation data = "
-              << best_metric_on_validation << std::endl;
+        << best_metric_on_validation << std::endl;
   }
 
   clear(vertical_training->num_features());
 
   std::cout << std::endl;
   std::cout << "#\t Training Time: " << std::setprecision(2) << train_time
-            << " s." << std::endl;
+      << " s." << std::endl;
 }
 
 void Mart::compute_pseudoresponses(
     std::shared_ptr<quickrank::data::VerticalDataset> training_dataset,
-    quickrank::metric::ir::Metric* scorer) {
+    quickrank::metric::ir::Metric *scorer) {
   const size_t nentries = training_dataset->num_instances();
   for (size_t i = 0; i < nentries; i++)
     pseudoresponses_[i] = training_dataset->getLabel(i)
@@ -308,7 +309,7 @@ std::unique_ptr<RegressionTree> Mart::fit_regressor_on_gradient(
     std::shared_ptr<data::VerticalDataset> training_dataset) {
   //Fit a regression tree
   /// \todo TODO: memory management of regression tree is wrong!!!
-  RegressionTree* tree = new RegressionTree(nleaves_, training_dataset.get(),
+  RegressionTree *tree = new RegressionTree(nleaves_, training_dataset.get(),
                                             pseudoresponses_, minleafsupport_);
   tree->fit(hist_);
   //update the outputs of the tree (with gamma computed using the Newton-Raphson pruning_method)
@@ -319,28 +320,29 @@ std::unique_ptr<RegressionTree> Mart::fit_regressor_on_gradient(
 }
 
 void Mart::update_modelscores(std::shared_ptr<data::Dataset> dataset,
-                              Score *scores, RegressionTree* tree) {
-  quickrank::Score* score_i = scores;
+                              Score *scores, RegressionTree *tree) {
+  quickrank::Score *score_i = scores;
   for (size_t q = 0; q < dataset->num_queries(); q++) {
     std::shared_ptr<quickrank::data::QueryResults> results = dataset
         ->getQueryResults(q);
     const size_t offset = 1;
-    const Feature* d = results->features();
+    const Feature *d = results->features();
     for (size_t i = 0; i < results->num_results(); i++) {
       score_i[i] += shrinkage_ * tree->get_proot()->score_instance(d, offset);
-      d+=dataset->num_features();
+      d += dataset->num_features();
     }
     score_i += results->num_results();
   }
 }
 
 void Mart::update_modelscores(std::shared_ptr<data::VerticalDataset> dataset,
-                              Score *scores, RegressionTree* tree) {
-  quickrank::Score* score_i = scores;
+                              Score *scores, RegressionTree *tree) {
+  quickrank::Score *score_i = scores;
   for (size_t q = 0; q < dataset->num_queries(); q++) {
-    std::shared_ptr<quickrank::data::QueryResults> results = dataset->getQueryResults(q);
+    std::shared_ptr<quickrank::data::QueryResults>
+        results = dataset->getQueryResults(q);
     const size_t offset = dataset->num_instances();
-    const Feature* d = results->features();
+    const Feature *d = results->features();
     for (size_t i = 0; i < results->num_results(); i++) {
       score_i[i] += shrinkage_ * tree->get_proot()->score_instance(d, offset);
       d++;
@@ -349,9 +351,9 @@ void Mart::update_modelscores(std::shared_ptr<data::VerticalDataset> dataset,
   }
 }
 
-pugi::xml_document* Mart::get_xml_model() const {
+pugi::xml_document *Mart::get_xml_model() const {
 
-  pugi::xml_document* doc = new pugi::xml_document();
+  pugi::xml_document *doc = new pugi::xml_document();
   pugi::xml_node root = doc->append_child("ranker");
   pugi::xml_node info = root.append_child("info");
 

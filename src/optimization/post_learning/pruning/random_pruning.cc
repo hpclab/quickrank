@@ -36,14 +36,14 @@ bool RandomPruning::line_search_pre_pruning() const {
   return false;
 }
 
-void RandomPruning::pruning(std::set<unsigned int>& pruned_estimators,
+void RandomPruning::pruning(std::set<unsigned int> &pruned_estimators,
                             std::shared_ptr<data::Dataset> dataset,
                             std::shared_ptr<metric::ir::Metric> scorer) {
 
   unsigned int num_features = (unsigned int) weights_.size();
 
   /* initialize random seed: */
-  srand (time(NULL));
+  srand(time(NULL));
 
   while (pruned_estimators.size() < estimators_to_prune_) {
     unsigned int index = rand() % num_features;

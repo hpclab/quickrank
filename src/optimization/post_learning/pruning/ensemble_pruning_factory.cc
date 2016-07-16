@@ -34,7 +34,7 @@ namespace post_learning {
 namespace pruning {
 
 std::shared_ptr<quickrank::optimization::Optimization> create_pruner(
-    const pugi::xml_document& model) {
+    const pugi::xml_document &model) {
 
   pugi::xml_node model_info = model.child("optimizer").child("info");
 

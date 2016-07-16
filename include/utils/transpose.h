@@ -23,10 +23,6 @@
 
 #include <stdlib.h>
 
-/*! \file transpose.h
- * \brief transpose matrix
- */
-
 /*! traspose \a input float matrix made up of \a n rows and \a m columns block by block
  *  @param input matrix to transpose
  *  @param output trasposed matrix

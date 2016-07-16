@@ -35,15 +35,15 @@ Dataset::Dataset(size_t n_instances, size_t n_features) {
   num_queries_ = 0;
   last_instance_id_ = 0;
 
-  if (posix_memalign((void**) &data_, 16,
+  if (posix_memalign((void **) &data_, 16,
                      max_instances_ * num_features_ * sizeof(Feature)) != 0) {
     std::cerr << "!!! Impossible to allocate memory for dataset storage."
-              << std::endl;
+        << std::endl;
     exit(EXIT_FAILURE);
   }
   std::memset(data_, 0, max_instances_ * num_features_ * sizeof(Feature));
 
-  if (posix_memalign((void**) &labels_, 16, max_instances_ * sizeof(Label))
+  if (posix_memalign((void **) &labels_, 16, max_instances_ * sizeof(Label))
       != 0) {
     std::cerr
         << "!!! Impossible to allocate memory for relevance labels storage."
@@ -66,13 +66,13 @@ void Dataset::addInstance(QueryID q_id, Label i_label,
 
   if (i_features.size() > num_features_ || num_instances_ == max_instances_) {
     std::cerr << "!!! Impossible to add a new instance to the dataset."
-              << std::endl;
+        << std::endl;
     exit(EXIT_FAILURE);
   }
 
   // update label and features
   labels_[num_instances_] = i_label;
-  quickrank::Feature* new_instance = data_ + (num_instances_ * num_features_);
+  quickrank::Feature *new_instance = data_ + (num_instances_ * num_features_);
   for (size_t i = 0; i < i_features.size(); i++)
     new_instance[i] = i_features[i];
 
@@ -88,19 +88,19 @@ void Dataset::addInstance(QueryID q_id, Label i_label,
 
 std::unique_ptr<QueryResults> Dataset::getQueryResults(size_t i) const {
   size_t num_results = offsets_[i + 1] - offsets_[i];
-  quickrank::Feature* start_data = data_ + offsets_[i] * num_features_;
-  quickrank::Label* start_label = labels_ + offsets_[i];
+  quickrank::Feature *start_data = data_ + offsets_[i] * num_features_;
+  quickrank::Label *start_label = labels_ + offsets_[i];
 
-  QueryResults* qr = new QueryResults(num_results, start_label, start_data);
+  QueryResults *qr = new QueryResults(num_results, start_label, start_data);
 
   return std::unique_ptr<QueryResults>(qr);
 }
 
-std::ostream& Dataset::put(std::ostream& os) const {
+std::ostream &Dataset::put(std::ostream &os) const {
   os << "#\t Dataset size: " << num_instances_ << " x " << num_features_
-     << " (instances x features)" << std::endl << "#\t Num queries: "
-     << num_queries_ << " | Avg. len: " << std::setprecision(3)
-     << num_instances_ / (float) num_queries_ << std::endl;
+      << " (instances x features)" << std::endl << "#\t Num queries: "
+      << num_queries_ << " | Avg. len: " << std::setprecision(3)
+      << num_instances_ / (float) num_queries_ << std::endl;
   return os;
 }
 

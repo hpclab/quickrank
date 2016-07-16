@@ -28,8 +28,8 @@ RTNodeHistogram::RTNodeHistogram(float **thresholds,
       thresholds_size(thresholds_size),
       nfeatures(nfeatures),
       squares_sum_(0.0) {
-  sumlbl = new double*[nfeatures];
-  count = new size_t*[nfeatures];
+  sumlbl = new double *[nfeatures];
+  count = new size_t *[nfeatures];
   for (size_t i = 0; i < nfeatures; ++i) {
     const size_t threshold_size = thresholds_size[i];
     sumlbl[i] = new double[threshold_size]();
@@ -37,10 +37,10 @@ RTNodeHistogram::RTNodeHistogram(float **thresholds,
   }
 }
 
-RTNodeHistogram::RTNodeHistogram(RTNodeHistogram const* parent,
-                                 size_t const* sampleids,
+RTNodeHistogram::RTNodeHistogram(RTNodeHistogram const *parent,
+                                 size_t const *sampleids,
                                  const size_t nsampleids,
-                                 double const* labels)
+                                 double const *labels)
     : RTNodeHistogram(parent->thresholds, parent->thresholds_size,
                       parent->nfeatures) {
   stmap = parent->stmap;
@@ -64,8 +64,8 @@ RTNodeHistogram::RTNodeHistogram(RTNodeHistogram const* parent,
   }
 }
 
-RTNodeHistogram::RTNodeHistogram(RTNodeHistogram const* parent,
-                                 RTNodeHistogram const* left)
+RTNodeHistogram::RTNodeHistogram(RTNodeHistogram const *parent,
+                                 RTNodeHistogram const *left)
     : RTNodeHistogram(parent->thresholds, parent->thresholds_size,
                       parent->nfeatures) {
   stmap = parent->stmap;
@@ -110,7 +110,7 @@ void RTNodeHistogram::update(double *labels, const size_t nlabels) {
   }
 }
 
-void RTNodeHistogram::transform_intorightchild(RTNodeHistogram const* left) {
+void RTNodeHistogram::transform_intorightchild(RTNodeHistogram const *left) {
   squares_sum_ = squares_sum_ - left->squares_sum_;
 #pragma omp parallel for
   for (size_t i = 0; i < nfeatures; ++i) {
@@ -135,7 +135,7 @@ RTRootHistogram::RTRootHistogram(quickrank::data::VerticalDataset *dps,
                                  size_t sortedidxsize, float **thresholds,
                                  size_t const *thresholds_size)
     : RTNodeHistogram(thresholds, thresholds_size, dps->num_features()) {
-  stmap = new size_t*[nfeatures];
+  stmap = new size_t *[nfeatures];
 #pragma omp parallel for
   for (size_t i = 0; i < nfeatures; ++i) {
     stmap[i] = new size_t[sortedidxsize];

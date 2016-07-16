@@ -21,10 +21,7 @@
  */
 #include "utils/strutils.h"
 
-#include <cctype>
-#include <cstdlib>
 #include <algorithm>
-#include <string>
 #include <iostream>
 
 /*! \file strutils.hpp
@@ -79,14 +76,12 @@ unsigned int atou(char *str, const char *sep) {
  return (*a!='\0' || *b!='\0') ? 1 : 0;
  }*/
 
-std::string trim(std::string str) {
-
+std::string &trim(std::string &str) {
   while (std::isspace(str[0])) {
     str.erase(str.begin()); // erase it
   }
 
   // if the last character of the string is a whitespace or a tab
-
   while (std::isspace(str[str.length() - 1])) {
     str.erase(str.end() - 1); // erase it
   }

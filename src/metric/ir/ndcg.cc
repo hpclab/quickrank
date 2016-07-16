@@ -32,9 +32,9 @@ namespace ir {
 
 const std::string Ndcg::NAME_ = "NDCG";
 
-MetricScore Ndcg::compute_idcg(const quickrank::data::QueryResults* rl) const {
+MetricScore Ndcg::compute_idcg(const quickrank::data::QueryResults *rl) const {
   //make a copy of labels
-  Label* copyoflabels = new Label[rl->num_results()];
+  Label *copyoflabels = new Label[rl->num_results()];
   memcpy(copyoflabels, rl->labels(), sizeof(Label) * rl->num_results());
   //sort the copy
   std::sort(copyoflabels, copyoflabels + rl->num_results(),
@@ -46,8 +46,8 @@ MetricScore Ndcg::compute_idcg(const quickrank::data::QueryResults* rl) const {
   return dcg;
 }
 
-MetricScore Ndcg::evaluate_result_list(const quickrank::data::QueryResults* rl,
-                                       const Score* scores) const {
+MetricScore Ndcg::evaluate_result_list(const quickrank::data::QueryResults *rl,
+                                       const Score *scores) const {
   if (rl->num_results() == 0)
     return 0.0;
   const MetricScore idcg = Ndcg::compute_idcg(rl);
@@ -64,7 +64,7 @@ std::unique_ptr<Jacobian> Ndcg::jacobian(
 
   auto results = std::shared_ptr<data::QueryResults>(
       new data::QueryResults(ranked->num_results(), ranked->sorted_labels(),
-      NULL));
+                             NULL));
   const double idcg = compute_idcg(results.get());
   if (idcg <= 0.0)
     return jacobian;
@@ -88,7 +88,7 @@ std::unique_ptr<Jacobian> Ndcg::jacobian(
   return jacobian;
 }
 
-std::ostream& Ndcg::put(std::ostream& os) const {
+std::ostream &Ndcg::put(std::ostream &os) const {
   if (cutoff() != Metric::NO_CUTOFF)
     return os << name() << "@" << cutoff();
   else

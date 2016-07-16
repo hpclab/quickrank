@@ -37,14 +37,14 @@ namespace linear {
 ///
 /// Metzler, D., Croft, W.B.: Linear feature-based models for information retrieval.
 /// Information Retrieval 10(3), 257–274 (2007)
-class CoordinateAscent : public LTR_Algorithm {
+class CoordinateAscent: public LTR_Algorithm {
 
  public:
   CoordinateAscent(unsigned int num_points, double window_size,
                    double reduction_factor, unsigned int max_iterations,
                    unsigned int max_failed_vali);
 
-  CoordinateAscent(const pugi::xml_document& model);
+  CoordinateAscent(const pugi::xml_document &model);
 
   virtual ~CoordinateAscent();
 
@@ -69,10 +69,10 @@ class CoordinateAscent : public LTR_Algorithm {
                      const std::string model_filename);
 
   /// Returns the score of a given document.
-  virtual Score score_document(const Feature* d) const;
+  virtual Score score_document(const Feature *d) const;
 
   /// Return the xml model representing the current object
-  virtual pugi::xml_document* get_xml_model() const;
+  virtual pugi::xml_document *get_xml_model() const;
 
   /// Returns the learned weights
   virtual std::shared_ptr<std::vector<double>> get_weights() const {
@@ -93,12 +93,12 @@ class CoordinateAscent : public LTR_Algorithm {
   unsigned int max_failed_vali_;
 
   /// The output stream operator.
-  friend std::ostream& operator<<(std::ostream& os, const CoordinateAscent& a) {
+  friend std::ostream &operator<<(std::ostream &os, const CoordinateAscent &a) {
     return a.put(os);
   }
 
   /// Prints the description of Algorithm, including its parameters
-  virtual std::ostream& put(std::ostream& os) const;
+  virtual std::ostream &put(std::ostream &os) const;
 };
 
 }  // namespace linear

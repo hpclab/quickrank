@@ -30,7 +30,7 @@ namespace ir {
 
 const std::string Dcg::NAME_ = "DCG";
 
-MetricScore Dcg::compute_dcg(const Label* labels, size_t len) const {
+MetricScore Dcg::compute_dcg(const Label *labels, size_t len) const {
   const size_t size = std::min(cutoff(), len);
   double dcg = 0.0;
   for (size_t i = 0; i < size; ++i)
@@ -38,15 +38,15 @@ MetricScore Dcg::compute_dcg(const Label* labels, size_t len) const {
   return (MetricScore) dcg;
 }
 
-MetricScore Dcg::evaluate_result_list(const quickrank::data::QueryResults* rl,
-                                      const Score* scores) const {
+MetricScore Dcg::evaluate_result_list(const quickrank::data::QueryResults *rl,
+                                      const Score *scores) const {
   const size_t size = std::min(cutoff(), rl->num_results());
 
   if (size == 0)
     return 0.0;
 
   // we have at most cutoff to be evaluated
-  Label* sorted_l = new Label[size];
+  Label *sorted_l = new Label[size];
   rl->sorted_labels(scores, sorted_l, cutoff());
 
   MetricScore dcg = compute_dcg(sorted_l, rl->num_results());
@@ -83,7 +83,7 @@ std::unique_ptr<Jacobian> Dcg::jacobian(
   return jacobian;
 }
 
-std::ostream& Dcg::put(std::ostream& os) const {
+std::ostream &Dcg::put(std::ostream &os) const {
   if (cutoff() != Metric::NO_CUTOFF)
     return os << name() << "@" << cutoff();
   else
