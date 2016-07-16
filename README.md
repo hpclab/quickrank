@@ -46,10 +46,9 @@ Create a temporary build folder and change your working directory to it:
 The Makefile generator can build the project in only one configuration, so you need to build a separate folder for each configuration. As an example, to use the Release configuration (which is by default, Debug is similar) you need to execute (take care of the compiler paths):
 
 ```
-cmake \
+cmake .. \
 -D CMAKE_CXX_COMPILER=/usr/local/bin/g++-5 \
--D CMAKE_BUILD_TYPE=Release \
-..
+-D CMAKE_BUILD_TYPE=Release
 ```
 Finally to compile Quickrank:
 
