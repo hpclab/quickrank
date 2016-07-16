@@ -25,7 +25,6 @@ On Mac OS X (HomeBrew and XCode command line tools are required):
 
 	xcode-select --install;
 	brew install gcc cmake git;
-	export HOMEBREW_CC=gcc-5;
 
 On Ubuntu Linux:
 
@@ -264,4 +263,3 @@ We thank the developers of the following tools and libraries:
 License
 -------
 © Contributors, 2016. Licensed under an [Reciprocal Public License (RPL-1.5)](https://opensource.org/licenses/RPL-1.5).
-
