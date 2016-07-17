@@ -36,7 +36,7 @@ void RTNode::save_leaves(RTNode **&leaves, size_t &nleaves,
   if (featureidx == uint_max) {
     if (nleaves == capacity) {
       capacity = 2 * capacity + 1;
-      leaves = (RTNode**) realloc(leaves, sizeof(RTNode*) * capacity);
+      leaves = (RTNode **) realloc(leaves, sizeof(RTNode *) * capacity);
     }
     leaves[nleaves++] = this;
   } else {
@@ -46,7 +46,7 @@ void RTNode::save_leaves(RTNode **&leaves, size_t &nleaves,
 }
 
 pugi::xml_node RTNode::append_xml_model(pugi::xml_node parent,
-                                        const std::string& pos) const {
+                                        const std::string &pos) const {
 
   std::stringstream ss;
   ss << std::setprecision(std::numeric_limits<double>::digits10);
@@ -75,10 +75,10 @@ pugi::xml_node RTNode::append_xml_model(pugi::xml_node parent,
   return split;
 }
 
-RTNode* RTNode::parse_xml(const pugi::xml_node& split_xml) {
-  RTNode* model_node = NULL;
-  RTNode* left_child = NULL;
-  RTNode* right_child = NULL;
+RTNode *RTNode::parse_xml(const pugi::xml_node &split_xml) {
+  RTNode *model_node = NULL;
+  RTNode *left_child = NULL;
+  RTNode *right_child = NULL;
 
   bool is_leaf = false;
 
@@ -86,7 +86,7 @@ RTNode* RTNode::parse_xml(const pugi::xml_node& split_xml) {
   quickrank::Feature threshold = 0.0f;
   quickrank::Score prediction = 0.0;
 
-  for (const pugi::xml_node& split_child: split_xml.children()) {
+  for (const pugi::xml_node &split_child: split_xml.children()) {
 
     if (strcmp(split_child.name(), "output") == 0) {
       prediction = split_child.text().as_double();

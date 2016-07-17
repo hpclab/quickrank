@@ -29,26 +29,25 @@ namespace post_learning {
 namespace pruning {
 
 /// This implements random pruning strategy for pruning ensembles.
-class LastPruning : public EnsemblePruning {
+class LastPruning: public EnsemblePruning {
 
-  public:
-    LastPruning(double pruning_rate) : EnsemblePruning(pruning_rate) {};
+ public:
+  LastPruning(double pruning_rate) : EnsemblePruning(pruning_rate) { };
 
-    LastPruning(double pruning_rate,
-                std::shared_ptr<learning::linear::LineSearch> lineSearch) :
-        EnsemblePruning(pruning_rate, lineSearch) {};
+  LastPruning(double pruning_rate,
+              std::shared_ptr<learning::linear::LineSearch> lineSearch) :
+      EnsemblePruning(pruning_rate, lineSearch) { };
 
-    LastPruning(const pugi::xml_document& model) : EnsemblePruning(model) {};
+  LastPruning(const pugi::xml_document &model) : EnsemblePruning(model) { };
 
-    EnsemblePruning::PruningMethod pruning_method() const;
+  EnsemblePruning::PruningMethod pruning_method() const;
 
-    bool line_search_pre_pruning() const;
+  bool line_search_pre_pruning() const;
 
-    void pruning(std::set<unsigned int>& pruned_estimators,
-                 std::shared_ptr<data::Dataset> dataset,
-                 std::shared_ptr<metric::ir::Metric> scorer);
+  void pruning(std::set<unsigned int> &pruned_estimators,
+               std::shared_ptr<data::Dataset> dataset,
+               std::shared_ptr<metric::ir::Metric> scorer);
 };
-
 
 }  // namespace pruning
 }  // namespace post_learning

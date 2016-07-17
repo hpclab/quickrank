@@ -31,10 +31,10 @@
 namespace quickrank {
 namespace optimization {
 std::shared_ptr<learning::linear::LineSearch> linesearch_opt_factory(
-    ParamsMap& pmap);
+    ParamsMap &pmap);
 
 std::shared_ptr<quickrank::optimization::Optimization> optimization_factory(
-    ParamsMap& pmap);
+    ParamsMap &pmap);
 
 }
 }

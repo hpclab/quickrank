@@ -79,7 +79,7 @@ class RTNode {
 
   // new node
   RTNode(float new_threshold, size_t new_featureidx,
-         size_t new_featureid, RTNode* new_left, RTNode* new_right) {
+         size_t new_featureid, RTNode *new_left, RTNode *new_right) {
     threshold = new_threshold;
     featureidx = new_featureidx;
     featureid = new_featureid;
@@ -94,7 +94,7 @@ class RTNode {
      */
   }
 
-  RTNode(size_t *new_sampleids, RTNodeHistogram* new_hist) {
+  RTNode(size_t *new_sampleids, RTNodeHistogram *new_hist) {
     hist = new_hist;
     sampleids = new_sampleids;
     nsampleids = hist->count[0][hist->thresholds_size[0] - 1];
@@ -130,7 +130,7 @@ class RTNode {
     return featureidx == uint_max;
   }
 
-  quickrank::Score score_instance(const quickrank::Feature* d,
+  quickrank::Score score_instance(const quickrank::Feature *d,
                                   const size_t next_fx_offset) const {
     /*if (featureidx == uint_max)
      std::cout << avglabel << std::endl;
@@ -139,10 +139,10 @@ class RTNode {
      */
     quickrank::Score score =
         featureidx == uint_max ?
-            avglabel :
-            (d[featureidx * next_fx_offset] <= threshold ?
-                left->score_instance(d, next_fx_offset) :
-                right->score_instance(d, next_fx_offset));
+        avglabel :
+        (d[featureidx * next_fx_offset] <= threshold ?
+         left->score_instance(d, next_fx_offset) :
+         right->score_instance(d, next_fx_offset));
 #ifdef QUICKRANK_PERF_STATS
     if (featureidx != uint_max)
     _internal_nodes_traversed.fetch_add(1, std::memory_order_relaxed);
@@ -161,7 +161,7 @@ class RTNode {
 #endif
 
   pugi::xml_node append_xml_model(pugi::xml_node parent,
-                                  const std::string& pos = "") const;
+                                  const std::string &pos = "") const;
 
-  static RTNode* parse_xml(const pugi::xml_node& split_xml);
+  static RTNode *parse_xml(const pugi::xml_node &split_xml);
 };

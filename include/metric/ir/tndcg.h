@@ -19,9 +19,7 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-
-#ifndef QUICKRANK_METRIC_IR_TNDCG_H_
-#define QUICKRANK_METRIC_IR_TNDCG_H_
+#pragma once
 
 #include "types.h"
 #include "ndcg.h"
@@ -37,7 +35,7 @@ namespace ir {
  * performance measures efficiently in the presence of tied scores."
  * In Advances in information retrieval, pp. 414-421. Springer Berlin Heidelberg, 2008.
  */
-class Tndcg : public Ndcg {
+class Tndcg: public Ndcg {
  public:
   explicit Tndcg(size_t k = NO_CUTOFF)
       : Ndcg(k) {
@@ -58,7 +56,7 @@ class Tndcg : public Ndcg {
   /// \param scores a list of scores
   /// \return The quality score of the result list.
   virtual MetricScore evaluate_result_list(
-      const quickrank::data::QueryResults* rl, const Score* scores) const;
+      const quickrank::data::QueryResults *rl, const Score *scores) const;
 
   virtual std::unique_ptr<Jacobian> jacobian(
       std::shared_ptr<data::RankedResults> ranked) const;
@@ -68,20 +66,18 @@ class Tndcg : public Ndcg {
   /// \param rl The given results list. Only labels are actually used.
   /// \param scores The scores to be used to re-order the result list.
   /// \return TNDCG\@K for computed on the given labels.
-  MetricScore compute_tndcg(const quickrank::data::QueryResults* rl,
-                            const Score* scores) const;
+  MetricScore compute_tndcg(const quickrank::data::QueryResults *rl,
+                            const Score *scores) const;
 
  private:
-  friend std::ostream& operator<<(std::ostream& os, const Tndcg& tndcg) {
+  friend std::ostream &operator<<(std::ostream &os, const Tndcg &tndcg) {
     return tndcg.put(os);
   }
 
-  virtual std::ostream& put(std::ostream& os) const;
+  virtual std::ostream &put(std::ostream &os) const;
 
 };
 
 }  // namespace ir
 }  // namespace metric
 }  // namespace quickrank
-
-#endif // QUICKRANK_METRIC_IR_TNDCG_H_

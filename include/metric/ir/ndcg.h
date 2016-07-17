@@ -19,9 +19,7 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-
-#ifndef QUICKRANK_METRIC_IR_NDCG_H_
-#define QUICKRANK_METRIC_IR_NDCG_H_
+#pragma once
 
 #include "types.h"
 #include "dcg.h"
@@ -37,7 +35,7 @@ namespace ir {
  * where \f$l_i\f$ is the relevance label of the i-th document,
  * and \f$IDCG_k\f$ is the NDCG\@K of a perfectly orderd result list.
  */
-class Ndcg : public Dcg {
+class Ndcg: public Dcg {
  public:
   explicit Ndcg(size_t k = NO_CUTOFF)
       : Dcg(k) {
@@ -58,7 +56,7 @@ class Ndcg : public Dcg {
   /// \param scores a list of scores
   /// \return The quality score of the result list.
   virtual MetricScore evaluate_result_list(
-      const quickrank::data::QueryResults* rl, const Score* scores) const;
+      const quickrank::data::QueryResults *rl, const Score *scores) const;
 
   virtual std::unique_ptr<Jacobian> jacobian(
       std::shared_ptr<data::RankedResults> ranked) const;
@@ -67,19 +65,17 @@ class Ndcg : public Dcg {
   /// Computes the IDCG\@K of a given list of labels.
   /// \param rl The given results list. Only labels are actually used.
   /// \return IDCG\@K for computed on the given labels.
-  MetricScore compute_idcg(const quickrank::data::QueryResults* rl) const;
+  MetricScore compute_idcg(const quickrank::data::QueryResults *rl) const;
 
  private:
-  friend std::ostream& operator<<(std::ostream& os, const Ndcg& ndcg) {
+  friend std::ostream &operator<<(std::ostream &os, const Ndcg &ndcg) {
     return ndcg.put(os);
   }
 
-  virtual std::ostream& put(std::ostream& os) const;
+  virtual std::ostream &put(std::ostream &os) const;
 
 };
 
 }  // namespace ir
 }  // namespace metric
 }  // namespace quickrank
-
-#endif // QUICKRANK_NDCG_H_

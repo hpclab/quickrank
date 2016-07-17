@@ -38,14 +38,14 @@ bool LowWeightsPruning::line_search_pre_pruning() const {
   return true;
 }
 
-void LowWeightsPruning::pruning(std::set<unsigned int>& pruned_estimators,
-                                    std::shared_ptr<data::Dataset> dataset,
-                                    std::shared_ptr<metric::ir::Metric> scorer) {
+void LowWeightsPruning::pruning(std::set<unsigned int> &pruned_estimators,
+                                std::shared_ptr<data::Dataset> dataset,
+                                std::shared_ptr<metric::ir::Metric> scorer) {
 
-  std::vector<unsigned int> idx (weights_.size());
+  std::vector<unsigned int> idx(weights_.size());
   std::iota(idx.begin(), idx.end(), 0);
   std::sort(idx.begin(), idx.end(),
-            [this] (const unsigned int& a, const unsigned int& b) {
+            [this](const unsigned int &a, const unsigned int &b) {
               return this->weights_[a] < this->weights_[b];
             });
 
@@ -53,7 +53,6 @@ void LowWeightsPruning::pruning(std::set<unsigned int>& pruned_estimators,
     pruned_estimators.insert(idx[f]);
   }
 }
-
 
 }  // namespace pruning
 }  // namespace post_learning

@@ -29,8 +29,8 @@
 namespace quickrank {
 namespace io {
 
-void model_tree_get_leaves(pugi::xml_node &split_xml,
-                           std::vector<std::string> &leaves) {
+void GenOblivious::model_tree_get_leaves(pugi::xml_node &split_xml,
+                                         std::vector<std::string> &leaves) {
   std::string prediction;
   bool is_leaf = false;
   pugi::xml_node left;
@@ -38,7 +38,7 @@ void model_tree_get_leaves(pugi::xml_node &split_xml,
 
   for (pugi::xml_node &node : split_xml.children()) {
     if (strcmp(node.name(), "output") == 0) {
-      prediction = node.child_value();
+      prediction = node.text().as_string();
       trim(prediction);
       is_leaf = true;
       break;
@@ -62,6 +62,71 @@ void model_tree_get_leaves(pugi::xml_node &split_xml,
   }
 }
 
+void GenOblivious::model_tree_get_feature_ids(pugi::xml_node &split_xml,
+                                              std::vector<unsigned int> &features) {
+  unsigned int feature_id;
+  bool is_leaf = false;
+  pugi::xml_node left;
+  pugi::xml_node right;
+
+  for (pugi::xml_node &node : split_xml.children()) {
+    if (strcmp(node.name(), "feature") == 0) {
+      feature_id = node.text().as_uint();
+      is_leaf = true;
+      break;
+    } else if (strcmp(node.name(), "split") == 0) {
+      std::string pos = node.attribute("pos").as_string();
+
+      if (pos == "left") {
+        left = node;
+      }
+      if (pos == "right") {
+        right = node;
+      }
+    }
+  }
+
+  if (is_leaf)
+    features.push_back(feature_id);
+  else {
+    model_tree_get_feature_ids(left, features);
+    model_tree_get_feature_ids(right, features);
+  }
+}
+
+void GenOblivious::model_tree_get_thresholds(pugi::xml_node &split_xml,
+                                             std::vector<std::string> &thresholds) {
+  std::string threshold;
+  bool is_leaf = false;
+  pugi::xml_node left;
+  pugi::xml_node right;
+
+  for (pugi::xml_node &node : split_xml.children()) {
+    if (strcmp(node.name(), "threshold") == 0) {
+      threshold = node.text().as_string();
+      trim(threshold);
+      is_leaf = true;
+      break;
+    } else if (strcmp(node.name(), "split") == 0) {
+      std::string pos = node.attribute("pos").as_string();
+
+      if (pos == "left") {
+        left = node;
+      }
+      if (pos == "right") {
+        right = node;
+      }
+    }
+  }
+
+  if (is_leaf)
+    thresholds.push_back(threshold);
+  else {
+    model_tree_get_thresholds(left, thresholds);
+    model_tree_get_thresholds(right, thresholds);
+  }
+}
+
 void GenOblivious::generate_oblivious_code(const std::string model_filename,
                                            const std::string code_filename) {
   if (model_filename.empty()) {
@@ -79,9 +144,9 @@ void GenOblivious::generate_oblivious_code(const std::string model_filename,
 
   // let's navigate the ensemble, for each tree...
   pugi::xml_node ranker = xml_document.child("ranker");
-  pugi::xml_node info = xml_document.child("info");
-  unsigned int trees = std::stoi(info.child("trees").child_value());
-  unsigned int depth = std::stoi(info.child("depth").child_value());
+  pugi::xml_node info = ranker.child("info");
+  unsigned int trees = info.child("trees").text().as_uint();
+  unsigned int depth = info.child("depth").text().as_uint();
   unsigned int max_leaves = 1 << depth;
 
   // printing ensemble info
@@ -103,55 +168,40 @@ void GenOblivious::generate_oblivious_code(const std::string model_filename,
   std::vector<int> tree_depths;
   for (pugi::xml_node &tree : ensemble.children("tree")) {
     int curr_depth = 0;
-    auto split_in_tree = tree.children("split");
-    int size = std::distance(split_in_tree.begin(), split_in_tree.end());
-    while (size != 2) {
+    auto splits_in_tree = tree.children("split");
+    int size = std::distance(splits_in_tree.begin(), splits_in_tree.end());
+    while (size != 0) {
       curr_depth++;
       tree = tree.child("split");
-      split_in_tree = tree.children("split");
-      size = std::distance(split_in_tree.begin(), split_in_tree.end());
+      splits_in_tree = tree.child("split").children("split");
+      size = std::distance(splits_in_tree.begin(), splits_in_tree.end());
     }
     tree_depths.push_back(curr_depth);
   }
 
   // load leaf outputs
   std::vector<std::vector<std::string>> tree_outputs(trees);
-  size_t curr_tree = 0;
+  unsigned int curr_tree = 0;
   for (pugi::xml_node &tree : ensemble.children("tree")) {
     pugi::xml_node root = tree.child("split");
     model_tree_get_leaves(root, tree_outputs[curr_tree++]);
   }
 
   // load features ids
-  std::vector<std::vector<size_t>> feature_ids(trees);
   curr_tree = 0;
+  std::vector<std::vector<unsigned int>> feature_ids(trees);
   for (pugi::xml_node &tree : ensemble.children("tree")) {
-    for (pugi::xml_node &split : tree.children("split")) {
-      int size = std::distance(split.begin(), split.end());
-      while (size != 2) {
-        feature_ids[curr_tree].push_back(
-            atoi(split.child("feature").child_value()) - 1);
-        split = split.child("split");
-      }
-      curr_tree++;
-    }
+    pugi::xml_node root = tree.child("split");
+    model_tree_get_feature_ids(root, feature_ids[curr_tree++]);
   }
 
-    // load thresholds values
-    std::vector<std::vector<std::string>> thresholds(trees);
-    curr_tree = 0;
-    for (pugi::xml_node &tree : ensemble.children("tree")) {
-      for (pugi::xml_node &split : tree.children("split")) {
-        int size = std::distance(split.begin(), split.end());
-        while (size != 2) {
-          std::string threshold = split.child("threshold").child_value();
-          trim(threshold);
-          thresholds[curr_tree].push_back(threshold);
-          split = split.child("split");
-        }
-      }
-    }
-    curr_tree++;
+  // load thresholds values
+  curr_tree = 0;
+  std::vector<std::vector<std::string>> thresholds(trees);
+  for (pugi::xml_node &tree : ensemble.children("tree")) {
+    pugi::xml_node root = tree.child("split");
+    model_tree_get_thresholds(root, thresholds[curr_tree++]);
+  }
 
   // mapping of trees in sorted order by depths
   std::vector<size_t> tree_mapping(trees);
@@ -221,7 +271,8 @@ void GenOblivious::generate_oblivious_code(const std::string model_filename,
 
   // print thresholds values
   source_code << "const float thresholds[N][M] = { " << std::endl << '\t';
-  source_code << std::setprecision(std::numeric_limits<Feature>::digits10);
+  source_code
+      << std::setprecision(std::numeric_limits<quickrank::Feature>::digits10);
   for (size_t i = 0; i < thresholds.size(); i++) {
     if (i != 0)
       source_code << "," << std::endl << '\t';

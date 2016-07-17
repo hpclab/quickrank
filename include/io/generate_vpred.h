@@ -24,8 +24,22 @@
 namespace quickrank {
 namespace io {
 
-void generate_vpred_input(const std::string &ensemble_file,
-                          const std::string &output_file);
+/**
+ * This class is a code generator on QuickRank XML files.
+ *
+ * The XML format is used for loading and storing ranking models.
+ */
+class GenVpred {
+ public:
+
+  /// Generates the VPRED intermediate file of the given XML model.
+  /// This applies to forests of oblivious trees.
+  ///
+  /// \param model_filename Previously saved XML ranker model.
+  /// \param code_filename Output source code file name.
+  void generate_vpred_input(const std::string &ensemble_file,
+                            const std::string &output_file);
+};
 
 }  // namespace io
-}  // namesapce quickrank
+}  // namespace quickrank

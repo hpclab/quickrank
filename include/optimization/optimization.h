@@ -38,17 +38,17 @@ class Optimization {
     EPRUNING
   };
 
-  Optimization() {};
+  Optimization() { };
 
   /// Generates a LTR_Algorithm instance from a previously saved XML model.
-  Optimization(const pugi::xml_document& model);
+  Optimization(const pugi::xml_document &model);
 
   virtual ~Optimization() = default;
 
   /// Avoid inefficient copy constructor
-  Optimization( const Optimization& other ) = delete;
+  Optimization(const Optimization &other) = delete;
   /// Avoid inefficient copy assignment
-  Optimization& operator=( const Optimization& ) = delete;
+  Optimization &operator=(const Optimization &) = delete;
 
   /// Returns the name of the optimizer.
   virtual std::string name() const = 0;
@@ -76,7 +76,7 @@ class Optimization {
   virtual void save(std::string model_filename, int suffix = -1) const;
 
   /// Return the xml model representing the current object
-  virtual pugi::xml_document* get_xml_model() const = 0;
+  virtual pugi::xml_document *get_xml_model() const = 0;
 
   virtual bool is_pre_learning() const = 0;
 
@@ -96,7 +96,7 @@ class Optimization {
     if (i_item != optimizationAlgorithmNames.cend()) {
 
       return OptimizationAlgorithm(std::distance(optimizationAlgorithmNames.cbegin(),
-                                         i_item));
+                                                 i_item));
     }
 
     throw std::invalid_argument("pruning method " + name + " is not valid");
@@ -109,12 +109,12 @@ class Optimization {
  protected:
 
   /// The output stream operator.
-  friend std::ostream& operator<<(std::ostream& os, const Optimization& a) {
+  friend std::ostream &operator<<(std::ostream &os, const Optimization &a) {
     return a.put(os);
   }
 
   /// Prints the description of Algorithm, including its parameters
-  virtual std::ostream& put(std::ostream& os) const = 0;
+  virtual std::ostream &put(std::ostream &os) const = 0;
 
 };
 

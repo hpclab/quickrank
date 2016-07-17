@@ -42,14 +42,14 @@ class QueryResults {
   /// related to a specific query.
   /// \param n_instances The number of training instances (lines) in the dataset.
   /// \param n_features The number of features.
-  QueryResults(size_t n_results, Label* new_labels,
-               Feature* new_features);
+  QueryResults(size_t n_results, Label *new_labels,
+               Feature *new_features);
   virtual ~QueryResults();
 
-  Feature* features() const {
+  Feature *features() const {
     return features_;
   }
-  Label* labels() const {
+  Label *labels() const {
     return labels_;
   }
   size_t num_results() const {
@@ -62,7 +62,7 @@ class QueryResults {
   ///
   /// \param scores vector of scores used for reverse sorting.
   /// \param dest output of the sorting indexing.
-  void indexing_of_sorted_labels(const Score* scores, size_t* dest) const;
+  void indexing_of_sorted_labels(const Score *scores, size_t *dest) const;
 
   /// Sorts the element of the current result list
   /// in descending order of the given \a scores vector
@@ -71,12 +71,12 @@ class QueryResults {
   /// \param scores vector of scores used for reverse sorting.
   /// \param dest output of the labels sorting.
   /// \param cutoff number of labels of interest, i.e., length of \a dest.
-  void sorted_labels(const Score* scores, Label* dest,
+  void sorted_labels(const Score *scores, Label *dest,
                      const size_t cutoff) const;
 
  private:
-  Label* labels_;
-  Feature* features_;
+  Label *labels_;
+  Feature *features_;
   size_t num_results_;
 
 };

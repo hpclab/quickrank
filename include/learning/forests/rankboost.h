@@ -34,52 +34,53 @@ namespace learning {
 namespace forests {
 
 class WeakRanker {
-public:
+ public:
 
-    WeakRanker(unsigned int feature_id, Feature theta, int sign) {
-        feature_id_ = feature_id;
-        theta_ = theta;
-        sign_ = sign;
-    }
+  WeakRanker(unsigned int feature_id, Feature theta, int sign) {
+    feature_id_ = feature_id;
+    theta_ = theta;
+    sign_ = sign;
+  }
 
-    ~WeakRanker() {
-    }
+  ~WeakRanker() {
+  }
 
-    unsigned int get_feature_id() const {
-        return feature_id_;
-    }
+  unsigned int get_feature_id() const {
+    return feature_id_;
+  }
 
-    Feature get_theta() const {
-        return theta_;
-    }
+  Feature get_theta() const {
+    return theta_;
+  }
 
-    int get_sign() const {
-        return sign_;
-    }
+  int get_sign() const {
+    return sign_;
+  }
 
-    unsigned int score_document(const quickrank::Feature* d) {
-        if (sign_ * d[feature_id_] > sign_ * theta_)
-            return 1;
-        return 0;
-    }
+  unsigned int score_document(const quickrank::Feature *d) {
+    if (sign_ * d[feature_id_] > sign_ * theta_)
+      return 1;
+    return 0;
+  }
 
-    WeakRanker* clone() {
-        return new WeakRanker(feature_id_, theta_, sign_);
-    }
+  WeakRanker *clone() {
+    return new WeakRanker(feature_id_, theta_, sign_);
+  }
 
-private:
-    unsigned int feature_id_ = 0;
-    Feature theta_ = 0.0;
-    int sign_ = 1;
+ private:
+  unsigned int feature_id_ = 0;
+  Feature theta_ = 0.0;
+  int sign_ = 1;
 
-    friend std::ostream& operator<<(std::ostream& os, const WeakRanker& a) {
-        return a.put(os);
-    }
+  friend std::ostream &operator<<(std::ostream &os, const WeakRanker &a) {
+    return a.put(os);
+  }
 
-    std::ostream& put(std::ostream& os) const {
-        os << "# WeakRanker " << feature_id_ << ":" << theta_ << " (" << ")" << std::endl;
-        return os;
-    }
+  std::ostream &put(std::ostream &os) const {
+    os << "# WeakRanker " << feature_id_ << ":" << theta_ << " (" << ")"
+        << std::endl;
+    return os;
+  }
 
 };
 
@@ -88,90 +89,93 @@ private:
 /// Freund, Y., Iyer, R., Schapire, R. E., & Singer, Y. (2003).
 /// An efficient boosting algorithm for combining preferences.
 /// The Journal of machine learning research, 4, 933-969.
-class Rankboost : public LTR_Algorithm {
-public:
-    Rankboost(size_t max_wr);
+class Rankboost: public LTR_Algorithm {
+ public:
+  Rankboost(size_t max_wr);
 
-    Rankboost(const pugi::xml_document& model);
+  Rankboost(const pugi::xml_document &model);
 
-    virtual ~Rankboost();
+  virtual ~Rankboost();
 
-    /// Avoid inefficient copy constructor
-    Rankboost( const Rankboost& other ) = delete;
-    /// Avoid inefficient copy assignment
-    Rankboost& operator=( const Rankboost& ) = delete;
+  /// Avoid inefficient copy constructor
+  Rankboost(const Rankboost &other) = delete;
+  /// Avoid inefficient copy assignment
+  Rankboost &operator=(const Rankboost &) = delete;
 
-    /// Returns the name of the ranker.
-    virtual std::string name() const {
-      return NAME_;
-    }
+  /// Returns the name of the ranker.
+  virtual std::string name() const {
+    return NAME_;
+  }
 
-    static const std::string NAME_;
+  static const std::string NAME_;
 
-    /// Executes the learning process.
-    ///
-    /// \param training_dataset The training dataset.
-    /// \param validation_dataset The validation training dataset.
-    /// \param metric The metric to be optimized.
-    /// \param partial_save Allows to save a partial model every given number of iterations.
-    /// \param model_filename The file where the model, and the partial models, are saved.
-    virtual void learn(
-            std::shared_ptr<data::Dataset> training_dataset,
-            std::shared_ptr<data::Dataset> validation_dataset,
-            std::shared_ptr<metric::ir::Metric> metric,
-            size_t partial_save,
-            const std::string model_filename);
+  /// Executes the learning process.
+  ///
+  /// \param training_dataset The training dataset.
+  /// \param validation_dataset The validation training dataset.
+  /// \param metric The metric to be optimized.
+  /// \param partial_save Allows to save a partial model every given number of iterations.
+  /// \param model_filename The file where the model, and the partial models, are saved.
+  virtual void learn(
+      std::shared_ptr<data::Dataset> training_dataset,
+      std::shared_ptr<data::Dataset> validation_dataset,
+      std::shared_ptr<metric::ir::Metric> metric,
+      size_t partial_save,
+      const std::string model_filename);
 
-    /// Returns the score of a given document.
-    virtual Score score_document(const Feature* d) const;
+  /// Returns the score of a given document.
+  virtual Score score_document(const Feature *d) const;
 
-    /// Returns the partial scores of a given document, tree.
-    /// \param d is a pointer to the document to be evaluated
-    virtual std::shared_ptr<std::vector<Score>> partial_scores_document(
-        const Feature *d) const;
+  /// Returns the partial scores of a given document, tree.
+  /// \param d is a pointer to the document to be evaluated
+  virtual std::shared_ptr<std::vector<Score>> partial_scores_document(
+      const Feature *d) const;
 
-    /// Return the xml model representing the current object
-    virtual pugi::xml_document* get_xml_model() const;
+  /// Return the xml model representing the current object
+  virtual pugi::xml_document *get_xml_model() const;
 
-    virtual bool update_weights(std::vector<double>& weights);
+  virtual bool update_weights(std::vector<double> &weights);
 
-    virtual std::shared_ptr<std::vector<double>> get_weights() const;
+  virtual std::shared_ptr<std::vector<double>> get_weights() const;
 
-private:
-    float*** D = NULL;
-    float** PI = NULL;
-    Feature** THETA = NULL;
-    unsigned int* n_theta = NULL;
-    unsigned int*** SDF = NULL;
-    Score* training_scores = NULL;
-    Score* validation_scores = NULL;
-    size_t T;
-    size_t best_T;
-    bool go_parallel;
-    char const* omp_schedule;
-    WeakRanker** weak_rankers = NULL;
-    float* alphas = NULL;
-    float best_r = 0.0;
-    float max_alpha = 0.0;
-    float r_t = 0.0;
-    float z_t = 1.0;
+ private:
+  float ***D = NULL;
+  float **PI = NULL;
+  Feature **THETA = NULL;
+  unsigned int *n_theta = NULL;
+  unsigned int ***SDF = NULL;
+  Score *training_scores = NULL;
+  Score *validation_scores = NULL;
+  size_t T;
+  size_t best_T;
+  bool go_parallel;
+  char const *omp_schedule;
+  WeakRanker **weak_rankers = NULL;
+  float *alphas = NULL;
+  float best_r = 0.0;
+  float max_alpha = 0.0;
+  float r_t = 0.0;
+  float z_t = 1.0;
 
-    void init(std::shared_ptr<data::Dataset> training_dataset, std::shared_ptr<data::Dataset> validation_dataset);
-    void compute_pi(std::shared_ptr<data::Dataset> dataset);
-    WeakRanker* compute_weak_ranker(std::shared_ptr<data::Dataset> dataset);
-    void update_d(std::shared_ptr<data::Dataset> dataset, WeakRanker* wr, float alpha);
-    MetricScore compute_metric_score(std::shared_ptr<data::Dataset> dataset, std::shared_ptr<quickrank::metric::ir::Metric> scorer);
-    void clean(std::shared_ptr<data::Dataset> dataset);
+  void init(std::shared_ptr<data::Dataset> training_dataset,
+            std::shared_ptr<data::Dataset> validation_dataset);
+  void compute_pi(std::shared_ptr<data::Dataset> dataset);
+  WeakRanker *compute_weak_ranker(std::shared_ptr<data::Dataset> dataset);
+  void update_d
+      (std::shared_ptr<data::Dataset> dataset, WeakRanker *wr, float alpha);
+  MetricScore compute_metric_score(std::shared_ptr<data::Dataset> dataset,
+                                   std::shared_ptr<quickrank::metric::ir::Metric> scorer);
+  void clean(std::shared_ptr<data::Dataset> dataset);
 
 
-    /// The output stream operator.
+  /// The output stream operator.
 
-    friend std::ostream& operator<<(std::ostream& os, const Rankboost& a) {
-        return a.put(os);
-    }
+  friend std::ostream &operator<<(std::ostream &os, const Rankboost &a) {
+    return a.put(os);
+  }
 
-    /// Prints the description of Algorithm, including its parameters
-    virtual std::ostream& put(std::ostream& os) const;
+  /// Prints the description of Algorithm, including its parameters
+  virtual std::ostream &put(std::ostream &os) const;
 };
 } // namespace forests
 } // namespace learning

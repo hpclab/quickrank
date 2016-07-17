@@ -30,7 +30,7 @@ namespace quickrank {
 namespace learning {
 namespace forests {
 
-class ObliviousLambdaMart : public LambdaMart {
+class ObliviousLambdaMart: public LambdaMart {
  public:
   /// Initializes a new ObliviousLambdaMart instance with the given learning parameters.
   ///
@@ -49,7 +49,7 @@ class ObliviousLambdaMart : public LambdaMart {
         treedepth_(treedepth) {
   }
 
-  ObliviousLambdaMart(const pugi::xml_document& model);
+  ObliviousLambdaMart(const pugi::xml_document &model);
 
   virtual ~ObliviousLambdaMart() {
   }
@@ -59,7 +59,7 @@ class ObliviousLambdaMart : public LambdaMart {
     return NAME_;
   }
 
-  virtual pugi::xml_document* get_xml_model() const;
+  virtual pugi::xml_document *get_xml_model() const;
 
   static const std::string NAME_;
 
@@ -74,13 +74,13 @@ class ObliviousLambdaMart : public LambdaMart {
 
  private:
   /// The output stream operator.
-  friend std::ostream& operator<<(std::ostream& os,
-                                  const ObliviousLambdaMart& a) {
+  friend std::ostream &operator<<(std::ostream &os,
+                                  const ObliviousLambdaMart &a) {
     return a.put(os);
   }
 
   /// Prints the description of Algorithm, including its parameters.
-  virtual std::ostream& put(std::ostream& os) const;
+  virtual std::ostream &put(std::ostream &os) const;
 
 };
 

@@ -29,13 +29,12 @@
 #include "learning/linear/coordinate_ascent.h"
 #include "learning/linear/line_search.h"
 #include "learning/custom/custom_ltr.h"
-#include "learning/linear/coordinate_ascent.h"
 
 namespace quickrank {
 namespace learning {
 
 std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
-    ParamsMap& pmap, bool verbose) {
+    ParamsMap &pmap, bool verbose) {
 
   std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algo = nullptr;
 
@@ -48,8 +47,8 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
       std::cout << "# Loading model from file " << model_filename << std::endl;
 
     ltr_algo = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
-            quickrank::learning::LTR_Algorithm::load_model_from_file(
-                model_filename));
+        quickrank::learning::LTR_Algorithm::load_model_from_file(
+            model_filename));
 
     if (verbose && !ltr_algo) {
       std::cerr << " !! Unable to load model from file." << std::endl;
@@ -81,7 +80,8 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
               pmap.get<size_t>("min-leaf-support"),
               pmap.get<size_t>("end-after-rounds")
           ));
-    } else if (algo_name == quickrank::learning::forests::ObliviousMart::NAME_) {
+    } else if (algo_name
+        == quickrank::learning::forests::ObliviousMart::NAME_) {
       ltr_algo = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
           new quickrank::learning::forests::ObliviousMart(
               pmap.get<size_t>("num-trees"),
@@ -91,7 +91,8 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
               pmap.get<size_t>("min-leaf-support"),
               pmap.get<size_t>("end-after-rounds")
           ));
-    } else if (algo_name == quickrank::learning::forests::ObliviousLambdaMart::NAME_) {
+    } else if (algo_name
+        == quickrank::learning::forests::ObliviousLambdaMart::NAME_) {
       ltr_algo = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
           new quickrank::learning::forests::ObliviousLambdaMart(
               pmap.get<size_t>("num-trees"),
@@ -106,25 +107,32 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
           new quickrank::learning::forests::Rankboost(
               pmap.get<size_t>("num-trees")
           ));
-    } else if (algo_name == quickrank::learning::linear::CoordinateAscent::NAME_) {
+    } else if (algo_name
+        == quickrank::learning::linear::CoordinateAscent::NAME_) {
       ltr_algo = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
           new quickrank::learning::linear::CoordinateAscent(
-              pmap.get<unsigned int>("num-samples"),
-              pmap.get<double>("window-size"),
-              pmap.get<double>("reduction-factor"),
-              pmap.get<unsigned int>("max-iterations"),
-              pmap.get<unsigned int>("max-failed-valid")
-          ));
+              pmap.get < unsigned
+      int > ("num-samples"),
+          pmap.get<double>("window-size"),
+          pmap.get<double>("reduction-factor"),
+          pmap.get < unsigned
+      int > ("max-iterations"),
+          pmap.get < unsigned
+      int > ("max-failed-valid")
+      ));
     } else if (algo_name == quickrank::learning::linear::LineSearch::NAME_) {
       ltr_algo = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
           new quickrank::learning::linear::LineSearch(
-              pmap.get<unsigned int>("num-samples"),
-              pmap.get<double>("window-size"),
-              pmap.get<double>("reduction-factor"),
-              pmap.get<unsigned int>("max-iterations"),
-              pmap.get<unsigned int>("max-failed-valid"),
-              pmap.isSet("adaptive")
-          ));
+              pmap.get < unsigned
+      int > ("num-samples"),
+          pmap.get<double>("window-size"),
+          pmap.get<double>("reduction-factor"),
+          pmap.get < unsigned
+      int > ("max-iterations"),
+          pmap.get < unsigned
+      int > ("max-failed-valid"),
+          pmap.isSet("adaptive")
+      ));
     } else if (algo_name == quickrank::learning::CustomLTR::NAME_) {
       ltr_algo = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
           new quickrank::learning::CustomLTR());

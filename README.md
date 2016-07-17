@@ -25,7 +25,6 @@ On Mac OS X (HomeBrew and XCode command line tools are required):
 
 	xcode-select --install;
 	brew install gcc cmake git;
-	export HOMEBREW_CC=gcc-5;
 
 On Ubuntu Linux:
 
@@ -34,25 +33,22 @@ On Ubuntu Linux:
 
 Once the compiler and the build system are installed, you can get the latest stable source packages (including the dependencies) using git:
 
-	git clone http://git.hpc.isti.cnr.it/quickrank/quickrank.git
-	cd quickrank
-	git submodule init
-	git submodule update
+	git clone --recursive https://github.com/hpclab/quickrank.git
 
 QuickRank relies on the CMake build system. The root directory contains CMake files that can be used to build the project from the command line or using an IDE which supports CMake. The instructions which follows describe how to build the project from the command line, but the same actions can be performed using appropriate GUI tools. 
 
 Create a temporary build folder and change your working directory to it:
 
+	cd quickrank
 	mkdir build_
 	cd build_
 
 The Makefile generator can build the project in only one configuration, so you need to build a separate folder for each configuration. As an example, to use the Release configuration (which is by default, Debug is similar) you need to execute (take care of the compiler paths):
 
 ```
-cmake \
+cmake .. \
 -D CMAKE_CXX_COMPILER=/usr/local/bin/g++-5 \
--D CMAKE_BUILD_TYPE=Release \
-..
+-D CMAKE_BUILD_TYPE=Release
 ```
 Finally to compile Quickrank:
 
@@ -167,6 +163,11 @@ To test a model, you could specify the test option in the previous command, or l
 
 With the ```--detailed``` option, valid only for ensemble-based algorithms, QuickRank will save in a SVM-light format (which consequently can be used as input dataset for other learning algorithms) the partial scores given by each weak ranker to the prediction of the documents (one row per document, a feature for each ensemble, preserving the order of the ensembles in the model and of the documents in the dataset).
 
+
+### Efficient Scoring
+
+QuickRank can translate learnt tree-based models into efficient C++ source code that can be used to score documents efficiently. See a more detailed description [here](documentation/quickscore.md).
+
 ### Optimization
 
 QuickRank introduces the concept of optimizers, i.e., algorithms than are executed before or after the training phase is executed. An optimizer could process either the dataset or the model, depending from its definition. Currently in QuickRank there is a single optimizer which acts in post learning by pruning an ensamble model, improving consequently its efficiency, without hindering its effectiveness.
@@ -240,6 +241,13 @@ If you use QuickRank, please acknowledge the following paper:
  *Information Processing & Management* (2016).
  [LINK](http://dx.doi.org/10.1016/j.ipm.2016.05.004).
 
+If you use the **CLEAVER**, please acknowledge the following paper:
+ - C. Lucchese, F. M. Nardini, S. Orlando, R. Perego, F. Silvestri, S. Trani.
+ **Post-Learning Optimization of Tree Ensembles for Efficient Ranking**.
+ *ACM SIGIR Conference on Research and Development in Information Retrieval*, (2016).
+ [LINK](http://dx.doi.org/10.1145/2911451.2914763).
+
+
 We will be happy to know that you are using QuickRank and to acknowledge you.
 [Check the list of works using QuickRank](documentation/usedby.md)
 
@@ -254,4 +262,3 @@ We thank the developers of the following tools and libraries:
 License
 -------
 © Contributors, 2016. Licensed under an [Reciprocal Public License (RPL-1.5)](https://opensource.org/licenses/RPL-1.5).
-

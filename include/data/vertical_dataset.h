@@ -49,20 +49,20 @@ class VerticalDataset {
   /// Allocates a vertical dataset by copying and transposing an horizontal one.
   ///
   /// \param h_dataset The horizontal dataset.
-  VerticalDataset( std::shared_ptr<Dataset> h_dataset);
+  VerticalDataset(std::shared_ptr<Dataset> h_dataset);
   virtual ~VerticalDataset();
 
   /// Avoid inefficient copy constructor
-  VerticalDataset( const VerticalDataset& other ) = delete;
+  VerticalDataset(const VerticalDataset &other) = delete;
   /// Avoid inefficient copy assignment
-  VerticalDataset& operator=( const VerticalDataset& ) = delete;
+  VerticalDataset &operator=(const VerticalDataset &) = delete;
 
   /// Returns a pointer to a specific data item.
   ///
   /// \param document_id The document of interest.
   /// \param feature_id The feature of interest.
   /// \returns A reference to the requested feature value of the given document id.
-  quickrank::Feature* at(size_t document_id, size_t feature_id) {
+  quickrank::Feature *at(size_t document_id, size_t feature_id) {
     return data_ + document_id + feature_id * num_instances_;
   }
 
@@ -105,18 +105,18 @@ class VerticalDataset {
   size_t num_queries_;
   size_t num_instances_;
 
-  quickrank::Feature* data_ = NULL;
-  quickrank::Label* labels_ = NULL;
+  quickrank::Feature *data_ = NULL;
+  quickrank::Label *labels_ = NULL;
   std::vector<size_t> offsets_;
 
   /// The output stream operator.
   /// Prints the data reading time stats
-  friend std::ostream& operator<<(std::ostream& os, const VerticalDataset& me) {
+  friend std::ostream &operator<<(std::ostream &os, const VerticalDataset &me) {
     return me.put(os);
   }
 
   /// Prints the data reading time stats
-  virtual std::ostream& put(std::ostream& os) const;
+  virtual std::ostream &put(std::ostream &os) const;
 
 };
 

@@ -39,9 +39,9 @@ bool ScoreLossPruning::line_search_pre_pruning() const {
   return true;
 }
 
-void ScoreLossPruning::pruning(std::set<unsigned int>& pruned_estimators,
-                                    std::shared_ptr<data::Dataset> dataset,
-                                    std::shared_ptr<metric::ir::Metric> scorer) {
+void ScoreLossPruning::pruning(std::set<unsigned int> &pruned_estimators,
+                               std::shared_ptr<data::Dataset> dataset,
+                               std::shared_ptr<metric::ir::Metric> scorer) {
 
   unsigned int num_features = dataset->num_features();
   unsigned int num_instances = dataset->num_instances();
@@ -51,8 +51,8 @@ void ScoreLossPruning::pruning(std::set<unsigned int>& pruned_estimators,
   // compute the per instance score
   this->score(dataset.get(), &instance_scores[0]);
 
-  Feature* features = dataset->at(0,0);
-  #pragma omp parallel for
+  Feature *features = dataset->at(0, 0);
+#pragma omp parallel for
   for (unsigned int s = 0; s < num_instances; s++) {
     unsigned int offset_feature = s * num_features;
     for (unsigned int f = 0; f < num_features; f++) {
@@ -62,10 +62,10 @@ void ScoreLossPruning::pruning(std::set<unsigned int>& pruned_estimators,
   }
 
   // Find the last feature scores
-  std::vector<unsigned int> idx (num_features);
+  std::vector<unsigned int> idx(num_features);
   std::iota(idx.begin(), idx.end(), 0);
   std::sort(idx.begin(), idx.end(),
-            [&feature_scores] (const unsigned int& a, const unsigned int& b) {
+            [&feature_scores](const unsigned int &a, const unsigned int &b) {
               return feature_scores[a] < feature_scores[b];
             });
 
@@ -73,7 +73,6 @@ void ScoreLossPruning::pruning(std::set<unsigned int>& pruned_estimators,
     pruned_estimators.insert(idx[f]);
   }
 }
-
 
 }  // namespace pruning
 }  // namespace post_learning

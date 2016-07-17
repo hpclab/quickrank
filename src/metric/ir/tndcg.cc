@@ -30,13 +30,13 @@ namespace ir {
 
 const std::string Tndcg::NAME_ = "TNDCG";
 
-MetricScore Tndcg::compute_tndcg(const quickrank::data::QueryResults* rl,
-                                 const Score* scores) const {
+MetricScore Tndcg::compute_tndcg(const quickrank::data::QueryResults *rl,
+                                 const Score *scores) const {
   const double idcg = Ndcg::compute_idcg(rl);
   if (idcg <= 0.0)
     return 0;
 
-  size_t* idx = new size_t[rl->num_results()];
+  size_t *idx = new size_t[rl->num_results()];
   rl->indexing_of_sorted_labels(scores, idx);
 
   const size_t size = std::min(cutoff(), rl->num_results());
@@ -62,8 +62,8 @@ MetricScore Tndcg::compute_tndcg(const quickrank::data::QueryResults* rl,
   return (MetricScore) (tndcg / idcg);
 }
 
-MetricScore Tndcg::evaluate_result_list(const quickrank::data::QueryResults* rl,
-                                        const Score* scores) const {
+MetricScore Tndcg::evaluate_result_list(const quickrank::data::QueryResults *rl,
+                                        const Score *scores) const {
   if (rl->num_results() == 0)
     return 0.0;
 
@@ -79,14 +79,14 @@ std::unique_ptr<Jacobian> Tndcg::jacobian(
 
   auto _results = std::shared_ptr<data::QueryResults>(
       new data::QueryResults(ranked->num_results(), ranked->sorted_labels(),
-      NULL));
+                             NULL));
   const double idcg = compute_idcg(_results.get());
   if (idcg <= 0.0)
     return jacobian;
 
   const size_t size = std::min(cutoff(), ranked->num_results());
 
-  double* weights = new double[ranked->num_results()]();  // init with 0s
+  double *weights = new double[ranked->num_results()]();  // init with 0s
 
   /// \todo TODO: it makes sense to pre-compute weights also in ndcg
   for (size_t i = 0; i < ranked->num_results();) {
@@ -124,7 +124,7 @@ std::unique_ptr<Jacobian> Tndcg::jacobian(
   return jacobian;
 }
 
-std::ostream& Tndcg::put(std::ostream& os) const {
+std::ostream &Tndcg::put(std::ostream &os) const {
   if (cutoff() != Metric::NO_CUTOFF)
     return os << name() << "@" << cutoff();
   else

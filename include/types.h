@@ -19,8 +19,7 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_TYPES_H_
-#define QUICKRANK_TYPES_H_
+#pragma once
 
 #include <vector>
 #include "utils/symmatrix.h"
@@ -33,8 +32,7 @@ typedef float Feature;  /// data type for instance feature
 typedef unsigned int QueryID;  /// data type for QueryID in L-t-R datasets
 typedef double MetricScore;  /// data type for evaluation metric final outcome
 
-typedef SymMatrix<double> Jacobian;  /// data type for a Metric's Jacobian Matrix
+typedef SymMatrix<double>
+    Jacobian;  /// data type for a Metric's Jacobian Matrix
 
 }  // namespace quickrank
-
-#endif

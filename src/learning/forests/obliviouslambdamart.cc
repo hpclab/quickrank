@@ -21,14 +21,8 @@
  */
 #include "learning/forests/obliviouslambdamart.h"
 
-#include <iostream>
 #include <fstream>
 #include <iomanip>
-#include <cfloat>
-#include <cmath>
-#include <boost/foreach.hpp>
-
-#include "io/xml.h"
 
 namespace quickrank {
 namespace learning {
@@ -36,30 +30,31 @@ namespace forests {
 
 const std::string ObliviousLambdaMart::NAME_ = "OBVLAMBDAMART";
 
-ObliviousLambdaMart::ObliviousLambdaMart(const pugi::xml_document& model)
+ObliviousLambdaMart::ObliviousLambdaMart(const pugi::xml_document &model)
     : LambdaMart(model) {
   treedepth_ = model.child("ranker").child("info").child("depth").text()
       .as_int();
 }
 
-std::ostream& ObliviousLambdaMart::put(std::ostream& os) const {
+std::ostream &ObliviousLambdaMart::put(std::ostream &os) const {
   os << "# Ranker: " << name() << std::endl << "# max no. of trees = "
-     << ntrees_ << std::endl << "# max tree depth = " << treedepth_ << std::endl
-     << "# shrinkage = " << shrinkage_ << std::endl << "# min leaf support = "
-     << minleafsupport_ << std::endl;
+      << ntrees_ << std::endl << "# max tree depth = " << treedepth_
+      << std::endl
+      << "# shrinkage = " << shrinkage_ << std::endl << "# min leaf support = "
+      << minleafsupport_ << std::endl;
   if (nthresholds_)
     os << "# no. of thresholds = " << nthresholds_ << std::endl;
   else
     os << "# no. of thresholds = unlimited" << std::endl;
   if (valid_iterations_)
     os << "# no. of no gain rounds before early stop = " << valid_iterations_
-       << std::endl;
+        << std::endl;
   return os;
 }
 
 std::unique_ptr<RegressionTree> ObliviousLambdaMart::fit_regressor_on_gradient(
     std::shared_ptr<data::VerticalDataset> training_dataset) {
-  ObliviousRT* tree = new ObliviousRT(nleaves_, training_dataset.get(),
+  ObliviousRT *tree = new ObliviousRT(nleaves_, training_dataset.get(),
                                       pseudoresponses_, minleafsupport_,
                                       treedepth_);
   tree->fit(hist_);
@@ -68,9 +63,9 @@ std::unique_ptr<RegressionTree> ObliviousLambdaMart::fit_regressor_on_gradient(
   return std::unique_ptr<RegressionTree>(tree);
 }
 
-pugi::xml_document* ObliviousLambdaMart::get_xml_model() const {
+pugi::xml_document *ObliviousLambdaMart::get_xml_model() const {
 
-  pugi::xml_document* doc = new pugi::xml_document();
+  pugi::xml_document *doc = new pugi::xml_document();
   pugi::xml_node root = doc->append_child("ranker");
 
   pugi::xml_node info = root.append_child("info");

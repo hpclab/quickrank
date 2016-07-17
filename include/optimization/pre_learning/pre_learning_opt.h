@@ -27,9 +27,9 @@ namespace quickrank {
 namespace optimization {
 namespace pre_learning {
 
-class PreLearningOptimization : public Optimization {
+class PreLearningOptimization: public Optimization {
 
-public:
+ public:
 
   bool is_pre_learning() const {
     return true;

@@ -51,8 +51,8 @@ inline int32_t bitcounter(int32_t n) {
  */
 void BitArray::set_up(const size_t i) {
   if (i >= MUL32(datasize)) {
-    size_t newdatasize = DIV32(2*i) + 1;
-    data = (int32_t*) realloc(data, sizeof(int32_t) * newdatasize);
+    size_t newdatasize = DIV32(2 * i) + 1;
+    data = (int32_t *) realloc(data, sizeof(int32_t) * newdatasize);
     while (datasize < newdatasize)
       data[datasize++] = 0x00000000;
   }
@@ -73,7 +73,7 @@ size_t BitArray::get_upcounter() {
 }
 /** \brief return an array of integers made up of the set bits positions
  */
-size_t* BitArray::get_uparray(const size_t n) {
+size_t *BitArray::get_uparray(const size_t n) {
   size_t *arr = new size_t[n], arrsize = 0;
   for (size_t i = 0; i < datasize && arrsize < n; ++i)
     for (size_t j = 0; j < 32 && arrsize < n; ++j)
@@ -83,9 +83,9 @@ size_t* BitArray::get_uparray(const size_t n) {
 }
 /** \brief compute bitwse OR of two bit arrays and store the result in the left operand
  */
-BitArray& BitArray::operator|=(const BitArray& other) {
+BitArray &BitArray::operator|=(const BitArray &other) {
   if (datasize < other.datasize) {
-    data = (int32_t*) realloc(data, sizeof(int32_t) * other.datasize);
+    data = (int32_t *) realloc(data, sizeof(int32_t) * other.datasize);
     for (size_t i = 0; i < datasize; ++i)
       data[i] |= other.data[i];
     for (size_t i = datasize; i < other.datasize; ++i)

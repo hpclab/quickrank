@@ -39,17 +39,20 @@ void ObliviousRT::fit(RTNodeHistogram *hist) {
   //featureidxs to be used for "tree"
   size_t nfeaturesamples = training_dataset->num_features();
   //histarray and nodearray store histograms and treenodes used in the entire procedure (i.e. the entire tree)
-  RTNode **nodearray = new RTNode*[POWTWO(treedepth + 1)]();  //initialized NULL
+  RTNode
+      **nodearray = new RTNode *[POWTWO(treedepth + 1)]();  //initialized NULL
   //init tree root
   nodearray[0] = root = new RTNode(sampleids, hist);
   //allocate a matrix for each (feature,threshold)
-  double **sum_scores = new double*[nfeaturesamples];
+  double **sum_scores = new double *[nfeaturesamples];
   for (size_t i = 0; i < nfeaturesamples; ++i)
     sum_scores[i] = new double[hist->thresholds_size[i]];
   //tree computation
   for (size_t depth = 0; depth < treedepth; ++depth) {
-    const size_t lbegin = POWTWO(depth) - 1;  //index of first histogram belonging to the current level
-    const size_t lend = POWTWO(depth+1) - 1;  //index of first histogram belonging to the next level
+    const size_t lbegin = POWTWO(depth)
+        - 1;  //index of first histogram belonging to the current level
+    const size_t lend = POWTWO(depth + 1)
+        - 1;  //index of first histogram belonging to the next level
     //init matrix to zero
 #pragma omp parallel for
     for (size_t i = 0; i < nfeaturesamples; ++i) {
@@ -62,9 +65,11 @@ void ObliviousRT::fit(RTNodeHistogram *hist) {
       fill(sum_scores, nfeaturesamples, nodearray[i]->hist);
     //find best split in the matrix
     const int nth = omp_get_num_procs();
-    double* thread_maxscore = new double[nth];  // double thread_minvar[nth];
-    size_t* thread_best_featureidx = new size_t[nth];  // size_t thread_best_featureidx[nth];
-    size_t* thread_best_thresholdid = new size_t[nth];  // size_t thread_best_thresholdid[nth];
+    double *thread_maxscore = new double[nth];  // double thread_minvar[nth];
+    size_t *thread_best_featureidx =
+        new size_t[nth];  // size_t thread_best_featureidx[nth];
+    size_t *thread_best_thresholdid =
+        new size_t[nth];  // size_t thread_best_thresholdid[nth];
     for (int i = 0; i < nth; ++i) {
       thread_maxscore[i] = 0.0;
       thread_best_featureidx[i] = uint_max;
@@ -112,9 +117,10 @@ void ObliviousRT::fit(RTNodeHistogram *hist) {
       //split samples between left and right child
       size_t *lsamples = new size_t[lcount], lsize = 0;
       size_t *rsamples = new size_t[rcount], rsize = 0;
-      float const* features = training_dataset->at(0, best_featureidx);  //training_set->get_fvector(best_featureidx);
+      float const *features = training_dataset->at(0,
+                                                   best_featureidx);  //training_set->get_fvector(best_featureidx);
       for (size_t j = 0, nsampleids = node->nsampleids; j < nsampleids;
-          ++j) {
+           ++j) {
         const size_t k = node->sampleids[j];
         if (features[k] <= best_threshold)
           lsamples[lsize++] = k;
@@ -162,15 +168,16 @@ void ObliviousRT::fit(RTNodeHistogram *hist) {
   }
   //visit tree and save leaves in a leaves[] array
   size_t capacity = nrequiredleaves;
-  leaves = capacity ? (RTNode**) malloc(sizeof(RTNode*) * capacity) : NULL, nleaves =
-      0;
+  leaves = capacity ? (RTNode **) malloc(sizeof(RTNode *) * capacity) : NULL,
+      nleaves =
+          0;
   root->save_leaves(leaves, nleaves, capacity);
   //free mem allocated for sumvar[][]
   for (size_t i = 0; i < nfeaturesamples; ++i)
     delete[] sum_scores[i];
   delete[] sum_scores,
-  //delete temp data
-  delete[] nodearray;
+      //delete temp data
+      delete[] nodearray;
 }
 
 void ObliviousRT::fill(double **sumvar, const size_t nfeaturesamples,

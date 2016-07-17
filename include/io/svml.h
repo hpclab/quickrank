@@ -74,12 +74,12 @@ class Svml {
 
   /// The output stream operator.
   /// Prints the data reading time stats.
-  friend std::ostream& operator<<(std::ostream& os, const Svml& me) {
+  friend std::ostream &operator<<(std::ostream &os, const Svml &me) {
     return me.put(os);
   }
 
   /// Prints the data reading time stats
-  virtual std::ostream& put(std::ostream& os) const;
+  virtual std::ostream &put(std::ostream &os) const;
 
 };
 

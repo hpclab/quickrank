@@ -23,10 +23,10 @@
 #include <fstream>
 #include <limits>
 #include <numeric>
+#include <io/generate_oblivious.h>
 
 #include "driver/driver.h"
 #include "io/svml.h"
-#include "io/generate_conditional_operators.h"
 #include "learning/ltr_algorithm_factory.h"
 #include "optimization/optimization_factory.h"
 #include "metric/metric_factory.h"
@@ -43,142 +43,145 @@ Driver::~Driver() {
 
 int Driver::run(ParamsMap &pmap) {
 
-
-  if (!pmap.isSet("train") && !pmap.isSet("test")) {
+  if (!pmap.isSet("train") && !pmap.isSet("test") && !pmap.isSet("dump-type")) {
     std::cout << pmap.help();
     exit(EXIT_FAILURE);
   }
 
-  std::shared_ptr<quickrank::learning::LTR_Algorithm> ranking_algorithm =
-      quickrank::learning::ltr_algorithm_factory(pmap);
-  if (!ranking_algorithm) {
-    std::cerr << " !! LTR Algorithm was not set properly" << std::endl;
-    exit(EXIT_FAILURE);
-  }
+  if (pmap.count("train") || pmap.count("test")) {
+    std::shared_ptr<quickrank::learning::LTR_Algorithm> ranking_algorithm =
+        quickrank::learning::ltr_algorithm_factory(pmap);
+    if (!ranking_algorithm) {
+      std::cerr << " !! LTR Algorithm was not set properly" << std::endl;
+      exit(EXIT_FAILURE);
+    }
 
-  std::cout << std::endl << *ranking_algorithm << std::endl;
+    std::cout << std::endl << *ranking_algorithm << std::endl;
 
-  // If there is the training dataset, it means we have to execute
-  // the training phase and/or the optimization phase (at least one of them)
-  if (pmap.count("train")) {
+    // If there is the training dataset, it means we have to execute
+    // the training phase and/or the optimization phase (at least one of them)
+    if (pmap.count("train")) {
 
-    std::shared_ptr<quickrank::optimization::Optimization> opt_algorithm;
-    if (pmap.count("opt-algo") || pmap.count("opt-model")) {
-      opt_algorithm = quickrank::optimization::optimization_factory(pmap);
-      if (!opt_algorithm) {
-        std::cerr << " !! Optimization Algorithm was not set properly" << std::endl;
+      std::shared_ptr<quickrank::optimization::Optimization> opt_algorithm;
+      if (pmap.count("opt-algo") || pmap.count("opt-model")) {
+        opt_algorithm = quickrank::optimization::optimization_factory(pmap);
+        if (!opt_algorithm) {
+          std::cerr << " !! Optimization Algorithm was not set properly"
+              << std::endl;
+          exit(EXIT_FAILURE);
+        }
+      }
+
+      std::string training_filename = pmap.get<std::string>("train");
+      std::string validation_filename = pmap.get<std::string>("valid");
+      std::string features_filename = pmap.get<std::string>("features");
+      std::string model_filename = pmap.get<std::string>("model");
+      std::string opt_model_filename = pmap.get<std::string>("opt-model");
+      std::string opt_algo_model_filename =
+          pmap.get<std::string>("opt-algo-model");
+      size_t partial_save = pmap.get<std::size_t>("partial");
+      std::string training_partial_filename;
+      std::string validation_partial_filename;
+      if (pmap.count("train-partial"))
+        training_partial_filename = pmap.get<std::string>("train-partial");
+      if (pmap.count("valid-partial"))
+        validation_partial_filename = pmap.get<std::string>("valid-partial");
+
+      std::shared_ptr<quickrank::data::Dataset> training_dataset;
+      std::shared_ptr<quickrank::data::Dataset> validation_dataset;
+
+      if (!training_filename.empty())
+        training_dataset = load_dataset(training_filename, "training");
+
+      if (!validation_filename.empty())
+        validation_dataset = load_dataset(validation_filename, "validation");
+
+      if (!features_filename.empty()) {
+        // TODO: filter features while loading dataset
+      }
+
+      std::shared_ptr<quickrank::metric::ir::Metric> training_metric =
+          quickrank::metric::ir::ir_metric_factory(
+              pmap.get<std::string>("train-metric"),
+              pmap.get<size_t>("train-cutoff"));
+      if (!training_metric) {
+        std::cerr << " !! Train Metric was not set properly" << std::endl;
         exit(EXIT_FAILURE);
+      }
+
+      if (opt_algorithm && opt_algorithm->is_pre_learning()) {
+        // We have to run the optimization process pre-training
+        optimization_phase(opt_algorithm,
+                           ranking_algorithm,
+                           training_metric,
+                           training_dataset,
+                           validation_dataset,
+                           training_partial_filename,
+                           validation_partial_filename,
+                           opt_model_filename,
+                           opt_algo_model_filename,
+                           partial_save);
+      }
+
+      // If the training algorithm has been created from scratch (not loaded
+      // from file), we have to run the training phase
+      if (pmap.count("algo")) {
+
+        //show ranker parameters
+        std::cout << "#" << std::endl << *ranking_algorithm;
+        std::cout << "#" << std::endl << "# training scorer: "
+            << *training_metric
+            << std::endl;
+
+        training_phase(ranking_algorithm,
+                       training_metric,
+                       training_dataset,
+                       validation_dataset,
+                       model_filename,
+                       partial_save);
+      }
+
+      if (opt_algorithm && !opt_algorithm->is_pre_learning()) {
+        // We have to run the optimization process post-training
+        optimization_phase(opt_algorithm,
+                           ranking_algorithm,
+                           training_metric,
+                           training_dataset,
+                           validation_dataset,
+                           training_partial_filename,
+                           validation_partial_filename,
+                           opt_model_filename,
+                           opt_algo_model_filename,
+                           partial_save);
       }
     }
 
-    std::string training_filename = pmap.get<std::string>("train");
-    std::string validation_filename = pmap.get<std::string>("valid");
-    std::string features_filename = pmap.get<std::string>("features");
-    std::string model_filename = pmap.get<std::string>("model");
-    std::string opt_model_filename = pmap.get<std::string>("opt-model");
-    std::string opt_algo_model_filename =
-        pmap.get<std::string>("opt-algo-model");
-    size_t partial_save = pmap.get<std::size_t>("partial");
-    std::string training_partial_filename;
-    std::string validation_partial_filename;
-    if (pmap.count("train-partial"))
-      training_partial_filename = pmap.get<std::string>("train-partial");
-    if (pmap.count("valid-partial"))
-      validation_partial_filename = pmap.get<std::string>("valid-partial");
+    if (pmap.isSet("test")) {
+      std::string test_filename = pmap.get<std::string>("test");
+      std::string scores_filename = pmap.get<std::string>("scores");
+      bool detailed_testing = pmap.isSet("detailed");
 
-    std::shared_ptr<quickrank::data::Dataset> training_dataset;
-    std::shared_ptr<quickrank::data::Dataset> validation_dataset;
+      std::shared_ptr<quickrank::data::Dataset> test_dataset;
+      if (!test_filename.empty())
+        test_dataset = load_dataset(test_filename, "testing");
 
-    if (!training_filename.empty())
-      training_dataset = load_dataset(training_filename, "training");
+      std::shared_ptr<quickrank::metric::ir::Metric> testing_metric =
+          quickrank::metric::ir::ir_metric_factory(
+              pmap.get<std::string>("test-metric"),
+              pmap.get<size_t>("test-cutoff"));
+      if (!testing_metric) {
+        std::cerr << " !! Train Metric was not set properly" << std::endl;
+        exit(EXIT_FAILURE);
+      }
 
-    if (!validation_filename.empty())
-      validation_dataset = load_dataset(validation_filename, "validation");
-
-    if (!features_filename.empty()) {
-      // TODO: filter features while loading dataset
+      std::cout << "# test scorer: " << *testing_metric << std::endl << "#" <<
+          std::endl;
+      testing_phase(ranking_algorithm,
+                    testing_metric,
+                    test_dataset,
+                    scores_filename,
+                    detailed_testing);
     }
-
-    std::shared_ptr<quickrank::metric::ir::Metric> training_metric =
-        quickrank::metric::ir::ir_metric_factory(
-            pmap.get<std::string>("train-metric"),
-            pmap.get<size_t>("train-cutoff"));
-    if (!training_metric) {
-      std::cerr << " !! Train Metric was not set properly" << std::endl;
-      exit(EXIT_FAILURE);
-    }
-
-    if (opt_algorithm && opt_algorithm->is_pre_learning()) {
-      // We have to run the optimization process pre-training
-      optimization_phase(opt_algorithm,
-                         ranking_algorithm,
-                         training_metric,
-                         training_dataset,
-                         validation_dataset,
-                         training_partial_filename,
-                         validation_partial_filename,
-                         opt_model_filename,
-                         opt_algo_model_filename,
-                         partial_save);
-    }
-
-    // If the training algorithm has been created from scratch (not loaded
-    // from file), we have to run the training phase
-    if (pmap.count("algo")) {
-
-      //show ranker parameters
-      std::cout << "#" << std::endl << *ranking_algorithm;
-      std::cout << "#" << std::endl << "# training scorer: " << *training_metric
-          << std::endl;
-
-      training_phase(ranking_algorithm,
-                     training_metric,
-                     training_dataset,
-                     validation_dataset,
-                     model_filename,
-                     partial_save);
-    }
-
-    if (opt_algorithm && !opt_algorithm->is_pre_learning()) {
-      // We have to run the optimization process post-training
-      optimization_phase(opt_algorithm,
-                         ranking_algorithm,
-                         training_metric,
-                         training_dataset,
-                         validation_dataset,
-                         training_partial_filename,
-                         validation_partial_filename,
-                         opt_model_filename,
-                         opt_algo_model_filename,
-                         partial_save);
-    }
-  }
-
-  if (pmap.isSet("test")) {
-    std::string test_filename = pmap.get<std::string>("test");
-    std::string scores_filename = pmap.get<std::string>("scores");
-    bool detailed_testing = pmap.isSet("detailed");
-
-    std::shared_ptr<quickrank::data::Dataset> test_dataset;
-    if (!test_filename.empty())
-      test_dataset = load_dataset(test_filename, "testing");
-
-    std::shared_ptr<quickrank::metric::ir::Metric> testing_metric =
-        quickrank::metric::ir::ir_metric_factory(
-            pmap.get<std::string>("test-metric"),
-            pmap.get<size_t>("test-cutoff"));
-    if (!testing_metric) {
-      std::cerr << " !! Train Metric was not set properly" << std::endl;
-      exit(EXIT_FAILURE);
-    }
-
-    std::cout << "# test scorer: " << *testing_metric << std::endl << "#" <<
-        std::endl;
-    testing_phase(ranking_algorithm,
-                  testing_metric,
-                  test_dataset,
-                  scores_filename,
-                  detailed_testing);
   }
 
   // Fast Scoring
@@ -190,16 +193,22 @@ int Driver::run(ParamsMap &pmap) {
 
     if (model_code_type == "condop") {
       quickrank::io::GenOpCond conditional_operator_generator;
-      std::cout << "applying conditional operators strategy for C code generation to: " << xml_filename << std::endl;
-      conditional_operator_generator.generate_conditional_operators_code(xml_filename, c_filename);
-//    } else if (model_code_type == "oblivious") {
-//      std::cout << "applying oblivious strategy for C code generation to: "
-//        << xml_filename << std::endl;
-//      xml.generate_c_code_oblivious_trees(xml_filename, c_filename);
-//    } else if (model_code_type == "vpred") {
-//      std::cout << "generating VPred input file from: " << xml_filename
-//        << std::endl;
-//      quickrank::io::generate_vpred_input(xml_filename, c_filename);
+      std::cout
+          << "applying conditional operators strategy for C code generation to: "
+          << xml_filename << std::endl;
+      conditional_operator_generator.generate_conditional_operators_code(
+          xml_filename,
+          c_filename);
+    } else if (model_code_type == "oblivious") {
+      quickrank::io::GenOblivious oblivious_generator;
+      std::cout << "applying oblivious strategy for C code generation to: "
+          << xml_filename << std::endl;
+      oblivious_generator.generate_oblivious_code(xml_filename, c_filename);
+    } else if (model_code_type == "vpred") {
+      quickrank::io::GenVpred vpred_generator;
+      std::cout << "generating VPred input file from: " << xml_filename
+          << std::endl;
+      vpred_generator.generate_vpred_input(xml_filename, c_filename);
     }
   }
 
@@ -339,7 +348,8 @@ void Driver::testing_phase(
         for (size_t i = 0; i < test_dataset->num_instances(); ++i)
           os << scores[i] << std::endl;
         os.close();
-        std::cout << "# Scores written to file: " << scores_filename << std::endl;
+        std::cout << "# Scores written to file: " << scores_filename
+            << std::endl;
       }
     }
   }

@@ -50,7 +50,7 @@ LineSearch::LineSearch(unsigned int num_points,
       train_only_last_(last_only) {
 }
 
-LineSearch::LineSearch(const pugi::xml_document& model) {
+LineSearch::LineSearch(const pugi::xml_document &model) {
 
   num_points_ = 0;
   window_size_ = 0.0;
@@ -77,7 +77,7 @@ LineSearch::LineSearch(const pugi::xml_document& model) {
     train_only_last_ = model_info.child("train-only-last").text().as_uint();
 
   unsigned int max_feature = 0;
-  for (const auto& tree: model_ensemble.children()) {
+  for (const auto &tree: model_ensemble.children()) {
 
     if (strcmp(tree.name(), "tree") == 0) {
       unsigned int feature = tree.child("index").text().as_uint();
@@ -89,7 +89,7 @@ LineSearch::LineSearch(const pugi::xml_document& model) {
 
   std::vector<double>(max_feature, 0.0).swap(best_weights_);
 
-  for (const auto& tree: model_ensemble.children()) {
+  for (const auto &tree: model_ensemble.children()) {
     if (strcmp(tree.name(), "tree") == 0) {
       unsigned int feature = tree.child("index").text().as_uint();
       double weight = tree.child("weight").text().as_double();
@@ -101,15 +101,15 @@ LineSearch::LineSearch(const pugi::xml_document& model) {
 LineSearch::~LineSearch() {
 }
 
-std::ostream& LineSearch::put(std::ostream &os) const {
+std::ostream &LineSearch::put(std::ostream &os) const {
   os << "# Ranker: " << name() << std::endl
-  << "# number of samples = " << num_points_ << std::endl
-  << "# window size = " << window_size_ << std::endl
-  << "# window reduction factor = " << reduction_factor_ << std::endl
-  << "# number of max iterations = " << max_iterations_ << std::endl
-  << "# number of fails on validation before exit = " << max_failed_vali_
-    << std::endl
-  << "# adaptive reduction factor = " << adaptive_ << std::endl;
+      << "# number of samples = " << num_points_ << std::endl
+      << "# window size = " << window_size_ << std::endl
+      << "# window reduction factor = " << reduction_factor_ << std::endl
+      << "# number of max iterations = " << max_iterations_ << std::endl
+      << "# number of fails on validation before exit = " << max_failed_vali_
+      << std::endl
+      << "# adaptive reduction factor = " << adaptive_ << std::endl;
 
   return os;
 }
@@ -212,7 +212,7 @@ void LineSearch::learn(
           points.push_back(point);
       }
 
-      #pragma omp parallel for
+#pragma omp parallel for
       for (unsigned int p = 0; p < points.size(); p++) {
         //loop to add partial scores to the total score of the feature i
         for (unsigned int s = 0; s < num_train_instances; s++) {
@@ -245,16 +245,16 @@ void LineSearch::learn(
     std::vector<double> step2(num_features);
     std::transform(weights.begin(), weights.end(), weights_prev.begin(),
                    step2.begin(), [&](double curr, double prev) {
-      return (curr - prev) / num_points;
-    });
+          return (curr - prev) / num_points;
+        });
 
     // if step2 is a 0-vector, no way to improve in step2
     bool zeros = std::all_of(step2.begin(), step2.end(),
-                             [] (double s) { return s == 0; });
+                             [](double s) { return s == 0; });
     double gain_on_training = 0;
     if (!zeros) {
 
-      #pragma omp parallel for
+#pragma omp parallel for
       for (unsigned int p = 0; p < num_points + 1; p++) {
         // loop to add partial scores to the total score of the feature i
         for (unsigned int s = 0; s < num_train_instances; s++) {
@@ -262,7 +262,7 @@ void LineSearch::learn(
           Score score = 0;
           for (unsigned int f = 0; f < num_features; f++) {
             score += (weights_prev[f] + step2[f] * p)
-                     * training_dataset->at(s, f)[0];
+                * training_dataset->at(s, f)[0];
           }
           training_score[s + (num_train_instances * p)] = score;
         }
@@ -293,14 +293,15 @@ void LineSearch::learn(
 
     } // end if zeros step2 vector
 
-    std::cout << std::setw(7) << i+1 << std::setw(9) << best_metric_on_training;
+    std::cout << std::setw(7) << i + 1 << std::setw(9)
+        << best_metric_on_training;
 
     auto cur_reduction_factor = reduction_factor_;
     if (adaptive_) {
       double max_gain = 0.005;
       // At most double the reduction factor (2 * reduction_factor_ > 1)
       double relative_gain =
-          std::min( (gain_on_training - max_gain) / max_gain, 1.);
+          std::min((gain_on_training - max_gain) / max_gain, 1.);
       // At least half the reduction factor (0.5 * reduction_factor_)
       cur_reduction_factor =
           reduction_factor_ * (1 + std::max(relative_gain, -0.5));
@@ -333,8 +334,8 @@ void LineSearch::learn(
       }
 
       std::cout << " " << std::setw(7) << gain_on_training << " "
-        << std::setw(8) << window_size << " "
-        << std::setw(8) << cur_reduction_factor;
+          << std::setw(8) << window_size << " "
+          << std::setw(8) << cur_reduction_factor;
     }
 
     std::cout << std::endl;
@@ -359,7 +360,7 @@ void LineSearch::learn(
       std::chrono::duration<double>>(end - begin);
   std::cout << std::endl;
   std::cout << "# \t Training time: " << std::setprecision(2) <<
-    elapsed.count() << " seconds" << std::endl;
+      elapsed.count() << " seconds" << std::endl;
 }
 
 Score LineSearch::score_document(const Feature *d) const {
@@ -372,10 +373,10 @@ Score LineSearch::score_document(const Feature *d) const {
 
 bool LineSearch::update_weights(std::shared_ptr<std::vector<double>> weights) {
 
-  if(weights->size() != best_weights_.size())
+  if (weights->size() != best_weights_.size())
     return false;
 
-  if(weights->size() != best_weights_.size())
+  if (weights->size() != best_weights_.size())
     return false;
 
   for (size_t k = 0; k < weights->size(); k++) {
@@ -385,9 +386,9 @@ bool LineSearch::update_weights(std::shared_ptr<std::vector<double>> weights) {
   return true;
 }
 
-pugi::xml_document* LineSearch::get_xml_model() const {
+pugi::xml_document *LineSearch::get_xml_model() const {
 
-  pugi::xml_document* doc = new pugi::xml_document();
+  pugi::xml_document *doc = new pugi::xml_document();
   pugi::xml_node root = doc->append_child("ranker");
 
   pugi::xml_node info = root.append_child("info");
@@ -425,7 +426,7 @@ void LineSearch::preCompute(Feature *training_dataset, unsigned int num_samples,
                             double *weights, Score *training_score,
                             unsigned int feature_exclude) {
 
-  #pragma omp parallel for
+#pragma omp parallel for
   for (unsigned int s = 0; s < num_samples; s++) {
     unsigned int offset_feature = s * num_features;
     pre_sum[s] = 0;
@@ -443,7 +444,7 @@ void LineSearch::score(Feature *dataset, unsigned int num_samples,
                        unsigned int num_features, double *weights,
                        Score *scores) {
 
-  #pragma omp parallel for
+#pragma omp parallel for
   for (unsigned int s = 0; s < num_samples; s++) {
     unsigned int offset_feature = s * num_features;
     scores[s] = 0;

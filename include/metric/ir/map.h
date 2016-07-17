@@ -19,9 +19,7 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-
-#ifndef QUICKRANK_METRIC_IR_MAP_H_
-#define QUICKRANK_METRIC_IR_MAP_H_
+#pragma once
 
 #include "types.h"
 #include "metric.h"
@@ -35,7 +33,7 @@ namespace ir {
  *
  * \todo TODO: test correctness
  */
-class Map : public Metric {
+class Map: public Metric {
  public:
   explicit Map(size_t k = NO_CUTOFF)
       : Metric(k) {
@@ -51,7 +49,7 @@ class Map : public Metric {
   static const std::string NAME_;
 
   virtual MetricScore evaluate_result_list(
-      const quickrank::data::QueryResults* rl, const Score* scores) const;
+      const quickrank::data::QueryResults *rl, const Score *scores) const;
 
   virtual std::unique_ptr<Jacobian> jacobian(
       std::shared_ptr<data::RankedResults> ranked) const;
@@ -59,16 +57,14 @@ class Map : public Metric {
  protected:
 
  private:
-  friend std::ostream& operator<<(std::ostream& os, const Map& map) {
+  friend std::ostream &operator<<(std::ostream &os, const Map &map) {
     return map.put(os);
   }
 
-  virtual std::ostream& put(std::ostream& os) const;
+  virtual std::ostream &put(std::ostream &os) const;
 
 };
 
 }  // namespace ir
 }  // namespace metric
 }  // namespace quickrank
-
-#endif // QUICKRANK_MAP_H_

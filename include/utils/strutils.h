@@ -19,8 +19,7 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#ifndef QUICKRANK_UTILS_STRUTILS_H_
-#define QUICKRANK_UTILS_STRUTILS_H_
+#pragma once
 
 #include <cctype>
 #include <string>
@@ -54,9 +53,7 @@ bool is_empty(const char *str);
  */
 unsigned int atou(char *str, const char *sep);
 
-/*! \fn std::string trim(std::string str)
+/*! \fn void trim(std::string& str)
  *  \brief delete spaces from start/end of a string (in place modification)
  */
-std::string trim(std::string str);
-
-#endif
+std::string &trim(std::string &str);

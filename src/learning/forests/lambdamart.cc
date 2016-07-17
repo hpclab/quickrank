@@ -21,14 +21,8 @@
  */
 #include "learning/forests/lambdamart.h"
 
-#include <iostream>
 #include <fstream>
 #include <iomanip>
-#include <cfloat>
-#include <cmath>
-
-#include "data/rankedresults.h"
-#include "io/xml.h"
 
 namespace quickrank {
 namespace learning {
@@ -53,7 +47,7 @@ std::unique_ptr<RegressionTree> LambdaMart::fit_regressor_on_gradient(
     std::shared_ptr<data::VerticalDataset> training_dataset) {
   //Fit a regression tree
   /// \todo TODO: memory management of regression tree is wrong!!!
-  RegressionTree* tree = new RegressionTree(nleaves_, training_dataset.get(),
+  RegressionTree *tree = new RegressionTree(nleaves_, training_dataset.get(),
                                             pseudoresponses_, minleafsupport_);
   tree->fit(hist_);
   //update the outputs of the tree (with gamma computed using the Newton-Raphson pruning_method)
@@ -65,7 +59,7 @@ std::unique_ptr<RegressionTree> LambdaMart::fit_regressor_on_gradient(
 
 void LambdaMart::compute_pseudoresponses(
     std::shared_ptr<quickrank::data::VerticalDataset> training_dataset,
-    quickrank::metric::ir::Metric* scorer) {
+    quickrank::metric::ir::Metric *scorer) {
   const size_t cutoff = scorer->cutoff();
 
   const size_t nrankedlists = training_dataset->num_queries();

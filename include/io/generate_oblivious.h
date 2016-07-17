@@ -30,6 +30,7 @@
 #include <list>
 #include <iostream>
 #include <cstring>
+#include <vector>
 #include <utils/strutils.h>
 
 #include "pugixml/src/pugixml.hpp"
@@ -48,9 +49,15 @@ class GenOblivious {
   /// Generates the C++ implementation of the model scoring function.
   /// This applies to forests of oblivious trees.
   ///
-  /// \param model_filename Previously saved xml ranker model.
+  /// \param model_filename Previously saved XML ranker model.
   /// \param code_filename Output source code file name.
   void generate_oblivious_code(const std::string, const std::string);
+
+ private:
+  void model_tree_get_leaves(pugi::xml_node &, std::vector<std::string> &);
+  void
+      model_tree_get_feature_ids(pugi::xml_node &, std::vector<unsigned int> &);
+  void model_tree_get_thresholds(pugi::xml_node &, std::vector<std::string> &);
 };
 
 }  // namespace io

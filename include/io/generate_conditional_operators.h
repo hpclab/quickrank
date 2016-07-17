@@ -45,15 +45,16 @@ namespace io {
 class GenOpCond {
  public:
 
-  GenOpCond() {}
-  ~GenOpCond() {}
+  GenOpCond() { }
+  ~GenOpCond() { }
 
   /// Generates the C++ implementation of the model scoring function.
   /// This applies to tree forests and generates a cascade of conditional operators.
   ///
   /// \param model_filename Previously saved xml ranker model.
   /// \param code_filename Output source code file name.
-  void generate_conditional_operators_code(const std::string, const std::string);
+  void
+      generate_conditional_operators_code(const std::string, const std::string);
 };
 
 }  // namespace io

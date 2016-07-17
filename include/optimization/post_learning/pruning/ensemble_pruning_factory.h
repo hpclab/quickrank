@@ -35,7 +35,7 @@ namespace post_learning {
 namespace pruning {
 
 std::shared_ptr<quickrank::optimization::Optimization> create_pruner(
-    const pugi::xml_document& model);
+    const pugi::xml_document &model);
 
 std::shared_ptr<quickrank::optimization::Optimization> create_pruner(
     EnsemblePruning::PruningMethod pruningMethod, double pruning_rate,

@@ -38,9 +38,9 @@ bool QualityLossPruning::line_search_pre_pruning() const {
   return true;
 }
 
-void QualityLossPruning::pruning(std::set<unsigned int>& pruned_estimators,
-                                    std::shared_ptr<data::Dataset> dataset,
-                                    std::shared_ptr<metric::ir::Metric> scorer) {
+void QualityLossPruning::pruning(std::set<unsigned int> &pruned_estimators,
+                                 std::shared_ptr<data::Dataset> dataset,
+                                 std::shared_ptr<metric::ir::Metric> scorer) {
 
   unsigned int num_features = dataset->num_features();
 
@@ -60,10 +60,10 @@ void QualityLossPruning::pruning(std::set<unsigned int>& pruned_estimators,
   }
 
   // Find the last metric scores
-  std::vector<unsigned int> idx (num_features);
+  std::vector<unsigned int> idx(num_features);
   std::iota(idx.begin(), idx.end(), 0);
   std::sort(idx.begin(), idx.end(),
-            [&metric_scores] (const unsigned int& a, const unsigned int& b) {
+            [&metric_scores](const unsigned int &a, const unsigned int &b) {
               return metric_scores[a] > metric_scores[b];
             });
 
@@ -71,7 +71,6 @@ void QualityLossPruning::pruning(std::set<unsigned int>& pruned_estimators,
     pruned_estimators.insert(idx[f]);
   }
 }
-
 
 }  // namespace pruning
 }  // namespace post_learning

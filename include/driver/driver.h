@@ -27,8 +27,9 @@
 #include "learning/ltr_algorithm.h"
 #include "optimization/optimization.h"
 
-#include "io/xml.h"
-#include "io/vpred.h"
+#include "io/generate_vpred.h"
+#include "io/generate_conditional_operators.h"
+#include "io/generate_oblivious.h"
 
 #include "paramsmap/paramsmap.h"
 
@@ -48,7 +49,7 @@ class Driver {
   /// Returns the exit code of the application
   ///
   /// \param, vm The Variable mapping of CLI options (boost object)
-  static int run(ParamsMap& pmap);
+  static int run(ParamsMap &pmap);
 
  private:
   /// Runs train/validation of \a algo by optimizing \a train_metric
