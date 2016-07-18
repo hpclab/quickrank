@@ -38,7 +38,6 @@ void model_node_to_conditional_operators(pugi::xml_node &nodes,
     if (strcmp(node.name(), "output") == 0) {
       prediction = node.text().as_string();
       trim(prediction);
-      os << prediction;
       is_leaf = true;
       break;
     } else if (strcmp(node.name(), "feature") == 0) {
@@ -68,7 +67,7 @@ void model_node_to_conditional_operators(pugi::xml_node &nodes,
     model_node_to_conditional_operators(left, os);
     os << " : ";
     model_node_to_conditional_operators(right, os);
-    os << " )";
+      os << " )";
   }
 }
 
