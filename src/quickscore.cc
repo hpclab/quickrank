@@ -67,15 +67,13 @@ int main(int argc, char *argv[]) {
   ParamsMap pmap;
 
   // Declare the supported options.
-  pmap.addMessage("QuickScore options:");
-  pmap.addOption("help", "h", "print help message");
-  pmap.addOptionWithArg<std::string>("dataset",
-                                     "d",
-                                     "Input dataset in SVML format");
-  pmap.addOptionWithArg<int>("rounds", "r", "Number of test repetitions", 10);
-  pmap.addOptionWithArg<std::string>("scores",
-                                     "s",
-                                     "File where scores are saved (Optional).");
+  pmap.addMessage({"QuickScore options:"});
+  pmap.addOption("help", "h", {"print help message"});
+  pmap.addOptionWithArg<std::string>("dataset", "d",
+                                     {"Input dataset in SVML format"});
+  pmap.addOptionWithArg<int>("rounds", "r", {"Number of test repetitions"}, 10);
+  pmap.addOptionWithArg<std::string>("scores",  "s",
+                                     {"File where scores are saved (Optional)."});
 
   bool parse_status = pmap.parse(argc, argv);
   if (!parse_status || pmap.isSet("help") || !pmap.isSet("dataset")) {
@@ -131,7 +129,6 @@ int main(int argc, char *argv[]) {
     }
     output.close();
   }
-
 
   return EXIT_SUCCESS;
 }

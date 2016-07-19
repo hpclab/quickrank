@@ -124,9 +124,12 @@ Test phase - general options:
   --detailed                            enable detailed testing [applies only to ensemble models]
 
 Code generation - general options:
-  --dump-model <arg>                    set XML model file path
-  --dump-code <arg>                     set C code file path
-  --dump-type <arg> (condop)            set C code generation strategy. Allowed options are: "condop", "oblivious". "vpred".
+  --model-file <arg>                    set XML model file path
+  --code-file <arg>                     set C code file path
+  --generator <arg> (condop)            set C code generation strategy. Allowed options are:
+                                        -  "condop" (conditional operators),
+                                        -  "oblivious" (optimized code for oblivious trees),
+                                        -  "vpred" (intermediate code used by VPRED).
 
 Help options:
   -h,--help                             print help message

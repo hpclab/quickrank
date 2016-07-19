@@ -191,7 +191,7 @@ void GenOblivious::generate_oblivious_code(const std::string model_filename,
   curr_tree = 0;
   std::vector<std::vector<unsigned int>> feature_ids(trees);
   for (pugi::xml_node &tree : ensemble.children("tree")) {
-    pugi::xml_node root = tree.child("split");
+    pugi::xml_node root = tree;
     model_tree_get_feature_ids(root, feature_ids[curr_tree++]);
   }
 

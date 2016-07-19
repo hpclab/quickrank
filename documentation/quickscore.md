@@ -11,9 +11,9 @@ QuickRanks implements three translation strategies:
 
 The optimized source code is generated as follows:
 
-    ./bin/quicklearn --dump-model model.xml \
-                     --dump-code model.cc \
-                     --dump-type condop
+    ./bin/quicklearn --model-file model.xml \
+                     --code-file model.cc \
+                     --generator condop
 
 After the source code was generated it is possible to test its efficiency.
 First you need to replace the file `src/scoring/ranker.cc` with the source file `model.cc` generated previously.
