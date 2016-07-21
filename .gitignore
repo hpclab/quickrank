@@ -1,20 +1,3 @@
-bin
-tests
-_deps
-_build
-build
-.cproject
-.project
-.settings
-.idea/
-documentation/html
-*~
-*.d
-*.o
-
-debug
-quickranktestdata
-
 # OS generated files #
 ######################
 .DS_Store
@@ -24,4 +7,21 @@ quickranktestdata
 .Trashes
 ehthumbs.db
 Thumbs.db
+# Project files to ignore #
+###########################
+bin
+tests
+build
+_build
+debug
+quickranktestdata
+api-documentation/html
+*~
+*.d
+*.o
+# Files from different IDEs #
+#############################
 .idea
+.cproject
+.project
+.settings

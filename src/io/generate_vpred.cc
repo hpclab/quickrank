@@ -137,22 +137,22 @@ void GenVpred::generate_vpred_input(const std::string &ensemble_file,
       if (is_leaf(node.node)) {
         if (node.id >= tree_size) {
           output << "leaf" << " " << node.id << " " << node.pid << " "
-              << node.left << " " << (learning_rate * std::stod(node.leaf))
-              << std::endl;
+                 << node.left << " " << (learning_rate * std::stod(node.leaf))
+                 << std::endl;
         } else {
           output << "node" << " " << node.id << " " << node.pid << " "
-              << (std::stoi(node.feature) - 1) << " " << node.left << " "
-              << (learning_rate * std::stod(node.leaf)) << std::endl;
+                 << (std::stoi(node.feature) - 1) << " " << node.left << " "
+                 << (learning_rate * std::stod(node.leaf)) << std::endl;
         }
       } else {
         if (node.id == 0) {
           output << "root" << " " << node.id << " "
-              << (std::stoi(node.feature) - 1) << " " << node.theta
-              << std::endl;  // print the root info
+                 << (std::stoi(node.feature) - 1) << " " << node.theta
+                 << std::endl;  // print the root info
         } else {
           output << "node" << " " << node.id << " " << node.pid << " "
-              << (std::stoi(node.feature) - 1) << " " << node.left << " "
-              << node.theta << std::endl;
+                 << (std::stoi(node.feature) - 1) << " " << node.left << " "
+                 << node.theta << std::endl;
         }
         for (const auto &split_child : node.node.children()) {
 

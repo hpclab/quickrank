@@ -38,17 +38,17 @@ ObliviousMart::ObliviousMart(const pugi::xml_document &model) : Mart(model) {
 
 std::ostream &ObliviousMart::put(std::ostream &os) const {
   os << "# Ranker: " << name() << std::endl << "# max no. of trees = "
-      << ntrees_ << std::endl << "# max tree depth = " << treedepth_
-      << std::endl
-      << "# shrinkage = " << shrinkage_ << std::endl << "# min leaf support = "
-      << minleafsupport_ << std::endl;
+     << ntrees_ << std::endl << "# max tree depth = " << treedepth_
+     << std::endl
+     << "# shrinkage = " << shrinkage_ << std::endl << "# min leaf support = "
+     << minleafsupport_ << std::endl;
   if (nthresholds_)
     os << "# no. of thresholds = " << nthresholds_ << std::endl;
   else
     os << "# no. of thresholds = unlimited" << std::endl;
   if (valid_iterations_)
     os << "# no. of no gain rounds before early stop = " << valid_iterations_
-        << std::endl;
+       << std::endl;
   return os;
 }
 

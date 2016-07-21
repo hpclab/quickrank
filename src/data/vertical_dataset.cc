@@ -87,10 +87,10 @@ std::unique_ptr<QueryResults> VerticalDataset::getQueryResults(size_t i) const {
 
 std::ostream &VerticalDataset::put(std::ostream &os) const {
   os << "#\t Vertical Dataset size: " << num_instances_ << " x "
-      << num_features_
-      << " (instances x features)" << std::endl << "#\t Num queries: "
-      << num_queries_ << " | Avg. len: " << std::setprecision(3)
-      << num_instances_ / (float) num_queries_ << std::endl;
+     << num_features_
+     << " (instances x features)" << std::endl << "#\t Num queries: "
+     << num_queries_ << " | Avg. len: " << std::setprecision(3)
+     << num_instances_ / (float) num_queries_ << std::endl;
   return os;
 }
 

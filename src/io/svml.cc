@@ -41,7 +41,7 @@ std::unique_ptr<data::Dataset> Svml::read_horizontal(
   FILE *f = fopen(filename.c_str(), "r");
   if (!f) {
     std::cerr << "!!! Error while opening file " << filename << "."
-        << std::endl;
+              << std::endl;
     exit(EXIT_FAILURE);
   }
 
@@ -174,7 +174,7 @@ void Svml::write(std::shared_ptr<data::Dataset> dataset,
       outFile << std::setprecision(0) << labels[r] << " qid:" << q + 1;
       for (size_t f = 0; f < dataset->num_features(); f++) {
         outFile << " " << f + 1 << ":" <<
-            std::fixed << std::setprecision(8) << features[f];
+                std::fixed << std::setprecision(8) << features[f];
       }
       outFile << std::endl;
       features += dataset->num_features();
@@ -187,8 +187,8 @@ void Svml::write(std::shared_ptr<data::Dataset> dataset,
 std::ostream &Svml::put(std::ostream &os) const {
   // num threads is not reported here.
   os << std::setprecision(2) << "#\t Reading time: " << reading_time_
-      << " s. @ " << file_size_ / 1024 / 1024 / reading_time_ << " MB/s "
-      << " (post-proc.: " << processing_time_ << " s.)" << std::endl;
+     << " s. @ " << file_size_ / 1024 / 1024 / reading_time_ << " MB/s "
+     << " (post-proc.: " << processing_time_ << " s.)" << std::endl;
   return os;
 }
 

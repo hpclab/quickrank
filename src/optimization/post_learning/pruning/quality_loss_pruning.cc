@@ -30,8 +30,8 @@ namespace post_learning {
 namespace pruning {
 
 /// Returns the pruning method of the algorithm.
-EnsemblePruning::PruningMethod QualityLossPruning::pruning_method() const {
-  return EnsemblePruning::PruningMethod::QUALITY_LOSS;
+Cleaver::PruningMethod QualityLossPruning::pruning_method() const {
+  return Cleaver::PruningMethod::QUALITY_LOSS;
 }
 
 bool QualityLossPruning::line_search_pre_pruning() const {

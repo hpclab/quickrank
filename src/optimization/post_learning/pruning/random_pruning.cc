@@ -28,8 +28,8 @@ namespace post_learning {
 namespace pruning {
 
 /// Returns the pruning method of the algorithm.
-EnsemblePruning::PruningMethod RandomPruning::pruning_method() const {
-  return EnsemblePruning::PruningMethod::RANDOM;
+Cleaver::PruningMethod RandomPruning::pruning_method() const {
+  return Cleaver::PruningMethod::RANDOM;
 }
 
 bool RandomPruning::line_search_pre_pruning() const {

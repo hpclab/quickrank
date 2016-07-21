@@ -216,15 +216,15 @@ void Rankboost::learn(
   double train_time = std::chrono::duration_cast<std::chrono::duration<double>>(
       train_end - train_start).count();
   std::cout << "# Training completed! (" << std::setprecision(3) << train_time
-      << " s.)" << std::endl;
+            << " s.)" << std::endl;
 
   // print metric on training/validation
   std::cout << "#" << std::endl;
   std::cout << std::setprecision(4) << "# " << *scorer << " on training: "
-      << best_metric_on_training << std::endl;
+            << best_metric_on_training << std::endl;
   if (validation_dataset)
     std::cout << std::setprecision(4) << "# " << *scorer << " on validation: "
-        << best_metric_on_validation << std::endl;
+              << best_metric_on_validation << std::endl;
 
 
   std::cout << "#" << std::endl;
@@ -232,7 +232,7 @@ void Rankboost::learn(
   double rank_time = std::chrono::duration_cast<std::chrono::duration<double>>(
       rank_end - rank_start).count();
   std::cout << "# Rankboost done! (" << std::setprecision(3) << rank_time
-      << " s.)" << std::endl;
+            << " s.)" << std::endl;
 }
 
 // Initialization
@@ -341,7 +341,7 @@ void Rankboost::init(std::shared_ptr<data::Dataset> training_dataset,
   double init_time = std::chrono::duration_cast<std::chrono::duration<double>>(
       init_end - init_start).count();
   std::cout << " [Done] (" << std::setprecision(3) << init_time << " s.)"
-      << std::endl;
+            << std::endl;
 } // init
 
 // Compute potential matrix PI
@@ -513,7 +513,7 @@ void Rankboost::clean(std::shared_ptr<data::Dataset> dataset) {
       std::chrono::duration_cast<std::chrono::duration<double>>(
           clean_end - clean_start).count();
   std::cout << " [Done] (" << std::setprecision(5) << clean_time << " s.)"
-      << std::endl;
+            << std::endl;
 }
 
 

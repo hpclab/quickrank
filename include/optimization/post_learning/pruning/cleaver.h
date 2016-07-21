@@ -41,7 +41,7 @@ namespace pruning {
 /// This optimization algorithm expect the datasets to be in the partial
 /// scores format (i.e., a column for each ensemble, with the partial score
 /// returned by that ensamble on each document (row of the original dataset)
-class EnsemblePruning: public PostLearningOptimization {
+class Cleaver: public PostLearningOptimization {
 
  public:
 
@@ -49,12 +49,12 @@ class EnsemblePruning: public PostLearningOptimization {
     RANDOM, LOW_WEIGHTS, SKIP, LAST, QUALITY_LOSS, SCORE_LOSS
   };
 
-  EnsemblePruning(double pruning_rate);
+  Cleaver(double pruning_rate);
 
-  EnsemblePruning(double pruning_rate,
+  Cleaver(double pruning_rate,
                   std::shared_ptr<learning::linear::LineSearch> lineSearch);
 
-  EnsemblePruning(const pugi::xml_document &model);
+  Cleaver(const pugi::xml_document &model);
 
   /// Returns the name of the optimizer.
   std::string name() const {

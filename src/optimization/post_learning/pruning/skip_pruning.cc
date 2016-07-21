@@ -30,8 +30,8 @@ namespace post_learning {
 namespace pruning {
 
 /// Returns the pruning method of the algorithm.
-EnsemblePruning::PruningMethod SkipPruning::pruning_method() const {
-  return EnsemblePruning::PruningMethod::SKIP;
+Cleaver::PruningMethod SkipPruning::pruning_method() const {
+  return Cleaver::PruningMethod::SKIP;
 }
 
 bool SkipPruning::line_search_pre_pruning() const {

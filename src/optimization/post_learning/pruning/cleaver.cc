@@ -29,33 +29,32 @@
 #include <io/svml.h>
 #include <sstream>
 
-#include "optimization/post_learning/pruning/ensemble_pruning.h"
-
+#include "optimization/post_learning/pruning/cleaver.h"
 
 namespace quickrank {
 namespace optimization {
 namespace post_learning {
 namespace pruning {
 
-const std::string EnsemblePruning::NAME_ = "CLEAVER";
+const std::string Cleaver::NAME_ = "CLEAVER";
 
-const std::vector<std::string> EnsemblePruning::pruningMethodNames = {
+const std::vector<std::string> Cleaver::pruningMethodNames = {
     "RANDOM", "LOW_WEIGHTS", "SKIP", "LAST", "QUALITY_LOSS", "SCORE_LOSS"
 };
 
-EnsemblePruning::EnsemblePruning(double pruning_rate) :
+Cleaver::Cleaver(double pruning_rate) :
     pruning_rate_(pruning_rate),
     lineSearch_() {
 }
 
-EnsemblePruning::EnsemblePruning(double pruning_rate,
-                                 std::shared_ptr<learning::linear::LineSearch> lineSearch)
+Cleaver::Cleaver(double pruning_rate,
+                 std::shared_ptr<learning::linear::LineSearch> lineSearch)
     :
     pruning_rate_(pruning_rate),
     lineSearch_(lineSearch) {
 }
 
-EnsemblePruning::EnsemblePruning(const pugi::xml_document &model) {
+Cleaver::Cleaver(const pugi::xml_document &model) {
   pugi::xml_node model_info = model.child("optimizer").child("info");
   pugi::xml_node model_tree = model.child("optimizer").child("ensemble");
 
@@ -87,12 +86,12 @@ EnsemblePruning::EnsemblePruning(const pugi::xml_document &model) {
   }
 }
 
-std::ostream &EnsemblePruning::put(std::ostream &os) const {
+std::ostream &Cleaver::put(std::ostream &os) const {
   os << "# Optimizer: " << name() << std::endl
-      << "# pruning rate = " << pruning_rate_ << std::endl
-      << "# pruning pruning_method = " << EnsemblePruning::getPruningMethod(
+     << "# pruning rate = " << pruning_rate_ << std::endl
+     << "# pruning pruning_method = " << Cleaver::getPruningMethod(
       pruning_method())
-      << std::endl;
+     << std::endl;
   if (lineSearch_)
     os << "# Line Search Parameters: " << std::endl << *lineSearch_;
   else
@@ -100,7 +99,7 @@ std::ostream &EnsemblePruning::put(std::ostream &os) const {
   return os << std::endl;
 }
 
-void EnsemblePruning::optimize(
+void Cleaver::optimize(
     std::shared_ptr<learning::LTR_Algorithm> algo,
     std::shared_ptr<data::Dataset> training_dataset,
     std::shared_ptr<data::Dataset> validation_dataset,
@@ -247,10 +246,10 @@ void EnsemblePruning::optimize(
       std::chrono::duration<double>>(end - begin);
   std::cout << std::endl;
   std::cout << "# \t Total training time: " << std::setprecision(2) <<
-      elapsed.count() << " seconds" << std::endl;
+            elapsed.count() << " seconds" << std::endl;
 }
 
-pugi::xml_document *EnsemblePruning::get_xml_model() const {
+pugi::xml_document *Cleaver::get_xml_model() const {
 
   pugi::xml_document *doc = new pugi::xml_document();
   pugi::xml_node root = doc->append_child("optimizer");
@@ -289,7 +288,7 @@ pugi::xml_document *EnsemblePruning::get_xml_model() const {
   return doc;
 }
 
-void EnsemblePruning::score(data::Dataset *dataset, Score *scores) const {
+void Cleaver::score(data::Dataset *dataset, Score *scores) const {
 
   Feature *features = dataset->at(0, 0);
 #pragma omp parallel for
@@ -303,7 +302,7 @@ void EnsemblePruning::score(data::Dataset *dataset, Score *scores) const {
   }
 }
 
-void EnsemblePruning::import_weights_from_line_search(
+void Cleaver::import_weights_from_line_search(
     std::set<unsigned int> &pruned_estimators) {
 
   auto ls_weights = lineSearch_->get_weights();
@@ -317,7 +316,7 @@ void EnsemblePruning::import_weights_from_line_search(
   assert(ls_f == ls_weights->size());
 }
 
-std::shared_ptr<data::Dataset> EnsemblePruning::filter_dataset(
+std::shared_ptr<data::Dataset> Cleaver::filter_dataset(
     std::shared_ptr<data::Dataset> dataset,
     std::set<unsigned int> &pruned_estimators) const {
 

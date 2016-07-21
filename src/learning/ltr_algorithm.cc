@@ -34,7 +34,7 @@
 #include "learning/forests/rankboost.h"
 // Added by Salvatore Trani
 #include "learning/linear/line_search.h"
-#include "optimization/post_learning/pruning/ensemble_pruning.h"
+#include "optimization/post_learning/pruning/cleaver.h"
 
 namespace quickrank {
 namespace learning {
@@ -72,7 +72,7 @@ std::shared_ptr<LTR_Algorithm> LTR_Algorithm::load_model_from_file(
   pugi::xml_parse_result result = model.load_file(model_filename.c_str());
   if (!result) {
     std::cerr << "!!! Model " + model_filename + " is not parsed correctly."
-        << std::endl;
+              << std::endl;
     exit(EXIT_FAILURE);
   }
 

@@ -69,7 +69,7 @@ int Driver::run(ParamsMap &pmap) {
         opt_algorithm = quickrank::optimization::optimization_factory(pmap);
         if (!opt_algorithm) {
           std::cerr << " !! Optimization Algorithm was not set properly"
-              << std::endl;
+                    << std::endl;
           exit(EXIT_FAILURE);
         }
       }
@@ -132,8 +132,8 @@ int Driver::run(ParamsMap &pmap) {
         //show ranker parameters
         std::cout << "#" << std::endl << *ranking_algorithm;
         std::cout << "#" << std::endl << "# training scorer: "
-            << *training_metric
-            << std::endl;
+                  << *training_metric
+                  << std::endl;
 
         training_phase(ranking_algorithm,
                        training_metric,
@@ -177,7 +177,7 @@ int Driver::run(ParamsMap &pmap) {
       }
 
       std::cout << "# test scorer: " << *testing_metric << std::endl << "#" <<
-          std::endl;
+                std::endl;
       testing_phase(ranking_algorithm,
                     testing_metric,
                     test_dataset,
@@ -204,12 +204,12 @@ int Driver::run(ParamsMap &pmap) {
     } else if (model_code_type == "oblivious") {
       quickrank::io::GenOblivious oblivious_generator;
       std::cout << "applying oblivious strategy for C code generation to: "
-          << xml_filename << std::endl;
+                << xml_filename << std::endl;
       oblivious_generator.generate_oblivious_code(xml_filename, c_filename);
     } else if (model_code_type == "vpred") {
       quickrank::io::GenVpred vpred_generator;
       std::cout << "generating VPred input file from: " << xml_filename
-          << std::endl;
+                << std::endl;
       vpred_generator.generate_vpred_input(xml_filename, c_filename);
     }
   }
@@ -299,14 +299,14 @@ void Driver::optimization_phase(
   if (!output_filename.empty()) {
     std::cout << std::endl;
     std::cout << "# Writing optimization model to file: "
-        << output_filename << std::endl;
+              << output_filename << std::endl;
     opt_algorithm->save(output_filename);
   }
 
   if (!opt_algo_model_filename.empty()) {
     std::cout << std::endl;
     std::cout << "# Writing optimized LTR algo model to file: "
-        << opt_algo_model_filename << std::endl << std::endl;
+              << opt_algo_model_filename << std::endl << std::endl;
     ranking_algo->save(opt_algo_model_filename);
   }
 }
@@ -329,7 +329,7 @@ void Driver::testing_phase(
           test_dataset, &scores[0]);
 
       std::cout << *test_metric << " on test data = " << std::setprecision(4)
-          << test_score << std::endl << std::endl;
+                << test_score << std::endl << std::endl;
 
       quickrank::io::Svml svml;
       svml.write(datasetPartScores, scores_filename);
@@ -341,7 +341,7 @@ void Driver::testing_phase(
 
       std::cout << std::endl;
       std::cout << *test_metric << " on test data = " << std::setprecision(4)
-          << test_score << std::endl << std::endl;
+                << test_score << std::endl << std::endl;
 
       if (!scores_filename.empty()) {
         std::ofstream os;
@@ -351,7 +351,7 @@ void Driver::testing_phase(
           os << scores[i] << std::endl;
         os.close();
         std::cout << "# Scores written to file: " << scores_filename
-            << std::endl;
+                  << std::endl;
       }
     }
   }
@@ -369,14 +369,14 @@ std::shared_ptr<quickrank::data::Dataset> Driver::load_dataset(
   std::shared_ptr<quickrank::data::Dataset> dataset = nullptr;
   if (!dataset_filename.empty()) {
     std::cout << "# Reading " + dataset_label + " dataset: " <<
-        dataset_filename << std::endl;
+              dataset_filename << std::endl;
     dataset = reader.read_horizontal(dataset_filename);
     std::cout << reader << *dataset << std::endl;
   }
 
   if (!dataset) {
     std::cerr << "!!! Error while loading " + dataset_label + " dataset" <<
-        std::endl;
+              std::endl;
     exit(EXIT_FAILURE);
   }
 
@@ -399,7 +399,7 @@ std::shared_ptr<data::Dataset> Driver::extract_partial_scores(
 
       if (!detailed_scores) {
         std::cerr << "# ## ERROR!! Only Ensemble methods support the "
-            << "export of detailed score tree by tree" << std::endl;
+                  << "export of detailed score tree by tree" << std::endl;
         exit(EXIT_FAILURE);
       }
 
