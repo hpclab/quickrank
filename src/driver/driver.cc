@@ -43,12 +43,14 @@ Driver::~Driver() {
 
 int Driver::run(ParamsMap &pmap) {
 
-  if (!pmap.isSet("train") && !pmap.isSet("test") && !pmap.isSet("dump-type")) {
+  if (!pmap.isSet("train") && !pmap.isSet("train-partial") &&
+      !pmap.isSet("test") && !pmap.isSet("dump-type")) {
     std::cout << pmap.help();
     exit(EXIT_FAILURE);
   }
 
-  if (pmap.count("train") || pmap.count("test")) {
+  if (pmap.isSet("train") || pmap.isSet("train-partial") ||
+      pmap.isSet("test")) {
     std::shared_ptr<quickrank::learning::LTR_Algorithm> ranking_algorithm =
         quickrank::learning::ltr_algorithm_factory(pmap);
     if (!ranking_algorithm) {
@@ -60,7 +62,7 @@ int Driver::run(ParamsMap &pmap) {
 
     // If there is the training dataset, it means we have to execute
     // the training phase and/or the optimization phase (at least one of them)
-    if (pmap.count("train")) {
+    if (pmap.count("train") || pmap.count("train-partial")) {
 
       std::shared_ptr<quickrank::optimization::Optimization> opt_algorithm;
       if (pmap.count("opt-algo") || pmap.count("opt-model")) {

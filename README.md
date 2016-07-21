@@ -173,7 +173,8 @@ QuickRank can translate learnt tree-based models into efficient C++ source code 
 
 ### Optimization
 
-QuickRank introduces the concept of optimizers, i.e., algorithms than are executed before or after the training phase is executed. An optimizer could process either the dataset or the model, depending from its definition. Currently in QuickRank there is a single optimizer which acts in post learning by pruning an ensamble model, improving consequently its efficiency, without hindering its effectiveness.
+QuickRank introduces the concept of optimizers, i.e., algorithms than are 
+executed before or after the training phase is executed. An optimizer could process either the dataset or the model, depending from its definition. Currently in QuickRank there is a single optimizer which acts in post learning by pruning an ensemble model, improving consequently its efficiency, without hindering its effectiveness.
 
 The optimizer can be executed in pipeline with the training phase by setting the corresponding options, or as a standalone process which works on an previously trained model (or dataset). 
 
@@ -194,6 +195,8 @@ The optimizer can be executed in pipeline with the training phase by setting the
   --max-iterations 100 \
   --max-failed-valid 20
 ```
+
+See a more detailed description [here](documentation/cleaver.md).
 
 ### Test Data
 

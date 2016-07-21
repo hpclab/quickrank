@@ -153,8 +153,9 @@ class Mart: public LTR_Algorithm {
   size_t nthresholds_;  //if ==0 then no. of thresholds is not limited
   size_t nleaves_;  //>0
   size_t minleafsupport_;  //>0
-  size_t
-      valid_iterations_;  //If no performance gain on validation data is observed in 'esr' rounds, stop the training process right away (if esr==0 feature is disabled).
+  size_t valid_iterations_;  // If no performance gain on validationdata is
+                          // observed in 'esr' rounds, stop the training
+                          // process right away (if esr==0 feature is disabled).
 
   size_t **sortedsid_ = NULL;
   size_t sortedsize_ = 0;
