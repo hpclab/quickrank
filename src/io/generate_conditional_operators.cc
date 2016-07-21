@@ -67,12 +67,13 @@ void model_node_to_conditional_operators(pugi::xml_node &nodes,
     model_node_to_conditional_operators(left, os);
     os << " : ";
     model_node_to_conditional_operators(right, os);
-      os << " )";
+    os << " )";
   }
 }
 
-void GenOpCond::generate_conditional_operators_code(const std::string model_filename,
-                                                    const std::string code_filename) {
+void
+GenOpCond::generate_conditional_operators_code(const std::string model_filename,
+                                               const std::string code_filename) {
   if (model_filename.empty()) {
     std::cerr << "!!! Model filename is empty." << std::endl;
     exit(EXIT_FAILURE);
@@ -97,7 +98,7 @@ void GenOpCond::generate_conditional_operators_code(const std::string model_file
     pugi::xml_node tree_content = tree.child("split");
     if (tree_content) {
       source_code << std::endl << "\t\t + " << std::setprecision(3)
-          << tree_weight << "f * ";
+                  << tree_weight << "f * ";
       model_node_to_conditional_operators(tree_content, source_code);
     }
   }

@@ -31,7 +31,8 @@ namespace forests {
 const std::string LambdaMart::NAME_ = "LAMBDAMART";
 
 
-void LambdaMart::init(std::shared_ptr<quickrank::data::VerticalDataset> training_dataset) {
+void
+LambdaMart::init(std::shared_ptr<quickrank::data::VerticalDataset> training_dataset) {
   Mart::init(training_dataset);
   const size_t nentries = training_dataset->num_instances();
   instance_weights_ = new double[nentries]();  //0.0f initialized

@@ -21,7 +21,7 @@
  */
 #pragma once
 
-#include "optimization/post_learning/pruning/ensemble_pruning.h"
+#include "optimization/post_learning/pruning/cleaver.h"
 
 namespace quickrank {
 namespace optimization {
@@ -29,18 +29,18 @@ namespace post_learning {
 namespace pruning {
 
 /// This implements random pruning strategy for pruning ensembles.
-class LastPruning: public EnsemblePruning {
+class LastPruning: public Cleaver {
 
  public:
-  LastPruning(double pruning_rate) : EnsemblePruning(pruning_rate) { };
+  LastPruning(double pruning_rate) : Cleaver(pruning_rate) { };
 
   LastPruning(double pruning_rate,
               std::shared_ptr<learning::linear::LineSearch> lineSearch) :
-      EnsemblePruning(pruning_rate, lineSearch) { };
+      Cleaver(pruning_rate, lineSearch) { };
 
-  LastPruning(const pugi::xml_document &model) : EnsemblePruning(model) { };
+  LastPruning(const pugi::xml_document &model) : Cleaver(model) { };
 
-  EnsemblePruning::PruningMethod pruning_method() const;
+  Cleaver::PruningMethod pruning_method() const;
 
   bool line_search_pre_pruning() const;
 

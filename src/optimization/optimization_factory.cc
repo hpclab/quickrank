@@ -21,7 +21,7 @@
  */
 
 #include "optimization/optimization_factory.h"
-#include "optimization/post_learning/pruning/ensemble_pruning.h"
+#include "optimization/post_learning/pruning/cleaver.h"
 #include "optimization/post_learning/pruning/ensemble_pruning_factory.h"
 
 namespace quickrank {
@@ -76,7 +76,7 @@ std::shared_ptr<quickrank::optimization::Optimization> optimization_factory(
     std::string opt_algo = pmap.get<std::string>("opt-algo");
 
     if (opt_algo == quickrank::optimization::post_learning::pruning
-    ::EnsemblePruning::NAME_) {
+    ::Cleaver::NAME_) {
 
       optimizer =
           quickrank::optimization::post_learning::pruning::create_pruner(

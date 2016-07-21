@@ -70,7 +70,7 @@ void CustomLTR::learn(
       validation_dataset, validation_scores);
 
   std::cout << *scorer << " on validation: " << metric_on_validation
-      << std::endl;
+            << std::endl;
 
   std::cout << "# Training completed." << std::endl;
 

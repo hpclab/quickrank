@@ -104,11 +104,11 @@ CoordinateAscent::~CoordinateAscent() {
 
 std::ostream &CoordinateAscent::put(std::ostream &os) const {
   os << "# Ranker: " << name() << std::endl << "# number of samples = "
-      << num_samples_ << std::endl << "# window size = " << window_size_
-      << std::endl << "# window reduction factor = " << reduction_factor_
-      << std::endl << "# number of max iterations = " << max_iterations_
-      << std::endl << "# number of fails on validation before exit = "
-      << max_failed_vali_ << std::endl;
+     << num_samples_ << std::endl << "# window size = " << window_size_
+     << std::endl << "# window reduction factor = " << reduction_factor_
+     << std::endl << "# number of max iterations = " << max_iterations_
+     << std::endl << "# number of fails on validation before exit = "
+     << max_failed_vali_ << std::endl;
   return os;
 }
 
@@ -243,7 +243,7 @@ void CoordinateAscent::learn(
       std::chrono::duration<double>>(end - begin);
   std::cout << std::endl;
   std::cout << "# \t Training time: " << std::setprecision(2) << elapsed.count()
-      << " seconds" << std::endl;
+            << " seconds" << std::endl;
 
 }
 

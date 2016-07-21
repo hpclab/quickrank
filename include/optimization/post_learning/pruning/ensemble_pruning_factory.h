@@ -25,7 +25,7 @@
 
 #include "optimization/optimization.h"
 #include "learning/linear/line_search.h"
-#include "optimization/post_learning/pruning/ensemble_pruning.h"
+#include "optimization/post_learning/pruning/cleaver.h"
 
 #include <memory>
 
@@ -38,11 +38,11 @@ std::shared_ptr<quickrank::optimization::Optimization> create_pruner(
     const pugi::xml_document &model);
 
 std::shared_ptr<quickrank::optimization::Optimization> create_pruner(
-    EnsemblePruning::PruningMethod pruningMethod, double pruning_rate,
+    Cleaver::PruningMethod pruningMethod, double pruning_rate,
     std::shared_ptr<learning::linear::LineSearch> lineSearch);
 
 std::shared_ptr<quickrank::optimization::Optimization> create_pruner(
-    EnsemblePruning::PruningMethod pruningMethod, double pruning_rate);
+    Cleaver::PruningMethod pruningMethod, double pruning_rate);
 
 std::shared_ptr<quickrank::optimization::Optimization> create_pruner(
     std::string pruningMethodName, double pruning_rate,

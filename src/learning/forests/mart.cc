@@ -75,21 +75,22 @@ Mart::Mart(const pugi::xml_document &model) {
 
 std::ostream &Mart::put(std::ostream &os) const {
   os << "# Ranker: " << name() << std::endl
-      << "# max no. of trees = " << ntrees_ << std::endl
-      << "# no. of tree leaves = " << nleaves_ << std::endl
-      << "# shrinkage = " << shrinkage_ << std::endl
-      << "# min leaf support = " << minleafsupport_ << std::endl;
+     << "# max no. of trees = " << ntrees_ << std::endl
+     << "# no. of tree leaves = " << nleaves_ << std::endl
+     << "# shrinkage = " << shrinkage_ << std::endl
+     << "# min leaf support = " << minleafsupport_ << std::endl;
   if (nthresholds_)
     os << "# no. of thresholds = " << nthresholds_ << std::endl;
   else
     os << "# no. of thresholds = unlimited" << std::endl;
   if (valid_iterations_)
     os << "# no. of no gain rounds before early stop = " << valid_iterations_
-        << std::endl;
+       << std::endl;
   return os;
 }
 
-void Mart::init(std::shared_ptr<quickrank::data::VerticalDataset> training_dataset) {
+void
+Mart::init(std::shared_ptr<quickrank::data::VerticalDataset> training_dataset) {
 
   const size_t nentries = training_dataset->num_instances();
   scores_on_training_ = new double[nentries]();  //0.0f initialized
@@ -282,18 +283,18 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   //Finishing up
   std::cout << std::endl;
   std::cout << *scorer << " on training data = " << best_metric_on_training
-      << std::endl;
+            << std::endl;
 
   if (validation_dataset) {
     std::cout << *scorer << " on validation data = "
-        << best_metric_on_validation << std::endl;
+              << best_metric_on_validation << std::endl;
   }
 
   clear(vertical_training->num_features());
 
   std::cout << std::endl;
   std::cout << "#\t Training Time: " << std::setprecision(2) << train_time
-      << " s." << std::endl;
+            << " s." << std::endl;
 }
 
 void Mart::compute_pseudoresponses(

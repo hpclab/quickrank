@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
   pmap.addOptionWithArg<std::string>("dataset", "d",
                                      {"Input dataset in SVML format"});
   pmap.addOptionWithArg<int>("rounds", "r", {"Number of test repetitions"}, 10);
-  pmap.addOptionWithArg<std::string>("scores",  "s",
+  pmap.addOptionWithArg<std::string>("scores", "s",
                                      {"File where scores are saved (Optional)."});
 
   bool parse_status = pmap.parse(argc, argv);
@@ -112,12 +112,12 @@ int main(int argc, char *argv[]) {
           end_scoring - start_scoring).count();
 
   std::cout << "       Total scoring time: " << scoring_time << " s."
-      << std::endl;
+            << std::endl;
   std::cout << "Avg. Dataset scoring time: " << scoring_time / rounds << " s."
-      << std::endl;
+            << std::endl;
   std::cout << "Avg.    Doc. scoring time: "
-      << scoring_time / dataset->num_instances() / rounds << " s."
-      << std::endl;
+            << scoring_time / dataset->num_instances() / rounds << " s."
+            << std::endl;
 
   // potentially save scores
   if (!scores_file.empty()) {

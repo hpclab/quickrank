@@ -23,7 +23,7 @@
 
 #include "learning/ltr_algorithm.h"
 #include "optimization/optimization.h"
-#include "optimization/post_learning/pruning/ensemble_pruning.h"
+#include "optimization/post_learning/pruning/cleaver.h"
 #include "optimization/post_learning/pruning/ensemble_pruning_factory.h"
 
 namespace quickrank {
@@ -66,7 +66,7 @@ std::shared_ptr<Optimization> Optimization::load_model_from_file(
 
   // Ensemble Pruning added by Salvatore Trani
   if (optimizer_type
-      == optimization::post_learning::pruning::EnsemblePruning::NAME_)
+      == optimization::post_learning::pruning::Cleaver::NAME_)
     return optimization::post_learning::pruning::create_pruner(model);
 
   return nullptr;

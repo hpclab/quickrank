@@ -48,7 +48,7 @@
 #include "learning/linear/coordinate_ascent.h"
 #include "learning/linear/line_search.h"
 #include "learning/custom/custom_ltr.h"
-#include "optimization/post_learning/pruning/ensemble_pruning.h"
+#include "optimization/post_learning/pruning/cleaver.h"
 
 #include "metric/ir/tndcg.h"
 #include "metric/ir/map.h"
@@ -61,22 +61,22 @@ void print_logo() {
     std::string color_reset = "\033[0m";
     std::string color_logo = "\033[1m\033[32m";
     std::cout << color_logo << std::endl
-        << "      _____  _____" << std::endl
-        << "     /    / /____/" << std::endl
-        << "    /____\\ /    \\          QuickRank has been developed by hpc.isti.cnr.it"
-        << std::endl
-        << "    ::Quick:Rank::                                   quickrank@isti.cnr.it"
-        << std::endl
-        << color_reset << std::endl;
+              << "      _____  _____" << std::endl
+              << "     /    / /____/" << std::endl
+              << "    /____\\ /    \\        QuickRank has been developed by hpc.isti.cnr.it"
+              << std::endl
+              << "    ::Quick:Rank::                             mail: quickrank@isti.cnr.it"
+              << std::endl
+              << color_reset << std::endl;
   } else {
     std::cout << std::endl
-        << "      _____  _____" << std::endl
-        << "     /    / /____/" << std::endl
-        << "    /____\\ /    \\          QuickRank has been developed by hpc.isti.cnr.it"
-        << std::endl
-        << "    ::Quick:Rank::                                   quickrank@isti.cnr.it"
-        << std::endl
-        << std::endl;
+              << "      _____  _____" << std::endl
+              << "     /    / /____/" << std::endl
+              << "    /____\\ /    \\          QuickRank has been developed by hpc.isti.cnr.it"
+              << std::endl
+              << "    ::Quick:Rank::                                   quickrank@isti.cnr.it"
+              << std::endl
+              << std::endl;
   }
 }
 
@@ -136,14 +136,14 @@ int main(int argc, char *argv[]) {
 
   pmap.addOptionWithArg("train-metric",
                         {"set train metric: ["
-                            + quickrank::metric::ir::Dcg::NAME_
-                            + "|"
-                            + quickrank::metric::ir::Ndcg::NAME_
-                            + "|"
-                            + quickrank::metric::ir::Tndcg::NAME_
-                            + "|"
-                            + quickrank::metric::ir::Map::NAME_
-                            + "]."},
+                             + quickrank::metric::ir::Dcg::NAME_
+                             + "|"
+                             + quickrank::metric::ir::Ndcg::NAME_
+                             + "|"
+                             + quickrank::metric::ir::Tndcg::NAME_
+                             + "|"
+                             + quickrank::metric::ir::Map::NAME_
+                             + "]."},
                         train_metric_string);
 
   pmap.addOptionWithArg("train-cutoff",
@@ -241,12 +241,12 @@ int main(int argc, char *argv[]) {
   pmap.addOptionWithArg<std::string>(
       "opt-algo",
       {"Optimization algorithm: [" +
-          quickrank::optimization::post_learning::pruning::EnsemblePruning::NAME_
+          quickrank::optimization::post_learning::pruning::Cleaver::NAME_
            + "]."});
 
   std::string pruningMethods = "";
   for (auto
-        i: quickrank::optimization::post_learning::pruning::EnsemblePruning::pruningMethodNames) {
+        i: quickrank::optimization::post_learning::pruning::Cleaver::pruningMethodNames) {
     pruningMethods += i + "|";
   }
   pruningMethods = pruningMethods.substr(0, pruningMethods.size() - 1);
@@ -254,7 +254,7 @@ int main(int argc, char *argv[]) {
   pmap.addOptionWithArg<std::string>(
       "opt-method",
       {"Optimization method: " +
-          quickrank::optimization::post_learning::pruning::EnsemblePruning::NAME_,
+          quickrank::optimization::post_learning::pruning::Cleaver::NAME_,
        "[" + pruningMethods + "]."});
 
   pmap.addOptionWithArg<std::string>(

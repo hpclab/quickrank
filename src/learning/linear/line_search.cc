@@ -103,13 +103,13 @@ LineSearch::~LineSearch() {
 
 std::ostream &LineSearch::put(std::ostream &os) const {
   os << "# Ranker: " << name() << std::endl
-      << "# number of samples = " << num_points_ << std::endl
-      << "# window size = " << window_size_ << std::endl
-      << "# window reduction factor = " << reduction_factor_ << std::endl
-      << "# number of max iterations = " << max_iterations_ << std::endl
-      << "# number of fails on validation before exit = " << max_failed_vali_
-      << std::endl
-      << "# adaptive reduction factor = " << adaptive_ << std::endl;
+     << "# number of samples = " << num_points_ << std::endl
+     << "# window size = " << window_size_ << std::endl
+     << "# window reduction factor = " << reduction_factor_ << std::endl
+     << "# number of max iterations = " << max_iterations_ << std::endl
+     << "# number of fails on validation before exit = " << max_failed_vali_
+     << std::endl
+     << "# adaptive reduction factor = " << adaptive_ << std::endl;
 
   return os;
 }
@@ -294,7 +294,7 @@ void LineSearch::learn(
     } // end if zeros step2 vector
 
     std::cout << std::setw(7) << i + 1 << std::setw(9)
-        << best_metric_on_training;
+              << best_metric_on_training;
 
     auto cur_reduction_factor = reduction_factor_;
     if (adaptive_) {
@@ -334,8 +334,8 @@ void LineSearch::learn(
       }
 
       std::cout << " " << std::setw(7) << gain_on_training << " "
-          << std::setw(8) << window_size << " "
-          << std::setw(8) << cur_reduction_factor;
+                << std::setw(8) << window_size << " "
+                << std::setw(8) << cur_reduction_factor;
     }
 
     std::cout << std::endl;
@@ -360,7 +360,7 @@ void LineSearch::learn(
       std::chrono::duration<double>>(end - begin);
   std::cout << std::endl;
   std::cout << "# \t Training time: " << std::setprecision(2) <<
-      elapsed.count() << " seconds" << std::endl;
+            elapsed.count() << " seconds" << std::endl;
 }
 
 Score LineSearch::score_document(const Feature *d) const {

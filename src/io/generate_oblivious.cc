@@ -153,7 +153,7 @@ void GenOblivious::generate_oblivious_code(const std::string model_filename,
   source_code << "#define N " << trees << " // no. of trees" << std::endl;
   source_code << "#define M " << depth << " // max tree depth" << std::endl;
   source_code << "#define F " << max_leaves << " // max number of leaves"
-      << std::endl;
+              << std::endl;
   source_code << std::endl;
 
   pugi::xml_node ensemble = ranker.child("ensemble");
@@ -255,7 +255,7 @@ void GenOblivious::generate_oblivious_code(const std::string model_filename,
 
   // pint features ids
   source_code << "const unsigned int features_ids[N][M] = { " << std::endl
-      << '\t';
+              << '\t';
   for (size_t i = 0; i < feature_ids.size(); i++) {
     if (i != 0)
       source_code << "," << std::endl << '\t';
@@ -296,11 +296,11 @@ void GenOblivious::generate_oblivious_code(const std::string model_filename,
       << "  return leafidx;" << std::endl << "}" << std::endl << std::endl;
 
   source_code << "double ranker(float *v) {" << std::endl
-      << "  double score = 0.0;" << std::endl << "  int i = 0;"
-      << std::endl;
+              << "  double score = 0.0;" << std::endl << "  int i = 0;"
+              << std::endl;
   for (int d = 0; d < max_depth; d++) {
     source_code << "  for (int j = 0; j < " << depths_pupolation[d]
-        << "; ++j) {" << std::endl;
+                << "; ++j) {" << std::endl;
     source_code
         << "    score += tree_weights[i] * leaf_outputs[i][leaf_id(v, features_ids[i], thresholds[i], "
         << d + 1 << ")];" << std::endl;

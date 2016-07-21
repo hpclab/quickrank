@@ -28,8 +28,8 @@ namespace post_learning {
 namespace pruning {
 
 /// Returns the pruning method of the algorithm.
-EnsemblePruning::PruningMethod LastPruning::pruning_method() const {
-  return EnsemblePruning::PruningMethod::LAST;
+Cleaver::PruningMethod LastPruning::pruning_method() const {
+  return Cleaver::PruningMethod::LAST;
 }
 
 bool LastPruning::line_search_pre_pruning() const {

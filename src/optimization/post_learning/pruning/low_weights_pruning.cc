@@ -30,8 +30,8 @@ namespace post_learning {
 namespace pruning {
 
 /// Returns the pruning method of the algorithm.
-EnsemblePruning::PruningMethod LowWeightsPruning::pruning_method() const {
-  return EnsemblePruning::PruningMethod::LOW_WEIGHTS;
+Cleaver::PruningMethod LowWeightsPruning::pruning_method() const {
+  return Cleaver::PruningMethod::LOW_WEIGHTS;
 }
 
 bool LowWeightsPruning::line_search_pre_pruning() const {

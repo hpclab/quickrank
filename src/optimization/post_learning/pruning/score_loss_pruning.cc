@@ -31,8 +31,8 @@ namespace post_learning {
 namespace pruning {
 
 /// Returns the pruning method of the algorithm.
-EnsemblePruning::PruningMethod ScoreLossPruning::pruning_method() const {
-  return EnsemblePruning::PruningMethod::SCORE_LOSS;
+Cleaver::PruningMethod ScoreLossPruning::pruning_method() const {
+  return Cleaver::PruningMethod::SCORE_LOSS;
 }
 
 bool ScoreLossPruning::line_search_pre_pruning() const {

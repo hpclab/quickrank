@@ -40,33 +40,33 @@ std::shared_ptr<quickrank::optimization::Optimization> create_pruner(
 
   std::string pruningMethodName =
       model_info.child("opt-method").text().as_string();
-  EnsemblePruning::PruningMethod pruningMethod =
-      EnsemblePruning::getPruningMethod(pruningMethodName);
+  Cleaver::PruningMethod pruningMethod =
+      Cleaver::getPruningMethod(pruningMethodName);
 
   Optimization *optimizer = nullptr;
 
   switch (pruningMethod) {
-    case EnsemblePruning::PruningMethod::RANDOM: {
+    case Cleaver::PruningMethod::RANDOM: {
       optimizer = new RandomPruning(model);
       break;
     }
-    case EnsemblePruning::PruningMethod::LOW_WEIGHTS: {
+    case Cleaver::PruningMethod::LOW_WEIGHTS: {
       optimizer = new LowWeightsPruning(model);
       break;
     }
-    case EnsemblePruning::PruningMethod::LAST: {
+    case Cleaver::PruningMethod::LAST: {
       optimizer = new LastPruning(model);
       break;
     }
-    case EnsemblePruning::PruningMethod::QUALITY_LOSS: {
+    case Cleaver::PruningMethod::QUALITY_LOSS: {
       optimizer = new QualityLossPruning(model);
       break;
     }
-    case EnsemblePruning::PruningMethod::SKIP: {
+    case Cleaver::PruningMethod::SKIP: {
       optimizer = new SkipPruning(model);
       break;
     }
-    case EnsemblePruning::PruningMethod::SCORE_LOSS: {
+    case Cleaver::PruningMethod::SCORE_LOSS: {
       optimizer = new ScoreLossPruning(model);
       break;
     }
@@ -76,33 +76,33 @@ std::shared_ptr<quickrank::optimization::Optimization> create_pruner(
 }
 
 std::shared_ptr<quickrank::optimization::Optimization> create_pruner(
-    EnsemblePruning::PruningMethod pruningMethod, double pruning_rate,
+    Cleaver::PruningMethod pruningMethod, double pruning_rate,
     std::shared_ptr<learning::linear::LineSearch> lineSearch) {
 
   Optimization *optimizer = nullptr;
 
   switch (pruningMethod) {
-    case EnsemblePruning::PruningMethod::RANDOM: {
+    case Cleaver::PruningMethod::RANDOM: {
       optimizer = new RandomPruning(pruning_rate, lineSearch);
       break;
     }
-    case EnsemblePruning::PruningMethod::LOW_WEIGHTS: {
+    case Cleaver::PruningMethod::LOW_WEIGHTS: {
       optimizer = new LowWeightsPruning(pruning_rate, lineSearch);
       break;
     }
-    case EnsemblePruning::PruningMethod::LAST: {
+    case Cleaver::PruningMethod::LAST: {
       optimizer = new LastPruning(pruning_rate, lineSearch);
       break;
     }
-    case EnsemblePruning::PruningMethod::QUALITY_LOSS: {
+    case Cleaver::PruningMethod::QUALITY_LOSS: {
       optimizer = new QualityLossPruning(pruning_rate, lineSearch);
       break;
     }
-    case EnsemblePruning::PruningMethod::SKIP: {
+    case Cleaver::PruningMethod::SKIP: {
       optimizer = new SkipPruning(pruning_rate, lineSearch);
       break;
     }
-    case EnsemblePruning::PruningMethod::SCORE_LOSS: {
+    case Cleaver::PruningMethod::SCORE_LOSS: {
       optimizer = new ScoreLossPruning(pruning_rate, lineSearch);
       break;
     }
@@ -112,7 +112,7 @@ std::shared_ptr<quickrank::optimization::Optimization> create_pruner(
 }
 
 std::shared_ptr<quickrank::optimization::Optimization> create_pruner(
-    EnsemblePruning::PruningMethod pruningMethod, double pruning_rate) {
+    Cleaver::PruningMethod pruningMethod, double pruning_rate) {
 
   return create_pruner(pruningMethod, pruning_rate, nullptr);
 }
@@ -122,7 +122,7 @@ std::shared_ptr<quickrank::optimization::Optimization> create_pruner(
     std::shared_ptr<learning::linear::LineSearch> lineSearch) {
 
   return create_pruner(
-      EnsemblePruning::getPruningMethod(pruningMethodName),
+      Cleaver::getPruningMethod(pruningMethodName),
       pruning_rate, lineSearch);
 
 }
