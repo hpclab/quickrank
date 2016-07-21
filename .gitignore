@@ -14,7 +14,7 @@ tests
 build
 debug
 quickranktestdata
-documentation/html
+api-documentation/html
 *~
 *.d
 *.o
