@@ -24,7 +24,7 @@ Being CLEAVER an optimization method inside QuickRank, it can be ran in pipeline
   --train quickranktestdata/msn1/msn1.fold1.train.5k.txt \
   --valid quickranktestdata/msn1/msn1.fold1.vali.5k.txt \
   --model lambdamart-model.xml \
-  --opt-algo EPRUNING \
+  --opt-algo CLEAVER \
   --opt-method QUALITY_LOSS \
   --opt-model optmization-model.xml \
   --opt-algo-model lambdamart-optimized-model.xml \
@@ -48,7 +48,7 @@ Running CLEAVER as a standalone process requires to separately train a model. Th
   --model lambdamart-model.xml \
   --train quickranktestdata/msn1/msn1.fold1.train.5k.txt \
   --valid quickranktestdata/msn1/msn1.fold1.vali.5k.txt \
-  --opt-algo EPRUNING \
+  --opt-algo CLEAVER \
   --opt-method QUALITY_LOSS \
   --opt-model optmization-model.xml \
   --opt-algo-model lambdamart-optimized-model.xml \
@@ -103,7 +103,7 @@ Having done these tasks, it is now possible to efficiently test various pruning 
   --model lambdamart-model.xml \
   --train-partial partial-score-train.txt \
   --valid-partial partial-score-vali.txt \
-  --opt-algo EPRUNING \
+  --opt-algo CLEAVER \
   --opt-method QUALITY_LOSS \
   --opt-model optmization-model.xml \
   --opt-algo-model lambdamart-optimized-model.xml \

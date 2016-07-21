@@ -106,8 +106,8 @@ Training phase - specific options for Line Search:
   --valid-partial <arg>                 set validation file with partial scores (input for loading or output for saving)
 
 Optimization phase - general options:
-  --opt-algo <arg>                      Optimization alghoritm [EPRUNING]
-  --opt-method <arg>                    Optimization method: EPRUNING [RANDOM|LOW_WEIGHTS|SKIP|LAST|QUALITY_LOSS|SCORE_LOSS]
+  --opt-algo <arg>                      Optimization alghoritm [CLEAVER]
+  --opt-method <arg>                    Optimization method: CLEAVER [RANDOM|LOW_WEIGHTS|SKIP|LAST|QUALITY_LOSS|SCORE_LOSS]
   --opt-model <arg>                     set output model file for optimization or input model file for testing
   --opt-algo-model <arg>                set output algorithm model file post optimization
 
@@ -183,7 +183,7 @@ The optimizer can be executed in pipeline with the training phase by setting the
   --model lambdamart-model.xml \
   --train quickranktestdata/msn1/msn1.fold1.train.5k.txt \
   --valid quickranktestdata/msn1/msn1.fold1.vali.5k.txt \
-  --opt-algo EPRUNING \
+  --opt-algo CLEAVER \
   --opt-method QUALITY_LOSS \
   --opt-model optmization-model.xml \
   --opt-algo-model optimized-model.xml \

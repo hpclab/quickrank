@@ -30,7 +30,7 @@ namespace quickrank {
 namespace optimization {
 
 const std::vector<std::string> Optimization::optimizationAlgorithmNames = {
-    "EPRUNING"
+    "CLEAVER"
 };
 
 void Optimization::save(std::string output_basename, int iteration) const {

@@ -37,7 +37,7 @@ namespace optimization {
 namespace post_learning {
 namespace pruning {
 
-const std::string EnsemblePruning::NAME_ = "EPRUNING";
+const std::string EnsemblePruning::NAME_ = "CLEAVER";
 
 const std::vector<std::string> EnsemblePruning::pruningMethodNames = {
     "RANDOM", "LOW_WEIGHTS", "SKIP", "LAST", "QUALITY_LOSS", "SCORE_LOSS"
