@@ -20,7 +20,7 @@
  *  - Salvatore Trani(salvatore.trani@isti.cnr.it)
  */
 
-#include "optimization/post_learning/pruning/last_pruning.h"
+#include "optimization/post_learning/cleaver/last_pruning.h"
 
 namespace quickrank {
 namespace optimization {
@@ -47,7 +47,7 @@ void LastPruning::pruning(std::set<unsigned int> &pruned_estimators,
   }
 }
 
-}  // namespace pruning
+}  // namespace cleaver
 }  // namespace post_learning
 }  // namespace optimization
 }  // namespace quickrank

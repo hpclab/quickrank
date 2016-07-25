@@ -19,38 +19,42 @@
  * Contributors:
  *  - Salvatore Trani(salvatore.trani@isti.cnr.it)
  */
-#pragma once
 
-#include "optimization/post_learning/pruning/cleaver.h"
+#include <numeric>
+
+#include "optimization/post_learning/cleaver/low_weights_pruning.h"
 
 namespace quickrank {
 namespace optimization {
 namespace post_learning {
 namespace pruning {
 
-/// This implements random pruning strategy for pruning ensembles.
-class LowWeightsPruning: public Cleaver {
+/// Returns the pruning method of the algorithm.
+Cleaver::PruningMethod LowWeightsPruning::pruning_method() const {
+  return Cleaver::PruningMethod::LOW_WEIGHTS;
+}
 
- public:
-  LowWeightsPruning(double pruning_rate) : Cleaver(pruning_rate) { };
+bool LowWeightsPruning::line_search_pre_pruning() const {
+  return true;
+}
 
-  LowWeightsPruning(double pruning_rate,
-                    std::shared_ptr<learning::linear::LineSearch> lineSearch) :
-      Cleaver(pruning_rate, lineSearch) { };
+void LowWeightsPruning::pruning(std::set<unsigned int> &pruned_estimators,
+                                std::shared_ptr<data::Dataset> dataset,
+                                std::shared_ptr<metric::ir::Metric> scorer) {
 
-  LowWeightsPruning(const pugi::xml_document &model) :
-      Cleaver(model) { };
+  std::vector<unsigned int> idx(weights_.size());
+  std::iota(idx.begin(), idx.end(), 0);
+  std::sort(idx.begin(), idx.end(),
+            [this](const unsigned int &a, const unsigned int &b) {
+              return this->weights_[a] < this->weights_[b];
+            });
 
-  Cleaver::PruningMethod pruning_method() const;
+  for (unsigned int f = 0; f < estimators_to_prune_; f++) {
+    pruned_estimators.insert(idx[f]);
+  }
+}
 
-  bool line_search_pre_pruning() const;
-
-  void pruning(std::set<unsigned int> &pruned_estimators,
-               std::shared_ptr<data::Dataset> dataset,
-               std::shared_ptr<metric::ir::Metric> scorer);
-};
-
-}  // namespace pruning
+}  // namespace cleaver
 }  // namespace post_learning
 }  // namespace optimization
 }  // namespace quickrank

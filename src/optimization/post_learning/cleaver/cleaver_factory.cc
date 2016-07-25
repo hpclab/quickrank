@@ -19,14 +19,14 @@
 * Contributors:
 *  - Salvatore Trani(salvatore.trani@isti.cnr.it)
 */
-#include "optimization/post_learning/pruning/ensemble_pruning_factory.h"
+#include "optimization/post_learning/cleaver/cleaver_factory.h"
 
-#include "optimization/post_learning/pruning/random_pruning.h"
-#include "optimization/post_learning/pruning/last_pruning.h"
-#include "optimization/post_learning/pruning/skip_pruning.h"
-#include "optimization/post_learning/pruning/score_loss_pruning.h"
-#include "optimization/post_learning/pruning/low_weights_pruning.h"
-#include "optimization/post_learning/pruning/quality_loss_pruning.h"
+#include "optimization/post_learning/cleaver/random_pruning.h"
+#include "optimization/post_learning/cleaver/last_pruning.h"
+#include "optimization/post_learning/cleaver/skip_pruning.h"
+#include "optimization/post_learning/cleaver/score_loss_pruning.h"
+#include "optimization/post_learning/cleaver/low_weights_pruning.h"
+#include "optimization/post_learning/cleaver/quality_loss_pruning.h"
 
 namespace quickrank {
 namespace optimization {

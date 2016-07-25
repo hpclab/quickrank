@@ -48,7 +48,7 @@
 #include "learning/linear/coordinate_ascent.h"
 #include "learning/linear/line_search.h"
 #include "learning/custom/custom_ltr.h"
-#include "optimization/post_learning/pruning/cleaver.h"
+#include "optimization/post_learning/cleaver/cleaver.h"
 
 #include "metric/ir/tndcg.h"
 #include "metric/ir/map.h"

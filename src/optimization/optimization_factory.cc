@@ -21,8 +21,8 @@
  */
 
 #include "optimization/optimization_factory.h"
-#include "optimization/post_learning/pruning/cleaver.h"
-#include "optimization/post_learning/pruning/ensemble_pruning_factory.h"
+#include "optimization/post_learning/cleaver/cleaver.h"
+#include "optimization/post_learning/cleaver/cleaver_factory.h"
 
 namespace quickrank {
 namespace optimization {

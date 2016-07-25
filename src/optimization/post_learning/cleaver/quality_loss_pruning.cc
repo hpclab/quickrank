@@ -22,8 +22,7 @@
 
 #include <numeric>
 
-#include "optimization/post_learning/pruning/score_loss_pruning.h"
-
+#include "optimization/post_learning/cleaver/quality_loss_pruning.h"
 
 namespace quickrank {
 namespace optimization {
@@ -31,42 +30,41 @@ namespace post_learning {
 namespace pruning {
 
 /// Returns the pruning method of the algorithm.
-Cleaver::PruningMethod ScoreLossPruning::pruning_method() const {
-  return Cleaver::PruningMethod::SCORE_LOSS;
+Cleaver::PruningMethod QualityLossPruning::pruning_method() const {
+  return Cleaver::PruningMethod::QUALITY_LOSS;
 }
 
-bool ScoreLossPruning::line_search_pre_pruning() const {
+bool QualityLossPruning::line_search_pre_pruning() const {
   return true;
 }
 
-void ScoreLossPruning::pruning(std::set<unsigned int> &pruned_estimators,
-                               std::shared_ptr<data::Dataset> dataset,
-                               std::shared_ptr<metric::ir::Metric> scorer) {
+void QualityLossPruning::pruning(std::set<unsigned int> &pruned_estimators,
+                                 std::shared_ptr<data::Dataset> dataset,
+                                 std::shared_ptr<metric::ir::Metric> scorer) {
 
   unsigned int num_features = dataset->num_features();
-  unsigned int num_instances = dataset->num_instances();
-  std::vector<Score> feature_scores(num_features, 0);
-  std::vector<Score> instance_scores(num_instances, 0);
 
-  // compute the per instance score
-  this->score(dataset.get(), &instance_scores[0]);
+  std::vector<MetricScore> metric_scores(num_features);
+  std::vector<Score> dataset_score(dataset->num_instances());
 
-  Feature *features = dataset->at(0, 0);
-#pragma omp parallel for
-  for (unsigned int s = 0; s < num_instances; s++) {
-    unsigned int offset_feature = s * num_features;
-    for (unsigned int f = 0; f < num_features; f++) {
-      feature_scores[f] +=
-          weights_[f] * features[offset_feature + f] / instance_scores[s];
-    }
+  for (unsigned int f = 0; f < num_features; f++) {
+    // set the weight of the feature to 0 to simulate its deletion
+    double weight_bkp = weights_[f];
+    weights_[f] = 0;
+
+    score(dataset.get(), &dataset_score[0]);
+    metric_scores[f] = scorer->evaluate_dataset(dataset, &dataset_score[0]);
+
+    // Re set the original weight to the feature
+    weights_[f] = weight_bkp;
   }
 
-  // Find the last feature scores
+  // Find the last metric scores
   std::vector<unsigned int> idx(num_features);
   std::iota(idx.begin(), idx.end(), 0);
   std::sort(idx.begin(), idx.end(),
-            [&feature_scores](const unsigned int &a, const unsigned int &b) {
-              return feature_scores[a] < feature_scores[b];
+            [&metric_scores](const unsigned int &a, const unsigned int &b) {
+              return metric_scores[a] > metric_scores[b];
             });
 
   for (unsigned int f = 0; f < estimators_to_prune_; f++) {
@@ -74,7 +72,7 @@ void ScoreLossPruning::pruning(std::set<unsigned int> &pruned_estimators,
   }
 }
 
-}  // namespace pruning
+}  // namespace cleaver
 }  // namespace post_learning
 }  // namespace optimization
 }  // namespace quickrank

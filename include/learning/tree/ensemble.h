@@ -48,8 +48,7 @@ class Ensemble {
       partial_scores_instance(const quickrank::Feature *d,
                               const size_t offset = 1) const;
 
-  pugi::xml_node append_xml_model(pugi::xml_node parent,
-                                  bool skip_useless_trees = true) const;
+  pugi::xml_node append_xml_model(pugi::xml_node parent) const;
 
   virtual bool update_ensemble_weights(
       std::shared_ptr<std::vector<double>> weights);
@@ -63,10 +62,11 @@ class Ensemble {
           weight(weight),
           maxlabel(maxlabel) {
     }
-    RTNode *root = NULL;
+    RTNode* root = NULL;
     double weight = 0.0;
     float maxlabel = 0.0f;
   };
   size_t size = 0;
-  wt *arr = NULL;
+  size_t capacity = 0;
+  wt* arr = NULL;
 };

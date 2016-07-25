@@ -29,7 +29,7 @@
 #include <io/svml.h>
 #include <sstream>
 
-#include "optimization/post_learning/pruning/cleaver.h"
+#include "optimization/post_learning/cleaver/cleaver.h"
 
 namespace quickrank {
 namespace optimization {
@@ -133,7 +133,7 @@ void Cleaver::optimize(
                                                           &training_score[0]);
 
   std::cout << std::endl;
-  std::cout << "# Without pruning:" << std::endl;
+  std::cout << "# Original model:" << std::endl;
   std::cout << std::fixed << std::setprecision(4);
   std::cout << "# --------------------------" << std::endl;
   std::cout << "#       training validation" << std::endl;
@@ -154,8 +154,8 @@ void Cleaver::optimize(
   if (line_search_pre_pruning()) {
 
     if (!lineSearch_) {
-      throw std::invalid_argument(std::string(
-          "This pruning pruning_method requires line search"));
+      std::cerr << "This pruning method requires line search" << std::endl;
+      exit(1);
     }
 
     if (lineSearch_->get_weights()->empty()) {
@@ -209,7 +209,7 @@ void Cleaver::optimize(
     std::cout << "# LineSearch post-pruning:" << std::endl;
     std::cout << "# --------------------------" << std::endl;
 
-    // On each learn call, line search internally resets the weights vector
+    // On each call to learn, line search internally resets the weights vector
     lineSearch_->learn(filtered_training_dataset, filtered_validation_dataset,
                        metric, 0, std::string());
     std::cout << std::endl;
@@ -266,7 +266,7 @@ pugi::xml_document *Cleaver::get_xml_model() const {
     pugi::xml_node ls_info = ls_model.child("ranker").child("info");
 
     // use the info section of the line search model to add a new node into
-    // the xml of the ensamble pruning model
+    // the xml of the cleaver model
     ls_info.set_name("line-search");
     root.append_copy(ls_info);
   }
@@ -349,7 +349,7 @@ std::shared_ptr<data::Dataset> Cleaver::filter_dataset(
   return std::shared_ptr<data::Dataset>(filt_dataset);
 }
 
-}  // namespace pruning
+}  // namespace cleaver
 }  // namespace post_learning
 }  // namespace optimization
 }  // namespace quickrank

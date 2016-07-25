@@ -62,10 +62,10 @@ int Driver::run(ParamsMap &pmap) {
 
     // If there is the training dataset, it means we have to execute
     // the training phase and/or the optimization phase (at least one of them)
-    if (pmap.count("train") || pmap.count("train-partial")) {
+    if (pmap.isSet("train") || pmap.isSet("train-partial")) {
 
       std::shared_ptr<quickrank::optimization::Optimization> opt_algorithm;
-      if (pmap.count("opt-algo") || pmap.count("opt-model")) {
+      if (pmap.isSet("opt-algo") || pmap.isSet("opt-model")) {
         opt_algorithm = quickrank::optimization::optimization_factory(pmap);
         if (!opt_algorithm) {
           std::cerr << " !! Optimization Algorithm was not set properly"
@@ -84,9 +84,9 @@ int Driver::run(ParamsMap &pmap) {
       size_t partial_save = pmap.get<std::size_t>("partial");
       std::string training_partial_filename;
       std::string validation_partial_filename;
-      if (pmap.count("train-partial"))
+      if (pmap.isSet("train-partial"))
         training_partial_filename = pmap.get<std::string>("train-partial");
-      if (pmap.count("valid-partial"))
+      if (pmap.isSet("valid-partial"))
         validation_partial_filename = pmap.get<std::string>("valid-partial");
 
       std::shared_ptr<quickrank::data::Dataset> training_dataset;
@@ -127,7 +127,7 @@ int Driver::run(ParamsMap &pmap) {
 
       // If the training algorithm has been created from scratch (not loaded
       // from file), we have to run the training phase
-      if (pmap.count("algo")) {
+      if (pmap.isSet("algo")) {
 
         //show ranker parameters
         std::cout << "#" << std::endl << *ranking_algorithm;
@@ -188,7 +188,7 @@ int Driver::run(ParamsMap &pmap) {
 
   // Fast Scoring
   // if the dump files are set, it proceeds to dump the model by following a given strategy.
-  if (pmap.count("dump-model") && pmap.count("dump-code")) {
+  if (pmap.isSet("dump-model") && pmap.isSet("dump-code")) {
     std::string xml_filename = pmap.get<std::string>("dump-model");
     std::string c_filename = pmap.get<std::string>("dump-code");
     std::string model_code_type = pmap.get<std::string>("dump-type");

@@ -133,7 +133,7 @@ class Cleaver: public PostLearningOptimization {
       std::set<unsigned int> &pruned_estimators);
 };
 
-}  // namespace pruning
+}  // namespace cleaver
 }  // namespace post_learning
 }  // namespace optimization
 }  // namespace quickrank

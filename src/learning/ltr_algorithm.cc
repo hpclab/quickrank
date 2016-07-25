@@ -34,7 +34,7 @@
 #include "learning/forests/rankboost.h"
 // Added by Salvatore Trani
 #include "learning/linear/line_search.h"
-#include "optimization/post_learning/pruning/cleaver.h"
+#include "optimization/post_learning/cleaver/cleaver.h"
 
 namespace quickrank {
 namespace learning {
