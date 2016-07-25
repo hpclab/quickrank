@@ -12,6 +12,7 @@ Thumbs.db
 bin
 tests
 build
+_build
 debug
 quickranktestdata
 api-documentation/html

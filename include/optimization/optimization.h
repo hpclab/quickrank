@@ -35,7 +35,7 @@ class Optimization {
  public:
 
   enum class OptimizationAlgorithm {
-    EPRUNING
+    CLEAVER
   };
 
   Optimization() { };
