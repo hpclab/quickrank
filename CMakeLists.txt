@@ -18,13 +18,18 @@ endif()
 find_package(OpenMP REQUIRED)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 
+# explicitly set default CMAKE_CXX_FLAGS_RELEASE options
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+# explicitly set default CMAKE_CXX_FLAGS_DEBUG options
+set(CMAKE_CXX_FLAGS_DEBUG "-g")
+
 # Compiler flags
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -std=c++11 -Wall -march=native -mtune=native -O3 -Wa,-q")
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -std=c++11 -Wall -O0 -g -Wa,-q")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -std=c++11 -Wall -march=native -mtune=native -Wa,-q")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -std=c++11 -Wall -O0 -Wa,-q")
 elseif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -std=c++11 -Wall -march=native -mtune=native -O3 -Wa,-q")
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -std=c++11 -Wall -O0 -g -Wa,-q")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -std=c++11 -Wall -march=native -mtune=native")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -std=c++11 -Wall -O0")
 endif()
 
 # Binary output directory
@@ -47,8 +52,9 @@ file(GLOB_RECURSE unit_tests_sources ${CMAKE_SOURCE_DIR}/catch-unit-tests/*.cc)
 
 # external libraries
 file(GLOB_RECURSE pugixml_sources ${CMAKE_SOURCE_DIR}/lib/pugixml/src/*.cpp)
-add_library(-pugixml STATIC ${pugixml_sources})
-add_library(-quickrank_common STATIC ${all_sources})
+add_library(pugixml STATIC ${pugixml_sources})
+add_library(quickrank_common STATIC ${all_sources})
+target_link_libraries(quickrank_common pugixml)
 
 # managing QuickRank headers and libraries
 file(GLOB_RECURSE all_headers ${CMAKE_SOURCE_DIR}/include/*.h)
@@ -59,14 +65,12 @@ file(GLOB_RECURSE all_headers ${CMAKE_SOURCE_DIR}/lib/paramsmap/*.h)
 # ---------------------------------
 # quicklearn target
 add_executable(quicklearn ${all_headers} ${QUICKLEARN_MAIN})
-target_link_libraries(quicklearn -pugixml)
-target_link_libraries(quicklearn -quickrank_common)
+target_link_libraries(quicklearn quickrank_common)
 
 # ---------------------------------
 # quickscore target
 add_executable(quickscore EXCLUDE_FROM_ALL ${all_headers} ${RANKER_CC} ${QUICKSCORE_MAIN})
-target_link_libraries(quickscore -pugixml)
-target_link_libraries(quickscore -quickrank_common)
+target_link_libraries(quickscore quickrank_common)
 
 # ---------------------------------
 # download test data for unit-testing
@@ -80,8 +84,7 @@ add_custom_target(quickranktestdata DEPENDS ${CMAKE_SOURCE_DIR}/quickranktestdat
 # unit-test target
 add_executable(unit-tests EXCLUDE_FROM_ALL ${all_headers} ${unit_tests_sources})
 add_dependencies(unit-tests quickranktestdata)
-target_link_libraries(unit-tests -pugixml)
-target_link_libraries(unit-tests -quickrank_common)
+target_link_libraries(unit-tests quickrank_common)
 
 # ---------------------------------
 # generate documentation
