@@ -78,7 +78,7 @@ class WeakRanker {
 
   std::ostream &put(std::ostream &os) const {
     os << "# WeakRanker " << feature_id_ << ":" << theta_ << " (" << ")"
-        << std::endl;
+       << std::endl;
     return os;
   }
 

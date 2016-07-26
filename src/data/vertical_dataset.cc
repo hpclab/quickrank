@@ -22,7 +22,6 @@
 #include "data/vertical_dataset.h"
 
 #include <iomanip>
-#include <stdlib.h>
 
 namespace quickrank {
 namespace data {

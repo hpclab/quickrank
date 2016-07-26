@@ -185,7 +185,8 @@ void Cleaver::optimize(
   std::cout << "# Ensemble Pruning:" << std::endl;
   std::cout << "# --------------------------" << std::endl;
   std::cout << "# Removed " << estimators_to_prune_ << " out of "
-      << training_dataset->num_features() << " trees" << std::endl << std::endl;
+            << training_dataset->num_features() << " trees" << std::endl
+            << std::endl;
 
   // Set the weights of the pruned features to 0
   for (unsigned int f: pruned_estimators) {

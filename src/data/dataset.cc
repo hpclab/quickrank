@@ -22,7 +22,6 @@
 #include "data/dataset.h"
 
 #include <iomanip>
-#include <stdlib.h>
 #include <cstring>
 
 namespace quickrank {

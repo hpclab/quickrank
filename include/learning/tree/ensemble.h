@@ -45,8 +45,8 @@ class Ensemble {
                                           const size_t offset = 1) const;
 
   virtual std::shared_ptr<std::vector<quickrank::Score>>
-      partial_scores_instance(const quickrank::Feature *d,
-                              const size_t offset = 1) const;
+  partial_scores_instance(const quickrank::Feature *d,
+                          const size_t offset = 1) const;
 
   pugi::xml_node append_xml_model(pugi::xml_node parent,
                                   bool skip_useless_trees = true) const;

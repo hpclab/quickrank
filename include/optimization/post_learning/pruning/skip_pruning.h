@@ -32,13 +32,13 @@ namespace pruning {
 class SkipPruning: public Cleaver {
 
  public:
-  SkipPruning(double pruning_rate) : Cleaver(pruning_rate) { };
+  SkipPruning(double pruning_rate) : Cleaver(pruning_rate) {};
 
   SkipPruning(double pruning_rate,
               std::shared_ptr<learning::linear::LineSearch> lineSearch) :
-      Cleaver(pruning_rate, lineSearch) { };
+      Cleaver(pruning_rate, lineSearch) {};
 
-  SkipPruning(const pugi::xml_document &model) : Cleaver(model) { };
+  SkipPruning(const pugi::xml_document &model) : Cleaver(model) {};
 
   Cleaver::PruningMethod pruning_method() const;
 

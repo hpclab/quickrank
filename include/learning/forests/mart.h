@@ -134,8 +134,8 @@ class Mart: public LTR_Algorithm {
   virtual void update_modelscores(std::shared_ptr<data::Dataset> dataset,
                                   Score *scores, RegressionTree *tree);
   virtual void
-      update_modelscores(std::shared_ptr<data::VerticalDataset> dataset,
-                         Score *scores, RegressionTree *tree);
+  update_modelscores(std::shared_ptr<data::VerticalDataset> dataset,
+                     Score *scores, RegressionTree *tree);
 
   virtual pugi::xml_document *get_xml_model() const;
 
@@ -154,8 +154,8 @@ class Mart: public LTR_Algorithm {
   size_t nleaves_;  //>0
   size_t minleafsupport_;  //>0
   size_t valid_iterations_;  // If no performance gain on validationdata is
-                          // observed in 'esr' rounds, stop the training
-                          // process right away (if esr==0 feature is disabled).
+  // observed in 'esr' rounds, stop the training
+  // process right away (if esr==0 feature is disabled).
 
   size_t **sortedsid_ = NULL;
   size_t sortedsize_ = 0;

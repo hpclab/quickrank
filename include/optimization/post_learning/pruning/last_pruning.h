@@ -32,13 +32,13 @@ namespace pruning {
 class LastPruning: public Cleaver {
 
  public:
-  LastPruning(double pruning_rate) : Cleaver(pruning_rate) { };
+  LastPruning(double pruning_rate) : Cleaver(pruning_rate) {};
 
   LastPruning(double pruning_rate,
               std::shared_ptr<learning::linear::LineSearch> lineSearch) :
-      Cleaver(pruning_rate, lineSearch) { };
+      Cleaver(pruning_rate, lineSearch) {};
 
-  LastPruning(const pugi::xml_document &model) : Cleaver(model) { };
+  LastPruning(const pugi::xml_document &model) : Cleaver(model) {};
 
   Cleaver::PruningMethod pruning_method() const;
 

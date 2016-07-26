@@ -52,7 +52,7 @@ class Cleaver: public PostLearningOptimization {
   Cleaver(double pruning_rate);
 
   Cleaver(double pruning_rate,
-                  std::shared_ptr<learning::linear::LineSearch> lineSearch);
+          std::shared_ptr<learning::linear::LineSearch> lineSearch);
 
   Cleaver(const pugi::xml_document &model);
 
