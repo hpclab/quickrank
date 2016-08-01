@@ -75,13 +75,16 @@ std::unique_ptr<Jacobian> Ndcg::jacobian(
     for (size_t j = i + 1; j < ranked->num_results(); ++j) {
       // if the score is the same, non changes occur
       if (ranked->sorted_labels()[i] != ranked->sorted_labels()[j]) {
-        //*p_jacobian =
-        jacobian->at(i, j) = (1.0f / log2((double) (j + 2))
-            - 1.0f / log2((double) (i + 2)))
+	if (j<size)
+	  jacobian->at(i, j) = (1.0f / log2((double) (j + 2)) - 1.0f / log2((double) (i + 2)))
             * (pow(2.0, (double) ranked->sorted_labels()[i])
-                - pow(2.0, (double) ranked->sorted_labels()[j])) / idcg;
+	       - pow(2.0, (double) ranked->sorted_labels()[j])) / idcg;
+	else
+	  jacobian->at(i, j) = (- 1.0f / log2((double) (i + 2)) )
+            * (pow(2.0, (double) ranked->sorted_labels()[i])
+	       - pow(2.0, (double) ranked->sorted_labels()[j])) / idcg;
+
       }
-      //p_jacobian++;
     }
   }
 
