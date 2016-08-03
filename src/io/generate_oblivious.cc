@@ -111,8 +111,8 @@ void GenOblivious::model_tree_get_thresholds(pugi::xml_node &split_xml,
       trim(threshold);
       thresholds.push_back(threshold);
     } else if (strcmp(node.name(), "output") == 0) {
-        is_leaf = true;
-        break;
+      is_leaf = true;
+      break;
     } else if (strcmp(node.name(), "split") == 0) {
       std::string pos = node.attribute("pos").as_string();
 
@@ -234,7 +234,8 @@ void GenOblivious::generate_oblivious_code(const std::string model_filename,
 
   // start printing code to output stream...
   // printing ensemble info
-  source_code << "#define N " << actual_model_size << " // no. of trees" << std::endl;
+  source_code << "#define N " << actual_model_size << " // no. of trees"
+              << std::endl;
   source_code << "#define M " << depth << " // max tree depth" << std::endl;
   source_code << "#define F " << max_leaves << " // max number of leaves"
               << std::endl;
