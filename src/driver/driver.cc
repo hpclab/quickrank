@@ -44,7 +44,7 @@ Driver::~Driver() {
 int Driver::run(ParamsMap &pmap) {
 
   if (!pmap.isSet("train") && !pmap.isSet("train-partial") &&
-      !pmap.isSet("test") && !pmap.isSet("dump-type")) {
+      !pmap.isSet("test") && !pmap.isSet("model-file")) {
     std::cout << pmap.help();
     exit(EXIT_FAILURE);
   }
@@ -186,14 +186,14 @@ int Driver::run(ParamsMap &pmap) {
     }
   }
 
-  // Fast Scoring
+  // Code Generation
   // if the dump files are set, it proceeds to dump the model by following a given strategy.
-  if (pmap.count("dump-model") && pmap.count("dump-code")) {
-    std::string xml_filename = pmap.get<std::string>("dump-model");
-    std::string c_filename = pmap.get<std::string>("dump-code");
-    std::string model_code_type = pmap.get<std::string>("dump-type");
+  if (pmap.count("model-file") && pmap.count("code-file")) {
+    std::string xml_filename = pmap.get<std::string>("model-file");
+    std::string c_filename = pmap.get<std::string>("code-file");
+    std::string generator_type = pmap.get<std::string>("generator");
 
-    if (model_code_type == "condop") {
+    if (generator_type == "condop") {
       quickrank::io::GenOpCond conditional_operator_generator;
       std::cout
           << "applying conditional operators strategy for C code generation to: "
@@ -201,12 +201,12 @@ int Driver::run(ParamsMap &pmap) {
       conditional_operator_generator.generate_conditional_operators_code(
           xml_filename,
           c_filename);
-    } else if (model_code_type == "oblivious") {
+    } else if (generator_type == "oblivious") {
       quickrank::io::GenOblivious oblivious_generator;
       std::cout << "applying oblivious strategy for C code generation to: "
                 << xml_filename << std::endl;
       oblivious_generator.generate_oblivious_code(xml_filename, c_filename);
-    } else if (model_code_type == "vpred") {
+    } else if (generator_type == "vpred") {
       quickrank::io::GenVpred vpred_generator;
       std::cout << "generating VPred input file from: " << xml_filename
                 << std::endl;
