@@ -83,7 +83,6 @@ Score CustomLTR::score_document(const quickrank::Feature *d) const {
 }
 
 pugi::xml_document *CustomLTR::get_xml_model() const {
-
   pugi::xml_document *doc = new pugi::xml_document();
   doc->set_name("ranker");
 
