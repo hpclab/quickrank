@@ -160,9 +160,14 @@ int main(int argc, char *argv[]) {
 
   pmap.addOptionWithArg<std::string>("features", {"set features file."});
 
-  pmap.addOptionWithArg<std::string>("model",
-                                     {"set output model file for training",
-                                      "or input model file for testing."});
+  pmap.addOptionWithArg<std::string>("model-in",
+                                     {"set input model file",
+                                     "(for testing, re-training or optimization)"});
+  pmap.addOptionWithArg<std::string>("model-out",
+                                     {"set output model file"});
+  pmap.addOption("skip-train", {"skip training phase."});
+  pmap.addOption("restart-train", {"restart training phase from a previous "
+                                       "trained model."});
 
 
   // --------------------------------------------------------

@@ -51,6 +51,7 @@ int Driver::run(ParamsMap &pmap) {
 
   if (pmap.isSet("train") || pmap.isSet("train-partial") ||
       pmap.isSet("test")) {
+
     std::shared_ptr<quickrank::learning::LTR_Algorithm> ranking_algorithm =
         quickrank::learning::ltr_algorithm_factory(pmap);
     if (!ranking_algorithm) {
@@ -77,7 +78,7 @@ int Driver::run(ParamsMap &pmap) {
       std::string training_filename = pmap.get<std::string>("train");
       std::string validation_filename = pmap.get<std::string>("valid");
       std::string features_filename = pmap.get<std::string>("features");
-      std::string model_filename = pmap.get<std::string>("model");
+      std::string model_filename_out = pmap.get<std::string>("model-out");
       std::string opt_model_filename = pmap.get<std::string>("opt-model");
       std::string opt_algo_model_filename =
           pmap.get<std::string>("opt-algo-model");
@@ -127,7 +128,7 @@ int Driver::run(ParamsMap &pmap) {
 
       // If the training algorithm has been created from scratch (not loaded
       // from file), we have to run the training phase
-      if (pmap.isSet("algo")) {
+      if (pmap.isSet("train") && !pmap.isSet("skip-train")) {
 
         //show ranker parameters
         std::cout << "#" << std::endl << *ranking_algorithm;
@@ -139,7 +140,7 @@ int Driver::run(ParamsMap &pmap) {
                        training_metric,
                        training_dataset,
                        validation_dataset,
-                       model_filename,
+                       model_filename_out,
                        partial_save);
       }
 
@@ -186,8 +187,8 @@ int Driver::run(ParamsMap &pmap) {
     }
   }
 
-  // Fast Scoring
-  // if the dump files are set, it proceeds to dump the model by following a given strategy.
+  // Fast Scoring: if the dump files are set, it proceeds to dump the model by
+  // following a given strategy.
   if (pmap.isSet("dump-model") && pmap.isSet("dump-code")) {
     std::string xml_filename = pmap.get<std::string>("dump-model");
     std::string c_filename = pmap.get<std::string>("dump-code");
@@ -345,7 +346,7 @@ void Driver::testing_phase(
 
       if (!scores_filename.empty()) {
         std::ofstream os;
-        os << std::setprecision(std::numeric_limits<Score>::digits10);
+        os << std::setprecision(std::numeric_limits<Score>::max_digits10);
         os.open(scores_filename, std::fstream::out);
         for (size_t i = 0; i < test_dataset->num_instances(); ++i)
           os << scores[i] << std::endl;

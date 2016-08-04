@@ -272,7 +272,8 @@ void GenOblivious::generate_oblivious_code(const std::string model_filename,
   // print thresholds values
   source_code << "const float thresholds[N][M] = { " << std::endl << '\t';
   source_code
-      << std::setprecision(std::numeric_limits<quickrank::Feature>::digits10);
+      << std::setprecision(
+          std::numeric_limits<quickrank::Feature>::max_digits10);
   for (size_t i = 0; i < thresholds.size(); i++) {
     if (i != 0)
       source_code << "," << std::endl << '\t';

@@ -28,7 +28,16 @@
 class Ensemble {
 
  public:
+  Ensemble() {};
+
+  // move constructor
+  Ensemble(Ensemble&& source);
+
   virtual ~Ensemble();
+
+  // move assignment operator
+  Ensemble& operator=(Ensemble&& other);
+
   void set_capacity(const size_t n);
   void push(RTNode *root, const double weight, const float maxlabel);
   void pop();
@@ -56,17 +65,28 @@ class Ensemble {
   virtual std::shared_ptr<std::vector<double>> get_weights() const;
 
  private:
-  struct wt {
-    wt(RTNode *root, double weight, float maxlabel)
+
+  struct weighted_tree {
+
+    weighted_tree(RTNode *root, double weight, float maxlabel)
         : root(root),
           weight(weight),
-          maxlabel(maxlabel) {
+          maxlabel(maxlabel) { }
+
+    weighted_tree(const weighted_tree& source) {
+      weight = source.weight;
+      maxlabel = source.maxlabel;
+      root = new RTNode(*(source.root));
     }
-    RTNode* root = NULL;
+
+    RTNode* root = nullptr;
     double weight = 0.0;
     float maxlabel = 0.0f;
   };
+
   size_t size = 0;
   size_t capacity = 0;
-  wt* arr = NULL;
+  weighted_tree* arr = nullptr;
+
+  void reset_state();
 };

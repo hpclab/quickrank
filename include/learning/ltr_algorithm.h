@@ -39,13 +39,13 @@ class LTR_Algorithm {
   /// Generates a LTR_Algorithm instance from a previously saved XML model.
   LTR_Algorithm(const pugi::xml_document &model);
 
-  virtual ~LTR_Algorithm() {
-  }
-
   /// Avoid inefficient copy constructor
   LTR_Algorithm(const LTR_Algorithm &other) = delete;
   /// Avoid inefficient copy assignment
   LTR_Algorithm &operator=(const LTR_Algorithm &) = delete;
+
+  virtual ~LTR_Algorithm() {
+  }
 
   /// Returns the name of the ranker.
   virtual std::string name() const = 0;
@@ -98,6 +98,18 @@ class LTR_Algorithm {
   /// \param model_filename The input file name.
   static std::shared_ptr<LTR_Algorithm> load_model_from_file(
       std::string model_filename);
+
+  /// Import the state of the model from a previously trained model object
+  /// (this operation overwrite the current state)
+  /// Default implementation will do nothing (default for non ensemble models).
+  /// WARNING: after the call, the passed LtR algo will be useless
+  /// (inconsistent state).
+  ///
+  /// \param other The model from which to copy the model state
+  /// \return bool indicating if the operation was succesfull
+  virtual bool import_model_state(LTR_Algorithm &other) {
+    return false;
+  };
 
   /// Return the xml model representing the current object
   virtual pugi::xml_document *get_xml_model() const = 0;

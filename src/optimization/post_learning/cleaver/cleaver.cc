@@ -272,7 +272,7 @@ pugi::xml_document *Cleaver::get_xml_model() const {
   }
 
   std::stringstream ss;
-  ss << std::setprecision(std::numeric_limits<float>::digits10);
+  ss << std::setprecision(std::numeric_limits<float>::max_digits10);
 
   pugi::xml_node ensemble = root.append_child("ensemble");
   for (unsigned int i = 0; i < weights_.size(); i++) {

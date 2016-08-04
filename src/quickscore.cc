@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
   if (!scores_file.empty()) {
     std::fstream output;
     output.open(scores_file, std::ofstream::out);
-    output << std::setprecision(std::numeric_limits<double>::digits10);
+    output << std::setprecision(std::numeric_limits<double>::max_digits10);
     for (size_t i = 0; i < dataset->num_instances(); i++) {
       output << scores[i] << std::endl;
     }

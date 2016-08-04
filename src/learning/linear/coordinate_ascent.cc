@@ -283,7 +283,7 @@ pugi::xml_document *CoordinateAscent::get_xml_model() const {
   info.append_child("max-failed-vali").text() = max_failed_vali_;
 
   std::stringstream ss;
-  ss << std::setprecision(std::numeric_limits<double>::digits10);
+  ss << std::setprecision(std::numeric_limits<double>::max_digits10);
 
   pugi::xml_node model = root.append_child("model");
   for (size_t i = 0; i < best_weights_.size(); i++) {

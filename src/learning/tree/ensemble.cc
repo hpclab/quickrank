@@ -24,10 +24,47 @@
 
 #include "learning/tree/ensemble.h"
 
+Ensemble::Ensemble(Ensemble&& other) {
+  size = other.size;
+  capacity = other.capacity;
+  arr = other.arr;
+  // reset source object
+  other.arr = nullptr;
+  other.size = 0;
+  other.capacity = 0;
+}
+
 Ensemble::~Ensemble() {
-  for (size_t i = 0; i < size; ++i)
-    delete arr[i].root;
-  free(arr);
+  if (arr)
+    reset_state();
+}
+
+void Ensemble::reset_state() {
+  if (arr) {
+    for (size_t i = 0; i < size; ++i)
+      delete arr[i].root;
+    free(arr);
+    arr = nullptr;
+  }
+  size = 0;
+  capacity = 0;
+}
+
+Ensemble& Ensemble::operator=(Ensemble&& other) {
+  if(this != &other) {
+    if(arr)
+      reset_state();
+
+    size = other.size;
+    capacity = other.capacity;
+    arr = other.arr;
+    // reset source object
+    other.arr = nullptr;
+    other.size = 0;
+    other.capacity = 0;
+  }
+
+  return *this;
 }
 
 void Ensemble::set_capacity(const size_t n) {
@@ -35,20 +72,20 @@ void Ensemble::set_capacity(const size_t n) {
   if (arr) {
 
     if (n < size) {
-      // We need to call the destructor of the RTNode exceeding the new size
+      // We need to call the destructor for the RTNode exceeding the new size
       for (size_t i = n; i < size; ++i)
         delete arr[i].root;
       size = n;
     }
 
-    arr = (wt*) realloc(arr, sizeof(wt) * n);
+    arr = (weighted_tree*) realloc(arr, sizeof(weighted_tree) * n);
 
   } else {
-    arr = (wt*) malloc(sizeof(wt) * n);
+    arr = (weighted_tree*) malloc(sizeof(weighted_tree) * n);
     size = 0;
   }
 
-  if (arr == NULL) {
+  if (arr == nullptr) {
     free (arr);
     std::cerr << "Error (re)allocating ensemble memory";
     exit(1);
@@ -63,7 +100,7 @@ void Ensemble::push(RTNode *root, const double weight, const float maxlabel) {
     exit(1);
   }
 
-  arr[size++] = wt(root, weight, maxlabel);
+  arr[size++] = weighted_tree(root, weight, maxlabel);
 }
 
 void Ensemble::pop() {

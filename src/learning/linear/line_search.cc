@@ -403,7 +403,7 @@ pugi::xml_document *LineSearch::get_xml_model() const {
   info.append_child("train-only-last").text() = train_only_last_;
 
   std::stringstream ss;
-  ss << std::setprecision(std::numeric_limits<double>::digits10);
+  ss << std::setprecision(std::numeric_limits<double>::max_digits10);
 
   pugi::xml_node ensemble = root.append_child("ensemble");
   for (unsigned int i = 0; i < best_weights_.size(); i++) {

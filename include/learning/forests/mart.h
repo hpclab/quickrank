@@ -55,8 +55,7 @@ class Mart: public LTR_Algorithm {
   /// Generates a LTR_Algorithm instance from a previously saved XML model.
   Mart(const pugi::xml_document &model);
 
-  virtual ~Mart() {
-  }
+  virtual ~Mart();
 
   /// Start the learning process.
   virtual void learn(std::shared_ptr<data::Dataset> training_dataset,
@@ -108,7 +107,7 @@ class Mart: public LTR_Algorithm {
 
   /// Prepares private data structures before training takes place.
   virtual void init(std::shared_ptr<data::VerticalDataset> training_dataset);
-
+  
   /// De-allocates private data structure after training has taken place.
   virtual void clear(size_t num_features);
 
@@ -139,6 +138,8 @@ class Mart: public LTR_Algorithm {
 
   virtual pugi::xml_document *get_xml_model() const;
 
+  virtual bool import_model_state(LTR_Algorithm &other);
+
  protected:
   float **thresholds_ = NULL;
   size_t *thresholds_size_ = NULL;
@@ -153,7 +154,7 @@ class Mart: public LTR_Algorithm {
   size_t nthresholds_;  //if ==0 then no. of thresholds is not limited
   size_t nleaves_;  //>0
   size_t minleafsupport_;  //>0
-  size_t valid_iterations_;  // If no performance gain on validationdata is
+  size_t valid_iterations_;  // If no performance gain on validation data is
                           // observed in 'esr' rounds, stop the training
                           // process right away (if esr==0 feature is disabled).
 
