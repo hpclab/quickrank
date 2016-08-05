@@ -48,16 +48,13 @@ std::shared_ptr<learning::linear::LineSearch> linesearch_opt_factory(
       // We have to create an empty model
       lineSearch = std::shared_ptr<learning::linear::LineSearch>(
           new quickrank::learning::linear::LineSearch(
-              pmap.get < unsigned
-      int > ("num-samples"),
-          pmap.get<double>("window-size"),
-          pmap.get<double>("reduction-factor"),
-          pmap.get < unsigned
-      int > ("max-iterations"),
-          pmap.get < unsigned
-      int > ("max-failed-valid"),
-          pmap.isSet("adaptive")
-      ));
+              pmap.get <unsigned int> ("num-samples"),
+              pmap.get<double>("window-size"),
+              pmap.get<double>("reduction-factor"),
+              pmap.get <unsigned int> ("max-iterations"),
+              pmap.get <unsigned int> ("max-failed-valid"),
+              pmap.isSet("adaptive")
+          ));
     }
   }
 
@@ -85,8 +82,9 @@ std::shared_ptr<quickrank::optimization::Optimization> optimization_factory(
               lineSearch
           );
     }
-  } else if (pmap.isSet("opt_model")) {
-    std::string opt_model = pmap.get<std::string>("opt_model");
+  } else if (pmap.isSet("opt-model")) {
+    std::string opt_model = pmap.get<std::string>("opt-model");
+
 
     optimizer =
         quickrank::optimization::Optimization::load_model_from_file(opt_model);

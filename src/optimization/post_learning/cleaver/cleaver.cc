@@ -61,6 +61,20 @@ Cleaver::Cleaver(const pugi::xml_document &model) {
   pruning_rate_ = model_info.child("pruning-rate").text().as_double();
 
   // TODO: read the line search parameters if available in the xml
+  model.child("optimizer").child("info").set_name("old-info");
+
+  // modify the model in order to create line search model from xml
+  model.child("optimizer").remove_child("info");
+  model.child("optimizer").child("line-search").set_name("info");
+  model.child("optimizer").set_name("ranker");
+
+  lineSearch_ = std::shared_ptr<learning::linear::LineSearch>(
+      new learning::linear::LineSearch(model));
+
+  // revert modification
+  model.child("ranker").remove_child("optimizer");
+  model.child("optimizer").child("info").set_name("line-search");
+  model.child("optimizer").child("old-info").set_name("info");
 
   unsigned int max_feature = 0;
   for (const auto &couple: model_tree.children()) {
@@ -85,6 +99,46 @@ Cleaver::Cleaver(const pugi::xml_document &model) {
     }
   }
 }
+
+pugi::xml_document *Cleaver::get_xml_model() const {
+
+  pugi::xml_document *doc = new pugi::xml_document();
+  pugi::xml_node root = doc->append_child("optimizer");
+
+  pugi::xml_node info = root.append_child("info");
+
+  info.append_child("opt-algo").text() = name().c_str();
+  info.append_child("opt-method").text() =
+      getPruningMethod(pruning_method()).c_str();
+  info.append_child("pruning-rate").text() = pruning_rate_;
+
+  if (lineSearch_) {
+    pugi::xml_document &ls_model = *lineSearch_->get_xml_model();
+    pugi::xml_node ls_info = ls_model.child("ranker").child("info");
+
+    // use the info section of the line search model to add a new node into
+    // the xml of the cleaver model
+    ls_info.set_name("line-search");
+    root.append_copy(ls_info);
+  }
+
+  std::stringstream ss;
+  ss << std::setprecision(std::numeric_limits<float>::max_digits10);
+
+  pugi::xml_node ensemble = root.append_child("ensemble");
+  for (unsigned int i = 0; i < weights_.size(); i++) {
+    pugi::xml_node tree = ensemble.append_child("tree");
+    tree.append_child("index").text() = i + 1;
+
+    ss << weights_[i];
+    tree.append_child("weight").text() = ss.str().c_str();
+    // reset ss
+    ss.str(std::string());
+  }
+
+  return doc;
+}
+
 
 std::ostream &Cleaver::put(std::ostream &os) const {
   os << "# Optimizer: " << name() << std::endl
@@ -247,45 +301,6 @@ void Cleaver::optimize(
   std::cout << std::endl;
   std::cout << "# \t Total training time: " << std::setprecision(2) <<
             elapsed.count() << " seconds" << std::endl;
-}
-
-pugi::xml_document *Cleaver::get_xml_model() const {
-
-  pugi::xml_document *doc = new pugi::xml_document();
-  pugi::xml_node root = doc->append_child("optimizer");
-
-  pugi::xml_node info = root.append_child("info");
-
-  info.append_child("opt-algo").text() = name().c_str();
-  info.append_child("opt-method").text() =
-      getPruningMethod(pruning_method()).c_str();
-  info.append_child("pruning-rate").text() = pruning_rate_;
-
-  if (lineSearch_) {
-    pugi::xml_document &ls_model = *lineSearch_->get_xml_model();
-    pugi::xml_node ls_info = ls_model.child("ranker").child("info");
-
-    // use the info section of the line search model to add a new node into
-    // the xml of the cleaver model
-    ls_info.set_name("line-search");
-    root.append_copy(ls_info);
-  }
-
-  std::stringstream ss;
-  ss << std::setprecision(std::numeric_limits<float>::max_digits10);
-
-  pugi::xml_node ensemble = root.append_child("ensemble");
-  for (unsigned int i = 0; i < weights_.size(); i++) {
-    pugi::xml_node tree = ensemble.append_child("tree");
-    tree.append_child("index").text() = i + 1;
-
-    ss << weights_[i];
-    tree.append_child("weight").text() = ss.str().c_str();
-    // reset ss
-    ss.str(std::string());
-  }
-
-  return doc;
 }
 
 void Cleaver::score(data::Dataset *dataset, Score *scores) const {
