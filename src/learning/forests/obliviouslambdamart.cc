@@ -84,6 +84,25 @@ pugi::xml_document *ObliviousLambdaMart::get_xml_model() const {
   return doc;
 }
 
+bool ObliviousLambdaMart::import_model_state(LTR_Algorithm &other) {
+
+  // Check the object is derived from Mart
+  try
+  {
+    ObliviousLambdaMart& otherCast = dynamic_cast<ObliviousLambdaMart&>(other);
+
+    if (treedepth_ != otherCast.treedepth_)
+      return false;
+
+    // Call the super method in Mart
+    return Mart::import_model_state(other);
+  }
+  catch(std::bad_cast)
+  {
+    return false;
+  }
+}
+
 }  // namespace forests
 }  // namespace learning
 }  // namespace quickrank

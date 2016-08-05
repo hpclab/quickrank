@@ -126,6 +126,7 @@ RTNodeHistogram::~RTNodeHistogram() {
   for (size_t i = 0; i < nfeatures; ++i) {
     delete[] sumlbl[i];
     delete[] count[i];
+
   }
   delete[] sumlbl;
   delete[] count;

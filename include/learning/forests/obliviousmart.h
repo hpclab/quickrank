@@ -59,6 +59,8 @@ class ObliviousMart: public Mart {
     return NAME_;
   }
 
+  virtual bool import_model_state(LTR_Algorithm &other);
+
   static const std::string NAME_;
 
  protected:

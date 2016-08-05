@@ -106,8 +106,6 @@ class RTNode {
             / (double) hist->count[0][hist->thresholds_size[0] - 1];
   }
 
-  RTNode(const RTNode& source);
-
   ~RTNode() {
     if (left)
       delete left;

@@ -75,23 +75,6 @@ pugi::xml_node RTNode::append_xml_model(pugi::xml_node parent,
   return split;
 }
 
-RTNode::RTNode(const RTNode& source) {
-  nsampleids = source.nsampleids;
-  threshold = source.threshold;
-  deviance = source.deviance;
-  avglabel = source.avglabel;
-
-  sampleids = new size_t[nsampleids];
-  for (unsigned int i=0; i<nsampleids; ++i) {
-    sampleids[i] = source.sampleids[i];
-  }
-
-  left = new RTNode(*(source.left));
-  right = new RTNode(*(source.right));
-
-  hist = new RTNodeHistogram(*(source.hist));
-}
-
 RTNode *RTNode::parse_xml(const pugi::xml_node &split_xml) {
   RTNode *model_node = NULL;
   RTNode *left_child = NULL;

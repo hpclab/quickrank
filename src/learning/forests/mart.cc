@@ -410,8 +410,6 @@ bool Mart::import_model_state(LTR_Algorithm &other) {
   {
     Mart& otherCast = dynamic_cast<Mart&>(other);
 
-    std::cout << std::abs(shrinkage_ - otherCast.shrinkage_) << std::endl;
-
     if (std::abs(shrinkage_ - otherCast.shrinkage_) > 0.000001 ||
         nthresholds_ != otherCast.nthresholds_ ||
         nleaves_ != otherCast.nleaves_ ||
