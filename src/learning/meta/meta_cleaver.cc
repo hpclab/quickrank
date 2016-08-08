@@ -106,7 +106,7 @@ pugi::xml_document* MetaCleaver::get_xml_model() const {
 std::ostream &MetaCleaver::put(std::ostream &os) const {
   os << "# Meta Ranker: " << name() << std::endl
      << "# max no. of trees = " << ntrees_ << std::endl
-     << "# no. of tree per iter = " << ntrees_per_iter_ << std::endl
+     << "# no. of trees per iter = " << ntrees_per_iter_ << std::endl
      << "# pruning rate per iter = " << cleaver_->get_pruning_rate() <<std::endl
      << "# line search last trees only = " << line_search_last_only_
      << std::endl << std::endl << *ltr_algo_ << std::endl << *cleaver_;
@@ -134,7 +134,7 @@ void MetaCleaver::learn(std::shared_ptr<quickrank::data::Dataset> training_datas
   size_t last_ensemble_size;
   unsigned int iter = 0;
   do {
-    // Suppress output from cleaver and line_search
+    // Suppress output from cleaver and line_search. Print only summary of iter
     if (!verbose_)
       std::cout.setstate(std::ios_base::failbit);
 
@@ -184,14 +184,16 @@ void MetaCleaver::learn(std::shared_ptr<quickrank::data::Dataset> training_datas
 //    }
 
     cleaver_->update_weights(ltr_weights);
-    // Reset the weights of the line search model in order to force it to
-    // not reuse the learned weights from the previous iteration but use the
-    // current weights of the cleaver model
-    cleaver_->get_line_search()->reset_weights();
+    if (cleaver_->get_line_search()) {
+      // Reset the weights of the line search model in order to force it to
+      // not reuse the learned weights from the previous iteration but use the
+      // current weights of the cleaver model
+      cleaver_->get_line_search()->reset_weights();
 
-    // Set to execute the line search only on the last learned trees
-    if (line_search_last_only_)
-      cleaver_->get_line_search()->set_last_only(diff_ensemble_size);
+      // Set to execute the line search only on the last learned trees
+      if (line_search_last_only_)
+        cleaver_->get_line_search()->set_last_only(diff_ensemble_size);
+    }
 
     // run the optimization process
     cleaver_->optimize(
@@ -213,6 +215,7 @@ void MetaCleaver::learn(std::shared_ptr<quickrank::data::Dataset> training_datas
               << "# ---------------------------------------------"
               << std::endl << std::endl;
 
+    // check if we have to print only the summary of each iteration
     if (!verbose_) {
       // Reset the stream state to print again
       std::cout.clear();

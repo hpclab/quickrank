@@ -100,7 +100,7 @@ void Mart::init(
   scores_on_training_ = new double[nentries]();  //0.0f initialized
   pseudoresponses_ = new double[nentries]();  //0.0f initialized
   const size_t nfeatures = training_dataset->num_features();
-  sortedsid_ = new size_t *[nfeatures];
+  sortedsid_ = new size_t * [nfeatures];
   sortedsize_ = nentries;
 
 #pragma omp parallel for
@@ -126,8 +126,7 @@ void Mart::init(
     uniqs[uniqs_size++] = features[idx[0]];
     for (size_t j = 1;
          j < sortedsize_
-             && (nthresholds_ == 0 || uniqs_size != nthresholds_ + 1);
-         ++j) {
+             && (nthresholds_ == 0 || uniqs_size != nthresholds_ + 1); ++j) {
       const float fval = features[idx[j]];
       if (uniqs[uniqs_size - 1] < fval)
         uniqs[uniqs_size++] = fval;
@@ -174,7 +173,18 @@ void Mart::clear(size_t num_features) {
       delete[] sortedsid_[i];
       free(thresholds_[i]);
     }
+    delete[] sortedsid_;
+    delete[] thresholds_;
   }
+
+  // Reset pointers to internal data structures
+  scores_on_training_ = NULL;
+  scores_on_validation_ = NULL;
+  pseudoresponses_ = NULL;
+  thresholds_size_ = NULL;
+  sortedsid_ = NULL;
+  thresholds_ = NULL;
+  hist_ = NULL;
 }
 
 void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
@@ -192,19 +202,21 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   std::shared_ptr<quickrank::data::VerticalDataset> vertical_training(
       new quickrank::data::VerticalDataset(training_dataset));
 
+  best_metric_on_validation_ = 0.0;
+  best_metric_on_training_ = 0.0;
+  validation_bestmodel_ = 0;
+
+  ensemble_model_.set_capacity(ntrees_);
+
   init(vertical_training);
 
   if (validation_dataset) {
     scores_on_validation_ = new Score[validation_dataset->num_instances()]();
   }
 
-  best_metric_on_validation_ = 0.0;
-  best_metric_on_training_ = 0.0;
-  ensemble_model_.set_capacity(ntrees_);
-
   // if the ensemble size is greater than zero, it means the learn method has
   // to start not from scratch but from a previously saved (intermediate) model
-  if (ensemble_model_.get_size() > 0) {
+  if (ensemble_model_.is_notempty()) {
     validation_bestmodel_ = ensemble_model_.get_size() - 1;
 
     // Update the model's outputs on all training samples
@@ -249,8 +261,7 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   // start iterations from 0 or (ensemble_size - 1)
   for (size_t m = ensemble_model_.get_size(); m < ntrees_; ++m) {
     if (validation_dataset
-        && (valid_iterations_ != 0
-            && m > validation_bestmodel_ + valid_iterations_))
+        && (valid_iterations_ && m > validation_bestmodel_ + valid_iterations_))
       break;
 
     compute_pseudoresponses(vertical_training, scorer.get());
