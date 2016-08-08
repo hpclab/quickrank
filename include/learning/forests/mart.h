@@ -137,9 +137,8 @@ class Mart: public LTR_Algorithm {
   /// \param tree Last regression tree leartn.
   virtual void update_modelscores(std::shared_ptr<data::Dataset> dataset,
                                   Score *scores, RegressionTree *tree);
-  virtual void
-      update_modelscores(std::shared_ptr<data::VerticalDataset> dataset,
-                         Score *scores, RegressionTree *tree);
+  virtual void update_modelscores(std::shared_ptr<data::VerticalDataset> dataset,
+                                  Score *scores, RegressionTree *tree);
 
   virtual pugi::xml_document *get_xml_model() const;
 

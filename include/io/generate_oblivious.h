@@ -56,7 +56,7 @@ class GenOblivious {
  private:
   void model_tree_get_leaves(pugi::xml_node &, std::vector<std::string> &);
   void
-      model_tree_get_feature_ids(pugi::xml_node &, std::vector<unsigned int> &);
+  model_tree_get_feature_ids(pugi::xml_node &, std::vector<unsigned int> &);
   void model_tree_get_thresholds(pugi::xml_node &, std::vector<std::string> &);
 };
 

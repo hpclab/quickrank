@@ -67,11 +67,14 @@ void GenOblivious::model_tree_get_feature_ids(pugi::xml_node &split_xml,
   unsigned int feature_id;
   bool is_leaf = false;
   pugi::xml_node left;
-  pugi::xml_node right;
+  //pugi::xml_node right;
 
   for (pugi::xml_node &node : split_xml.children()) {
     if (strcmp(node.name(), "feature") == 0) {
       feature_id = node.text().as_uint();
+      // decreasing by 1 to remap features to zero
+      features.push_back(feature_id - 1);
+    } else if (strcmp(node.name(), "output") == 0) {
       is_leaf = true;
       break;
     } else if (strcmp(node.name(), "split") == 0) {
@@ -81,16 +84,17 @@ void GenOblivious::model_tree_get_feature_ids(pugi::xml_node &split_xml,
         left = node;
       }
       if (pos == "right") {
-        right = node;
+        // not needed, simmetric trees...
+        //right = node;
       }
     }
   }
 
   if (is_leaf)
-    features.push_back(feature_id);
+    return;
   else {
     model_tree_get_feature_ids(left, features);
-    model_tree_get_feature_ids(right, features);
+    //model_tree_get_feature_ids(right, features);
   }
 }
 
@@ -99,12 +103,14 @@ void GenOblivious::model_tree_get_thresholds(pugi::xml_node &split_xml,
   std::string threshold;
   bool is_leaf = false;
   pugi::xml_node left;
-  pugi::xml_node right;
+  //pugi::xml_node right;
 
   for (pugi::xml_node &node : split_xml.children()) {
     if (strcmp(node.name(), "threshold") == 0) {
       threshold = node.text().as_string();
       trim(threshold);
+      thresholds.push_back(threshold);
+    } else if (strcmp(node.name(), "output") == 0) {
       is_leaf = true;
       break;
     } else if (strcmp(node.name(), "split") == 0) {
@@ -114,16 +120,17 @@ void GenOblivious::model_tree_get_thresholds(pugi::xml_node &split_xml,
         left = node;
       }
       if (pos == "right") {
-        right = node;
+        // not needed, simmetric trees...
+        //right = node;
       }
     }
   }
 
   if (is_leaf)
-    thresholds.push_back(threshold);
+    return;
   else {
     model_tree_get_thresholds(left, thresholds);
-    model_tree_get_thresholds(right, thresholds);
+    //model_tree_get_thresholds(right, thresholds);
   }
 }
 
@@ -145,16 +152,11 @@ void GenOblivious::generate_oblivious_code(const std::string model_filename,
   // let's navigate the ensemble, for each tree...
   pugi::xml_node ranker = xml_document.child("ranker");
   pugi::xml_node info = ranker.child("info");
-  unsigned int trees = info.child("trees").text().as_uint();
+  // trees below not used as it can report a bigger number of trees
+  // in case we are using intermediate XML model dump files...
+  //unsigned int trees = info.child("trees").text().as_uint();
   unsigned int depth = info.child("depth").text().as_uint();
   unsigned int max_leaves = 1 << depth;
-
-  // printing ensemble info
-  source_code << "#define N " << trees << " // no. of trees" << std::endl;
-  source_code << "#define M " << depth << " // max tree depth" << std::endl;
-  source_code << "#define F " << max_leaves << " // max number of leaves"
-              << std::endl;
-  source_code << std::endl;
 
   pugi::xml_node ensemble = ranker.child("ensemble");
 
@@ -166,7 +168,7 @@ void GenOblivious::generate_oblivious_code(const std::string model_filename,
 
   // loading tree depths
   std::vector<int> tree_depths;
-  for (pugi::xml_node &tree : ensemble.children("tree")) {
+  for (pugi::xml_node tree : ensemble.children("tree")) {
     int curr_depth = 0;
     auto splits_in_tree = tree.children("split");
     int size = std::distance(splits_in_tree.begin(), splits_in_tree.end());
@@ -179,32 +181,34 @@ void GenOblivious::generate_oblivious_code(const std::string model_filename,
     tree_depths.push_back(curr_depth);
   }
 
+  int actual_model_size = tree_depths.size();
+
   // load leaf outputs
-  std::vector<std::vector<std::string>> tree_outputs(trees);
+  std::vector<std::vector<std::string>> tree_outputs(actual_model_size);
   unsigned int curr_tree = 0;
-  for (pugi::xml_node &tree : ensemble.children("tree")) {
+  for (pugi::xml_node tree : ensemble.children("tree")) {
     pugi::xml_node root = tree.child("split");
     model_tree_get_leaves(root, tree_outputs[curr_tree++]);
   }
 
   // load features ids
   curr_tree = 0;
-  std::vector<std::vector<unsigned int>> feature_ids(trees);
-  for (pugi::xml_node &tree : ensemble.children("tree")) {
-    pugi::xml_node root = tree;
+  std::vector<std::vector<unsigned int>> feature_ids(actual_model_size);
+  for (pugi::xml_node tree : ensemble.children("tree")) {
+    pugi::xml_node root = tree.child("split");
     model_tree_get_feature_ids(root, feature_ids[curr_tree++]);
   }
 
   // load thresholds values
   curr_tree = 0;
-  std::vector<std::vector<std::string>> thresholds(trees);
-  for (pugi::xml_node &tree : ensemble.children("tree")) {
+  std::vector<std::vector<std::string>> thresholds(actual_model_size);
+  for (pugi::xml_node tree : ensemble.children("tree")) {
     pugi::xml_node root = tree.child("split");
     model_tree_get_thresholds(root, thresholds[curr_tree++]);
   }
 
   // mapping of trees in sorted order by depths
-  std::vector<size_t> tree_mapping(trees);
+  std::vector<size_t> tree_mapping(tree_depths.size());
   std::iota(tree_mapping.begin(), tree_mapping.end(), 0);
   std::sort(tree_mapping.begin(), tree_mapping.end(),
             [&tree_depths](int a, int b) {
@@ -212,21 +216,30 @@ void GenOblivious::generate_oblivious_code(const std::string model_filename,
             });
 
   // number of trees for each depth
-  std::vector<size_t> depths_pupolation;
+  std::vector<size_t> depths_population;
   int max_depth = tree_depths[tree_mapping.back()];
 
   int curr_depth = 1;
   size_t start_position = 0;
   for (size_t i = 0; i < tree_mapping.size(); i++) {
     while (tree_depths[tree_mapping[i]] > curr_depth) {
-      depths_pupolation.push_back(i - start_position);
+      depths_population.push_back(i - start_position);
       curr_depth++;
       start_position = i;
     }
     if (curr_depth == max_depth)
       break;
   }
-  depths_pupolation.push_back(tree_mapping.size() - start_position);
+  depths_population.push_back(tree_mapping.size() - start_position);
+
+  // start printing code to output stream...
+  // printing ensemble info
+  source_code << "#define N " << actual_model_size << " // no. of trees"
+              << std::endl;
+  source_code << "#define M " << depth << " // max tree depth" << std::endl;
+  source_code << "#define F " << max_leaves << " // max number of leaves"
+              << std::endl;
+  source_code << std::endl;
 
   // print tree weights
   source_code.setf(std::ios::floatfield, std::ios::fixed);
@@ -300,7 +313,7 @@ void GenOblivious::generate_oblivious_code(const std::string model_filename,
               << "  double score = 0.0;" << std::endl << "  int i = 0;"
               << std::endl;
   for (int d = 0; d < max_depth; d++) {
-    source_code << "  for (int j = 0; j < " << depths_pupolation[d]
+    source_code << "  for (int j = 0; j < " << depths_population[d]
                 << "; ++j) {" << std::endl;
     source_code
         << "    score += tree_weights[i] * leaf_outputs[i][leaf_id(v, features_ids[i], thresholds[i], "

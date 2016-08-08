@@ -2,7 +2,7 @@
 # GNU C++ COMPILER OPTION (on Mac OS X, brew): -DCMAKE_CXX_COMPILER=/usr/local/bin/g++-5
 # BUILD TYPE: -DCMAKE_BUILD_TYPE=[Release|Debug]
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.12)
 project(QUICKRANK CXX)
 
 # require support of C++11

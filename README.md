@@ -47,8 +47,8 @@ The Makefile generator can build the project in only one configuration, so you n
 
 ```
 cmake .. \
--D CMAKE_CXX_COMPILER=/usr/local/bin/g++-5 \
--D CMAKE_BUILD_TYPE=Release
+-DCMAKE_CXX_COMPILER=/usr/local/bin/g++-5 \
+-DCMAKE_BUILD_TYPE=Release
 ```
 Finally to compile Quickrank:
 

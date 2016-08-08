@@ -225,11 +225,13 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     best_metric_on_training_ = scorer->evaluate_dataset(
         vertical_training, scores_on_training_);
 
-    // Update the model's outputs on all validation samples
-    score_dataset(validation_dataset, scores_on_validation_);
-    // run metric
-    best_metric_on_validation_ = scorer->evaluate_dataset(
-        validation_dataset, scores_on_validation_);
+    if (validation_dataset) {
+      // Update the model's outputs on all validation samples
+      score_dataset(validation_dataset, scores_on_validation_);
+      // run metric
+      best_metric_on_validation_ = scorer->evaluate_dataset(
+          validation_dataset, scores_on_validation_);
+    }
   }
 
   auto chrono_init_end = std::chrono::high_resolution_clock::now();

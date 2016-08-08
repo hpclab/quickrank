@@ -21,13 +21,13 @@
  */
 #include "learning/linear/line_search.h"
 
+#include <chrono>
+#include <sstream>
+#include <cstring>
 #include <fstream>
 #include <iomanip>
-#include <chrono>
 #include <numeric>
 #include "utils/strutils.h"
-
-#include <boost/property_tree/xml_parser.hpp>
 
 namespace quickrank {
 namespace learning {
