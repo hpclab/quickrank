@@ -34,12 +34,20 @@ namespace post_learning {
 namespace pruning {
 
 std::shared_ptr<quickrank::optimization::Optimization> create_pruner(
-    const pugi::xml_document &model) {
+    const pugi::xml_document& model) {
 
   pugi::xml_node model_info = model.child("optimizer").child("info");
 
   std::string pruningMethodName =
       model_info.child("opt-method").text().as_string();
+
+  if (pruningMethodName.empty()) {
+    std::cerr << "Unable to find the name of the optimization method inside "
+        "the xml." << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+
   Cleaver::PruningMethod pruningMethod =
       Cleaver::getPruningMethod(pruningMethodName);
 

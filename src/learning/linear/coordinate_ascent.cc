@@ -255,14 +255,13 @@ Score CoordinateAscent::score_document(const Feature *d) const {
   return score;
 }
 
-bool CoordinateAscent::update_weights(
-    std::shared_ptr<std::vector<double>> weights) {
+bool CoordinateAscent::update_weights(std::vector<double>& weights) {
 
-  if (weights->size() != best_weights_.size())
+  if (weights.size() != best_weights_.size())
     return false;
 
-  for (size_t k = 0; k < weights->size(); k++) {
-    best_weights_[k] = (*weights)[k];
+  for (size_t k = 0; k < weights.size(); k++) {
+    best_weights_[k] = weights[k];
   }
 
   return true;

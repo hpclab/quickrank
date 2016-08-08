@@ -198,8 +198,8 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     scores_on_validation_ = new Score[validation_dataset->num_instances()]();
   }
 
-  quickrank::MetricScore best_metric_on_validation = 0.0;
-  quickrank::MetricScore best_metric_on_training = 0.0;
+  best_metric_on_validation_ = 0.0;
+  best_metric_on_training_ = 0.0;
   ensemble_model_.set_capacity(ntrees_);
 
   // if the ensemble size is greater than zero, it means the learn method has
@@ -210,13 +210,13 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     // Update the model's outputs on all training samples
     score_dataset(training_dataset, scores_on_training_);
     // run metric
-    best_metric_on_training = scorer->evaluate_dataset(
+    best_metric_on_training_ = scorer->evaluate_dataset(
         vertical_training, scores_on_training_);
 
     // Update the model's outputs on all validation samples
     score_dataset(validation_dataset, scores_on_validation_);
     // run metric
-    best_metric_on_validation = scorer->evaluate_dataset(
+    best_metric_on_validation_ = scorer->evaluate_dataset(
         validation_dataset, scores_on_validation_);
   }
 
@@ -236,10 +236,10 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   // shows the performance of the already trained model..
   if (ensemble_model_.is_notempty()) {
     std::cout << std::setw(7) << ensemble_model_.get_size()
-              << std::setw(9) << best_metric_on_training;
+              << std::setw(9) << best_metric_on_training_;
 
     if (validation_dataset)
-      std::cout << std::setw(9) << best_metric_on_validation << " *";
+      std::cout << std::setw(9) << best_metric_on_validation_ << " *";
 
     std::cout << std::endl;
   }
@@ -284,15 +284,15 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
           validation_dataset, scores_on_validation_);
       std::cout << std::setw(9) << metric_on_validation;
 
-      if (metric_on_validation > best_metric_on_validation
-          || best_metric_on_validation == 0.0f) {
-        best_metric_on_training = metric_on_training;
-        best_metric_on_validation = metric_on_validation;
+      if (metric_on_validation > best_metric_on_validation_
+          || best_metric_on_validation_ == 0.0f) {
+        best_metric_on_training_ = metric_on_training;
+        best_metric_on_validation_ = metric_on_validation;
         validation_bestmodel_ = ensemble_model_.get_size() - 1;
         std::cout << " *";
       }
     } else {
-      best_metric_on_training = metric_on_training;
+      best_metric_on_training_ = metric_on_training;
     }
     std::cout << std::endl;
 
@@ -314,12 +314,12 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
 
   //Finishing up
   std::cout << std::endl;
-  std::cout << *scorer << " on training data = " << best_metric_on_training
+  std::cout << *scorer << " on training data = " << best_metric_on_training_
             << std::endl;
 
   if (validation_dataset) {
     std::cout << *scorer << " on validation data = "
-              << best_metric_on_validation << std::endl;
+              << best_metric_on_validation_ << std::endl;
   }
 
   clear(vertical_training->num_features());
@@ -429,7 +429,7 @@ bool Mart::import_model_state(LTR_Algorithm &other) {
   return true;
 }
 
-bool Mart::update_weights(std::shared_ptr<std::vector<double>> weights) {
+bool Mart::update_weights(std::vector<double>& weights) {
   return ensemble_model_.update_ensemble_weights(weights);
 }
 

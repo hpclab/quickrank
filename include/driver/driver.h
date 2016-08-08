@@ -51,6 +51,11 @@ class Driver {
   /// \param, vm The Variable mapping of CLI options (boost object)
   static int run(ParamsMap &pmap);
 
+  static std::shared_ptr<data::Dataset> extract_partial_scores(
+      std::shared_ptr<learning::LTR_Algorithm> algo,
+      std::shared_ptr<data::Dataset> dataset,
+      bool ignore_weights = false);
+
  private:
   /// Runs train/validation of \a algo by optimizing \a train_metric
   /// and then measures \a test_metric on the test data.
@@ -115,10 +120,6 @@ class Driver {
   static std::shared_ptr<quickrank::data::Dataset> load_dataset(
       const std::string dataset_filename,
       const std::string dataset_label);
-
-  static std::shared_ptr<data::Dataset> extract_partial_scores(
-      std::shared_ptr<learning::LTR_Algorithm> algo,
-      std::shared_ptr<data::Dataset> input_dataset);
 };
 
 }  // namespace driver

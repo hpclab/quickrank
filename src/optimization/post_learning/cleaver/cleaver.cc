@@ -29,6 +29,8 @@
 #include <io/svml.h>
 #include <sstream>
 
+#include "utils/strutils.h"
+
 #include "optimization/post_learning/cleaver/cleaver.h"
 
 namespace quickrank {
@@ -64,7 +66,6 @@ Cleaver::Cleaver(const pugi::xml_document &model) {
   model.child("optimizer").child("info").set_name("old-info");
 
   // modify the model in order to create line search model from xml
-  model.child("optimizer").remove_child("info");
   model.child("optimizer").child("line-search").set_name("info");
   model.child("optimizer").set_name("ranker");
 
@@ -76,25 +77,26 @@ Cleaver::Cleaver(const pugi::xml_document &model) {
   model.child("optimizer").child("info").set_name("line-search");
   model.child("optimizer").child("old-info").set_name("info");
 
-  unsigned int max_feature = 0;
-  for (const auto &couple: model_tree.children()) {
+  // Check if this is a full cleaver model or if it contains only the
+  // preamble (for models which uses cleaver inside...)
+  if (!model_tree.child("tree").child("index").empty()) {
 
-    if (strcmp(couple.name(), "tree") == 0) {
-      unsigned int feature = couple.child("index").text().as_uint();
+    unsigned int max_feature = 0;
+    for (const auto &tree: model_tree.children("tree")) {
+
+      unsigned int feature = tree.child("index").text().as_uint();
       if (feature > max_feature) {
         max_feature = feature;
       }
     }
-  }
 
-  estimators_to_prune_ = 0;
-  std::vector<float>(max_feature, 0.0).swap(weights_);
-  for (const auto &tree: model_tree.children()) {
-    if (strcmp(tree.name(), "tree") == 0) {
+    estimators_to_prune_ = 0;
+    std::vector<double>(max_feature, 0.0).swap(weights_);
+    for (const auto &tree: model_tree.children("tree")) {
       unsigned int feature = tree.child("index").text().as_uint();
       float weight = tree.child("weight").text().as_float();
       weights_[feature - 1] = weight;
-      if (weight > 0)
+      if (weight == 0)
         estimators_to_prune_++;
     }
   }
@@ -128,10 +130,12 @@ pugi::xml_document *Cleaver::get_xml_model() const {
   pugi::xml_node ensemble = root.append_child("ensemble");
   for (unsigned int i = 0; i < weights_.size(); i++) {
     pugi::xml_node tree = ensemble.append_child("tree");
-    tree.append_child("index").text() = i + 1;
 
     ss << weights_[i];
+
+    tree.append_child("index").text() = i + 1;
     tree.append_child("weight").text() = ss.str().c_str();
+
     // reset ss
     ss.str(std::string());
   }
@@ -163,22 +167,33 @@ void Cleaver::optimize(
 
   auto begin = std::chrono::steady_clock::now();
 
+  size_t num_features = training_dataset->num_features();
+
   if (pruning_rate_ < 1)
-    estimators_to_prune_ = (unsigned int) round(
-        pruning_rate_ * training_dataset->num_features());
+    estimators_to_prune_ = (size_t) round(pruning_rate_ * num_features);
   else {
-    estimators_to_prune_ = (unsigned int) pruning_rate_;
-    if (estimators_to_prune_ >= training_dataset->num_features()) {
-      std::cout << "Impossible to prune everything. Quit!" << std::endl;
+    estimators_to_prune_ = (size_t) pruning_rate_;
+    if (estimators_to_prune_ >= num_features) {
+      std::cout << "Incorrect pruning rate value (too high). Quit!"
+                << std::endl;
       return;
     }
   }
 
-  estimators_to_select_ =
-      training_dataset->num_features() - estimators_to_prune_;
+  estimators_to_select_ = num_features - estimators_to_prune_;
 
-  // Set all the weights to 1 (and initialize the vector)
-  std::vector<float>(training_dataset->num_features(), 1.0).swap(weights_);
+  // If weights were not set before by calling the update_weights method,
+  // set the starting weights to 1.0 by default
+  if (weights_.empty())  {
+    // Need the swap method because best_weights_ is unitialized
+    std::vector<double>(num_features, 1.0f).swap(weights_);
+  } else if (weights_.size() != num_features) {
+    // The check on the number of features is needed because the line search model
+    // could be reused on a different datasets (different size) w/o reset weights
+    std::cerr << "Initial Cleaver Weights does not correspond to datasets "
+        "size" << std::endl;
+    exit(EXIT_FAILURE);
+  }
 
   // compute training and validation scores using starting weights
   std::vector<Score> training_score(training_dataset->num_instances());
@@ -187,7 +202,7 @@ void Cleaver::optimize(
                                                           &training_score[0]);
 
   std::cout << std::endl;
-  std::cout << "# Original model:" << std::endl;
+  std::cout << "# Model before optimization:" << std::endl;
   std::cout << std::fixed << std::setprecision(4);
   std::cout << "# --------------------------" << std::endl;
   std::cout << "#       training validation" << std::endl;
@@ -204,18 +219,36 @@ void Cleaver::optimize(
 
   std::set<unsigned int> pruned_estimators;
 
+  // Backup the starting weights in order to re-set them to their starting
+  // value after the pre-pruning line search (which modifies the weights)
+  std::vector<double> starting_weights(weights_);
+
+  print_weights(weights_, "Cleaver Weights ANTE LS pre-pruning");
+
+  if (lineSearch_ &&
+      !lineSearch_->get_weights().empty() &&
+      lineSearch_->get_weights() != weights_) {
+    std::cerr << "The weights in the line search model do not "
+        "correspond to the weights in the cleaver model." << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
   // Some pruning methods needs to perform line search before the pruning
-  if (line_search_pre_pruning()) {
+  if (line_search_pre_pruning() && pruning_rate_ > 0) {
 
     if (!lineSearch_) {
       std::cerr << "This pruning method requires line search" << std::endl;
-      exit(1);
+      exit(EXIT_FAILURE);
     }
 
-    if (lineSearch_->get_weights()->empty()) {
+    if (lineSearch_->get_weights().empty()) {
 
-      // Need to do the line search pre pruning.
+      // Need to do the line search pre-pruning.
       // The line search weights inside the model are not set
+
+      // Set the weights in the line search model to their starting value
+      lineSearch_->update_weights(weights_);
+
       std::cout << "# LineSearch pre-pruning:" << std::endl;
       std::cout << "# --------------------------" << std::endl;
       lineSearch_->learn(training_dataset, validation_dataset, metric,
@@ -230,16 +263,22 @@ void Cleaver::optimize(
     // Needs to import the line search learned weights into this model
     import_weights_from_line_search(pruned_estimators);
     std::cout << std::endl;
-
-    // Reset the weights for reusing the LS model in the post-pruning phase
-    lineSearch_->reset_weights();
   }
+
+  print_weights(weights_, "Cleaver Weights POST LS pre-pruning");
 
   pruning(pruned_estimators, training_dataset, metric);
   std::cout << "# Ensemble Pruning:" << std::endl;
   std::cout << "# --------------------------" << std::endl;
   std::cout << "# Removed " << estimators_to_prune_ << " out of "
-      << training_dataset->num_features() << " trees" << std::endl << std::endl;
+      << num_features << " trees" << std::endl << std::endl;
+
+  print_weights(std::vector<double>(
+      pruned_estimators.cbegin(),
+      pruned_estimators.cend()), "Pruned trees");
+
+  // Reset the weights to their starting value
+  weights_ = starting_weights;
 
   // Set the weights of the pruned features to 0
   for (unsigned int f: pruned_estimators) {
@@ -248,6 +287,21 @@ void Cleaver::optimize(
 
   // Line search post pruning
   if (lineSearch_) {
+
+    print_weights(weights_, "Cleaver Weights PRE LS post-pruning");
+
+    // Re-Set the weights of the LS model for the post-pruning phase
+    // Need it because pre-pruning could have modified the weights and because
+    // now the dataset is smaller in size (pruned features...)
+    std::vector<double> new_ls_weights;
+    new_ls_weights.reserve(num_features - estimators_to_prune_);
+
+    for (size_t f=0; f<num_features; ++f) {
+      if (!pruned_estimators.count(f)) // skip pruned estimators
+        new_ls_weights.push_back(starting_weights[f]);
+    }
+
+    lineSearch_->update_weights(new_ls_weights);
 
     // Filter the dataset by deleting features with 0 weight
     std::shared_ptr<data::Dataset> filtered_training_dataset;
@@ -270,18 +324,18 @@ void Cleaver::optimize(
 
     // Needs to import the line search learned weights into this model
     import_weights_from_line_search(pruned_estimators);
+
+    print_weights(weights_, "Cleaver Weights POST LS post-pruning");
   }
 
   // Put the new weights inside the ltr algorithm (including the pruned trees)
-  algo->update_weights(
-      std::shared_ptr<std::vector<double>>(
-          new std::vector<double>(weights_.cbegin(), weights_.cend())));
+  algo->update_weights(weights_);
 
   score(training_dataset.get(), &training_score[0]);
   init_metric_on_training = metric->evaluate_dataset(training_dataset,
                                                      &training_score[0]);
 
-  std::cout << "# With pruning:" << std::endl;
+  std::cout << "# Model after optimization:" << std::endl;
   std::cout << std::fixed << std::setprecision(4);
   std::cout << "# --------------------------" << std::endl;
   std::cout << "#       training validation" << std::endl;
@@ -307,11 +361,11 @@ void Cleaver::score(data::Dataset *dataset, Score *scores) const {
 
   Feature *features = dataset->at(0, 0);
 #pragma omp parallel for
-  for (unsigned int s = 0; s < dataset->num_instances(); s++) {
-    unsigned int offset_feature = s * dataset->num_features();
+  for (unsigned int s = 0; s < dataset->num_instances(); ++s) {
+    size_t offset_feature = s * dataset->num_features();
     scores[s] = 0;
     // compute partialScore * weight for all the trees
-    for (unsigned int f = 0; f < dataset->num_features(); f++) {
+    for (unsigned int f = 0; f < dataset->num_features(); ++f) {
       scores[s] += weights_[f] * features[offset_feature + f];
     }
   }
@@ -325,10 +379,10 @@ void Cleaver::import_weights_from_line_search(
   unsigned int ls_f = 0;
   for (unsigned int f = 0; f < weights_.size(); f++) {
     if (!pruned_estimators.count(f)) // skip pruned estimators
-      weights_[f] = (*ls_weights)[ls_f++];
+      weights_[f] = ls_weights[ls_f++];
   }
 
-  assert(ls_f == ls_weights->size());
+  assert(ls_f == ls_weights.size());
 }
 
 std::shared_ptr<data::Dataset> Cleaver::filter_dataset(
@@ -362,6 +416,23 @@ std::shared_ptr<data::Dataset> Cleaver::filter_dataset(
   }
 
   return std::shared_ptr<data::Dataset>(filt_dataset);
+}
+
+bool Cleaver::update_weights(std::vector<double>& weights) {
+
+  if (weights.size() != weights_.size()) {
+
+    // copy the new weight vector, throwing away the old one (implicitly)
+    weights_ = std::vector<double>(weights);
+
+  } else {
+
+    for (size_t k = 0; k < weights.size(); k++) {
+      weights_[k] = weights[k];
+    }
+  }
+
+  return true;
 }
 
 }  // namespace cleaver

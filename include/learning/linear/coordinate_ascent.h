@@ -75,13 +75,11 @@ class CoordinateAscent: public LTR_Algorithm {
   virtual pugi::xml_document *get_xml_model() const;
 
   /// Returns the learned weights
-  virtual std::shared_ptr<std::vector<double>> get_weights() const {
-
-    return std::shared_ptr<std::vector<double>>(
-        new std::vector<double>(best_weights_));
+  virtual std::vector<double> get_weights() const {
+    return best_weights_;
   }
 
-  virtual bool update_weights(std::shared_ptr<std::vector<double>> weights);
+  virtual bool update_weights(std::vector<double>& weights);
 
  private:
   std::vector<double> best_weights_;

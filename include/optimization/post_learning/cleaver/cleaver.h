@@ -89,6 +89,16 @@ class Cleaver: public PostLearningOptimization {
   /// Return the xml model representing the current object
   virtual pugi::xml_document *get_xml_model() const;
 
+  // Return the pruining rate of the model
+  virtual double get_pruning_rate() {
+    return pruning_rate_;
+  }
+
+  // Set the pruining rate of the model
+  virtual void set_pruning_rate(double pruning_rate) {
+    pruning_rate_ = pruning_rate;
+  }
+
   static const std::vector<std::string> pruningMethodNames;
 
   static PruningMethod getPruningMethod(std::string name) {
@@ -110,19 +120,26 @@ class Cleaver: public PostLearningOptimization {
   }
 
   /// Returns the learned weights
-  virtual std::vector<float> &get_weigths() {
-    return weights_;
+  virtual std::vector<double> get_weigths() {
+    return std::vector<double>(weights_);
+  }
+
+  virtual bool update_weights(std::vector<double>& weights);
+
+  // Return the line search model
+  virtual std::shared_ptr<learning::linear::LineSearch> get_line_search() {
+    return lineSearch_;
   }
 
   static const std::string NAME_;
 
  protected:
   double pruning_rate_;
-  unsigned int estimators_to_prune_;
-  unsigned int estimators_to_select_;
+  size_t estimators_to_prune_;
+  size_t estimators_to_select_;
   std::shared_ptr<learning::linear::LineSearch> lineSearch_;
 
-  std::vector<float> weights_;
+  std::vector<double> weights_;
 
   /// Prints the description of Algorithm, including its parameters
   std::ostream &put(std::ostream &os) const;

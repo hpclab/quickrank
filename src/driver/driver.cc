@@ -24,6 +24,7 @@
 #include <limits>
 #include <numeric>
 #include <io/generate_oblivious.h>
+#include <learning/meta/meta_cleaver.h>
 
 #include "driver/driver.h"
 #include "io/svml.h"
@@ -66,13 +67,17 @@ int Driver::run(ParamsMap &pmap) {
     if (pmap.isSet("train") || pmap.isSet("train-partial")) {
 
       std::shared_ptr<quickrank::optimization::Optimization> opt_algorithm;
-      if (pmap.isSet("opt-algo") || pmap.isSet("opt-model")) {
+      if ((pmap.isSet("opt-algo") || pmap.isSet("opt-model")) &&
+          ranking_algorithm->name() != learning::meta::MetaCleaver::NAME_) {
+
         opt_algorithm = quickrank::optimization::optimization_factory(pmap);
         if (!opt_algorithm) {
           std::cerr << " !! Optimization Algorithm was not set properly"
                     << std::endl;
           exit(EXIT_FAILURE);
         }
+
+        std::cout << std::endl << *opt_algorithm << std::endl;
       }
 
       std::string training_filename = pmap.get<std::string>("train");
@@ -271,7 +276,8 @@ void Driver::optimization_phase(
 
       training_partial_dataset = Driver::extract_partial_scores(
           ranking_algo,
-          training_dataset);
+          training_dataset,
+          true);
 
       if (!training_partial_filename.empty())
         svml.write(training_partial_dataset, training_partial_filename);
@@ -281,7 +287,8 @@ void Driver::optimization_phase(
 
       validation_partial_dataset = Driver::extract_partial_scores(
           ranking_algo,
-          validation_dataset);
+          validation_dataset,
+          true);
 
       if (!validation_partial_filename.empty())
         svml.write(validation_partial_dataset, validation_partial_filename);
@@ -386,17 +393,18 @@ std::shared_ptr<quickrank::data::Dataset> Driver::load_dataset(
 
 std::shared_ptr<data::Dataset> Driver::extract_partial_scores(
     std::shared_ptr<learning::LTR_Algorithm> algo,
-    std::shared_ptr<data::Dataset> input_dataset) {
+    std::shared_ptr<data::Dataset> dataset,
+    bool ignore_weights) {
 
   data::Dataset *datasetPartScores = nullptr;
-
-  for (size_t q = 0; q < input_dataset->num_queries(); q++) {
-    auto results = input_dataset->getQueryResults(q);
+  for (size_t q = 0; q < dataset->num_queries(); q++) {
+    auto results = dataset->getQueryResults(q);
     // score_query_results(r, scores, 1, test_dataset->num_features());
     const Feature *features = results->features();
     const Label *labels = results->labels();
     for (size_t i = 0; i < results->num_results(); i++) {
-      auto detailed_scores = algo->partial_scores_document(features);
+      auto detailed_scores = algo->partial_scores_document(features,
+                                                           ignore_weights);
 
       if (!detailed_scores) {
         std::cerr << "# ## ERROR!! Only Ensemble methods support the "
@@ -404,16 +412,16 @@ std::shared_ptr<data::Dataset> Driver::extract_partial_scores(
         exit(EXIT_FAILURE);
       }
 
-      // Initilized on iterating the first instance in the dataset
+      // Initilizing on the first instance of the dataset
       if (datasetPartScores == nullptr)
-        datasetPartScores = new data::Dataset(input_dataset->num_instances(),
+        datasetPartScores = new data::Dataset(dataset->num_instances(),
                                               detailed_scores->size());
       // It performs a copy for casting Score to Feature (double to float)
       std::vector<Feature> featuresScore(detailed_scores->begin(),
                                          detailed_scores->end());
       datasetPartScores->addInstance(q, labels[i], featuresScore);
 
-      features += input_dataset->num_features();
+      features += dataset->num_features();
     }
   }
 

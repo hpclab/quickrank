@@ -48,13 +48,13 @@
 #include "learning/linear/coordinate_ascent.h"
 #include "learning/linear/line_search.h"
 #include "learning/custom/custom_ltr.h"
+#include "learning/meta/meta_cleaver.h"
 #include "optimization/post_learning/cleaver/cleaver.h"
 
 #include "metric/ir/tndcg.h"
 #include "metric/ir/map.h"
 
 #include "driver/driver.h"
-
 
 void print_logo() {
   if (isatty(fileno(stdout))) {
@@ -199,6 +199,19 @@ int main(int argc, char *argv[]) {
                          "[applies only to ObliviousMART/ObliviousLambdaMART]."},
                         treedepth);
 
+// --------------------------------------------------------
+  pmap.addMessage({"Training phase - specific options for Meta LtR models:"});
+  pmap.addOptionWithArg<std::string>("meta-algo", {"Meta LtR algorithm:", "["
+      + quickrank::learning::meta::MetaCleaver::NAME_
+      + "]."});
+  pmap.addOptionWithArg<size_t>("final-num-trees",
+                        {"set number of final trees."});
+  pmap.addOption("line-search-last-only",
+                        {"line search executed only on trees learned",
+                         "in last iteration."});
+  pmap.addOption("meta-verbose",
+                 {"Increase verbosity of Meta Algorithm,",
+                  "showing each step in detail."});
 
   // --------------------------------------------------------
   // CoordinateAscent and LineSearch options

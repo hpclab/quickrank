@@ -25,6 +25,7 @@
 #include <iomanip>
 #include <chrono>
 #include <numeric>
+#include "utils/strutils.h"
 
 #include <boost/property_tree/xml_parser.hpp>
 
@@ -76,26 +77,61 @@ LineSearch::LineSearch(const pugi::xml_document &model) {
   if (model_info.child("train-only-last"))
     train_only_last_ = model_info.child("train-only-last").text().as_uint();
 
-  unsigned int max_feature = 0;
-  for (const auto &tree: model_ensemble.children()) {
+  // Check if this is a full line search model or if it contains only the
+  // preamble (for models which uses line search inside...)
+  if (!model_ensemble.child("tree").child("index").empty()) {
 
-    if (strcmp(tree.name(), "tree") == 0) {
+    unsigned int max_feature = 0;
+    for (const auto &tree: model_ensemble.children("tree")) {
       unsigned int feature = tree.child("index").text().as_uint();
       if (feature > max_feature) {
         max_feature = feature;
       }
     }
-  }
 
-  std::vector<double>(max_feature, 0.0).swap(best_weights_);
+    std::vector<double>(max_feature, 0.0).swap(best_weights_);
 
-  for (const auto &tree: model_ensemble.children()) {
-    if (strcmp(tree.name(), "tree") == 0) {
+    for (const auto &tree: model_ensemble.children("tree")) {
       unsigned int feature = tree.child("index").text().as_uint();
       double weight = tree.child("weight").text().as_double();
       best_weights_[feature - 1] = weight;
     }
   }
+}
+
+pugi::xml_document *LineSearch::get_xml_model() const {
+
+  pugi::xml_document *doc = new pugi::xml_document();
+  pugi::xml_node root = doc->append_child("ranker");
+
+  pugi::xml_node info = root.append_child("info");
+
+  info.append_child("type").text() = name().c_str();
+  info.append_child("num-samples").text() = num_points_;
+  info.append_child("window-size").text() = window_size_;
+  info.append_child("reduction-factor").text() = reduction_factor_;
+  info.append_child("max-iterations").text() = max_iterations_;
+  info.append_child("max-failed-vali").text() = max_failed_vali_;
+  info.append_child("adaptive").text() = adaptive_;
+  info.append_child("train-only-last").text() = train_only_last_;
+
+  std::stringstream ss;
+  ss << std::setprecision(std::numeric_limits<double>::max_digits10);
+
+  pugi::xml_node ensemble = root.append_child("ensemble");
+  for (unsigned int i = 0; i < best_weights_.size(); i++) {
+
+    ss << best_weights_[i];
+
+    pugi::xml_node couple = ensemble.append_child("tree");
+    couple.append_child("index").text() = i + 1;
+    couple.append_child("weight").text() = ss.str().c_str();
+
+    // reset ss
+    ss.str(std::string());
+  }
+
+  return doc;
 }
 
 LineSearch::~LineSearch() {
@@ -142,20 +178,27 @@ void LineSearch::learn(
   const auto num_features = training_dataset->num_features();
   const auto num_train_instances = training_dataset->num_instances();
 
-  // initialize weights, weights_prev and best_weights_ a 1 (by default)
-  std::vector<double> weights(num_features, 1.0f);
-  std::vector<double> weights_prev(num_features, 1.0f);
+  std::vector<double> weights(num_features);
+  std::vector<double> weights_prev(num_features);
 
-  // If weights were set before by calling the set_weights method, copy them
-  // The check on the number of features is needed because the line search model
-  // could be reused on a different dataset (size)
-  if (!best_weights_.empty() && best_weights_.size() == num_features) {
-    weights = best_weights_;
-    weights_prev = best_weights_;
-  } else {
+  // If weights were not set before by calling the update_weights method,
+  // set the starting weights to 1.0 by default
+  if (best_weights_.empty())  {
     // Need the swap method because best_weights_ is unitialized
     std::vector<double>(num_features, 1.0f).swap(best_weights_);
+  } else if (best_weights_.size() != num_features) {
+    // The check on the number of features is needed because the line search model
+    // could be reused on a different datasets (different size) w/o reset weights
+    std::cerr << "Initial Line Search Weights does not correspond to datasets "
+        "size" << std::endl;
+    exit(EXIT_FAILURE);
   }
+
+  print_weights(best_weights_, "LS Weights pre learning");
+
+  // Copy the values of best_weights into weights and weights_prev (same size)
+  std::copy(best_weights_.begin(), best_weights_.end(), weights.begin());
+  std::copy(best_weights_.begin(), best_weights_.end(), weights_prev.begin());
 
   MetricScore best_metric_on_training = 0;
   MetricScore best_metric_on_validation = 0;
@@ -186,7 +229,7 @@ void LineSearch::learn(
 
   unsigned int starting_feature_idx = 0;
   if (train_only_last_)
-    starting_feature_idx = num_features - train_only_last_ - 1;
+    starting_feature_idx = num_features - train_only_last_;
 
   // counter of sequential iterations without improvement on validation
   unsigned int count_failed_vali = 0;
@@ -355,6 +398,8 @@ void LineSearch::learn(
   if (validation_dataset == NULL)
     best_weights_ = weights;
 
+  print_weights(best_weights_, "LS Weights post learning");
+
   auto end = std::chrono::steady_clock::now();
   std::chrono::duration<double> elapsed = std::chrono::duration_cast<
       std::chrono::duration<double>>(end - begin);
@@ -371,54 +416,21 @@ Score LineSearch::score_document(const Feature *d) const {
   return score;
 }
 
-bool LineSearch::update_weights(std::shared_ptr<std::vector<double>> weights) {
+bool LineSearch::update_weights(std::vector<double>& weights) {
 
-  if (weights->size() != best_weights_.size())
-    return false;
+  if (weights.size() != best_weights_.size()) {
 
-  if (weights->size() != best_weights_.size())
-    return false;
+    // copy the new weight vector, throwing away the old one (implicitly)
+    best_weights_ = std::vector<double>(weights);
 
-  for (size_t k = 0; k < weights->size(); k++) {
-    best_weights_[k] = (*weights)[k];
+  } else {
+
+    for (size_t k = 0; k < weights.size(); k++) {
+      best_weights_[k] = weights[k];
+    }
   }
 
   return true;
-}
-
-pugi::xml_document *LineSearch::get_xml_model() const {
-
-  pugi::xml_document *doc = new pugi::xml_document();
-  pugi::xml_node root = doc->append_child("ranker");
-
-  pugi::xml_node info = root.append_child("info");
-
-  info.append_child("type").text() = name().c_str();
-  info.append_child("num-samples").text() = num_points_;
-  info.append_child("window-size").text() = window_size_;
-  info.append_child("reduction-factor").text() = reduction_factor_;
-  info.append_child("max-iterations").text() = max_iterations_;
-  info.append_child("max-failed-vali").text() = max_failed_vali_;
-  info.append_child("adaptive").text() = adaptive_;
-  info.append_child("train-only-last").text() = train_only_last_;
-
-  std::stringstream ss;
-  ss << std::setprecision(std::numeric_limits<double>::max_digits10);
-
-  pugi::xml_node ensemble = root.append_child("ensemble");
-  for (unsigned int i = 0; i < best_weights_.size(); i++) {
-
-    ss << best_weights_[i];
-
-    pugi::xml_node couple = ensemble.append_child("tree");
-    couple.append_child("index").text() = i + 1;
-    couple.append_child("weight").text() = ss.str().c_str();
-
-    // reset ss
-    ss.str(std::string());
-  }
-
-  return doc;
 }
 
 void LineSearch::preCompute(Feature *training_dataset, unsigned int num_samples,

@@ -19,6 +19,7 @@
  * Contributors:
  *  - Salvatore Trani(salvatore.trani@isti.cnr.it)
  */
+#include <optimization/optimization_factory.h>
 #include "learning/ltr_algorithm_factory.h"
 
 #include "learning/forests/mart.h"
@@ -51,7 +52,6 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
     if (!ltr_algo_model)
       std::cerr << " !! Unable to load model from file." << std::endl;
   }
-
 
   if (!pmap.isSet("model-in") || pmap.isSet("restart-train")) {
 
@@ -138,6 +138,33 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
       ltr_algo->import_model_state(*ltr_algo_model);
     else
       ltr_algo = ltr_algo_model;
+  }
+
+  if (pmap.isSet("meta-algo")) {
+    std::string meta_algo_name = pmap.get<std::string>("meta-algo");
+
+    auto opt_algorithm =
+        std::dynamic_pointer_cast<optimization::post_learning::pruning::Cleaver>(
+            quickrank::optimization::optimization_factory(pmap));
+    if (!opt_algorithm) {
+      std::cerr << " !! Optimization Algorithm is required but it is not set "
+          "properly" << std::endl;
+      exit(EXIT_FAILURE);
+    }
+
+    if (meta_algo_name == quickrank::learning::meta::MetaCleaver::NAME_) {
+      ltr_algo = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
+          new quickrank::learning::meta::MetaCleaver(
+              ltr_algo,
+              opt_algorithm,
+              pmap.get<size_t>("final-num-trees"),
+              pmap.get<size_t>("num-trees"),
+              pmap.get<double>("pruning-rate"),
+              pmap.isSet("line-search-last-only"),
+              pmap.isSet("meta-verbose")
+          )
+      );
+    }
   }
 
   return ltr_algo;

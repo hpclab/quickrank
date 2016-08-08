@@ -25,12 +25,17 @@
 #include "learning/ltr_algorithm.h"
 #include "learning/tree/rt.h"
 #include "learning/tree/ensemble.h"
+#include "learning/meta/meta_cleaver.h"
 
 namespace quickrank {
 namespace learning {
 namespace forests {
 
 class Mart: public LTR_Algorithm {
+
+  // TODO: remove friendness by refactoring the code to expose ensemble info
+  friend class quickrank::learning::meta::MetaCleaver;
+
  public:
   /// Initializes a new Mart instance with the given learning parameters.
   ///
@@ -76,13 +81,13 @@ class Mart: public LTR_Algorithm {
   /// \param next_fx_offset The offset to the next feature in the data representation.
   /// \note   Each algorithm has a different implementation.
   virtual std::shared_ptr<std::vector<Score>> partial_scores_document(
-      const Feature *d) const {
+      const Feature *d, bool ignore_weights=false) const {
     // TODO: remove the following code...
     if (!ensemble_model_.get_size()) {
-      std::cerr << "Zero alberi nell'ensemble..." << std::endl;
+      std::cerr << "The model is empty..." << std::endl;
       exit(EXIT_FAILURE);
     }
-    return ensemble_model_.partial_scores_instance(d);
+    return ensemble_model_.partial_scores_instance(d, ignore_weights);
   }
 
   /// Print additional statistics.
@@ -95,9 +100,9 @@ class Mart: public LTR_Algorithm {
     return NAME_;
   }
 
-  virtual bool update_weights(std::shared_ptr<std::vector<double>> weights);
+  virtual bool update_weights(std::vector<double>& weights);
 
-  virtual std::shared_ptr<std::vector<double>> get_weights() const {
+  virtual std::vector<double> get_weights() const {
     return ensemble_model_.get_weights();
   }
 
@@ -143,8 +148,12 @@ class Mart: public LTR_Algorithm {
  protected:
   float **thresholds_ = NULL;
   size_t *thresholds_size_ = NULL;
-  double *scores_on_training_ = NULL;  //[0..nentries-1]
-  quickrank::Score *scores_on_validation_ = NULL;  //[0..nentries-1]
+
+  quickrank::Score* scores_on_training_ = NULL;
+  quickrank::MetricScore best_metric_on_training_ = 0;
+  quickrank::Score* scores_on_validation_ = NULL;
+  quickrank::MetricScore best_metric_on_validation_ = 0;
+
   size_t validation_bestmodel_ = 0;
   double *pseudoresponses_ = NULL;  //[0..nentries-1]
   Ensemble ensemble_model_;

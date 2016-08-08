@@ -119,10 +119,14 @@ quickrank::Score Ensemble::score_instance(const quickrank::Feature *d,
 
 std::shared_ptr<std::vector<quickrank::Score>>
 Ensemble::partial_scores_instance(const quickrank::Feature *d,
+                                  bool ignore_weights,
                                   const size_t offset) const {
   std::vector<quickrank::Score> scores(size);
-  for (unsigned int i = 0; i < size; ++i)
-    scores[i] = arr[i].root->score_instance(d, offset) * arr[i].weight;
+  for (unsigned int i = 0; i < size; ++i) {
+    scores[i] = arr[i].root->score_instance(d, offset);
+    if (!ignore_weights)
+      scores[i] *= arr[i].weight;
+  }
   return std::make_shared<std::vector<quickrank::Score>>(std::move(scores));
 }
 
@@ -142,40 +146,39 @@ pugi::xml_node Ensemble::append_xml_model(pugi::xml_node parent) const {
   return ensemble;
 }
 
-bool Ensemble::update_ensemble_weights(
-    std::shared_ptr<std::vector<double>> weights) {
+bool Ensemble::update_ensemble_weights(std::vector<double>& weights) {
 
-  if (weights->size() != size) {
+  if (weights.size() != size) {
     std::cerr << "# ## ERROR!! Ensemble size does not match size of the "
         "weight vector in updating the weights" << std::endl;
     return false;
   }
 
-  size_t idx_final = 0;
+  size_t idx_curr = 0;
 
   for (size_t i = 0; i < size; ++i) {
     // Use a small epsilon to check for 0-weight trees...
-    if (weights->at(i) < 0.0000001) {
+    if (weights[i] < 0.0000001) {
       // Remove 0-weight tree
       delete arr[i].root;
     } else {
       // Check if we need to move back the tree in the array of root trees
-      if (idx_final < i)
-        arr[idx_final] = arr[i];
-      arr[idx_final].weight = weights->at(i);
-      ++idx_final;
+      if (idx_curr < i)
+        arr[idx_curr] = arr[i];
+      arr[idx_curr].weight = weights[i];
+      ++idx_curr;
     }
   }
 
   // Set the new size to the last element index (+1 because it is a size)
-  size = idx_final;
+  size = idx_curr;
 
   return true;
 }
 
-std::shared_ptr<std::vector<double>> Ensemble::get_weights() const {
-  std::vector<double> *weights = new std::vector<double>(size);
+std::vector<double> Ensemble::get_weights() const {
+  std::vector<double> weights = std::vector<double>(size);
   for (unsigned int i = 0; i < size; ++i)
-    weights->at(i) = arr[i].weight;
-  return std::shared_ptr<std::vector<double>>(weights);
+    weights[i] = arr[i].weight;
+  return weights;
 }

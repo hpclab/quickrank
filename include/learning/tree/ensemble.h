@@ -55,14 +55,14 @@ class Ensemble {
 
   virtual std::shared_ptr<std::vector<quickrank::Score>>
       partial_scores_instance(const quickrank::Feature *d,
+                              bool ignore_weights = false,
                               const size_t offset = 1) const;
 
   pugi::xml_node append_xml_model(pugi::xml_node parent) const;
 
-  virtual bool update_ensemble_weights(
-      std::shared_ptr<std::vector<double>> weights);
+  virtual bool update_ensemble_weights(std::vector<double>& weights);
 
-  virtual std::shared_ptr<std::vector<double>> get_weights() const;
+  virtual std::vector<double> get_weights() const;
 
  private:
 

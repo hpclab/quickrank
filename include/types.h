@@ -21,7 +21,6 @@
  */
 #pragma once
 
-#include <vector>
 #include "utils/symmatrix.h"
 
 namespace quickrank {

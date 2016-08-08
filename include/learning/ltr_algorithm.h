@@ -83,7 +83,7 @@ class LTR_Algorithm {
   /// \param next_fx_offset The offset to the next feature in the data representation.
   /// \note   Each algorithm has a different implementation.
   virtual std::shared_ptr<std::vector<Score>> partial_scores_document(
-      const Feature *d) const {
+      const Feature *d, bool ignore_weights=false) const {
     return nullptr;
   }
 
@@ -98,6 +98,12 @@ class LTR_Algorithm {
   /// \param model_filename The input file name.
   static std::shared_ptr<LTR_Algorithm> load_model_from_file(
       std::string model_filename);
+
+  /// Load a LtR model from a given XML model.
+  ///
+  /// \param xml_model The input file name.
+  static std::shared_ptr<LTR_Algorithm> load_model_from_xml(
+      const pugi::xml_document& xml_model);
 
   /// Import the state of the model from a previously trained model object
   /// (this operation overwrite the current state)
@@ -123,15 +129,16 @@ class LTR_Algorithm {
   /// Update the weights for the ensemble models (only).
   ///
   /// Default implementation will do nothing (default for non ensemble models).
-  virtual bool update_weights(std::shared_ptr<std::vector<double>> weights) {
+  virtual bool update_weights(std::vector<double>& weights) {
     return false;
   }
 
   /// Return the weights for the ensemble models (only).
   ///
   /// Default implementation will do nothing (default for non ensemble models).
-  virtual std::shared_ptr<std::vector<double>> get_weights() const {
-    return nullptr;
+  virtual std::vector<double> get_weights() const {
+    // empty std::vector
+    return {};
   }
 
  private:
