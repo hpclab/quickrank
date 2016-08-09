@@ -73,15 +73,15 @@ TEST_CASE( "Testing NDCG", "[metric][ndcg]" ) {
   std::swap(scores[0],scores[2]);
   true_delta_ndcg += ndcg_metric.evaluate_result_list(results.get(), scores);
   std::swap(scores[0],scores[2]);
-  std::cout << std::setprecision(18);
 
   auto ranked_list = std::shared_ptr<quickrank::data::RankedResults>(new quickrank::data::RankedResults(results, scores));
   delta_ndcg = ndcg_metric.jacobian(ranked_list)->at(0,2);
 
+  // std::cout << std::setprecision(18);
   // std::cout << "true delta ndcg: " << true_delta_ndcg << std::endl;
   // std::cout << "delta ndcg by specialized method: " << delta_ndcg << std::endl;
 
-  REQUIRE( Approx(true_delta_ndcg) == delta_ndcg );
+  REQUIRE( Approx(delta_ndcg) == true_delta_ndcg );
 
   // Jacobian, witouth cutoff in the middle of the swap
   ndcg_metric.set_cutoff(2);
@@ -90,18 +90,18 @@ TEST_CASE( "Testing NDCG", "[metric][ndcg]" ) {
   std::swap(scores[0],scores[2]);
   true_delta_ndcg += ndcg_metric.evaluate_result_list(results.get(), scores);
   std::swap(scores[0],scores[2]);
-  std::cout << std::setprecision(18);
 
   ranked_list = std::shared_ptr<quickrank::data::RankedResults>(new quickrank::data::RankedResults(results, scores));
   delta_ndcg = ndcg_metric.jacobian(ranked_list)->at(0,2);
 
+  // std::cout << std::setprecision(18);
   // std::cout << "true delta ndcg: " << true_delta_ndcg << std::endl;
   // std::cout << "delta ndcg by specialized method: " << delta_ndcg << std::endl;
 
-  REQUIRE( Approx(true_delta_ndcg) == delta_ndcg );
+  REQUIRE( Approx(delta_ndcg) == true_delta_ndcg );
 
+  // discount = 1/log(2)
   //  std::cout << ((pow(2, labels[2]) - 1) - (pow(2, labels[0]) - 1))/idcg << std::endl;
-
   REQUIRE( Approx(delta_ndcg) == ( pow(2, labels[2])  - pow(2, labels[0]) )/idcg );
 
 }
