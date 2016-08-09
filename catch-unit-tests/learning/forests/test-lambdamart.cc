@@ -132,7 +132,7 @@ TEST_CASE( "Testing LambdaMart", "[learning][forests][lmart]" ) {
   // NDCG@10 on validation data: 0.4343
   // NDCG@10 on test data: 0.3367
 
-  REQUIRE( training_score >= 0.7321);
-  REQUIRE( validation_score >= 0.4136);
-  REQUIRE( test_score >= 0.3230);
+  REQUIRE( training_score >= 0.74055);
+  REQUIRE( validation_score >= 0.4402);
+  REQUIRE( test_score >= 0.3519);
 }

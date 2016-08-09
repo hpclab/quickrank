@@ -428,5 +428,5 @@ std::shared_ptr<data::Dataset> Driver::extract_partial_scores(
   return std::shared_ptr<data::Dataset>(datasetPartScores);
 }
 
-}  // namespace metric
+}  // namespace driver
 }  // namespace quickrank

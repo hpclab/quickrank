@@ -315,6 +315,7 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     }
 
   }
+
   //Rollback to the best model observed on the validation data
   if (validation_dataset)
     while (ensemble_model_.is_notempty()
@@ -362,7 +363,6 @@ std::unique_ptr<RegressionTree> Mart::fit_regressor_on_gradient(
   //float maxlabel =
   tree->update_output(pseudoresponses_);
   return std::unique_ptr<RegressionTree>(tree);
-
 }
 
 void Mart::update_modelscores(std::shared_ptr<data::Dataset> dataset,

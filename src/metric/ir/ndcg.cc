@@ -84,7 +84,6 @@ std::unique_ptr<Jacobian> Ndcg::jacobian(
           jacobian->at(i, j) = (-1.0f / log2((double) (i + 2)))
               * (pow(2.0, (double) ranked->sorted_labels()[i])
                   - pow(2.0, (double) ranked->sorted_labels()[j])) / idcg;
-
       }
     }
   }

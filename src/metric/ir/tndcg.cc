@@ -112,10 +112,16 @@ std::unique_ptr<Jacobian> Tndcg::jacobian(
   for (size_t i = 0; i < size; ++i) {
     for (size_t j = i + 1; j < ranked->num_results(); ++j) {
       // if the score is the same, non changes occur
-      if (ranked->sorted_scores()[i] != ranked->sorted_scores()[j]
-          && ranked->sorted_labels()[i] != ranked->sorted_labels()[j]) {
-        jacobian->at(i, j) = (pow(2.0, ranked->sorted_labels()[i])
-            - pow(2.0, ranked->sorted_labels()[j])) * (weights[j] - weights[i]);
+      if (ranked->sorted_labels()[i] != ranked->sorted_labels()[j]) {
+        if (j < size)
+          jacobian->at(i, j) =
+          jacobian->at(i, j) = (weights[j] - weights[i]) *
+              ( pow(2.0, ranked->sorted_labels()[i])
+              - pow(2.0, ranked->sorted_labels()[j]) );
+        else
+          jacobian->at(i, j) = weights[i] *
+              ( pow(2.0, ranked->sorted_labels()[j])
+                  - pow(2.0, ranked->sorted_labels()[i]) );
       }
     }
   }

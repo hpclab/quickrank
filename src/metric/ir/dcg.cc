@@ -65,18 +65,17 @@ std::unique_ptr<Jacobian> Dcg::jacobian(
   for (size_t i = 0; i < size; ++i) {
     for (size_t j = i + 1; j < ranked->num_results(); ++j) {
       // if the score is the same, non changes occur
-      if (ranked->sorted_labels()[ranked->pos_of_rank(i)]
-          != ranked->sorted_labels()[ranked->pos_of_rank(j)]) {
-        //*p_jacobian =
-        jacobian->at(ranked->pos_of_rank(i), ranked->pos_of_rank(j)) =
-            (1.0f / log2((double) (i + 2)) - 1.0f / log2((double) (j + 2)))
-                * (pow(2.0,
-                       (double) ranked->sorted_labels()[ranked->pos_of_rank(i)])
-                    - pow(
-                        2.0,
-                        (double) ranked->sorted_labels()[ranked->pos_of_rank(j)]));
+      if (ranked->sorted_labels()[i] != ranked->sorted_labels()[j]) {
+        if (j < size)
+          jacobian->at(i, j) =
+              (1.0f / log2((double) (j + 2)) - 1.0f / log2((double) (i + 2)))
+                  * (pow(2.0, (double) ranked->sorted_labels()[i])
+                      - pow(2.0, (double) ranked->sorted_labels()[j]));
+        else
+          jacobian->at(i, j) = (-1.0f / log2((double) (i + 2)))
+              * (   pow(2.0, (double) ranked->sorted_labels()[i])
+                  - pow(2.0, (double) ranked->sorted_labels()[j]) );
       }
-      //p_jacobian++;
     }
   }
 
