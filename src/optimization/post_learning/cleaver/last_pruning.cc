@@ -40,7 +40,7 @@ void LastPruning::pruning(std::set<unsigned int> &pruned_estimators,
                           std::shared_ptr<data::Dataset> dataset,
                           std::shared_ptr<metric::ir::Metric> scorer) {
 
-  unsigned int num_features = (unsigned int) weights_.size();
+  size_t num_features = (unsigned int) weights_.size();
 
   for (unsigned int i = 1; i <= estimators_to_prune_; i++) {
     pruned_estimators.insert(num_features - i);

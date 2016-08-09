@@ -160,7 +160,8 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
               pmap.get<size_t>("final-num-trees"),
               pmap.get<size_t>("num-trees"),
               pmap.get<double>("pruning-rate"),
-              pmap.isSet("line-search-last-only"),
+              pmap.isSet("opt-last-only"),
+              pmap.get<size_t>("meta-end-after-rounds"),
               pmap.isSet("meta-verbose")
           )
       );

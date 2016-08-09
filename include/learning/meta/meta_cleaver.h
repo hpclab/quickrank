@@ -49,16 +49,17 @@ class MetaCleaver: public LTR_Algorithm {
       size_t ntrees,
       size_t ntrees_per_iter,
       double pruning_rate_per_iter,
-      bool line_search_last_only,
+      bool opt_last_only,
+      size_t valid_iterations,
       bool verbose = false)
       : ltr_algo_(ltr_algo),
         cleaver_(cleaver),
         ntrees_(ntrees),
         ntrees_per_iter_(ntrees_per_iter),
         pruning_rate_per_iter_(pruning_rate_per_iter),
-        line_search_last_only_(line_search_last_only),
-        verbose_(verbose) {
-  }
+        opt_last_only_(opt_last_only),
+        valid_iterations_(valid_iterations),
+        verbose_(verbose) { }
 
   /// Generates a LTR_Algorithm instance from a previously saved XML model.
   MetaCleaver(const pugi::xml_document &model);
@@ -121,7 +122,10 @@ class MetaCleaver: public LTR_Algorithm {
   size_t ntrees_;
   size_t ntrees_per_iter_;
   double pruning_rate_per_iter_;
-  bool line_search_last_only_;
+  bool opt_last_only_;
+  size_t valid_iterations_; // If no performance gain on validation data is
+                            // observed in 'esr' rounds, stop the training
+                            // process right away (if esr==0 feature is disabled)
   bool verbose_;
 
  private:

@@ -42,8 +42,10 @@ void LowWeightsPruning::pruning(std::set<unsigned int> &pruned_estimators,
                                 std::shared_ptr<data::Dataset> dataset,
                                 std::shared_ptr<metric::ir::Metric> scorer) {
 
-  std::vector<unsigned int> idx(weights_.size());
-  std::iota(idx.begin(), idx.end(), 0);
+  size_t start_last = dataset->num_features() - last_estimators_to_optimize_;
+
+  std::vector<unsigned int> idx(last_estimators_to_optimize_);
+  std::iota(idx.begin(), idx.end(), start_last);
   std::sort(idx.begin(), idx.end(),
             [this](const unsigned int &a, const unsigned int &b) {
               return this->weights_[a] < this->weights_[b];

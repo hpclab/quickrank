@@ -99,6 +99,14 @@ class Cleaver: public PostLearningOptimization {
     pruning_rate_ = pruning_rate;
   }
 
+  virtual void set_update_model(bool update_model) {
+    update_model_ = update_model;
+  }
+
+  virtual bool get_update_model() {
+    return update_model_;
+  }
+
   static const std::vector<std::string> pruningMethodNames;
 
   static PruningMethod getPruningMethod(std::string name) {
@@ -133,11 +141,33 @@ class Cleaver: public PostLearningOptimization {
 
   static const std::string NAME_;
 
+  size_t get_last_estimators_to__work_on() const {
+    return last_estimators_to_optimize_;
+  }
+
+  void set_last_estimators_to_optimize(size_t last_estimators_to_optimize) {
+    last_estimators_to_optimize_ = last_estimators_to_optimize;
+    if (lineSearch_)
+      lineSearch_->set_last_only(last_estimators_to_optimize);
+  }
+
+  MetricScore get_metric_on_training() {
+    return metric_on_training_;
+  }
+
+  MetricScore get_metric_on_validation() {
+    return metric_on_validation_;
+  }
+
  protected:
   double pruning_rate_;
-  size_t estimators_to_prune_;
-  size_t estimators_to_select_;
+  unsigned int estimators_to_prune_;
   std::shared_ptr<learning::linear::LineSearch> lineSearch_;
+  unsigned int last_estimators_to_optimize_;
+  bool update_model_;
+
+  MetricScore metric_on_training_;
+  MetricScore metric_on_validation_;
 
   std::vector<double> weights_;
 

@@ -206,9 +206,13 @@ int main(int argc, char *argv[]) {
       + "]."});
   pmap.addOptionWithArg<size_t>("final-num-trees",
                         {"set number of final trees."});
-  pmap.addOption("line-search-last-only",
-                        {"line search executed only on trees learned",
+  pmap.addOption("opt-last-only",
+                        {"optimization executed only on trees learned",
                          "in last iteration."});
+  pmap.addOptionWithArg<size_t>("meta-end-after-rounds",
+                                {"set num. rounds with no gain in validation",
+                                 "before ending (if 0 disabled) on meta LtR "
+                                     "models."});
   pmap.addOption("meta-verbose",
                  {"Increase verbosity of Meta Algorithm,",
                   "showing each step in detail."});

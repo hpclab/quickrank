@@ -43,9 +43,11 @@ void ScoreLossPruning::pruning(std::set<unsigned int> &pruned_estimators,
                                std::shared_ptr<data::Dataset> dataset,
                                std::shared_ptr<metric::ir::Metric> scorer) {
 
-  unsigned int num_features = dataset->num_features();
-  unsigned int num_instances = dataset->num_instances();
-  std::vector<Score> feature_scores(num_features, 0);
+  size_t num_features = dataset->num_features();
+  size_t start_last = num_features - last_estimators_to_optimize_;
+  size_t num_instances = dataset->num_instances();
+
+  std::vector<Score> feature_scores(last_estimators_to_optimize_, 0);
   std::vector<Score> instance_scores(num_instances, 0);
 
   // compute the per instance score
@@ -53,20 +55,21 @@ void ScoreLossPruning::pruning(std::set<unsigned int> &pruned_estimators,
 
   Feature *features = dataset->at(0, 0);
 #pragma omp parallel for
-  for (unsigned int s = 0; s < num_instances; s++) {
-    unsigned int offset_feature = s * num_features;
-    for (unsigned int f = 0; f < num_features; f++) {
-      feature_scores[f] +=
+  for (size_t s = 0; s < num_instances; s++) {
+    size_t offset_feature = s * num_features;
+    for (size_t f = start_last; f < num_features; f++) {
+      feature_scores[f - start_last] +=
           weights_[f] * features[offset_feature + f] / instance_scores[s];
     }
   }
 
   // Find the last feature scores
-  std::vector<unsigned int> idx(num_features);
-  std::iota(idx.begin(), idx.end(), 0);
+  std::vector<unsigned int> idx(last_estimators_to_optimize_);
+  std::iota(idx.begin(), idx.end(), start_last);
   std::sort(idx.begin(), idx.end(),
-            [&feature_scores](const unsigned int &a, const unsigned int &b) {
-              return feature_scores[a] < feature_scores[b];
+            [&feature_scores, &start_last]
+                (const unsigned int &a, const unsigned int &b) {
+              return feature_scores[a-start_last] < feature_scores[b-start_last];
             });
 
   for (unsigned int f = 0; f < estimators_to_prune_; f++) {

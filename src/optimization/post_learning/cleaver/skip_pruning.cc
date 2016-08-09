@@ -42,15 +42,18 @@ void SkipPruning::pruning(std::set<unsigned int> &pruned_estimators,
                           std::shared_ptr<data::Dataset> dataset,
                           std::shared_ptr<metric::ir::Metric> scorer) {
 
-  unsigned int num_features = (unsigned int) weights_.size();
-  double step = (double) num_features / estimators_to_select_;
+  size_t num_features = dataset->num_features();
+  size_t start_last = num_features - last_estimators_to_optimize_;
+  size_t estimators_to_select =
+      last_estimators_to_optimize_ - estimators_to_prune_;
+  double step = (double) last_estimators_to_optimize_ / estimators_to_select;
 
-  std::set<unsigned int> selected_estimators;
-  for (unsigned int i = 0; i < estimators_to_select_; i++) {
-    selected_estimators.insert((unsigned int) ceil(i * step));
+  std::set<size_t> selected_estimators;
+  for (size_t i = 0; i < estimators_to_select; ++i) {
+    selected_estimators.insert((size_t) ceil(step * i + start_last));
   }
 
-  for (unsigned int f = 0; f < num_features; f++) {
+  for (size_t f = start_last; f < num_features; ++f) {
     if (!selected_estimators.count(f))
       pruned_estimators.insert(f);
   }

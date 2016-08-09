@@ -40,13 +40,18 @@ void RandomPruning::pruning(std::set<unsigned int> &pruned_estimators,
                             std::shared_ptr<data::Dataset> dataset,
                             std::shared_ptr<metric::ir::Metric> scorer) {
 
-  unsigned int num_features = (unsigned int) weights_.size();
+  size_t num_features = weights_.size();
+  size_t start_last = num_features - last_estimators_to_optimize_;
+
+  std::cout << "Num Features: " << num_features << std::endl;
+  std::cout << "Last to Optimize: " << last_estimators_to_optimize_<< std::endl;
+  std::cout << "Start Last: " << start_last << std::endl;
 
   /* initialize random seed: */
   srand(time(NULL));
 
   while (pruned_estimators.size() < estimators_to_prune_) {
-    unsigned int index = rand() % num_features;
+    size_t index = ( rand() % last_estimators_to_optimize_) + start_last;
     if (!pruned_estimators.count(index))
       pruned_estimators.insert(index);
   }

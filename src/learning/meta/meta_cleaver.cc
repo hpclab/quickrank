@@ -43,7 +43,7 @@ MetaCleaver::MetaCleaver(const pugi::xml_document& model) {
   ntrees_ = 0;
   ntrees_per_iter_ = 0;
   pruning_rate_per_iter_ = 0;
-  line_search_last_only_ = false;
+  opt_last_only_ = false;
 
   pugi::xml_node info = model.child("ranker").child("info");
 
@@ -52,8 +52,8 @@ MetaCleaver::MetaCleaver(const pugi::xml_document& model) {
   ntrees_per_iter_ = info.child("trees-per-iter").text().as_int();
   pruning_rate_per_iter_ =
       info.child("pruning-rate-per-iter").text().as_double();
-  line_search_last_only_ =
-      info.child("line-search-last-only").text().as_bool();
+  opt_last_only_ = info.child("opt-last-only").text().as_bool();
+  valid_iterations_ = info.child("meta-end-after-rounds").text().as_int();
 
   model.child("ranker").remove_child("info");
 
@@ -81,7 +81,8 @@ pugi::xml_document* MetaCleaver::get_xml_model() const {
   info.append_child("type").text() = name().c_str();
   info.append_child("trees-per-iter").text() = ntrees_per_iter_;
   info.append_child("pruning-rate-per-iter").text() = pruning_rate_per_iter_;
-  info.append_child("line-search-last-only").text() = line_search_last_only_;
+  info.append_child("opt-last-only").text() = opt_last_only_;
+  info.append_child("meta-end-after-rounds").text() = valid_iterations_;
 
   pugi::xml_document& ltr_model = *ltr_algo_->get_xml_model();
   pugi::xml_node ltr_info = ltr_model.child("ranker").child("info");
@@ -108,7 +109,9 @@ std::ostream &MetaCleaver::put(std::ostream &os) const {
      << "# max no. of trees = " << ntrees_ << std::endl
      << "# no. of trees per iter = " << ntrees_per_iter_ << std::endl
      << "# pruning rate per iter = " << cleaver_->get_pruning_rate() <<std::endl
-     << "# line search last trees only = " << line_search_last_only_
+     << "# optimize only last trees = " << opt_last_only_
+     << "# no. of no gain rounds before early stop = " << valid_iterations_
+     << std::endl
      << std::endl << std::endl << *ltr_algo_ << std::endl << *cleaver_;
   return os;
 }
@@ -131,9 +134,27 @@ void MetaCleaver::learn(std::shared_ptr<quickrank::data::Dataset> training_datas
     std::cout << "# -------------------------------" << std::endl;
   }
 
+  quickrank::MetricScore best_metric_on_training = 0.0;
+  quickrank::MetricScore best_metric_on_validation = 0.0;
+  size_t best_model = 0;
+  std::vector<double> best_weights;
+  best_weights.reserve(ntrees_);
+
+  // if we optimize the full model at each iteration (not only the last part)
+  // we cannot do more than one iteration without improvement...
+  if (!opt_last_only_)
+    valid_iterations_ = 1;
+
+  // Let's take the control of updating the LtR model
+  cleaver_->set_update_model(false);
+
   size_t last_ensemble_size;
   unsigned int iter = 0;
   do {
+
+    if (++iter > best_model + valid_iterations_ && valid_iterations_)
+      break;
+
     // Suppress output from cleaver and line_search. Print only summary of iter
     if (!verbose_)
       std::cout.setstate(std::ios_base::failbit);
@@ -154,7 +175,12 @@ void MetaCleaver::learn(std::shared_ptr<quickrank::data::Dataset> training_datas
 
     size_t new_ensemble_size = ltr_algo_ensemble->ensemble_model_.get_size();
     size_t diff_ensemble_size = new_ensemble_size - last_ensemble_size;
-    size_t size_to_prune = round(pruning_rate_per_iter_ * diff_ensemble_size);
+    size_t trees_to_keep =
+        (size_t) round( (1. - pruning_rate_per_iter_) * ntrees_per_iter_);
+
+    size_t trees_to_prune = diff_ensemble_size - trees_to_keep;
+    if (new_ensemble_size > ntrees_)
+      trees_to_prune = new_ensemble_size - ntrees_;
 
     // If the LtR training do not learned additional trees, stop now.
     if (!diff_ensemble_size)
@@ -173,15 +199,13 @@ void MetaCleaver::learn(std::shared_ptr<quickrank::data::Dataset> training_datas
     }
 
     // Set the number of trees to prune (when pruning rate is >= 1)
-    cleaver_->set_pruning_rate(size_to_prune);
+    cleaver_->set_pruning_rate(trees_to_prune);
     // Update the weights used by cleaver, using the weights of the ltr model
     auto ltr_weights = ltr_algo_ensemble->get_weights();
 
-//    // Set to 1 the weight of the tree learned in the current iteration
-//    for (auto i = new_ensemble_size - diff_ensemble_size;
-//         i < new_ensemble_size; ++i) {
-//      ltr_weights[i] = 1.0;
-//    }
+    // Set the optimization process to run only on the last trees
+    if (opt_last_only_)
+      cleaver_->set_last_estimators_to_optimize(diff_ensemble_size);
 
     cleaver_->update_weights(ltr_weights);
     if (cleaver_->get_line_search()) {
@@ -189,10 +213,6 @@ void MetaCleaver::learn(std::shared_ptr<quickrank::data::Dataset> training_datas
       // not reuse the learned weights from the previous iteration but use the
       // current weights of the cleaver model
       cleaver_->get_line_search()->reset_weights();
-
-      // Set to execute the line search only on the last learned trees
-      if (line_search_last_only_)
-        cleaver_->get_line_search()->set_last_only(diff_ensemble_size);
     }
 
     // run the optimization process
@@ -204,16 +224,44 @@ void MetaCleaver::learn(std::shared_ptr<quickrank::data::Dataset> training_datas
         0,
         output_basename);
 
+    // Check if there is a metric score improvement
+    bool improvement = false;
+    if (validation_dataset &&
+        cleaver_->get_metric_on_validation() > best_metric_on_validation) {
+      best_metric_on_validation = cleaver_->get_metric_on_validation();
+      best_metric_on_training = cleaver_->get_metric_on_training();
+      improvement = true;
+    } else if (cleaver_->get_metric_on_training() > best_metric_on_training) {
+      best_metric_on_training = cleaver_->get_metric_on_training();
+      improvement = true;
+    }
+
+    if (verbose_) {
+      std::cout << std::fixed << std::setprecision(4) << std::endl;
+      std::cout << "metric on training: "
+                << cleaver_->get_metric_on_training()
+                << " ( " << best_metric_on_training << " )" << std::endl;
+      std::cout << "metric on validation: "
+                << cleaver_->get_metric_on_validation() <<
+                " ( " << best_metric_on_validation << " )" << std::endl;
+      std::cout << "improvement: " << improvement << std::endl;
+    }
+
+
+    auto cur_weights = cleaver_->get_weigths();
+    // Apply changes on LtR algo if there is an impr. OR if we can backtrack
+    if (improvement || opt_last_only_)
+      ltr_algo_ensemble->update_weights(cur_weights);
+
+    // Save partial infos to do the backtrack
+    if (improvement) {
+      best_model = ltr_algo_ensemble->ensemble_model_.get_size();
+      best_weights = ltr_algo_ensemble->get_weights();
+    }
+
     print_weights(cleaver_->get_weigths(), "Cleaver Weights post-optimization");
     print_weights(ltr_algo_ensemble->get_weights(), "LtR Weights "
         "post-optimization");
-
-    std::cout << std::endl
-              << "# ---------------------------------------------" << std::endl
-              << "# |        Completed Meta Iteration. " << ++iter
-              << "        |" << std::endl
-              << "# ---------------------------------------------"
-              << std::endl << std::endl;
 
     // check if we have to print only the summary of each iteration
     if (!verbose_) {
@@ -226,16 +274,46 @@ void MetaCleaver::learn(std::shared_ptr<quickrank::data::Dataset> training_datas
       std::cout
           << std::setw(7) << iter
           << std::setw(6) << ltr_algo_ensemble->ensemble_model_.get_size()
-          << std::setw(9) << ltr_algo_ensemble->best_metric_on_training_;
+          << std::setw(9) << cleaver_->get_metric_on_training();
 
       if (validation_dataset)
         std::cout << std::setw(11)
-                  << ltr_algo_ensemble->best_metric_on_validation_;
+                  << cleaver_->get_metric_on_validation();
 
       std::cout << std::endl;
+    } else {
+
+      std::cout << std::endl
+                << "# ---------------------------------------------"<< std::endl
+                << "# |        Completed Meta Iteration. " << iter
+                << "        |" << std::endl
+                << "# ---------------------------------------------"
+                << std::endl << std::endl;
     }
 
   } while (ltr_algo_ensemble->ensemble_model_.get_size() < ntrees_);
+
+  // Check if we need to the the backtrack on the LtR model
+  if (opt_last_only_) {
+    size_t cur_size = ltr_algo_ensemble->ensemble_model_.get_size();
+    if (cur_size > best_model) {
+      std::vector<double> weight_mask = best_weights;
+      // Add as many 0-weight elem as the trees added from the last best model
+      for (size_t i=0; i < cur_size - best_model; ++i)
+        weight_mask.push_back(0);
+      // Reset the model with the old best weight and last trees
+      ltr_algo_ensemble->update_weights(weight_mask);
+    }
+  }
+
+  // --------------- TO REMOVE ---------------------
+  ltr_algo_ensemble->ntrees_ = ltr_algo_ensemble->ensemble_model_.get_size();
+  ltr_algo_ensemble->learn(training_dataset,
+                           validation_dataset,
+                           scorer,
+                           0,
+                           output_basename);
+  // --------------- TO REMOVE ---------------------
 
   // Reset the stream state to print again
   std::cout.clear();
@@ -245,13 +323,13 @@ void MetaCleaver::learn(std::shared_ptr<quickrank::data::Dataset> training_datas
       chrono_train_end - chrono_train_start).count();
 
   //Finishing up
-  std::cout << std::endl;
+  std::cout <<  std::fixed << std::setprecision(4) << std::endl;
   std::cout << *scorer << " on training data = "
-            << ltr_algo_ensemble->best_metric_on_training_ << std::endl;
+            << best_metric_on_training << std::endl;
 
   if (validation_dataset) {
     std::cout << *scorer << " on validation data = "
-              << ltr_algo_ensemble->best_metric_on_validation_ << std::endl;
+              << best_metric_on_validation << std::endl;
   }
 
   std::cout << std::endl;

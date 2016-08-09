@@ -46,14 +46,18 @@ const std::vector<std::string> Cleaver::pruningMethodNames = {
 
 Cleaver::Cleaver(double pruning_rate) :
     pruning_rate_(pruning_rate),
-    lineSearch_() {
+    lineSearch_(),
+    last_estimators_to_optimize_(0),
+    update_model_(true) {
 }
 
 Cleaver::Cleaver(double pruning_rate,
                  std::shared_ptr<learning::linear::LineSearch> lineSearch)
     :
     pruning_rate_(pruning_rate),
-    lineSearch_(lineSearch) {
+    lineSearch_(lineSearch),
+    last_estimators_to_optimize_(0),
+    update_model_(true) {
 }
 
 Cleaver::Cleaver(const pugi::xml_document &model) {
@@ -167,20 +171,22 @@ void Cleaver::optimize(
 
   auto begin = std::chrono::steady_clock::now();
 
-  size_t num_features = training_dataset->num_features();
+  unsigned int num_features = training_dataset->num_features();
+
+  // If var is not set, optimize all the features and not only the last ones.
+  if (!last_estimators_to_optimize_)
+    last_estimators_to_optimize_ = num_features;
 
   if (pruning_rate_ < 1)
-    estimators_to_prune_ = (size_t) round(pruning_rate_ * num_features);
+    estimators_to_prune_ = round(pruning_rate_ * last_estimators_to_optimize_);
   else {
-    estimators_to_prune_ = (size_t) pruning_rate_;
-    if (estimators_to_prune_ >= num_features) {
+    estimators_to_prune_ = pruning_rate_;
+    if (estimators_to_prune_ >= last_estimators_to_optimize_) {
       std::cout << "Incorrect pruning rate value (too high). Quit!"
                 << std::endl;
       return;
     }
   }
-
-  estimators_to_select_ = num_features - estimators_to_prune_;
 
   // If weights were not set before by calling the update_weights method,
   // set the starting weights to 1.0 by default
@@ -198,8 +204,8 @@ void Cleaver::optimize(
   // compute training and validation scores using starting weights
   std::vector<Score> training_score(training_dataset->num_instances());
   score(training_dataset.get(), &training_score[0]);
-  auto init_metric_on_training = metric->evaluate_dataset(training_dataset,
-                                                          &training_score[0]);
+  metric_on_training_ = metric->evaluate_dataset(training_dataset,
+                                                 &training_score[0]);
 
   std::cout << std::endl;
   std::cout << "# Model before optimization:" << std::endl;
@@ -207,13 +213,13 @@ void Cleaver::optimize(
   std::cout << "# --------------------------" << std::endl;
   std::cout << "#       training validation" << std::endl;
   std::cout << "# --------------------------" << std::endl;
-  std::cout << std::setw(16) << init_metric_on_training;
+  std::cout << std::setw(16) << metric_on_training_;
   if (validation_dataset) {
     std::vector<Score> validation_score(validation_dataset->num_instances());
     score(validation_dataset.get(), &validation_score[0]);
-    auto init_metric_on_validation = metric->evaluate_dataset(
+    metric_on_validation_ = metric->evaluate_dataset(
         validation_dataset, &validation_score[0]);
-    std::cout << std::setw(9) << init_metric_on_validation << std::endl;
+    std::cout << std::setw(9) << metric_on_validation_ << std::endl;
   }
   std::cout << std::endl;
 
@@ -234,7 +240,7 @@ void Cleaver::optimize(
   }
 
   // Some pruning methods needs to perform line search before the pruning
-  if (line_search_pre_pruning() && pruning_rate_ > 0) {
+  if (line_search_pre_pruning() && estimators_to_prune_ > 0) {
 
     if (!lineSearch_) {
       std::cerr << "This pruning method requires line search" << std::endl;
@@ -329,10 +335,11 @@ void Cleaver::optimize(
   }
 
   // Put the new weights inside the ltr algorithm (including the pruned trees)
-  algo->update_weights(weights_);
+  if (update_model_)
+    algo->update_weights(weights_);
 
   score(training_dataset.get(), &training_score[0]);
-  init_metric_on_training = metric->evaluate_dataset(training_dataset,
+  metric_on_training_ = metric->evaluate_dataset(training_dataset,
                                                      &training_score[0]);
 
   std::cout << "# Model after optimization:" << std::endl;
@@ -340,13 +347,13 @@ void Cleaver::optimize(
   std::cout << "# --------------------------" << std::endl;
   std::cout << "#       training validation" << std::endl;
   std::cout << "# --------------------------" << std::endl;
-  std::cout << std::setw(16) << init_metric_on_training;
+  std::cout << std::setw(16) << metric_on_training_;
   if (validation_dataset) {
     std::vector<Score> validation_score(validation_dataset->num_instances());
     score(validation_dataset.get(), &validation_score[0]);
-    auto init_metric_on_validation = metric->evaluate_dataset(
+    metric_on_validation_ = metric->evaluate_dataset(
         validation_dataset, &validation_score[0]);
-    std::cout << std::setw(9) << init_metric_on_validation << std::endl;
+    std::cout << std::setw(9) << metric_on_validation_ << std::endl;
   }
 
   auto end = std::chrono::steady_clock::now();
@@ -389,11 +396,13 @@ std::shared_ptr<data::Dataset> Cleaver::filter_dataset(
     std::shared_ptr<data::Dataset> dataset,
     std::set<unsigned int> &pruned_estimators) const {
 
+  size_t estimators_to_select = dataset->num_features() - estimators_to_prune_;
+
   data::Dataset *filt_dataset = new data::Dataset(dataset->num_instances(),
-                                                  estimators_to_select_);
+                                                  estimators_to_select);
 
   // allocate feature vector
-  std::vector<Feature> featureSelected(estimators_to_select_);
+  std::vector<Feature> featureSelected(estimators_to_select);
   unsigned int skipped;
 
   for (unsigned int q = 0; q < dataset->num_queries(); q++) {
