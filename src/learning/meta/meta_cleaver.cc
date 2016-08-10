@@ -109,9 +109,8 @@ std::ostream &MetaCleaver::put(std::ostream &os) const {
      << "# max no. of trees = " << ntrees_ << std::endl
      << "# no. of trees per iter = " << ntrees_per_iter_ << std::endl
      << "# pruning rate per iter = " << cleaver_->get_pruning_rate() <<std::endl
-     << "# optimize only last trees = " << opt_last_only_
+     << "# optimize only last trees = " << opt_last_only_ <<std::endl
      << "# no. of no gain rounds before early stop = " << valid_iterations_
-     << std::endl
      << std::endl << std::endl << *ltr_algo_ << std::endl << *cleaver_;
   return os;
 }

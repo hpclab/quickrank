@@ -384,7 +384,8 @@ void LineSearch::learn(
     std::cout << std::endl;
     window_size *= cur_reduction_factor;
 
-    if (adaptive_ && window_size < 0.01)
+    // if the cur window size is smaller than 1/100th of the original one, stop
+    if (adaptive_ && window_size < window_size_ / 100)
       break;
 
     if (partial_save != 0 and !output_basename.empty()

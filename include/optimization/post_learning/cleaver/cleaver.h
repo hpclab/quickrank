@@ -147,8 +147,6 @@ class Cleaver: public PostLearningOptimization {
 
   void set_last_estimators_to_optimize(size_t last_estimators_to_optimize) {
     last_estimators_to_optimize_ = last_estimators_to_optimize;
-    if (lineSearch_)
-      lineSearch_->set_last_only(last_estimators_to_optimize);
   }
 
   MetricScore get_metric_on_training() {

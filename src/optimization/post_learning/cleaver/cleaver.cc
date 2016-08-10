@@ -247,6 +247,9 @@ void Cleaver::optimize(
       exit(EXIT_FAILURE);
     }
 
+    // Set to optimize only last estimators
+    lineSearch_->set_last_only(last_estimators_to_optimize_);
+
     if (lineSearch_->get_weights().empty()) {
 
       // Need to do the line search pre-pruning.
@@ -323,6 +326,10 @@ void Cleaver::optimize(
     std::cout << "# LineSearch post-pruning:" << std::endl;
     std::cout << "# --------------------------" << std::endl;
 
+    // Set to optimize only last estimators (excluding the pruned ones)
+    lineSearch_->set_last_only(
+        last_estimators_to_optimize_ - estimators_to_prune_);
+
     // On each call to learn, line search internally resets the weights vector
     lineSearch_->learn(filtered_training_dataset, filtered_validation_dataset,
                        metric, 0, std::string());
@@ -342,18 +349,26 @@ void Cleaver::optimize(
   metric_on_training_ = metric->evaluate_dataset(training_dataset,
                                                      &training_score[0]);
 
+  // compute the new ensemble size. The first line could be approx due to
+  // the fact that line search could have set to 0 also ensemble not to prune
+  // (as a result of the optimization process on the weights).
+  unsigned int new_estimators_size = num_features - estimators_to_prune_;
+  if (update_model_)
+    new_estimators_size = algo->get_weights().size();
+
   std::cout << "# Model after optimization:" << std::endl;
   std::cout << std::fixed << std::setprecision(4);
   std::cout << "# --------------------------" << std::endl;
-  std::cout << "#       training validation" << std::endl;
+  std::cout << "#  size training validation" << std::endl;
   std::cout << "# --------------------------" << std::endl;
-  std::cout << std::setw(16) << metric_on_training_;
+  std::cout << std::setw(7) << new_estimators_size;
+  std::cout << std::setw(8) << metric_on_training_;
   if (validation_dataset) {
     std::vector<Score> validation_score(validation_dataset->num_instances());
     score(validation_dataset.get(), &validation_score[0]);
     metric_on_validation_ = metric->evaluate_dataset(
         validation_dataset, &validation_score[0]);
-    std::cout << std::setw(9) << metric_on_validation_ << std::endl;
+    std::cout << std::setw(10) << metric_on_validation_ << std::endl;
   }
 
   auto end = std::chrono::steady_clock::now();
