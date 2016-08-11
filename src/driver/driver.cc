@@ -238,7 +238,8 @@ void Driver::training_phase(
 
   if (!output_filename.empty()) {
     std::cout << std::endl;
-    std::cout << "# Writing model to file: " << output_filename << std::endl;
+    std::cout << "# Writing model to file: " << output_filename
+              << std::endl << std::endl;
     algo->save(output_filename);
   }
 }

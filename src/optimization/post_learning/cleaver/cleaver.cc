@@ -174,8 +174,11 @@ void Cleaver::optimize(
   unsigned int num_features = training_dataset->num_features();
 
   // If var is not set, optimize all the features and not only the last ones.
-  if (!last_estimators_to_optimize_)
+  bool opt_last_only = true;
+  if (last_estimators_to_optimize_ == 0) {
     last_estimators_to_optimize_ = num_features;
+    opt_last_only = false;
+  }
 
   if (pruning_rate_ < 1)
     estimators_to_prune_ = round(pruning_rate_ * last_estimators_to_optimize_);
@@ -215,13 +218,13 @@ void Cleaver::optimize(
   std::cout << "#  size training validation" << std::endl;
   std::cout << "# --------------------------" << std::endl;
   std::cout << std::setw(7) << num_features;
-  std::cout << std::setw(16) << metric_on_training_;
+  std::cout << std::setw(8) << metric_on_training_;
   if (validation_dataset) {
     std::vector<Score> validation_score(validation_dataset->num_instances());
     score(validation_dataset.get(), &validation_score[0]);
     metric_on_validation_ = metric->evaluate_dataset(
         validation_dataset, &validation_score[0]);
-    std::cout << std::setw(9) << metric_on_validation_ << std::endl;
+    std::cout << std::setw(10) << metric_on_validation_ << std::endl;
   }
   std::cout << std::endl;
 
@@ -250,7 +253,9 @@ void Cleaver::optimize(
     }
 
     // Set to optimize only last estimators
-    lineSearch_->set_last_only(last_estimators_to_optimize_);
+    if (opt_last_only) {
+      lineSearch_->set_last_only(last_estimators_to_optimize_);
+    }
 
     if (lineSearch_->get_weights().empty()) {
 
@@ -258,7 +263,9 @@ void Cleaver::optimize(
       // The line search weights inside the model are not set
 
       // Set the weights in the line search model to their starting value
-      lineSearch_->update_weights(weights_);
+      bool res = lineSearch_->update_weights(weights_);
+      if (!res)
+        std::exit(EXIT_FAILURE);
 
       std::cout << "# LineSearch pre-pruning:" << std::endl;
       std::cout << "# --------------------------" << std::endl;
@@ -312,7 +319,9 @@ void Cleaver::optimize(
         new_ls_weights.push_back(starting_weights[f]);
     }
 
-    lineSearch_->update_weights(new_ls_weights);
+    bool res = lineSearch_->update_weights(new_ls_weights);
+    if (!res)
+      std::exit(EXIT_FAILURE);
 
     // Filter the dataset by deleting features with 0 weight
     std::shared_ptr<data::Dataset> filtered_training_dataset;
@@ -329,8 +338,10 @@ void Cleaver::optimize(
     std::cout << "# --------------------------" << std::endl;
 
     // Set to optimize only last estimators (excluding the pruned ones)
-    lineSearch_->set_last_only(
-        last_estimators_to_optimize_ - estimators_to_prune_);
+    if (opt_last_only) {
+      lineSearch_->set_last_only(
+          last_estimators_to_optimize_ - estimators_to_prune_);
+    }
 
     // On each call to learn, line search internally resets the weights vector
     lineSearch_->learn(filtered_training_dataset, filtered_validation_dataset,
@@ -344,8 +355,11 @@ void Cleaver::optimize(
   }
 
   // Put the new weights inside the ltr algorithm (including the pruned trees)
-  if (update_model_)
-    algo->update_weights(weights_);
+  if (update_model_) {
+    bool res = algo->update_weights(weights_);
+    if (!res)
+      std::exit(EXIT_FAILURE);
+  }
 
   score(training_dataset.get(), &training_score[0]);
   metric_on_training_ = metric->evaluate_dataset(training_dataset,
@@ -379,6 +393,10 @@ void Cleaver::optimize(
   std::cout << std::endl;
   std::cout << "# \t Total training time: " << std::setprecision(2) <<
             elapsed.count() << " seconds" << std::endl;
+
+  // Reset last_estimators_to_optimize_ to 0 in case of global optimization
+  if (!opt_last_only)
+    last_estimators_to_optimize_ = 0;
 }
 
 void Cleaver::score(data::Dataset *dataset, Score *scores) const {

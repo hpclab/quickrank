@@ -249,8 +249,11 @@ void MetaCleaver::learn(std::shared_ptr<quickrank::data::Dataset> training_datas
 
     auto cur_weights = cleaver_->get_weigths();
     // Apply changes on LtR algo if there is an impr. OR if we can backtrack
-    if (improvement || opt_last_only_)
-      ltr_algo_ensemble->update_weights(cur_weights);
+    if (improvement || opt_last_only_) {
+      bool res = ltr_algo_ensemble->update_weights(cur_weights);
+      if (!res)
+        std::exit(EXIT_FAILURE);
+    }
 
     // Save partial infos to do the backtrack
     if (improvement) {
@@ -301,18 +304,11 @@ void MetaCleaver::learn(std::shared_ptr<quickrank::data::Dataset> training_datas
       for (size_t i=0; i < cur_size - best_model; ++i)
         weight_mask.push_back(0);
       // Reset the model with the old best weight and last trees
-      ltr_algo_ensemble->update_weights(weight_mask);
+      bool res = ltr_algo_ensemble->update_weights(weight_mask);
+      if (!res)
+        std::exit(EXIT_FAILURE);
     }
   }
-
-  // --------------- TO REMOVE ---------------------
-  ltr_algo_ensemble->ntrees_ = ltr_algo_ensemble->ensemble_model_.get_size();
-  ltr_algo_ensemble->learn(training_dataset,
-                           validation_dataset,
-                           scorer,
-                           0,
-                           output_basename);
-  // --------------- TO REMOVE ---------------------
 
   // Reset the stream state to print again
   std::cout.clear();
