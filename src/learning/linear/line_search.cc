@@ -226,11 +226,11 @@ void LineSearch::learn(
   std::cout << std::endl;
 
   // window_size is the mean weight times the window_size_ factor
-  double window_size = std::accumulate(best_weights_.cbegin(),
-                                       best_weights_.cend(),
-                                       0.0) / best_weights_.size();
+  double starting_window_size = std::accumulate(best_weights_.cbegin(),
+                                                best_weights_.cend(),
+                                                0.0) / best_weights_.size();
   // Multiply the average weight for the window size factor
-  window_size *= window_size_;
+  double window_size = starting_window_size * window_size_;
 
   unsigned int starting_feature_idx = 0;
   if (train_only_last_)
@@ -392,7 +392,7 @@ void LineSearch::learn(
     window_size *= cur_reduction_factor;
 
     // if the cur window size is smaller than 1/10th of the original one, stop
-    if (adaptive_ && window_size < window_size_ / 10)
+    if (adaptive_ && window_size < starting_window_size / 10)
       break;
 
     if (partial_save != 0 and !output_basename.empty()
