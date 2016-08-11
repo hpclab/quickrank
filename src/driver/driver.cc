@@ -133,7 +133,8 @@ int Driver::run(ParamsMap &pmap) {
 
       // If the training algorithm has been created from scratch (not loaded
       // from file), we have to run the training phase
-      if (pmap.isSet("train") && !pmap.isSet("skip-train")) {
+      if (pmap.isSet("train") && !pmap.isSet("skip-train") && (
+          !pmap.isSet("model-in") || pmap.isSet("restart-train")) ) {
 
         //show ranker parameters
         std::cout << "#" << std::endl << *ranking_algorithm;

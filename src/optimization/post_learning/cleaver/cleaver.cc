@@ -191,8 +191,9 @@ void Cleaver::optimize(
   // If weights were not set before by calling the update_weights method,
   // set the starting weights to 1.0 by default
   if (weights_.empty())  {
+    weights_ = std::vector<double>(algo->get_weights());
     // Need the swap method because best_weights_ is unitialized
-    std::vector<double>(num_features, 1.0f).swap(weights_);
+//    std::vector<double>(num_features, 1.0f).swap(weights_);
   } else if (weights_.size() != num_features) {
     // The check on the number of features is needed because the line search model
     // could be reused on a different datasets (different size) w/o reset weights
@@ -211,8 +212,9 @@ void Cleaver::optimize(
   std::cout << "# Model before optimization:" << std::endl;
   std::cout << std::fixed << std::setprecision(4);
   std::cout << "# --------------------------" << std::endl;
-  std::cout << "#       training validation" << std::endl;
+  std::cout << "#  size training validation" << std::endl;
   std::cout << "# --------------------------" << std::endl;
+  std::cout << std::setw(7) << num_features;
   std::cout << std::setw(16) << metric_on_training_;
   if (validation_dataset) {
     std::vector<Score> validation_score(validation_dataset->num_instances());

@@ -157,8 +157,6 @@ void LineSearch::learn(
     size_t partial_save, const std::string output_basename) {
 
   auto begin = std::chrono::steady_clock::now();
-  // preserve original value of the window
-  double window_size = window_size_;
 
   // We force num_points to be odd, so that the central point in step 1 is
   // included by default in searching the best weight for each feature
@@ -226,6 +224,13 @@ void LineSearch::learn(
     std::cout << std::setw(9) << best_metric_on_validation << " *";
   }
   std::cout << std::endl;
+
+  // window_size is the mean weight times the window_size_ factor
+  double window_size = std::accumulate(best_weights_.cbegin(),
+                                       best_weights_.cend(),
+                                       0.0) / best_weights_.size();
+  // Multiply the average weight for the window size factor
+  window_size *= window_size_;
 
   unsigned int starting_feature_idx = 0;
   if (train_only_last_)
@@ -341,13 +346,13 @@ void LineSearch::learn(
 
     auto cur_reduction_factor = reduction_factor_;
     if (adaptive_) {
+      // TODO: fix, metric dependent (NDCG considered here)
       double max_gain = 0.005;
       // At most double the reduction factor (2 * reduction_factor_ > 1)
       double relative_gain =
           std::min((gain_on_training - max_gain) / max_gain, 1.);
       // At least half the reduction factor (0.5 * reduction_factor_)
-      cur_reduction_factor =
-          reduction_factor_ * (1 + std::max(relative_gain, -0.5));
+      cur_reduction_factor = 1 + std::max(relative_gain, -0.5);
     }
 
     // check if there is validation_dataset
@@ -375,17 +380,19 @@ void LineSearch::learn(
           break;
         }
       }
-
-      std::cout << " " << std::setw(7) << gain_on_training << " "
-                << std::setw(8) << window_size << " "
-                << std::setw(8) << cur_reduction_factor;
+    } else {
+      std::cout << std::setw(11) << "";
     }
+
+    std::cout << " " << std::setw(7) << gain_on_training << " "
+              << std::setw(8) << window_size << " "
+              << std::setw(8) << cur_reduction_factor;
 
     std::cout << std::endl;
     window_size *= cur_reduction_factor;
 
-    // if the cur window size is smaller than 1/100th of the original one, stop
-    if (adaptive_ && window_size < window_size_ / 100)
+    // if the cur window size is smaller than 1/10th of the original one, stop
+    if (adaptive_ && window_size < window_size_ / 10)
       break;
 
     if (partial_save != 0 and !output_basename.empty()
