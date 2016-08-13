@@ -59,10 +59,12 @@ Cleaver::Cleaver(double pruning_rate,
     last_estimators_to_optimize_(0),
     update_model_(true) {
 
-  // Update the cleaver weights if line search is pre-trained
-  auto ls_weights = lineSearch->get_weights();
-  if (!ls_weights.empty())
-    this->update_weights(ls_weights);
+  if (lineSearch) {
+    // Update the cleaver weights if line search is pre-trained
+    auto ls_weights = lineSearch->get_weights();
+    if (!ls_weights.empty())
+      this->update_weights(ls_weights);
+  }
 }
 
 Cleaver::Cleaver(const pugi::xml_document &model) {
