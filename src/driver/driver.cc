@@ -179,7 +179,7 @@ int Driver::run(ParamsMap &pmap) {
               pmap.get<std::string>("test-metric"),
               pmap.get<size_t>("test-cutoff"));
       if (!testing_metric) {
-        std::cerr << " !! Train Metric was not set properly" << std::endl;
+        std::cerr << " !! Test Metric was not set properly" << std::endl;
         exit(EXIT_FAILURE);
       }
 
@@ -330,10 +330,20 @@ void Driver::testing_phase(
 
   if (test_metric and test_dataset) {
 
-    std::vector<Score> scores(test_dataset->num_instances());
+    std::vector<Score> scores(test_dataset->num_instances(), 0.0);
     if (detailed_testing) {
       std::shared_ptr<data::Dataset> datasetPartScores =
           Driver::extract_partial_scores(algo, test_dataset);
+
+      Feature *features = datasetPartScores->at(0, 0);
+#pragma omp parallel for
+      for (unsigned int s = 0; s < datasetPartScores->num_instances(); ++s) {
+        size_t offset_feature = s * datasetPartScores->num_features();
+        // compute partialScore * weight for all the trees
+        for (unsigned int f = 0; f < datasetPartScores->num_features(); ++f) {
+          scores[s] += features[offset_feature + f];
+        }
+      }
 
       quickrank::MetricScore test_score = test_metric->evaluate_dataset(
           test_dataset, &scores[0]);
@@ -343,6 +353,9 @@ void Driver::testing_phase(
 
       quickrank::io::Svml svml;
       svml.write(datasetPartScores, scores_filename);
+
+      std::cout << "# Partial Scores written to file: " << scores_filename
+                << std::endl;
 
     } else {
       algo->score_dataset(test_dataset, &scores[0]);
