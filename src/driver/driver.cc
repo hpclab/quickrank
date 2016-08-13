@@ -77,7 +77,7 @@ int Driver::run(ParamsMap &pmap) {
           exit(EXIT_FAILURE);
         }
 
-        std::cout << std::endl << *opt_algorithm << std::endl;
+        std::cout << *opt_algorithm << std::endl;
       }
 
       std::string training_filename = pmap.get<std::string>("train");

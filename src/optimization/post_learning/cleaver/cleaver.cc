@@ -58,13 +58,6 @@ Cleaver::Cleaver(double pruning_rate,
     lineSearch_(lineSearch),
     last_estimators_to_optimize_(0),
     update_model_(true) {
-
-  if (lineSearch) {
-    // Update the cleaver weights if line search is pre-trained
-    auto ls_weights = lineSearch->get_weights();
-    if (!ls_weights.empty())
-      this->update_weights(ls_weights);
-  }
 }
 
 Cleaver::Cleaver(const pugi::xml_document &model) {
@@ -164,7 +157,7 @@ std::ostream &Cleaver::put(std::ostream &os) const {
   if (lineSearch_)
     os << "# Line Search Parameters: " << std::endl << *lineSearch_;
   else
-    os << "# No Line Search" << std::endl;
+    os << "# No Line Search";
   return os << std::endl;
 }
 
@@ -240,14 +233,6 @@ void Cleaver::optimize(
   std::vector<double> starting_weights(weights_);
 
   print_weights(weights_, "Cleaver Weights ANTE LS pre-pruning");
-
-  if (lineSearch_ &&
-      !lineSearch_->get_weights().empty() &&
-      lineSearch_->get_weights() != weights_) {
-    std::cerr << "The weights in the line search model do not "
-        "correspond to the weights in the cleaver model." << std::endl;
-    exit(EXIT_FAILURE);
-  }
 
   // Some pruning methods needs to perform line search before the pruning
   if (line_search_pre_pruning() && estimators_to_prune_ > 0) {
