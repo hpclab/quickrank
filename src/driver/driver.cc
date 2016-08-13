@@ -259,6 +259,7 @@ void Driver::optimization_phase(
   std::shared_ptr<quickrank::data::Dataset> training_partial_dataset;
   std::shared_ptr<quickrank::data::Dataset> validation_partial_dataset;
 
+  // Variable meaning the algo needs partial scores
   bool need_ps = opt_algorithm->need_partial_score_dataset();
 
   if (opt_algorithm && need_ps) {

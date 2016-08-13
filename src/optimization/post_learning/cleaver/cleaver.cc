@@ -58,6 +58,11 @@ Cleaver::Cleaver(double pruning_rate,
     lineSearch_(lineSearch),
     last_estimators_to_optimize_(0),
     update_model_(true) {
+
+  // Update the cleaver weights if line search is pre-trained
+  auto ls_weights = lineSearch->get_weights();
+  if (!ls_weights.empty())
+    this->update_weights(ls_weights);
 }
 
 Cleaver::Cleaver(const pugi::xml_document &model) {
@@ -192,11 +197,9 @@ void Cleaver::optimize(
   }
 
   // If weights were not set before by calling the update_weights method,
-  // set the starting weights to 1.0 by default
+  // set the starting weights to the line search or algo weights
   if (weights_.empty())  {
     weights_ = std::vector<double>(algo->get_weights());
-    // Need the swap method because best_weights_ is unitialized
-//    std::vector<double>(num_features, 1.0f).swap(weights_);
   } else if (weights_.size() != num_features) {
     // The check on the number of features is needed because the line search model
     // could be reused on a different datasets (different size) w/o reset weights
