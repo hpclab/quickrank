@@ -261,15 +261,15 @@ void LineSearch::learn(
       }
 
 #pragma omp parallel for
-      for (unsigned int s = 0; s < num_train_instances; s++) {
-        for (unsigned int p = 0; p < points.size(); p++) {
+      for (unsigned int s = 0; s < num_train_instances; ++s) {
+        for (unsigned int p = 0; p < points.size(); ++p) {
           training_score[s + (num_train_instances * p)] =
               points[p] * training_dataset->at(s, f)[0] + pre_sum[s];
         }
       }
 
 #pragma omp parallel for
-      for (unsigned int p = 0; p < points.size(); p++) {
+      for (unsigned int p = 0; p < points.size(); ++p) {
         // Each thread computes the metric on some points of the window.
         // Thread p-th computes score on a part of the training_score vector
         // Operator & is used to obtain the first position of the sub-array
@@ -304,10 +304,10 @@ void LineSearch::learn(
     if (!zeros) {
 
 #pragma omp parallel for
-      for (unsigned int s = 0; s < num_train_instances; s++) {
-        for (unsigned int p = 0; p < num_points + 1; p++) {
+      for (unsigned int s = 0; s < num_train_instances; ++s) {
+        for (unsigned int p = 0; p < num_points + 1; ++p) {
           Score score = 0;
-          for (unsigned int f = 0; f < num_features; f++) {
+          for (unsigned int f = 0; f < num_features; ++f) {
             score += (weights_prev[f] + step2[f] * p)
                 * training_dataset->at(s, f)[0];
           }
@@ -316,7 +316,7 @@ void LineSearch::learn(
       }
 
 #pragma omp parallel for
-      for (unsigned int p = 0; p < num_points + 1; p++) {
+      for (unsigned int p = 0; p < num_points + 1; ++p) {
         // Each thread computes the metric on some points of the window.
         // Thread p-th computes score on a part of the training_score vector
         // Operator & is used to obtain the first position of the sub-array
@@ -331,7 +331,7 @@ void LineSearch::learn(
         auto p = std::distance(metric_scores.cbegin(), i_max_metric_score);
 
         // recompute the weights vector related to point p
-        for (unsigned int f = 0; f < num_features; f++) {
+        for (unsigned int f = 0; f < num_features; ++f) {
           weights[f] = (weights_prev[f] + step2[f] * p);
         }
         gain_on_training = *i_max_metric_score - best_metric_on_training;
