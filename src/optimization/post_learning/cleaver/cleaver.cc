@@ -234,6 +234,14 @@ void Cleaver::optimize(
 
   print_weights(weights_, "Cleaver Weights ANTE LS pre-pruning");
 
+  if (lineSearch_ &&
+      !lineSearch_->get_weights().empty() &&
+      lineSearch_->get_weights() != weights_) {
+    std::cerr << "The weights in the line search model do not "
+        "correspond to the weights in the cleaver model." << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
   // Some pruning methods needs to perform line search before the pruning
   if (line_search_pre_pruning() && estimators_to_prune_ > 0) {
 

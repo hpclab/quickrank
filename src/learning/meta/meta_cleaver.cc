@@ -149,6 +149,7 @@ void MetaCleaver::learn(std::shared_ptr<quickrank::data::Dataset> training_datas
 
   size_t last_ensemble_size;
   unsigned int iter = 0;
+  size_t last_save = 0;
   do {
 
     if (++iter > best_model + valid_iterations_ && valid_iterations_)
@@ -190,7 +191,8 @@ void MetaCleaver::learn(std::shared_ptr<quickrank::data::Dataset> training_datas
       quickrank::driver::Driver::extract_partial_scores(
           ltr_algo_ensemble, training_dataset, true);
 
-    std::shared_ptr<quickrank::data::Dataset> validation_partial_dataset;
+    std::shared_ptr<quickrank::data::Dataset>
+        validation_partial_dataset = nullptr;
     if (validation_dataset) {
       validation_partial_dataset =
           quickrank::driver::Driver::extract_partial_scores(
@@ -256,8 +258,9 @@ void MetaCleaver::learn(std::shared_ptr<quickrank::data::Dataset> training_datas
     }
 
     // Save partial infos to do the backtrack
+    size_t cur_ens_size = ltr_algo_ensemble->ensemble_model_.get_size();
     if (improvement) {
-      best_model = ltr_algo_ensemble->ensemble_model_.get_size();
+      best_model = cur_ens_size;
       best_weights = ltr_algo_ensemble->get_weights();
     }
 
@@ -291,6 +294,16 @@ void MetaCleaver::learn(std::shared_ptr<quickrank::data::Dataset> training_datas
                 << "        |" << std::endl
                 << "# ---------------------------------------------"
                 << std::endl << std::endl;
+    }
+
+    if (partial_save != 0 and !output_basename.empty()) {
+
+      if ( floor( 1.0f * last_save / partial_save) <
+           floor( 1.0f * cur_ens_size / partial_save) ) {
+
+        save(output_basename, cur_ens_size);
+        last_save = cur_ens_size;
+      }
     }
 
   } while (ltr_algo_ensemble->ensemble_model_.get_size() < ntrees_);
