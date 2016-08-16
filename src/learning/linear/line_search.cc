@@ -261,20 +261,21 @@ void LineSearch::learn(
       }
 
 #pragma omp parallel for
-      for (unsigned int p = 0; p < points.size(); p++) {
-        //loop to add partial scores to the total score of the feature i
-        for (unsigned int s = 0; s < num_train_instances; s++) {
+      for (unsigned int s = 0; s < num_train_instances; s++) {
+        for (unsigned int p = 0; p < points.size(); p++) {
           training_score[s + (num_train_instances * p)] =
               points[p] * training_dataset->at(s, f)[0] + pre_sum[s];
         }
+      }
+
+#pragma omp parallel for
+      for (unsigned int p = 0; p < points.size(); p++) {
         // Each thread computes the metric on some points of the window.
         // Thread p-th computes score on a part of the training_score vector
         // Operator & is used to obtain the first position of the sub-array
         metric_scores[p] = scorer->evaluate_dataset(
             training_dataset, &training_score[num_train_instances * p]);
-
       }
-      // End parallel loop
 
       // Find the best metric score
       auto i_max_metric_score = std::max_element(metric_scores.cbegin(),
@@ -303,10 +304,8 @@ void LineSearch::learn(
     if (!zeros) {
 
 #pragma omp parallel for
-      for (unsigned int p = 0; p < num_points + 1; p++) {
-        // loop to add partial scores to the total score of the feature i
-        for (unsigned int s = 0; s < num_train_instances; s++) {
-
+      for (unsigned int s = 0; s < num_train_instances; s++) {
+        for (unsigned int p = 0; p < num_points + 1; p++) {
           Score score = 0;
           for (unsigned int f = 0; f < num_features; f++) {
             score += (weights_prev[f] + step2[f] * p)
@@ -314,14 +313,16 @@ void LineSearch::learn(
           }
           training_score[s + (num_train_instances * p)] = score;
         }
+      }
 
+#pragma omp parallel for
+      for (unsigned int p = 0; p < num_points + 1; p++) {
         // Each thread computes the metric on some points of the window.
         // Thread p-th computes score on a part of the training_score vector
         // Operator & is used to obtain the first position of the sub-array
         metric_scores[p] = scorer->evaluate_dataset(
             training_dataset, &training_score[num_train_instances * p]);
       }
-      // End parallel loop
 
       // Find the best metric score
       auto i_max_metric_score = std::max_element(metric_scores.cbegin(),
