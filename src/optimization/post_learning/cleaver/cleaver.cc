@@ -28,6 +28,7 @@
 #include <cassert>
 #include <io/svml.h>
 #include <sstream>
+#include <numeric>
 
 #include "utils/strutils.h"
 
