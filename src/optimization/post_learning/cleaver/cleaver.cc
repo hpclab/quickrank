@@ -214,7 +214,6 @@ void Cleaver::optimize(
                                                 0.0) / algo_weights.size();
 
       double scaling_factor = mean_ls_weight / mean_algo_weight;
-      std::cout << "Scaling Factor: " << scaling_factor << std::endl;
 
       weights_ = std::vector<double>(ls_weights);
       std::transform(weights_.begin(), weights_.end(), weights_.begin(),
