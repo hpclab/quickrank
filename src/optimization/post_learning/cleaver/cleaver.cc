@@ -58,11 +58,6 @@ Cleaver::Cleaver(double pruning_rate,
     lineSearch_(lineSearch),
     last_estimators_to_optimize_(0),
     update_model_(true) {
-
-  if (!lineSearch->get_weights().empty()) {
-    auto ls_weights = lineSearch->get_weights();
-    update_weights(ls_weights);
-  }
 }
 
 Cleaver::Cleaver(const pugi::xml_document &model) {
@@ -197,9 +192,40 @@ void Cleaver::optimize(
   }
 
   // If weights were not set before by calling the update_weights method,
-  // set the starting weights to the algo weights
+  // set the starting weights to the line search or algo weights
   if (weights_.empty())  {
-    weights_ = std::vector<double>(algo->get_weights());
+
+    // import weights from line search and scale accordingly
+    // to the average weight of the LtR algo (LS done separately has
+    // weights around 1.0f value).
+    if (!lineSearch_->get_weights().empty()) {
+
+      auto ls_weights = lineSearch_->get_weights();
+      auto algo_weights = algo->get_weights();
+
+      // window_size is the mean weight times the window_size_ factor
+      double mean_ls_weight = std::accumulate(ls_weights.cbegin(),
+                                              ls_weights.cend(),
+                                              0.0) / ls_weights.size();
+
+      double mean_algo_weight = std::accumulate(algo_weights.cbegin(),
+                                                algo_weights.cend(),
+                                                0.0) / algo_weights.size();
+
+      double scaling_factor = mean_ls_weight / mean_algo_weight;
+      std::cout << "Scaling Factor: " << scaling_factor << std::endl;
+
+      weights_ = std::vector<double>(ls_weights);
+      std::transform(weights_.begin(), weights_.end(), weights_.begin(),
+                     std::bind1st(std::multiplies<double>(),
+                                  1.0 / scaling_factor) );
+      // Update accordingly the line search weights after the rescaling
+      lineSearch_->update_weights(weights_);
+
+    } else {
+      weights_ = std::vector<double>(algo->get_weights());
+    }
+
   } else if (weights_.size() != num_features) {
     // The check on the number of features is needed because the line search model
     // could be reused on a different datasets (different size) w/o reset weights

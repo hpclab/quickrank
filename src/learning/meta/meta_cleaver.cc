@@ -205,12 +205,12 @@ void MetaCleaver::learn(std::shared_ptr<quickrank::data::Dataset> training_datas
     cleaver_->set_pruning_rate(trees_to_prune);
     // Update the weights used by cleaver, using the weights of the ltr model
     auto ltr_weights = ltr_algo_ensemble->get_weights();
+    cleaver_->update_weights(ltr_weights);
 
     // Set the optimization process to run only on the last trees
     if (opt_last_only_)
       cleaver_->set_last_estimators_to_optimize(diff_ensemble_size);
 
-    cleaver_->update_weights(ltr_weights);
     if (cleaver_->get_line_search()) {
       // Reset the weights of the line search model in order to force it to
       // not reuse the learned weights from the previous iteration but use the
