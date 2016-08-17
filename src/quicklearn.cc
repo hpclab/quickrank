@@ -37,6 +37,7 @@
 #include <memory>
 #include <unistd.h>
 #include <fstream>
+#include <metric/ir/rmse.h>
 
 #include "paramsmap/paramsmap.h"
 
@@ -53,6 +54,7 @@
 
 #include "metric/ir/tndcg.h"
 #include "metric/ir/map.h"
+#include "metric/ir/rmse.h"
 
 #include "driver/driver.h"
 
@@ -314,6 +316,7 @@ int main(int argc, char *argv[]) {
                              + "|"
                              + quickrank::metric::ir::Ndcg::NAME_ + "|"
                              + quickrank::metric::ir::Tndcg::NAME_ + "|"
+                             + quickrank::metric::ir::Rmse::NAME_ + "|"
                              + quickrank::metric::ir::Map::NAME_ + "]."},
                         test_metric_string);
 

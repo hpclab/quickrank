@@ -133,8 +133,10 @@ void MetaCleaver::learn(std::shared_ptr<quickrank::data::Dataset> training_datas
     std::cout << "# -------------------------------" << std::endl;
   }
 
-  quickrank::MetricScore best_metric_on_training = 0.0;
-  quickrank::MetricScore best_metric_on_validation = 0.0;
+  quickrank::MetricScore best_metric_on_training =
+      std::numeric_limits<double>::lowest();
+  quickrank::MetricScore best_metric_on_validation =
+      std::numeric_limits<double>::lowest();
   size_t best_model = 0;
   std::vector<double> best_weights;
   best_weights.reserve(ntrees_);

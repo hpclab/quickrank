@@ -202,8 +202,8 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   std::shared_ptr<quickrank::data::VerticalDataset> vertical_training(
       new quickrank::data::VerticalDataset(training_dataset));
 
-  best_metric_on_validation_ = 0.0;
-  best_metric_on_training_ = 0.0;
+  best_metric_on_validation_ = std::numeric_limits<double>::lowest();
+  best_metric_on_training_ = std::numeric_limits<double>::lowest();
   validation_bestmodel_ = 0;
 
   ensemble_model_.set_capacity(ntrees_);
@@ -297,8 +297,7 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
           validation_dataset, scores_on_validation_);
       std::cout << std::setw(9) << metric_on_validation;
 
-      if (metric_on_validation > best_metric_on_validation_
-          || best_metric_on_validation_ == 0.0f) {
+      if (metric_on_validation > best_metric_on_validation_) {
         best_metric_on_training_ = metric_on_training;
         best_metric_on_validation_ = metric_on_validation;
         validation_bestmodel_ = ensemble_model_.get_size() - 1;

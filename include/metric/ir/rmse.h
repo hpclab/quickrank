@@ -21,39 +21,58 @@
  */
 #pragma once
 
-#include <iostream>
-#include <climits>
-#include <memory>
-
 #include "types.h"
-
-#include "metric/ir/tndcg.h"
-#include "metric/ir/ndcg.h"
-#include "metric/ir/dcg.h"
-#include "metric/ir/map.h"
-#include "metric/ir/rmse.h"
+#include "metric.h"
 
 namespace quickrank {
 namespace metric {
 namespace ir {
 
-std::shared_ptr<Metric> ir_metric_factory(std::string metric,
-                                          size_t cutoff) {
-  std::transform(metric.begin(), metric.end(),
-                 metric.begin(), ::toupper);
-  if (metric == Dcg::NAME_)
-    return std::shared_ptr<Metric>(new Dcg(cutoff));
-  else if (metric == Ndcg::NAME_)
-    return std::shared_ptr<Metric>(new Ndcg(cutoff));
-  else if (metric == Tndcg::NAME_)
-    return std::shared_ptr<Metric>(new Tndcg(cutoff));
-  else if (metric == Map::NAME_)
-    return std::shared_ptr<Metric>(new Map(cutoff));
-  else if (metric == Rmse::NAME_)
-    return std::shared_ptr<Metric>(new Rmse(cutoff));
-  else
-    return std::shared_ptr<Metric>();
-}
+/**
+ * This class implements the average precision AP\@k measure.
+ *
+ * \todo TODO: test correctness
+ */
+class Rmse: public Metric {
+ public:
+  explicit Rmse(size_t k = NO_CUTOFF)
+      : Metric(NO_CUTOFF) { // RMSE has no cutoff
+  }
+
+  virtual ~Rmse() {
+  }
+
+  /// Returns the name of the metric.
+  virtual std::string name() const {
+    return NAME_;
+  }
+
+  static const std::string NAME_;
+
+  virtual MetricScore evaluate_result_list(
+      const quickrank::data::QueryResults *rl, const Score *scores) const;
+
+  virtual std::unique_ptr<Jacobian> jacobian(
+      std::shared_ptr<data::RankedResults> ranked) const;
+
+  virtual MetricScore evaluate_dataset(
+      const std::shared_ptr<data::Dataset> dataset,
+      const Score *scores) const;
+
+  virtual MetricScore evaluate_dataset(
+      const std::shared_ptr<data::VerticalDataset> dataset,
+      const Score *scores) const;
+
+ protected:
+
+ private:
+  friend std::ostream &operator<<(std::ostream &os, const Rmse &rmse) {
+    return rmse.put(os);
+  }
+
+  virtual std::ostream &put(std::ostream &os) const;
+
+};
 
 }  // namespace ir
 }  // namespace metric
