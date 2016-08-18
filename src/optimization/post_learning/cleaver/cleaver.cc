@@ -199,7 +199,7 @@ void Cleaver::optimize(
     // import weights from line search and scale accordingly
     // to the average weight of the LtR algo (LS done separately has
     // weights around 1.0f value).
-    if (!lineSearch_->get_weights().empty()) {
+    if (lineSearch_ && !lineSearch_->get_weights().empty()) {
 
       auto ls_weights = lineSearch_->get_weights();
       auto algo_weights = algo->get_weights();
