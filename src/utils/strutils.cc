@@ -92,7 +92,7 @@ std::string &trim(std::string &str) {
 }
 
 void print_weights(std::vector<double> weights, std::string header) {
-//  return;
+  return;
   std::cout << std::endl << "# " << header << std::endl;
   for (size_t i=0; i < weights.size(); ++i) {
     std::cout << std::setw(7) << i;
