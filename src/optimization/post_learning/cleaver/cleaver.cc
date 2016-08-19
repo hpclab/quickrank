@@ -193,39 +193,9 @@ void Cleaver::optimize(
   }
 
   // If weights were not set before by calling the update_weights method,
-  // set the starting weights to the line search or algo weights
-  if (weights_.empty())  {
-
-    // import weights from line search and scale accordingly
-    // to the average weight of the LtR algo (LS done separately has
-    // weights around 1.0f value).
-    if (lineSearch_ && !lineSearch_->get_weights().empty()) {
-
-      auto ls_weights = lineSearch_->get_weights();
-      auto algo_weights = algo->get_weights();
-
-      // window_size is the mean weight times the window_size_ factor
-      double mean_ls_weight = std::accumulate(ls_weights.cbegin(),
-                                              ls_weights.cend(),
-                                              0.0) / ls_weights.size();
-
-      double mean_algo_weight = std::accumulate(algo_weights.cbegin(),
-                                                algo_weights.cend(),
-                                                0.0) / algo_weights.size();
-
-      double scaling_factor = mean_ls_weight / mean_algo_weight;
-
-      weights_ = std::vector<double>(ls_weights);
-      std::transform(weights_.begin(), weights_.end(), weights_.begin(),
-                     std::bind1st(std::multiplies<double>(),
-                                  1.0 / scaling_factor) );
-      // Update accordingly the line search weights after the rescaling
-      lineSearch_->update_weights(weights_);
-
-    } else {
+  // set the starting weights to the algo weights
+  if (weights_.empty()) {
       weights_ = std::vector<double>(algo->get_weights());
-    }
-
   } else if (weights_.size() != num_features) {
     // The check on the number of features is needed because the line search model
     // could be reused on a different datasets (different size) w/o reset weights
@@ -257,24 +227,14 @@ void Cleaver::optimize(
   }
   std::cout << std::endl;
 
-  std::set<unsigned int> pruned_estimators;
-
   // Backup the starting weights in order to re-set them to their starting
   // value after the pre-pruning line search (which modifies the weights)
   std::vector<double> starting_weights(weights_);
 
-  print_weights(weights_, "Cleaver Weights ANTE LS pre-pruning");
-
-  if (lineSearch_ &&
-      !lineSearch_->get_weights().empty() &&
-      lineSearch_->get_weights() != weights_) {
-    std::cerr << "The weights in the line search model do not "
-        "correspond to the weights in the cleaver model." << std::endl;
-    exit(EXIT_FAILURE);
-  }
-
   // Some pruning methods needs to perform line search before the pruning
   if (line_search_pre_pruning() && estimators_to_prune_ > 0) {
+
+    print_weights(weights_, "Cleaver Weights ANTE LS pre-pruning");
 
     if (!lineSearch_) {
       std::cerr << "This pruning method requires line search" << std::endl;
@@ -282,16 +242,15 @@ void Cleaver::optimize(
     }
 
     // Set to optimize only last estimators
-    if (opt_last_only) {
+    if (opt_last_only)
       lineSearch_->set_last_only(last_estimators_to_optimize_);
-    }
 
     if (lineSearch_->get_weights().empty()) {
 
       // Need to do the line search pre-pruning.
       // The line search weights inside the model are not set
 
-      // Set the weights in the line search model to their starting value
+      // Set the starting weights in the line search model...
       bool res = lineSearch_->update_weights(weights_);
       if (!res)
         std::exit(EXIT_FAILURE);
@@ -300,20 +259,46 @@ void Cleaver::optimize(
       std::cout << "# --------------------------" << std::endl;
       lineSearch_->learn(training_dataset, validation_dataset, metric,
                          0, std::string());
+
+      // Needs to import the line search learned weights into this model
+      auto ls_weights = lineSearch_->get_weights();
+      weights_ = std::vector<double>(ls_weights);
+
     } else {
       // The line search pre pruning is already done and the weights are in
       // the model. We just need to load them.
       std::cout << "# LineSearch pre-pruning already done:" << std::endl;
       std::cout << "# --------------------------" << std::endl;
+
+      // import weights from line search and scale accordingly
+      // to the average weight of the LtR algo (LS done separately has
+      // weights around 1.0f value).
+      auto ls_weights = lineSearch_->get_weights();
+      auto algo_weights = algo->get_weights();
+
+      assert(ls_weights.size() == algo_weights.size());
+
+      // window_size is the mean weight times the window_size_ factor
+      double mean_ls_weight = std::accumulate(ls_weights.cbegin(),
+                                              ls_weights.cend(),
+                                              0.0) / ls_weights.size();
+
+      double mean_algo_weight = std::accumulate(algo_weights.cbegin(),
+                                                algo_weights.cend(),
+                                                0.0) / algo_weights.size();
+
+      double scaling_factor = mean_ls_weight / mean_algo_weight;
+      weights_ = std::vector<double>(ls_weights);
+      std::transform(weights_.begin(), weights_.end(), weights_.begin(),
+                     std::bind1st(std::multiplies<double>(),
+                                  1.0 / scaling_factor) );
     }
 
-    // Needs to import the line search learned weights into this model
-    import_weights_from_line_search(pruned_estimators);
     std::cout << std::endl;
+    print_weights(weights_, "Cleaver Weights POST LS pre-pruning");
   }
 
-  print_weights(weights_, "Cleaver Weights POST LS pre-pruning");
-
+  std::set<unsigned int> pruned_estimators;
   pruning(pruned_estimators, training_dataset, metric);
   std::cout << "# Ensemble Pruning:" << std::endl;
   std::cout << "# --------------------------" << std::endl;
@@ -345,7 +330,7 @@ void Cleaver::optimize(
 
     for (size_t f=0; f<num_features; ++f) {
       if (!pruned_estimators.count(f)) // skip pruned estimators
-        new_ls_weights.push_back(starting_weights[f]);
+        new_ls_weights.push_back(weights_[f]);
     }
 
     bool res = lineSearch_->update_weights(new_ls_weights);

@@ -215,6 +215,7 @@ void LineSearch::learn(
         &weights[0], &training_score[0]);
   best_metric_on_training = scorer->evaluate_dataset(training_dataset,
                                                      &training_score[0]);
+  std::cout << std::fixed << std::setprecision(4);
   std::cout << std::setw(7) << 0 << std::setw(9) << best_metric_on_training;
   if (validation_dataset) {
     score(validation_dataset->at(0, 0), validation_dataset->num_instances(),
