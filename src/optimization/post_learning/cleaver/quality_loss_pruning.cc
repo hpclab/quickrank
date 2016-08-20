@@ -24,6 +24,8 @@
 
 #include "optimization/post_learning/cleaver/quality_loss_pruning.h"
 
+#include "utils/strutils.h"
+
 namespace quickrank {
 namespace optimization {
 namespace post_learning {
@@ -64,6 +66,7 @@ void QualityLossPruning::pruning(std::set<unsigned int> &pruned_estimators,
   // Find the last metric scores
   std::vector<unsigned int> idx(last_estimators_to_optimize_);
   std::iota(idx.begin(), idx.end(), start_last);
+
   std::sort(idx.begin(), idx.end(),
             [&metric_scores,&start_last]
                 (const unsigned int &a, const unsigned int &b) {
