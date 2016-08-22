@@ -50,17 +50,27 @@ void QualityLossPruning::pruning(std::set<unsigned int> &pruned_estimators,
   std::vector<MetricScore> metric_scores(last_estimators_to_optimize_);
   std::vector<Score> dataset_score(dataset->num_instances());
 
+  // Score the dataset with initial weights
+  score(dataset.get(), &dataset_score[0]);
+
+  Feature *features = dataset->at(0, 0);
+
+#pragma omp parallel for
   for (size_t f = start_last; f < num_features; f++) {
-    // set the weight of the feature to 0 to simulate its deletion
-    double weight_bkp = weights_[f];
-    weights_[f] = 0;
 
-    score(dataset.get(), &dataset_score[0]);
+    std::vector<Score> new_dataset_score(dataset->num_instances());
+
+    // In place of set the feature weight to 0, score the dataset with the
+    // Cleaver score function, and reset back the weight, we optimize the
+    // process by computing on the fly the new score based on the original
+    // score less the contribute given by the f-th feature...
+    for (unsigned int s = 0; s < dataset->num_instances(); ++s) {
+      new_dataset_score[s] = dataset_score[s] -
+          weights_[f] * features[s * num_features + f];
+    }
+
     metric_scores[f - start_last] =
-        scorer->evaluate_dataset(dataset, &dataset_score[0]);
-
-    // Re set the original weight to the feature
-    weights_[f] = weight_bkp;
+        scorer->evaluate_dataset(dataset, &new_dataset_score[0]);
   }
 
   // Find the last metric scores
