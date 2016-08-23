@@ -27,6 +27,7 @@
 #include "optimization/post_learning/cleaver/score_loss_pruning.h"
 #include "optimization/post_learning/cleaver/low_weights_pruning.h"
 #include "optimization/post_learning/cleaver/quality_loss_pruning.h"
+#include "optimization/post_learning/cleaver/quality_loss_adv_pruning.h"
 
 namespace quickrank {
 namespace optimization {
@@ -70,6 +71,10 @@ std::shared_ptr<quickrank::optimization::Optimization> create_pruner(
       optimizer = new QualityLossPruning(model);
       break;
     }
+    case Cleaver::PruningMethod::QUALITY_LOSS_ADV: {
+      optimizer = new QualityLossAdvPruning(model);
+      break;
+    }
     case Cleaver::PruningMethod::SKIP: {
       optimizer = new SkipPruning(model);
       break;
@@ -104,6 +109,10 @@ std::shared_ptr<quickrank::optimization::Optimization> create_pruner(
     }
     case Cleaver::PruningMethod::QUALITY_LOSS: {
       optimizer = new QualityLossPruning(pruning_rate, lineSearch);
+      break;
+    }
+    case Cleaver::PruningMethod::QUALITY_LOSS_ADV: {
+      optimizer = new QualityLossAdvPruning(pruning_rate, lineSearch);
       break;
     }
     case Cleaver::PruningMethod::SKIP: {

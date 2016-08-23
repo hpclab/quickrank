@@ -46,7 +46,7 @@ class Cleaver: public PostLearningOptimization {
  public:
 
   enum class PruningMethod {
-    RANDOM, LOW_WEIGHTS, SKIP, LAST, QUALITY_LOSS, SCORE_LOSS
+    RANDOM, LOW_WEIGHTS, SKIP, LAST, QUALITY_LOSS, QUALITY_LOSS_ADV, SCORE_LOSS
   };
 
   Cleaver(double pruning_rate);

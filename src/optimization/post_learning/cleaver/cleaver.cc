@@ -42,7 +42,8 @@ namespace pruning {
 const std::string Cleaver::NAME_ = "CLEAVER";
 
 const std::vector<std::string> Cleaver::pruningMethodNames = {
-    "RANDOM", "LOW_WEIGHTS", "SKIP", "LAST", "QUALITY_LOSS", "SCORE_LOSS"
+    "RANDOM", "LOW_WEIGHTS", "SKIP", "LAST", "QUALITY_LOSS",
+    "QUALITY_LOSS_ADV", "SCORE_LOSS"
 };
 
 Cleaver::Cleaver(double pruning_rate) :
