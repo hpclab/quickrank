@@ -82,13 +82,14 @@ void QualityLossAdvPruning::pruning(std::set<unsigned int> &pruned_estimators,
 
     auto max = std::max_element(metric_scores.cbegin(), metric_scores.cend());
     auto maxIdx = std::distance(metric_scores.cbegin(), max);
+    auto f_prune = maxIdx + start_last;
 
-    pruned_estimators.insert(maxIdx + start_last);
+    pruned_estimators.insert(f_prune);
     // Set the new reference scores after the feature removal
 #pragma omp parallel for
     for (unsigned int s = 0; s < dataset->num_instances(); ++s) {
-      dataset_score[maxIdx] -=
-          weights_[maxIdx] * features[s * num_features + maxIdx];
+      dataset_score[s] -=
+          weights_[f_prune] * features[s * num_features + f_prune];
     }
   };
 }

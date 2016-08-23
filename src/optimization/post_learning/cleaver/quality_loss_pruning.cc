@@ -56,7 +56,7 @@ void QualityLossPruning::pruning(std::set<unsigned int> &pruned_estimators,
   Feature *features = dataset->at(0, 0);
 
 #pragma omp parallel for
-  for (size_t f = start_last; f < num_features; f++) {
+  for (size_t f = start_last; f < num_features; ++f) {
 
     std::vector<Score> new_dataset_score(dataset->num_instances());
 
@@ -83,7 +83,7 @@ void QualityLossPruning::pruning(std::set<unsigned int> &pruned_estimators,
               return metric_scores[a-start_last] > metric_scores[b-start_last];
             });
 
-  for (unsigned int f = 0; f < estimators_to_prune_; f++) {
+  for (unsigned int f = 0; f < estimators_to_prune_; ++f) {
     pruned_estimators.insert(idx[f]);
   }
 }

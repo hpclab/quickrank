@@ -229,11 +229,12 @@ void MetaCleaver::learn(std::shared_ptr<quickrank::data::Dataset> training_datas
 
     // Check if there is a metric score improvement
     bool improvement = false;
-    if (validation_dataset &&
-        cleaver_->get_metric_on_validation() > best_metric_on_validation) {
-      best_metric_on_validation = cleaver_->get_metric_on_validation();
-      best_metric_on_training = cleaver_->get_metric_on_training();
-      improvement = true;
+    if (validation_dataset) {
+        if (cleaver_->get_metric_on_validation() > best_metric_on_validation) {
+          best_metric_on_validation = cleaver_->get_metric_on_validation();
+          best_metric_on_training = cleaver_->get_metric_on_training();
+          improvement = true;
+        }
     } else if (cleaver_->get_metric_on_training() > best_metric_on_training) {
       best_metric_on_training = cleaver_->get_metric_on_training();
       improvement = true;
@@ -257,6 +258,11 @@ void MetaCleaver::learn(std::shared_ptr<quickrank::data::Dataset> training_datas
       bool res = ltr_algo_ensemble->update_weights(cur_weights);
       if (!res)
         std::exit(EXIT_FAILURE);
+    }
+
+    // If there is no improvement and we cannot backtrack, stop it now!
+    if (!improvement && !opt_last_only_) {
+      break;
     }
 
     // Save partial infos to do the backtrack
