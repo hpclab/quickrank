@@ -22,6 +22,7 @@
 #include "optimization/post_learning/cleaver/cleaver_factory.h"
 
 #include "optimization/post_learning/cleaver/random_pruning.h"
+#include "optimization/post_learning/cleaver/random_adv_pruning.h"
 #include "optimization/post_learning/cleaver/last_pruning.h"
 #include "optimization/post_learning/cleaver/skip_pruning.h"
 #include "optimization/post_learning/cleaver/score_loss_pruning.h"
@@ -57,6 +58,10 @@ std::shared_ptr<quickrank::optimization::Optimization> create_pruner(
   switch (pruningMethod) {
     case Cleaver::PruningMethod::RANDOM: {
       optimizer = new RandomPruning(model);
+      break;
+    }
+    case Cleaver::PruningMethod::RANDOM_ADV: {
+      optimizer = new RandomAdvPruning(model);
       break;
     }
     case Cleaver::PruningMethod::LOW_WEIGHTS: {
@@ -97,6 +102,10 @@ std::shared_ptr<quickrank::optimization::Optimization> create_pruner(
   switch (pruningMethod) {
     case Cleaver::PruningMethod::RANDOM: {
       optimizer = new RandomPruning(pruning_rate, lineSearch);
+      break;
+    }
+    case Cleaver::PruningMethod::RANDOM_ADV: {
+      optimizer = new RandomAdvPruning(pruning_rate, lineSearch);
       break;
     }
     case Cleaver::PruningMethod::LOW_WEIGHTS: {

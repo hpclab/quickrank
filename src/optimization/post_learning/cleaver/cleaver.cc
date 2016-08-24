@@ -42,8 +42,8 @@ namespace pruning {
 const std::string Cleaver::NAME_ = "CLEAVER";
 
 const std::vector<std::string> Cleaver::pruningMethodNames = {
-    "RANDOM", "LOW_WEIGHTS", "SKIP", "LAST", "QUALITY_LOSS",
-    "QUALITY_LOSS_ADV", "SCORE_LOSS"
+    "RANDOM", "RANDOM_ADV", "LOW_WEIGHTS", "SKIP", "LAST",
+    "QUALITY_LOSS", "QUALITY_LOSS_ADV", "SCORE_LOSS"
 };
 
 Cleaver::Cleaver(double pruning_rate) :
@@ -299,12 +299,20 @@ void Cleaver::optimize(
     print_weights(weights_, "Cleaver Weights POST LS pre-pruning");
   }
 
+  auto begin_pruning = std::chrono::steady_clock::now();
+
   std::set<unsigned int> pruned_estimators;
   pruning(pruned_estimators, training_dataset, metric);
+
+  auto end_pruning = std::chrono::steady_clock::now();
+  std::chrono::duration<double> pTime = std::chrono::duration_cast<
+      std::chrono::duration<double>>(end_pruning - begin_pruning);
+
   std::cout << "# Ensemble Pruning:" << std::endl;
   std::cout << "# --------------------------" << std::endl;
   std::cout << "# Removed " << estimators_to_prune_ << " out of "
-      << num_features << " trees" << std::endl << std::endl;
+      << num_features << " trees (" << std::setprecision(2) << pTime.count()
+      << " s.)" << std::endl << std::endl;
 
   print_weights(std::vector<double>(
       pruned_estimators.cbegin(),

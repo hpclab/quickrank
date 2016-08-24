@@ -58,7 +58,7 @@ void QualityLossAdvPruning::pruning(std::set<unsigned int> &pruned_estimators,
   for (unsigned int p = 0; p < estimators_to_prune_; ++p) {
 
 #pragma omp parallel for
-    for (size_t f = start_last; f < num_features; f++) {
+    for (size_t f = start_last; f < num_features; ++f) {
 
       if (pruned_estimators.count(f)) {
         metric_scores[f - start_last] = 0;
