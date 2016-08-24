@@ -50,16 +50,16 @@ void ScoreLossPruning::pruning(std::set<unsigned int> &pruned_estimators,
   std::vector<Score> feature_scores(last_estimators_to_optimize_, 0);
   std::vector<Score> instance_scores(num_instances, 0);
 
-  // compute the per instance score
+  // compute the score of each instance
   this->score(dataset.get(), &instance_scores[0]);
 
   Feature *features = dataset->at(0, 0);
-#pragma omp parallel for
-  for (size_t s = 0; s < num_instances; s++) {
-    size_t offset_feature = s * num_features;
-    for (size_t f = start_last; f < num_features; f++) {
+
+  #pragma omp parallel for
+  for (size_t f = start_last; f < num_features; ++f) {
+    for (size_t s = 0; s < num_instances; ++s) {
       feature_scores[f - start_last] +=
-          weights_[f] * features[offset_feature + f] / instance_scores[s];
+          weights_[f] * features[s * num_features + f] / instance_scores[s];
     }
   }
 

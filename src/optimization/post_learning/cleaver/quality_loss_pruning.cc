@@ -55,10 +55,10 @@ void QualityLossPruning::pruning(std::set<unsigned int> &pruned_estimators,
 
   Feature *features = dataset->at(0, 0);
 
-#pragma omp parallel for
-  for (size_t f = start_last; f < num_features; ++f) {
+  std::vector<Score> new_dataset_score(dataset->num_instances(), 0);
 
-    std::vector<Score> new_dataset_score(dataset->num_instances());
+  #pragma omp parallel for firstprivate(new_dataset_score)
+  for (size_t f = start_last; f < num_features; ++f) {
 
     // In place of set the feature weight to 0, score the dataset with the
     // Cleaver score function, and reset back the weight, we optimize the

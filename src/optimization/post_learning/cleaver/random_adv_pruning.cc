@@ -56,20 +56,20 @@ void RandomAdvPruning::pruning(std::set<unsigned int> &pruned_estimators,
   MetricScore best_metric_score = std::numeric_limits<double>::lowest();
   auto best_pruned_estimators = std::set<unsigned int>();
 
-  #pragma omp parallel for
+  std::vector<Score> new_dataset_score(dataset_score);
+  std::set<unsigned int> pruned_estimators_it;
+
+  #pragma omp parallel for firstprivate(new_dataset_score, pruned_estimators_it)
   for (auto i = 0; i < 100; ++i) {
 
-    std::vector<Score> new_dataset_score(dataset_score);
-    std::set<unsigned int> pruned_estimators_try;
-
-    while (pruned_estimators_try.size() < estimators_to_prune_) {
+    while (pruned_estimators_it.size() < estimators_to_prune_) {
       size_t index = (rand() % last_estimators_to_optimize_) + start_last;
-      if (!pruned_estimators_try.count(index))
-        pruned_estimators_try.insert(index);
+      if (!pruned_estimators_it.count(index))
+        pruned_estimators_it.insert(index);
     }
 
     for (unsigned int s = 0; s < dataset->num_instances(); ++s) {
-      for (auto &f: pruned_estimators_try) {
+      for (auto &f: pruned_estimators_it) {
         new_dataset_score[s] -= weights_[f] * features[s * num_features + f];
       }
     }
@@ -77,11 +77,11 @@ void RandomAdvPruning::pruning(std::set<unsigned int> &pruned_estimators,
     MetricScore metric_scores =
         scorer->evaluate_dataset(dataset, &new_dataset_score[0]);
 
-    #pragma omp critical(metricupdate)
+    #pragma omp critical(metric_update)
     {
       if (metric_scores > best_metric_score) {
         best_metric_score = metric_scores;
-        best_pruned_estimators = pruned_estimators_try;
+        best_pruned_estimators = pruned_estimators_it;
       }
     }
   }
