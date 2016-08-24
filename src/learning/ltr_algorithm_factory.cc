@@ -46,8 +46,8 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
 
     std::cout << "# Loading model from file " << model_filename << std::endl;
 
-    ltr_algo_model = quickrank::learning::LTR_Algorithm::load_model_from_file(
-        model_filename);
+    ltr_algo_model =
+        learning::LTR_Algorithm::load_model_from_file(model_filename);
 
     if (!ltr_algo_model)
       std::cerr << " !! Unable to load model from file." << std::endl;
@@ -133,13 +133,6 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
     }
   }
 
-  if (ltr_algo_model) {
-    if (ltr_algo && pmap.isSet("restart-train"))
-      ltr_algo->import_model_state(*ltr_algo_model);
-    else
-      ltr_algo = ltr_algo_model;
-  }
-
   if (pmap.isSet("meta-algo")) {
     std::string meta_algo_name = pmap.get<std::string>("meta-algo");
 
@@ -166,6 +159,17 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
           )
       );
     }
+  }
+
+  if (ltr_algo_model) {
+    if (ltr_algo && pmap.isSet("restart-train")) {
+      bool res = ltr_algo->import_model_state(*ltr_algo_model);
+      if (!res) {
+        std::cerr << " !! Models not compatible for restart!" << std::endl;
+        exit(EXIT_FAILURE);
+      }
+    } else
+      ltr_algo = ltr_algo_model;
   }
 
   return ltr_algo;

@@ -109,6 +109,8 @@ class MetaCleaver: public LTR_Algorithm {
     return ltr_algo_->get_weights();
   }
 
+  virtual bool import_model_state(LTR_Algorithm &other);
+
   static const std::string NAME_;
 
  protected:

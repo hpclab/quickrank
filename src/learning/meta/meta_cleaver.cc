@@ -137,9 +137,12 @@ void MetaCleaver::learn(std::shared_ptr<quickrank::data::Dataset> training_datas
       std::numeric_limits<double>::lowest();
   quickrank::MetricScore best_metric_on_validation =
       std::numeric_limits<double>::lowest();
-  size_t best_model = 0;
+
+  size_t best_model = ltr_algo_ensemble->ensemble_model_.get_size();
   std::vector<double> best_weights;
   best_weights.reserve(ntrees_);
+  if (best_model > 0)
+    best_weights = ltr_algo_ensemble->get_weights();
 
   // if we optimize the full model at each iteration (not only the last part)
   // we cannot do more than one iteration without improvement...
@@ -151,7 +154,7 @@ void MetaCleaver::learn(std::shared_ptr<quickrank::data::Dataset> training_datas
 
   size_t last_ensemble_size;
   unsigned int iter = 0;
-  size_t last_save = 0;
+  size_t last_save = best_model;
   do {
 
     if (++iter > best_model + valid_iterations_ && valid_iterations_)
@@ -351,6 +354,31 @@ void MetaCleaver::learn(std::shared_ptr<quickrank::data::Dataset> training_datas
   std::cout << std::endl;
   std::cout << "#\t Training Time: " << std::setprecision(2) << train_time
             << " s." << std::endl;
+}
+
+bool MetaCleaver::import_model_state(LTR_Algorithm &other) {
+
+  // Check the object is derived from MetaCleaver
+  try
+  {
+    MetaCleaver& otherCast = dynamic_cast<MetaCleaver&>(other);
+
+    // TODO: improve this check...
+    if (ntrees_per_iter_ != otherCast.ntrees_per_iter_ ||
+        pruning_rate_per_iter_ != otherCast.pruning_rate_per_iter_ ||
+        opt_last_only_ != otherCast.opt_last_only_)
+      return false;
+
+    if (!ltr_algo_->import_model_state(*otherCast.ltr_algo_))
+      return false;
+
+  }
+  catch(std::bad_cast)
+  {
+    return false;
+  }
+
+  return true;
 }
 
 }  // namespace forests
