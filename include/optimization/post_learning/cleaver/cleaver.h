@@ -109,7 +109,7 @@ class Cleaver: public PostLearningOptimization {
 
   static const std::vector<std::string> pruningMethodNames;
 
-  static PruningMethod getPruningMethod(std::string name) {
+  static PruningMethod get_pruning_method(std::string name) {
     auto i_item = std::find(pruningMethodNames.cbegin(),
                             pruningMethodNames.cend(),
                             name);
@@ -123,7 +123,7 @@ class Cleaver: public PostLearningOptimization {
 //    return NULL;
   }
 
-  static std::string getPruningMethod(PruningMethod pruningMethod) {
+  static std::string get_pruning_method(PruningMethod pruningMethod) {
     return pruningMethodNames[static_cast<int>(pruningMethod)];
   }
 

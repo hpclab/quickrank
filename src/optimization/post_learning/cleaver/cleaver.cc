@@ -117,7 +117,7 @@ pugi::xml_document *Cleaver::get_xml_model() const {
 
   info.append_child("opt-algo").text() = name().c_str();
   info.append_child("opt-method").text() =
-      getPruningMethod(pruning_method()).c_str();
+      get_pruning_method(pruning_method()).c_str();
   info.append_child("pruning-rate").text() = pruning_rate_;
 
   if (lineSearch_) {
@@ -153,7 +153,7 @@ pugi::xml_document *Cleaver::get_xml_model() const {
 std::ostream &Cleaver::put(std::ostream &os) const {
   os << "# Optimizer: " << name() << std::endl
      << "# pruning rate = " << pruning_rate_ << std::endl
-     << "# pruning pruning_method = " << Cleaver::getPruningMethod(
+     << "# pruning pruning_method = " << Cleaver::get_pruning_method(
       pruning_method())
      << std::endl;
   if (lineSearch_)

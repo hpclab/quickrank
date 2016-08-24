@@ -50,7 +50,7 @@ std::shared_ptr<quickrank::optimization::Optimization> create_pruner(
 
 
   Cleaver::PruningMethod pruningMethod =
-      Cleaver::getPruningMethod(pruningMethodName);
+      Cleaver::get_pruning_method(pruningMethodName);
 
   Optimization *optimizer = nullptr;
 
@@ -139,7 +139,7 @@ std::shared_ptr<quickrank::optimization::Optimization> create_pruner(
     std::shared_ptr<learning::linear::LineSearch> lineSearch) {
 
   return create_pruner(
-      Cleaver::getPruningMethod(pruningMethodName),
+      Cleaver::get_pruning_method(pruningMethodName),
       pruning_rate, lineSearch);
 
 }
