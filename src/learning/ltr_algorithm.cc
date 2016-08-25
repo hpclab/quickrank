@@ -42,9 +42,10 @@ namespace learning {
 void LTR_Algorithm::score_dataset(std::shared_ptr<data::Dataset> dataset,
                                   Score *scores) const {
   const quickrank::Feature *d = dataset->at(0, 0);
+  #pragma omp parallel for
   for (size_t i = 0; i < dataset->num_instances(); i++) {
-    scores[i] = score_document(d);
-    d += dataset->num_features();
+    scores[i] = score_document(d + i * dataset->num_features());
+//    d += dataset->num_features();
   }
 }
 
