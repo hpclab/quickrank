@@ -62,7 +62,7 @@ void QualityLossAdvPruning::pruning(std::set<unsigned int> &pruned_estimators,
     for (size_t f = start_last; f < num_features; ++f) {
 
       if (pruned_estimators.count(f)) {
-        metric_scores[f - start_last] = 0;
+        metric_scores[f - start_last] = std::numeric_limits<double>::lowest();
         continue;
       }
 
