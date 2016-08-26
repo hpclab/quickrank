@@ -188,9 +188,9 @@ void MetaCleaver::learn(std::shared_ptr<quickrank::data::Dataset> training_datas
     else {
       trees_to_keep = ntrees_per_iter_ - pruning_rate_per_iter_;
       if (trees_to_keep < 0) {
-        std::cout << "Incorrect pruning rate value (too high). Quit!"
+        std::cerr << "Incorrect pruning rate value (too high). Quit!"
                   << std::endl;
-        return;
+        exit(EXIT_FAILURE);
       }
     }
 
