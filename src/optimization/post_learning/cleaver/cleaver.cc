@@ -187,9 +187,9 @@ void Cleaver::optimize(
   else {
     estimators_to_prune_ = pruning_rate_;
     if (estimators_to_prune_ >= last_estimators_to_optimize_) {
-      std::cout << "Incorrect pruning rate value (too high). Quit!"
+      std::cerr << "Incorrect pruning rate value (too high). Quit!"
                 << std::endl;
-      return;
+      exit(EXIT_FAILURE);
     }
   }
 
@@ -310,7 +310,7 @@ void Cleaver::optimize(
 
   std::cout << "# Ensemble Pruning:" << std::endl;
   std::cout << "# --------------------------" << std::endl;
-  std::cout << "# Removed " << estimators_to_prune_ << " out of "
+  std::cout << "# Removed " << pruned_estimators.size() << " out of "
       << num_features << " trees (" << std::setprecision(2) << pTime.count()
       << " s.)" << std::endl << std::endl;
 

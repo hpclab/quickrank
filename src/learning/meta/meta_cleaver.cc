@@ -180,11 +180,22 @@ void MetaCleaver::learn(std::shared_ptr<quickrank::data::Dataset> training_datas
 
     size_t new_ensemble_size = ltr_algo_ensemble->ensemble_model_.get_size();
     size_t diff_ensemble_size = new_ensemble_size - last_ensemble_size;
-    size_t trees_to_keep =
-        (size_t) round( (1. - pruning_rate_per_iter_) * ntrees_per_iter_);
+
+    size_t trees_to_keep;
+    if (pruning_rate_per_iter_ < 1)
+      trees_to_keep =
+          (size_t) round( (1. - pruning_rate_per_iter_) * ntrees_per_iter_);
+    else {
+      trees_to_keep = ntrees_per_iter_ - pruning_rate_per_iter_;
+      if (trees_to_keep < 0) {
+        std::cout << "Incorrect pruning rate value (too high). Quit!"
+                  << std::endl;
+        return;
+      }
+    }
 
     size_t trees_to_prune = diff_ensemble_size - trees_to_keep;
-    if (new_ensemble_size > ntrees_)
+    if (new_ensemble_size - trees_to_prune > ntrees_)
       trees_to_prune = new_ensemble_size - ntrees_;
 
     // If the LtR training do not learned additional trees, stop now.
