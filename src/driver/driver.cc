@@ -68,7 +68,8 @@ int Driver::run(ParamsMap &pmap) {
 
       std::shared_ptr<quickrank::optimization::Optimization> opt_algorithm;
       if ((pmap.isSet("opt-algo") || pmap.isSet("opt-model")) &&
-          ranking_algorithm->name() != learning::meta::MetaCleaver::NAME_) {
+          (ranking_algorithm->name() != learning::meta::MetaCleaver::NAME_
+              || (!pmap.isSet("meta-algo") && !pmap.isSet("restart-train")) )) {
 
         opt_algorithm = quickrank::optimization::optimization_factory(pmap);
         if (!opt_algorithm) {
