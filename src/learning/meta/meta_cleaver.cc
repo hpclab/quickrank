@@ -171,10 +171,10 @@ void MetaCleaver::learn(std::shared_ptr<quickrank::data::Dataset> training_datas
     ltr_algo_ensemble->ntrees_ = last_ensemble_size + ntrees_per_iter_;
 
     ltr_algo_ensemble->learn(training_dataset,
-                            validation_dataset,
-                            scorer,
-                            0,
-                            output_basename);
+                             nullptr, //validation_dataset,
+                             scorer,
+                             0,
+                             output_basename);
 
     print_weights(ltr_algo_ensemble->get_weights(), "LtR Weights post-train");
 

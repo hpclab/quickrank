@@ -204,7 +204,7 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
 
   best_metric_on_validation_ = std::numeric_limits<double>::lowest();
   best_metric_on_training_ = std::numeric_limits<double>::lowest();
-  validation_bestmodel_ = 0;
+  best_model_ = 0;
 
   ensemble_model_.set_capacity(ntrees_);
 
@@ -217,7 +217,7 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   // if the ensemble size is greater than zero, it means the learn method has
   // to start not from scratch but from a previously saved (intermediate) model
   if (ensemble_model_.is_notempty()) {
-    validation_bestmodel_ = ensemble_model_.get_size() - 1;
+    best_model_ = ensemble_model_.get_size() - 1;
 
     // Update the model's outputs on all training samples
     score_dataset(training_dataset, scores_on_training_);
@@ -253,9 +253,9 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
               << std::setw(9) << best_metric_on_training_;
 
     if (validation_dataset)
-      std::cout << std::setw(9) << best_metric_on_validation_ << " *";
+      std::cout << std::setw(9) << best_metric_on_validation_;
 
-    std::cout << std::endl;
+    std::cout << " *" << std::endl;
   }
 
   auto chrono_train_start = std::chrono::high_resolution_clock::now();
@@ -263,7 +263,7 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   // start iterations from 0 or (ensemble_size - 1)
   for (size_t m = ensemble_model_.get_size(); m < ntrees_; ++m) {
     if (validation_dataset
-        && (valid_iterations_ && m > validation_bestmodel_ + valid_iterations_))
+        && (valid_iterations_ && m > best_model_ + valid_iterations_))
       break;
 
     compute_pseudoresponses(vertical_training, scorer.get());
@@ -287,6 +287,7 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
 
     //show results
     std::cout << std::setw(7) << m + 1 << std::setw(9) << metric_on_training;
+
     //Evaluate the current model on the validation data (if available)
     if (validation_dataset) {
       // update validation scores
@@ -300,11 +301,15 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
       if (metric_on_validation > best_metric_on_validation_) {
         best_metric_on_training_ = metric_on_training;
         best_metric_on_validation_ = metric_on_validation;
-        validation_bestmodel_ = ensemble_model_.get_size() - 1;
+        best_model_ = ensemble_model_.get_size() - 1;
         std::cout << " *";
       }
     } else {
-      best_metric_on_training_ = metric_on_training;
+      if (metric_on_training > best_metric_on_training_) {
+        best_metric_on_training_ = metric_on_training;
+        best_model_ = ensemble_model_.get_size() - 1;
+        std::cout << " *";
+      }
     }
     std::cout << std::endl;
 
@@ -316,10 +321,10 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   }
 
   //Rollback to the best model observed on the validation data
-  if (validation_dataset)
     while (ensemble_model_.is_notempty()
-        && ensemble_model_.get_size() > validation_bestmodel_ + 1)
+        && ensemble_model_.get_size() > best_model_ + 1) {
       ensemble_model_.pop();
+    }
 
   auto chrono_train_end = std::chrono::high_resolution_clock::now();
   double train_time = std::chrono::duration_cast<std::chrono::duration<double>>(

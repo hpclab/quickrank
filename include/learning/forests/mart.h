@@ -153,7 +153,7 @@ class Mart: public LTR_Algorithm {
   quickrank::Score* scores_on_validation_ = NULL;
   quickrank::MetricScore best_metric_on_validation_ = 0;
 
-  size_t validation_bestmodel_ = 0;
+  size_t best_model_ = 0;
   double *pseudoresponses_ = NULL;  //[0..nentries-1]
   Ensemble ensemble_model_;
 
