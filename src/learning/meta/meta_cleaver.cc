@@ -154,10 +154,12 @@ void MetaCleaver::learn(std::shared_ptr<quickrank::data::Dataset> training_datas
 
   size_t last_ensemble_size;
   unsigned int iter = 0;
+  unsigned int best_iter = 0;
   size_t last_save = best_model;
   do {
 
-    if (++iter > best_model + valid_iterations_ && valid_iterations_)
+    ++iter;
+    if (valid_iterations_ && iter > best_iter + valid_iterations_)
       break;
 
     // Suppress output from cleaver and line_search. Print only summary of iter
@@ -244,11 +246,11 @@ void MetaCleaver::learn(std::shared_ptr<quickrank::data::Dataset> training_datas
     // Check if there is a metric score improvement
     bool improvement = false;
     if (validation_dataset) {
-        if (cleaver_->get_metric_on_validation() > best_metric_on_validation) {
-          best_metric_on_validation = cleaver_->get_metric_on_validation();
-          best_metric_on_training = cleaver_->get_metric_on_training();
-          improvement = true;
-        }
+      if (cleaver_->get_metric_on_validation() > best_metric_on_validation) {
+        best_metric_on_validation = cleaver_->get_metric_on_validation();
+        best_metric_on_training = cleaver_->get_metric_on_training();
+        improvement = true;
+      }
     } else if (cleaver_->get_metric_on_training() > best_metric_on_training) {
       best_metric_on_training = cleaver_->get_metric_on_training();
       improvement = true;
@@ -284,6 +286,7 @@ void MetaCleaver::learn(std::shared_ptr<quickrank::data::Dataset> training_datas
     if (improvement) {
       best_model = cur_ens_size;
       best_weights = ltr_algo_ensemble->get_weights();
+      best_iter = iter;
     }
 
     print_weights(cleaver_->get_weigths(), "Cleaver Weights post-optimization");
@@ -353,7 +356,11 @@ void MetaCleaver::learn(std::shared_ptr<quickrank::data::Dataset> training_datas
       chrono_train_end - chrono_train_start).count();
 
   //Finishing up
-  std::cout <<  std::fixed << std::setprecision(4) << std::endl;
+  std::cout <<  std::endl;
+  std::cout << "Final ensemble size = "
+            << ltr_algo_ensemble->ensemble_model_.get_size() << std::endl;
+
+  std::cout <<  std::fixed << std::setprecision(4);
   std::cout << *scorer << " on training data = "
             << best_metric_on_training << std::endl;
 
