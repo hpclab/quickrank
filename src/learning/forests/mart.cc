@@ -321,10 +321,12 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   }
 
   //Rollback to the best model observed on the validation data
+  if (validation_dataset) {
     while (ensemble_model_.is_notempty()
         && ensemble_model_.get_size() > best_model_ + 1) {
       ensemble_model_.pop();
     }
+  }
 
   auto chrono_train_end = std::chrono::high_resolution_clock::now();
   double train_time = std::chrono::duration_cast<std::chrono::duration<double>>(
