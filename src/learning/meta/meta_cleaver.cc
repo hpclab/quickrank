@@ -334,18 +334,16 @@ void MetaCleaver::learn(std::shared_ptr<quickrank::data::Dataset> training_datas
   } while (ltr_algo_ensemble->ensemble_model_.get_size() < ntrees_);
 
   // Check if we need to the the backtrack on the LtR model
-  if (opt_last_only_) {
-    size_t cur_size = ltr_algo_ensemble->ensemble_model_.get_size();
-    if (cur_size > best_model) {
-      std::vector<double> weight_mask = best_weights;
-      // Add as many 0-weight elem as the trees added from the last best model
-      for (size_t i=0; i < cur_size - best_model; ++i)
-        weight_mask.push_back(0);
-      // Reset the model with the old best weight and last trees
-      bool res = ltr_algo_ensemble->update_weights(weight_mask);
-      if (!res)
-        std::exit(EXIT_FAILURE);
-    }
+  size_t cur_size = ltr_algo_ensemble->ensemble_model_.get_size();
+  if (cur_size > best_model) {
+    std::vector<double> weight_mask = best_weights;
+    // Add as many 0-weight elem as the trees added from the last best model
+    for (size_t i=0; i < cur_size - best_model; ++i)
+      weight_mask.push_back(0);
+    // Reset the model with the old best weight and last trees
+    bool res = ltr_algo_ensemble->update_weights(weight_mask);
+    if (!res)
+      std::exit(EXIT_FAILURE);
   }
 
   // Reset the stream state to print again
