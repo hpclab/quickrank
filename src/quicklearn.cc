@@ -42,6 +42,7 @@
 #include "paramsmap/paramsmap.h"
 
 #include "learning/forests/mart.h"
+#include "learning/forests/dart.h"
 #include "learning/forests/lambdamart.h"
 #include "learning/forests/obliviousmart.h"
 #include "learning/forests/obliviouslambdamart.h"
@@ -105,6 +106,15 @@ int main(int argc, char *argv[]) {
   size_t test_cutoff = 10;
   size_t partial_save = 100;
 
+  std::string sample_type =
+      quickrank::learning::forests::Dart::get_sampling_type(
+          quickrank::learning::forests::Dart::SamplingType::UNIFORM);
+  std::string normalize_type
+      = quickrank::learning::forests::Dart::get_normalization_type(
+          quickrank::learning::forests::Dart::NormalizationType::TREE);
+  double rate_drop = 0.1;
+  double skip_drop = 0;
+
   // ------------------------------------------
   // Coordinate ascent added by Chiara Pierucci
   unsigned int num_points = 21;
@@ -126,15 +136,17 @@ int main(int argc, char *argv[]) {
       + quickrank::learning::forests::ObliviousMart::NAME_
       + "|"
       + quickrank::learning::forests::ObliviousLambdaMart::NAME_
+      + "|"
+      + quickrank::learning::forests::Dart::NAME_
       + "|", ""
-                                     + quickrank::learning::forests::Rankboost::NAME_
-                                     + "|"
-                                     + quickrank::learning::linear::CoordinateAscent::NAME_
-                                     + "|"
-                                     + quickrank::learning::linear::LineSearch::NAME_
-                                     + "|"
-                                     + quickrank::learning::CustomLTR::NAME_
-                                     + "]."}, algorithm_string);
+      + quickrank::learning::forests::Rankboost::NAME_
+      + "|"
+      + quickrank::learning::linear::CoordinateAscent::NAME_
+      + "|"
+      + quickrank::learning::linear::LineSearch::NAME_
+      + "|"
+      + quickrank::learning::CustomLTR::NAME_
+      + "]."}, algorithm_string);
 
   pmap.addOptionWithArg("train-metric",
                         {"set train metric: ["
@@ -218,6 +230,40 @@ int main(int argc, char *argv[]) {
   pmap.addOption("meta-verbose",
                  {"Increase verbosity of Meta Algorithm,",
                   "showing each step in detail."});
+
+  // --------------------------------------------------------
+  // Dart options add by Salvatore Trani
+  pmap.addMessage(
+      {"Training phase - specific options for Dart:"});
+
+  std::string samplingMethods = "";
+  for (auto i: quickrank::learning::forests::Dart::samplingTypesNames) {
+    samplingMethods += i + "|";
+  }
+  samplingMethods = samplingMethods.substr(0, samplingMethods.size() - 1);
+
+  pmap.addOptionWithArg("sample-type",
+                        {"sampling type of trees. [" + samplingMethods + "]."},
+                        sample_type);
+
+  std::string normalizationMethods = "";
+  for (auto i: quickrank::learning::forests::Dart::normalizationTypesNames) {
+    normalizationMethods += i + "|";
+  }
+  normalizationMethods = normalizationMethods.substr(0, normalizationMethods.size() - 1);
+
+  pmap.addOptionWithArg("normalize-type",
+                        {"normalization type of trees. "
+                             "[" + normalizationMethods + "]."},
+                        normalize_type);
+
+  pmap.addOptionWithArg("rate-drop",
+                        {"set dropout rate"},
+                        rate_drop);
+
+  pmap.addOptionWithArg("skip-drop",
+                        {"set probability of skipping dropout"},
+                        skip_drop);
 
   // --------------------------------------------------------
   // CoordinateAscent and LineSearch options

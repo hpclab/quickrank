@@ -62,7 +62,18 @@ class Ensemble {
 
   virtual bool update_ensemble_weights(std::vector<double>& weights);
 
+  virtual bool update_ensemble_weights(
+      std::vector<double>& weights, bool remove);
+
   virtual std::vector<double> get_weights() const;
+
+  inline RTNode* getTree(int index) const {
+    return arr[index].root;
+  }
+
+  inline double getWeight(int index) const {
+    return arr[index].weight;
+  }
 
  private:
 

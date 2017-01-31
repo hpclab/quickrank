@@ -23,6 +23,7 @@
 #include "learning/ltr_algorithm_factory.h"
 
 #include "learning/forests/mart.h"
+#include "learning/forests/dart.h"
 #include "learning/forests/lambdamart.h"
 #include "learning/forests/obliviousmart.h"
 #include "learning/forests/obliviouslambdamart.h"
@@ -79,6 +80,22 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
               pmap.get<size_t>("num-leaves"),
               pmap.get<size_t>("min-leaf-support"),
               pmap.get<size_t>("end-after-rounds")
+          ));
+    } else if (algo_name == quickrank::learning::forests::Dart::NAME_) {
+      ltr_algo = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
+          new quickrank::learning::forests::Dart(
+              pmap.get<size_t>("num-trees"),
+              pmap.get<double>("shrinkage"),
+              pmap.get<size_t>("num-thresholds"),
+              pmap.get<size_t>("num-leaves"),
+              pmap.get<size_t>("min-leaf-support"),
+              pmap.get<size_t>("end-after-rounds"),
+              quickrank::learning::forests::Dart::get_sampling_type(
+                  pmap.get<std::string>("sample-type")),
+              quickrank::learning::forests::Dart::get_normalization_type(
+                  pmap.get<std::string>("normalize-type")),
+              pmap.get<double>("rate-drop"),
+              pmap.get<double>("skip-drop")
           ));
     } else if (algo_name
         == quickrank::learning::forests::ObliviousMart::NAME_) {

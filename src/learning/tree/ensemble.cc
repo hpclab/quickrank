@@ -146,7 +146,8 @@ pugi::xml_node Ensemble::append_xml_model(pugi::xml_node parent) const {
   return ensemble;
 }
 
-bool Ensemble::update_ensemble_weights(std::vector<double>& weights) {
+bool Ensemble::update_ensemble_weights(
+    std::vector<double>& weights, bool remove) {
 
   if (weights.size() != size) {
     std::cerr << "# ## ERROR!! Ensemble size does not match size of the "
@@ -158,7 +159,7 @@ bool Ensemble::update_ensemble_weights(std::vector<double>& weights) {
 
   for (size_t i = 0; i < size; ++i) {
     // Use a small epsilon to check for 0-weight trees...
-    if (weights[i] < 0.0000001) {
+    if (weights[i] < 0.0000001 && remove) {
       // Remove 0-weight tree
       delete arr[i].root;
     } else {
@@ -176,8 +177,12 @@ bool Ensemble::update_ensemble_weights(std::vector<double>& weights) {
   return true;
 }
 
+bool Ensemble::update_ensemble_weights(std::vector<double>& weights) {
+  return update_ensemble_weights(weights, true);
+}
+
 std::vector<double> Ensemble::get_weights() const {
-  std::vector<double> weights = std::vector<double>(size);
+  std::vector<double> weights(size);
   for (unsigned int i = 0; i < size; ++i)
     weights[i] = arr[i].weight;
   return weights;
