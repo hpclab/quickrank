@@ -53,6 +53,8 @@ Dart::Dart(const pugi::xml_document &model) : LambdaMart(model) {
       .child("rate_drop").text().as_double();
   skip_drop = model.child("ranker").child("info")
       .child("skip_drop").text().as_double();
+  keep_drop = model.child("ranker").child("info")
+      .child("keep_drop").text().as_bool();
 }
 
 Dart::~Dart() {
@@ -78,6 +80,7 @@ std::ostream &Dart::put(std::ostream &os) const {
      << std::endl;
   os << "# rate drop = " << rate_drop << std::endl;
   os << "# skip drop = " << skip_drop << std::endl;
+  os << "# keep drop = " << keep_drop << std::endl;
   return os;
 }
 
@@ -102,6 +105,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   best_metric_on_validation_ = std::numeric_limits<double>::lowest();
   best_metric_on_training_ = std::numeric_limits<double>::lowest();
   best_model_ = 0;
+  size_t best_iter_ = 0;
 
   ensemble_model_.set_capacity(ntrees_);
 
@@ -117,6 +121,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   // to start not from scratch but from a previously saved (intermediate) model
   if (ensemble_model_.is_notempty()) {
     best_model_ = ensemble_model_.get_size() - 1;
+    best_iter_ = best_model_;
 
     // Update the model's outputs on all training samples
     score_dataset(training_dataset, scores_on_training_);
@@ -165,9 +170,12 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
       std::numeric_limits<double>::lowest();
 
   // start iterations from 0 or (ensemble_size - 1)
-  for (size_t m = ensemble_model_.get_size(); m < ntrees_; ++m) {
+  int m = -1;
+  while (ensemble_model_.get_size() < ntrees_) {
+    ++m;
+//  for (size_t m = ensemble_model_.get_size(); m < ntrees_; ++m) {
     if (validation_dataset
-        && (valid_iterations_ && m > best_model_ + valid_iterations_))
+        && (valid_iterations_ && m > best_iter_ + valid_iterations_))
       break;
 
     std::vector<double> weights = ensemble_model_.get_weights();
@@ -178,6 +186,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     double metric_on_validation_dropout;
     std::vector<int> dropped_trees;
     bool dropout_better_than_full = false;
+    std::vector<double> dropped_weights(weights);
     if (trees_to_dropout > 0 && prob_skip_dropout > skip_drop) {
 
       dropped_trees = select_trees_to_dropout(weights, trees_to_dropout);
@@ -209,7 +218,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
           dropout_better_than_full = true;
       }
 
-      std::vector<double> dropped_weights(weights);
+//      std::vector<double> dropped_weights(weights);
       for (auto idx: dropped_trees) {
         dropped_weights[idx] = 0;
       }
@@ -232,7 +241,6 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     // add this tree to the ensemble (our model)
     ensemble_model_.push(tree->get_proot(), shrinkage_, 0);  // maxlabel);
 
-    // ----------
     double metric_on_training_fit;
     double metric_on_validation_fit;
     int lastTreeIndex = ensemble_model_.get_size()-1;
@@ -265,31 +273,51 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
         fit_after_dropout_better_than_full = true;
     }
 
-    // Reset the original scores before doing normalization
-    update_modelscores(training_dataset, false,
-                       scores_on_training_, lastTree);
-    update_modelscores(validation_dataset, false,
-                       scores_on_validation_, lastTree);
-    // --------------------
+    if (!keep_drop || !fit_after_dropout_better_than_full) {
 
-    if (dropped_trees.size() > 0) {
-      // Normalize the weight vector increased by the last added tree
-      weights.push_back(shrinkage_);
-      normalize_trees(weights, dropped_trees);
-      ensemble_model_.update_ensemble_weights(weights, false);
+      // Reset the original scores before doing normalization
+      update_modelscores(training_dataset, false,
+                         scores_on_training_, lastTree);
+      if (validation_dataset) {
+        update_modelscores(validation_dataset, false,
+                           scores_on_validation_, lastTree);
+      }
+
+      if (dropped_trees.size() > 0) {
+        // Normalize the weight vector increased by the last added tree
+        weights.push_back(shrinkage_);
+        normalize_trees(weights, dropped_trees);
+        ensemble_model_.update_ensemble_weights(weights, false);
+      }
+
+      // add the last tree for the update of the modelscores
+      dropped_trees.push_back(ensemble_model_.get_size() - 1);
+
+      // Update the model's outputs on all training samples
+      update_modelscores(vertical_training, true,
+                         scores_on_training_, dropped_trees);
+
+      // run metric
+      metric_on_training = scorer->evaluate_dataset(vertical_training,
+                                                    scores_on_training_);
+
+      if (validation_dataset) {
+        update_modelscores(validation_dataset, true,
+                           scores_on_validation_, dropped_trees);
+      }
+
+      metric_on_validation = scorer->evaluate_dataset(
+          validation_dataset, scores_on_validation_);
+
+    } else {
+      // Add last trained tree
+      dropped_weights.push_back(shrinkage_);
+      // Remove the 0-weights
+      ensemble_model_.update_ensemble_weights(dropped_weights, true);
+
+      metric_on_training = metric_on_training_fit;
+      metric_on_validation = metric_on_validation_fit;
     }
-
-    // add the last tree for the update of the modelscores
-    dropped_trees.push_back(ensemble_model_.get_size()-1);
-
-    // Update the model's outputs on all training samples
-    update_modelscores(vertical_training, true,
-                       scores_on_training_, dropped_trees);
-//    score_dataset(training_dataset, scores_on_training_);
-
-    // run metric
-    metric_on_training = scorer->evaluate_dataset(vertical_training,
-                                                  scores_on_training_);
 
     //show results
     std::cout << std::setw(7) << m + 1 << std::setw(9) << metric_on_training;
@@ -297,25 +325,21 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     //Evaluate the current model on the validation data (if available)
     if (validation_dataset) {
 
-      update_modelscores(validation_dataset, true,
-                         scores_on_validation_, dropped_trees);
-//      score_dataset(validation_dataset, scores_on_validation_);
-
       // run metric
-      metric_on_validation = scorer->evaluate_dataset(
-          validation_dataset, scores_on_validation_);
       std::cout << std::setw(9) << metric_on_validation;
 
       if (metric_on_validation > best_metric_on_validation_) {
         best_metric_on_training_ = metric_on_training;
         best_metric_on_validation_ = metric_on_validation;
         best_model_ = ensemble_model_.get_size() - 1;
+        best_iter_ = m;
         std::cout << " *";
       }
     } else {
       if (metric_on_training > best_metric_on_training_) {
         best_metric_on_training_ = metric_on_training;
         best_model_ = ensemble_model_.get_size() - 1;
+        best_iter_ = m;
         std::cout << " *";
       }
     }
@@ -335,14 +359,14 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
               << metric_on_validation;
     std::cout << " }";
 
-//    std::cout << " \t " << trees_to_dropout << " Dropped Trees: [ ";
-    std::cout << " \t" << trees_to_dropout << " Dropped Trees" << std::endl;
-//    for (unsigned int i=0; i<dropped_trees.size()-1; ++i)
-//      std::cout << dropped_trees[i] << " ";
-//    std::cout << "]" << std::endl;
+    std::cout << " \t" << trees_to_dropout << " Dropped Trees "
+              << "- Ensemble size: " << ensemble_model_.get_size();
+    if (keep_drop && fit_after_dropout_better_than_full)
+      std::cout << " - Keep Dropout";
+    std::cout << std::endl;
 
     if (partial_save != 0 and !output_basename.empty()
-        and (m + 1) % partial_save == 0) {
+        and (ensemble_model_.get_size()) % partial_save == 0) {
       save(output_basename, m + 1);
     }
   }

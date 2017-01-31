@@ -265,6 +265,10 @@ int main(int argc, char *argv[]) {
                         {"set probability of skipping dropout"},
                         skip_drop);
 
+  pmap.addOption("keep-drop",
+                {"keep the dropped trees out of the ensemble"
+                 "if the performance of the model improved"});
+
   // --------------------------------------------------------
   // CoordinateAscent and LineSearch options
   // add by Chiara Pierucci and Salvatore Trani

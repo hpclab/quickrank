@@ -95,7 +95,8 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
               quickrank::learning::forests::Dart::get_normalization_type(
                   pmap.get<std::string>("normalize-type")),
               pmap.get<double>("rate-drop"),
-              pmap.get<double>("skip-drop")
+              pmap.get<double>("skip-drop"),
+              pmap.isSet("keep-drop")
           ));
     } else if (algo_name
         == quickrank::learning::forests::ObliviousMart::NAME_) {

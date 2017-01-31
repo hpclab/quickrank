@@ -54,13 +54,14 @@ class Dart: public LambdaMart {
        size_t ntreeleaves, size_t minleafsupport,
        size_t valid_iterations,
        SamplingType sample_type, NormalizationType normalize_type,
-       double rate_drop, double skip_drop)
+       double rate_drop, double skip_drop, bool keep_drop)
       : LambdaMart(ntrees, shrinkage, nthresholds, ntreeleaves,
              minleafsupport, valid_iterations),
         sample_type(sample_type),
         normalize_type(normalize_type),
         rate_drop(rate_drop),
-        skip_drop(skip_drop) {
+        skip_drop(skip_drop),
+        keep_drop(keep_drop) {
   }
 
   /// Generates a LTR_Algorithm instance from a previously saved XML model.
@@ -147,6 +148,7 @@ class Dart: public LambdaMart {
   NormalizationType normalize_type;
   double rate_drop;           // dropout rate
   double skip_drop;           // probability of skipping dropout
+  bool keep_drop;
 
  private:
 
