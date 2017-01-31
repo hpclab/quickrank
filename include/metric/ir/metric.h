@@ -79,6 +79,8 @@ class Metric {
     if (dataset->num_queries() == 0)
       return 0.0;
     MetricScore avg_score = 0.0;
+
+//    #pragma omp parallel for reduction(+:avg_score)
     for (size_t q = 0; q < dataset->num_queries(); q++) {
       std::shared_ptr<data::QueryResults> r = dataset->getQueryResults(q);
       avg_score += evaluate_result_list(r.get(), scores);

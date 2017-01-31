@@ -182,17 +182,8 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
 
       dropped_trees = select_trees_to_dropout(weights, trees_to_dropout);
 
-      std::vector<double> dropped_weights(weights);
-      for (auto idx: dropped_trees) {
-        dropped_weights[idx] = 0;
-      }
-
-      ensemble_model_.update_ensemble_weights(dropped_weights, false);
-
-      // Update the model's outputs on all training samples
-      score_dataset(training_dataset, scores_on_training_);
-//      update_modelscores(training_dataset, false,
-//                         scores_on_training_, dropped_trees);
+      update_modelscores(vertical_training, false,
+                         scores_on_training_, dropped_trees);
 
       // run metric
       metric_on_training_dropout = scorer->evaluate_dataset(
@@ -200,9 +191,8 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
 
       if (validation_dataset) {
         // Update the model's outputs on all validation samples
-        score_dataset(validation_dataset, scores_on_validation_);
-//        update_modelscores(validation_dataset, false,
-//                           scores_on_validation_, dropped_trees);
+        update_modelscores(validation_dataset, false,
+                           scores_on_validation_, dropped_trees);
         // run metric
         metric_on_validation_dropout = scorer->evaluate_dataset(
             validation_dataset, scores_on_validation_);
@@ -218,6 +208,12 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
         if (metric_on_training_dropout > metric_on_training)
           dropout_better_than_full = true;
       }
+
+      std::vector<double> dropped_weights(weights);
+      for (auto idx: dropped_trees) {
+        dropped_weights[idx] = 0;
+      }
+      ensemble_model_.update_ensemble_weights(dropped_weights, false);
 
     } else {
       trees_to_dropout = 0;
@@ -239,10 +235,12 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     // ----------
     double metric_on_training_fit;
     double metric_on_validation_fit;
+    int lastTreeIndex = ensemble_model_.get_size()-1;
+    std::vector<int> lastTree = {lastTreeIndex};
     // Update the model's outputs on all training samples
-    score_dataset(training_dataset, scores_on_training_);
-//      update_modelscores(training_dataset, false,
-//                         scores_on_training_, dropped_trees);
+//    score_dataset(training_dataset, scores_on_training_);
+      update_modelscores(training_dataset, true,
+                         scores_on_training_, lastTree);
 
     // run metric
     metric_on_training_fit = scorer->evaluate_dataset(
@@ -250,9 +248,9 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
 
     if (validation_dataset) {
       // Update the model's outputs on all validation samples
-      score_dataset(validation_dataset, scores_on_validation_);
-//        update_modelscores(validation_dataset, false,
-//                           scores_on_validation_, dropped_trees);
+//      score_dataset(validation_dataset, scores_on_validation_);
+        update_modelscores(validation_dataset, true,
+                           scores_on_validation_, lastTree);
       // run metric
       metric_on_validation_fit = scorer->evaluate_dataset(
           validation_dataset, scores_on_validation_);
@@ -266,6 +264,12 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
       if (metric_on_training_fit > metric_on_training)
         fit_after_dropout_better_than_full = true;
     }
+
+    // Reset the original scores before doing normalization
+    update_modelscores(training_dataset, false,
+                       scores_on_training_, lastTree);
+    update_modelscores(validation_dataset, false,
+                       scores_on_validation_, lastTree);
     // --------------------
 
     if (dropped_trees.size() > 0) {
@@ -279,9 +283,9 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     dropped_trees.push_back(ensemble_model_.get_size()-1);
 
     // Update the model's outputs on all training samples
-//    update_modelscores(vertical_training, true,
-//                       scores_on_training_, dropped_trees);
-    score_dataset(training_dataset, scores_on_training_);
+    update_modelscores(vertical_training, true,
+                       scores_on_training_, dropped_trees);
+//    score_dataset(training_dataset, scores_on_training_);
 
     // run metric
     metric_on_training = scorer->evaluate_dataset(vertical_training,
@@ -293,9 +297,9 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     //Evaluate the current model on the validation data (if available)
     if (validation_dataset) {
 
-//      update_modelscores(validation_dataset, true,
-//                         scores_on_validation_, dropped_trees);
-      score_dataset(validation_dataset, scores_on_validation_);
+      update_modelscores(validation_dataset, true,
+                         scores_on_validation_, dropped_trees);
+//      score_dataset(validation_dataset, scores_on_validation_);
 
       // run metric
       metric_on_validation = scorer->evaluate_dataset(
@@ -331,10 +335,11 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
               << metric_on_validation;
     std::cout << " }";
 
-    std::cout << "\t" << trees_to_dropout << " \t Dropped Trees: [ ";
-    for (unsigned int i=0; i<dropped_trees.size()-1; ++i)
-      std::cout << dropped_trees[i] << " ";
-    std::cout << "]" << std::endl;
+//    std::cout << " \t " << trees_to_dropout << " Dropped Trees: [ ";
+    std::cout << " \t" << trees_to_dropout << " Dropped Trees" << std::endl;
+//    for (unsigned int i=0; i<dropped_trees.size()-1; ++i)
+//      std::cout << dropped_trees[i] << " ";
+//    std::cout << "]" << std::endl;
 
     if (partial_save != 0 and !output_basename.empty()
         and (m + 1) % partial_save == 0) {
@@ -434,7 +439,7 @@ void Dart::update_modelscores(std::shared_ptr<data::Dataset> dataset,
   const quickrank::Feature *d = dataset->at(0, 0);
   const size_t offset = 1;
   const size_t num_features = dataset->num_features();
-  const double sign = add ? 1.0f : -1.0f;
+  const double sign = add ? 1.0 : -1.0;
 
   for (int t: trees_to_update) {
     #pragma omp parallel for
