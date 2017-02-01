@@ -19,7 +19,6 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#include "learning/forests/dart.h"
 
 #include <fstream>
 #include <iomanip>
@@ -27,6 +26,7 @@
 #include <numeric>
 #include <random>
 
+#include "learning/forests/dart.h"
 #include "utils/radix.h"
 
 namespace quickrank {
@@ -170,7 +170,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
       std::numeric_limits<double>::lowest();
 
   // start iterations from 0 or (ensemble_size - 1)
-  int m = -1;
+  size_t m = -1;
   while (ensemble_model_.get_size() < ntrees_) {
     ++m;
 //  for (size_t m = ensemble_model_.get_size(); m < ntrees_; ++m) {
@@ -226,6 +226,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
 
     } else {
       trees_to_dropout = 0;
+      metric_on_training_dropout = metric_on_validation_dropout = 0;
     }
 
     compute_pseudoresponses(vertical_training, scorer.get());
@@ -265,12 +266,14 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     }
 
     bool fit_after_dropout_better_than_full = false;
-    if (validation_dataset) {
-      if (metric_on_validation_fit > metric_on_validation)
-        fit_after_dropout_better_than_full = true;
-    } else {
-      if (metric_on_training_fit > metric_on_training)
-        fit_after_dropout_better_than_full = true;
+    if (dropped_trees.size() > 0) {
+      if (validation_dataset) {
+        if (metric_on_validation_fit > metric_on_validation)
+          fit_after_dropout_better_than_full = true;
+      } else {
+        if (metric_on_training_fit > metric_on_training)
+          fit_after_dropout_better_than_full = true;
+      }
     }
 
     if (!keep_drop || !fit_after_dropout_better_than_full) {
@@ -323,6 +326,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     std::cout << std::setw(7) << m + 1 << std::setw(9) << metric_on_training;
 
     //Evaluate the current model on the validation data (if available)
+    std::string improved = " ";
     if (validation_dataset) {
 
       // run metric
@@ -334,6 +338,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
         best_model_ = ensemble_model_.get_size() - 1;
         best_iter_ = m;
         std::cout << " *";
+        improved += "*";
       }
     } else {
       if (metric_on_training > best_metric_on_training_) {
@@ -341,8 +346,11 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
         best_model_ = ensemble_model_.get_size() - 1;
         best_iter_ = m;
         std::cout << " *";
+        improved += "*";
       }
     }
+    if (improved.size() == 1)
+      improved += " ";
 
     std::string betterDrop = "  ";
     std::string betterFit = "  ";
@@ -356,13 +364,15 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
               << metric_on_training << " | "
               << metric_on_validation_dropout << betterDrop << " -> "
               << metric_on_validation_fit << betterFit << " -> "
-              << metric_on_validation;
-    std::cout << " }";
+              << metric_on_validation << improved;
+    std::cout << "]";
 
     std::cout << " \t" << trees_to_dropout << " Dropped Trees "
               << "- Ensemble size: " << ensemble_model_.get_size();
     if (keep_drop && fit_after_dropout_better_than_full)
       std::cout << " - Keep Dropout";
+    else if (dropped_trees.size() > 1)
+      std::cout << " - Dropout";
     std::cout << std::endl;
 
     if (partial_save != 0 and !output_basename.empty()
