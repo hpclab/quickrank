@@ -207,13 +207,6 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
         // run metric
         metric_on_validation_dropout = scorer->evaluate_dataset(
             validation_dataset, scores_on_validation_);
-
-        ensemble_model_.update_ensemble_weights(dropped_weights, false);
-        MetricScore metric;
-        score_dataset(validation_dataset, scores_on_validation_);
-        metric =scorer->evaluate_dataset(validation_dataset, scores_on_validation_);
-
-        std::cout << metric << " - " << metric_on_validation_dropout << std::endl;
       }
 
       // Apply the removal of the dropped trees from the forest
@@ -344,7 +337,6 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
       if (metric_on_validation > best_metric_on_validation_) {
         best_metric_on_training_ = metric_on_training;
         best_metric_on_validation_ = metric_on_validation;
-        best_model_ = ensemble_model_.get_size() - 1;
         best_iter_ = m;
         std::cout << " *";
         best_improved = true;
@@ -352,7 +344,6 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     } else {
       if (metric_on_training > best_metric_on_training_) {
         best_metric_on_training_ = metric_on_training;
-        best_model_ = ensemble_model_.get_size() - 1;
         best_iter_ = m;
         std::cout << " *";
         best_improved = true;
@@ -362,10 +353,11 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     if (best_improved) {
       //Obtains last used weigths (including 0)
       best_weights = ensemble_model_.get_weights();
-      // Prune 0-weight trees
+      // Prune 0-weight trees (still there from previous iterations)
       ensemble_model_.update_ensemble_weights(best_weights);
       // Update the best weights vector with remaining trees
       best_weights = ensemble_model_.get_weights();
+      best_model_ = ensemble_model_.get_size();
     }
 
     std::string improved = " ";
@@ -394,7 +386,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     std::cout << " \t" << trees_to_dropout << " Dropped Trees "
               << "- Ensemble size: " << ensemble_model_.get_size();
     if (keep_drop && fit_after_dropout_better_than_full)
-      std::cout << " - Keep Dropout";
+        std::cout << " - Keep Dropout";
     else if (dropped_trees.size() > 1)
       std::cout << " - Dropout";
 
@@ -402,11 +394,6 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
       std::cout << " - CLEANED";
 
     std::cout << std::endl;
-
-//    std::cout << "Weights: [ ";
-//    for (auto w: ensemble_model_.get_weights())
-//      std::cout << w << " ";
-//    std::cout << " ]" << std::endl;
 
     if (partial_save != 0 and !output_basename.empty()
         and (ensemble_model_.get_size()) % partial_save == 0) {
@@ -417,7 +404,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   //Rollback to the best model observed on the validation data
   if (validation_dataset) {
     while (ensemble_model_.is_notempty()
-        && ensemble_model_.get_size() > best_model_ + 1) {
+        && ensemble_model_.get_size() > best_model_) {
       ensemble_model_.pop();
     }
     ensemble_model_.update_ensemble_weights(best_weights);
@@ -593,7 +580,7 @@ void Dart::normalize_trees(std::vector<double>& weights,
 
     // nothing to do
 
-  } else if (sample_type == SamplingType::WEIGHTED) {
+  } else if (normalize_type == NormalizationType::WEIGHTED) {
 
     // Sum of the weights of the dropped trees + last added tree
 //    double sum = weights[weights.size() - 1];
