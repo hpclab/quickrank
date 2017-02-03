@@ -156,7 +156,7 @@ class Dart: public LambdaMart {
   virtual std::ostream &put(std::ostream &os) const;
 
   std::vector<int> select_trees_to_dropout(std::vector<double>& weights,
-                                           int trees_to_dropout);
+                                           unsigned int trees_to_dropout);
 
   void normalize_trees(std::vector<double>& weights,
                        std::vector<int> dropped_trees);

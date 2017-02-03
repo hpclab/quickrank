@@ -106,6 +106,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   best_metric_on_training_ = std::numeric_limits<double>::lowest();
   best_model_ = 0;
   size_t best_iter_ = 0;
+  std::vector<double> best_weights;
 
   ensemble_model_.set_capacity(ntrees_);
 
@@ -122,6 +123,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   if (ensemble_model_.is_notempty()) {
     best_model_ = ensemble_model_.get_size() - 1;
     best_iter_ = best_model_;
+    best_weights = ensemble_model_.get_weights();
 
     // Update the model's outputs on all training samples
     score_dataset(training_dataset, scores_on_training_);
@@ -205,6 +207,13 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
         // run metric
         metric_on_validation_dropout = scorer->evaluate_dataset(
             validation_dataset, scores_on_validation_);
+
+        ensemble_model_.update_ensemble_weights(dropped_weights, false);
+        MetricScore metric;
+        score_dataset(validation_dataset, scores_on_validation_);
+        metric =scorer->evaluate_dataset(validation_dataset, scores_on_validation_);
+
+        std::cout << metric << " - " << metric_on_validation_dropout << std::endl;
       }
 
       // Apply the removal of the dropped trees from the forest
@@ -247,9 +256,8 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     int lastTreeIndex = ensemble_model_.get_size()-1;
     std::vector<int> lastTree = {lastTreeIndex};
     // Update the model's outputs on all training samples
-//    score_dataset(training_dataset, scores_on_training_);
-      update_modelscores(training_dataset, true,
-                         scores_on_training_, lastTree);
+    update_modelscores(training_dataset, true,
+                       scores_on_training_, lastTree);
 
     // run metric
     metric_on_training_fit = scorer->evaluate_dataset(
@@ -257,7 +265,6 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
 
     if (validation_dataset) {
       // Update the model's outputs on all validation samples
-//      score_dataset(validation_dataset, scores_on_validation_);
         update_modelscores(validation_dataset, true,
                            scores_on_validation_, lastTree);
       // run metric
@@ -315,8 +322,10 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     } else {
       // Add last trained tree
       dropped_weights.push_back(shrinkage_);
-      // Remove the 0-weights
-      ensemble_model_.update_ensemble_weights(dropped_weights, true);
+
+      // keep the 0 weights into the ensemble in order
+      // to allow the rollback at the end for saving the right model...
+      ensemble_model_.update_ensemble_weights(dropped_weights, false);
 
       metric_on_training = metric_on_training_fit;
       metric_on_validation = metric_on_validation_fit;
@@ -326,7 +335,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     std::cout << std::setw(7) << m + 1 << std::setw(9) << metric_on_training;
 
     //Evaluate the current model on the validation data (if available)
-    std::string improved = " ";
+    bool best_improved = false;
     if (validation_dataset) {
 
       // run metric
@@ -338,7 +347,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
         best_model_ = ensemble_model_.get_size() - 1;
         best_iter_ = m;
         std::cout << " *";
-        improved += "*";
+        best_improved = true;
       }
     } else {
       if (metric_on_training > best_metric_on_training_) {
@@ -346,11 +355,26 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
         best_model_ = ensemble_model_.get_size() - 1;
         best_iter_ = m;
         std::cout << " *";
-        improved += "*";
+        best_improved = true;
       }
     }
-    if (improved.size() == 1)
+
+    if (best_improved) {
+      //Obtains last used weigths (including 0)
+      best_weights = ensemble_model_.get_weights();
+      // Prune 0-weight trees
+      ensemble_model_.update_ensemble_weights(best_weights);
+      // Update the best weights vector with remaining trees
+      best_weights = ensemble_model_.get_weights();
+    }
+
+    std::string improved = " ";
+    if (best_improved)
+      improved += "*";
+    else
       improved += " ";
+
+//    if (best_improved)
 
     std::string betterDrop = "  ";
     std::string betterFit = "  ";
@@ -373,7 +397,16 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
       std::cout << " - Keep Dropout";
     else if (dropped_trees.size() > 1)
       std::cout << " - Dropout";
+
+    if (best_improved)
+      std::cout << " - CLEANED";
+
     std::cout << std::endl;
+
+//    std::cout << "Weights: [ ";
+//    for (auto w: ensemble_model_.get_weights())
+//      std::cout << w << " ";
+//    std::cout << " ]" << std::endl;
 
     if (partial_save != 0 and !output_basename.empty()
         and (ensemble_model_.get_size()) % partial_save == 0) {
@@ -387,6 +420,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
         && ensemble_model_.get_size() > best_model_ + 1) {
       ensemble_model_.pop();
     }
+    ensemble_model_.update_ensemble_weights(best_weights);
   }
 
   auto chrono_train_end = std::chrono::high_resolution_clock::now();
@@ -501,7 +535,7 @@ void Dart::update_modelscores(std::shared_ptr<data::VerticalDataset> dataset,
 }
 
 std::vector<int> Dart::select_trees_to_dropout(std::vector<double>& weights,
-                                               int trees_to_dropout) {
+                                               unsigned int trees_to_dropout) {
 
   if (trees_to_dropout == 0)
     return std::vector<int>(0);
@@ -515,15 +549,16 @@ std::vector<int> Dart::select_trees_to_dropout(std::vector<double>& weights,
 
     struct RNG {
       int operator() (int n) {
-        return std::rand() / (1.0 + RAND_MAX) * n;
+        return (int) (std::rand() / (1.0 + RAND_MAX) * n);
       }
     };
 
     // Permute idx
     std::random_shuffle(idx.begin(), idx.end(), RNG());
 
-    for(int i=0; i<trees_to_dropout; ++i)
-      dropped.push_back(idx[i]);
+    for(int i=0; dropped.size() < trees_to_dropout; ++i)
+      if (weights[idx[i]] > 0)
+        dropped.push_back(idx[i]);
 
   }
 //  else if (sample_type == SamplingType::WEIGHTED) {
