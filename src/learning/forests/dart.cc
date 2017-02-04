@@ -36,7 +36,7 @@ namespace forests {
 const std::string Dart::NAME_ = "DART";
 
 const std::vector<std::string> Dart::samplingTypesNames = {
-    "UNIFORM" //, "WEIGHTED"
+    "UNIFORM" , "WEIGHTED"
 };
 
 const std::vector<std::string> Dart::normalizationTypesNames = {
@@ -543,15 +543,43 @@ std::vector<int> Dart::select_trees_to_dropout(std::vector<double>& weights,
     // Permute idx
     std::random_shuffle(idx.begin(), idx.end(), RNG());
 
-    for(int i=0; dropped.size() < trees_to_dropout; ++i)
+    for(size_t i=0; dropped.size() < trees_to_dropout && i < idx.size(); ++i)
       if (weights[idx[i]] > 0)
         dropped.push_back(idx[i]);
 
   }
-//  else if (sample_type == SamplingType::WEIGHTED) {
-//
-//    // TODO: implement weighted sampling
-//  }
+  else if (sample_type == SamplingType::WEIGHTED) {
+
+    double sumWeights = 0;
+    for (auto w: weights)
+      sumWeights += w;
+
+    std::vector<double> prob(weights);
+    std::vector<double> cumProb(weights.size());
+
+    for(int i=0; dropped.size() < trees_to_dropout; ++i) {
+
+      // Simulate the generation of a random permutation with
+      // different probability for each element to be selected
+      for (unsigned int i=0; i<weights.size(); ++i) {
+        if (prob[i] != 0)
+          prob[i] = weights[i] / sumWeights;
+        cumProb[i] = prob[i];
+        if (i>0)
+          cumProb[i] += cumProb[i-1];
+      }
+
+      double select = (double) rand() / (double) (RAND_MAX);
+
+      int index = binary_search(cumProb, select);
+      if (index == -1)
+        break;
+
+      dropped.push_back(index);
+      sumWeights -= weights[index];
+      prob[index] = 0;
+    }
+  }
 
   return dropped;
 }
@@ -591,7 +619,7 @@ void Dart::normalize_trees(std::vector<double>& weights,
     weights.back() /= sum;
 
     double sumWithLast = sum + weights[weights.size() - 1];
-    double norm = (double) sum / sumWithLast;
+    double norm = sum / sumWithLast;
     weights.back() *= norm;
     for (int t: dropped_trees)
       weights[t] *= norm;
@@ -603,6 +631,24 @@ void Dart::normalize_trees(std::vector<double>& weights,
 //
 //  }
 
+}
+
+int Dart::binary_search(std::vector<double>& array, double key) {
+
+  int low = 0, high = (int) (array.size() - 1), midpoint = 0;
+
+  while (low <= high) {
+
+    midpoint = low + (high - low) / 2;
+    if (key < array[midpoint] && (midpoint == 0 || key >= array[midpoint-1]) ) {
+      return midpoint;
+    } else if (key < array[midpoint])
+      high = midpoint - 1;
+    else
+      low = midpoint + 1;
+  }
+
+  return -1;
 }
 
 }  // namespace forests

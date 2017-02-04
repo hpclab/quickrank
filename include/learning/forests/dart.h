@@ -160,6 +160,8 @@ class Dart: public LambdaMart {
 
   void normalize_trees(std::vector<double>& weights,
                        std::vector<int> dropped_trees);
+
+  int binary_search(std::vector<double>& array, double elem);
 };
 
 }  // namespace forests
