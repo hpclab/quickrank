@@ -159,7 +159,7 @@ bool Ensemble::update_ensemble_weights(
 
   for (size_t i = 0; i < size; ++i) {
     // Use a small epsilon to check for 0-weight trees...
-    if (weights[i] < 0.0000001 && remove) {
+    if (weights[i] == 0 && remove) {
       // Remove 0-weight tree
       delete arr[i].root;
     } else {

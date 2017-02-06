@@ -36,11 +36,11 @@ class Dart: public LambdaMart {
  public:
 
   enum class SamplingType {
-    UNIFORM, WEIGHTED
+    UNIFORM, WEIGHTED, WEIGHTED_INV
   };
 
   enum class NormalizationType {
-    TREE, NONE, WEIGHTED //,FOREST
+    TREE, NONE, WEIGHTED, FOREST, TREE_ADAPTIVE
   };
 
   /// Initializes a new Dart instance with the given learning parameters.
@@ -158,8 +158,11 @@ class Dart: public LambdaMart {
   std::vector<int> select_trees_to_dropout(std::vector<double>& weights,
                                            unsigned int trees_to_dropout);
 
-  void normalize_trees(std::vector<double>& weights,
-                       std::vector<int> dropped_trees);
+  void normalize_trees_restore_drop(std::vector<double> &weights,
+                                    std::vector<int> dropped_trees);
+
+  void normalize_trees_permanent_drop(std::vector<double> &weights,
+                                      std::vector<int> dropped_trees);
 
   int binary_search(std::vector<double>& array, double elem);
 };

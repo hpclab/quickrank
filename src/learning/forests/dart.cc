@@ -36,11 +36,11 @@ namespace forests {
 const std::string Dart::NAME_ = "DART";
 
 const std::vector<std::string> Dart::samplingTypesNames = {
-    "UNIFORM" , "WEIGHTED"
+    "UNIFORM" , "WEIGHTED", "WEIGHTED_INV"
 };
 
 const std::vector<std::string> Dart::normalizationTypesNames = {
-    "TREE", "NONE", "WEIGHTED" //, "FOREST",
+    "TREE", "NONE", "WEIGHTED", "FOREST", "TREE_ADAPTIVE"
 };
 
 Dart::Dart(const pugi::xml_document &model) : LambdaMart(model) {
@@ -209,9 +209,6 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
             validation_dataset, scores_on_validation_);
       }
 
-      // Apply the removal of the dropped trees from the forest
-//      ensemble_model_.update_ensemble_weights(dropped_weights, false);
-
       if (validation_dataset) {
         if (metric_on_validation_dropout > metric_on_validation)
           dropout_better_than_full = true;
@@ -288,8 +285,8 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
 
       if (dropped_trees.size() > 0) {
         // Normalize the weight vector increased by the last added tree
-        weights.push_back(shrinkage_);
-        normalize_trees(weights, dropped_trees);
+//        weights.push_back(shrinkage_);
+        normalize_trees_restore_drop(weights, dropped_trees);
         ensemble_model_.update_ensemble_weights(weights, false);
       }
 
@@ -314,7 +311,8 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
 
     } else {
       // Add last trained tree
-      dropped_weights.push_back(shrinkage_);
+//      dropped_weights.push_back(shrinkage_);
+      normalize_trees_permanent_drop(dropped_weights, dropped_trees);
 
       // keep the 0 weights into the ensemble in order
       // to allow the rollback at the end for saving the right model...
@@ -547,8 +545,8 @@ std::vector<int> Dart::select_trees_to_dropout(std::vector<double>& weights,
       if (weights[idx[i]] > 0)
         dropped.push_back(idx[i]);
 
-  }
-  else if (sample_type == SamplingType::WEIGHTED) {
+  } else if ( sample_type == SamplingType::WEIGHTED ||
+              sample_type == SamplingType::WEIGHTED_INV) {
 
     double sumWeights = 0;
     for (auto w: weights)
@@ -564,6 +562,8 @@ std::vector<int> Dart::select_trees_to_dropout(std::vector<double>& weights,
       for (unsigned int i=0; i<weights.size(); ++i) {
         if (prob[i] != 0)
           prob[i] = weights[i] / sumWeights;
+        if (sample_type == SamplingType::WEIGHTED_INV)
+          prob[i] = 1 - prob[i];
         cumProb[i] = prob[i];
         if (i>0)
           cumProb[i] += cumProb[i-1];
@@ -572,6 +572,7 @@ std::vector<int> Dart::select_trees_to_dropout(std::vector<double>& weights,
       double select = (double) rand() / (double) (RAND_MAX);
 
       int index = binary_search(cumProb, select);
+      // We are trying to drop-out more than valid elements (!= 0)
       if (index == -1)
         break;
 
@@ -584,29 +585,30 @@ std::vector<int> Dart::select_trees_to_dropout(std::vector<double>& weights,
   return dropped;
 }
 
-void Dart::normalize_trees(std::vector<double>& weights,
-                           std::vector<int> dropped_trees) {
+void Dart::normalize_trees_restore_drop(std::vector<double>& weights,
+                                        std::vector<int> dropped_trees) {
+
+  // This function has to add the weight of the last trained tree
+  // to the vector of weights
 
   int k = dropped_trees.size();
   if (k == 0)
     return;
 
-  if (normalize_type == NormalizationType::TREE) {
+  if (normalize_type == NormalizationType::TREE ||
+      normalize_type == NormalizationType::TREE_ADAPTIVE) {
 
     // Normalize last added tree
-    weights.back() *= (1.0f / k);
+    weights.push_back(shrinkage_ / (k + shrinkage_) );
 
     // Normalize dropped trees and last added tree
-    double norm = (double) k / (k + 1);
-
-    weights.back() *= norm;
-    for (int idx: dropped_trees) {
+    double norm = (double) k / (k + shrinkage_);
+    for (int idx: dropped_trees)
       weights[idx] *= norm;
-    }
 
   } else if (normalize_type == NormalizationType::NONE) {
 
-    // nothing to do
+    weights.push_back(shrinkage_);
 
   } else if (normalize_type == NormalizationType::WEIGHTED) {
 
@@ -616,13 +618,20 @@ void Dart::normalize_trees(std::vector<double>& weights,
     for (int t: dropped_trees)
       sum += weights[t];
 
-    weights.back() /= sum;
-
-    double sumWithLast = sum + weights[weights.size() - 1];
+    double sumWithLast = sum + shrinkage_;
     double norm = sum / sumWithLast;
-    weights.back() *= norm;
+    weights.push_back(shrinkage_ / sumWithLast);
     for (int t: dropped_trees)
       weights[t] *= norm;
+
+  } else if (normalize_type == NormalizationType::FOREST) {
+
+
+    weights.push_back(shrinkage_ / (1 + shrinkage_));
+
+    double norm = 1 / (1 + shrinkage_);
+    for (int idx: dropped_trees)
+      weights[idx] *= norm;
   }
 
 //  else if (normalize_type == NormalizationType::FOREST) {
@@ -630,6 +639,36 @@ void Dart::normalize_trees(std::vector<double>& weights,
 //    // TODO: implement forest normalization
 //
 //  }
+
+}
+
+void Dart::normalize_trees_permanent_drop(std::vector<double>& weights,
+                                          std::vector<int> dropped_trees) {
+
+  int k = dropped_trees.size();
+  if (k == 0)
+    return;
+
+  if (normalize_type == NormalizationType::TREE) {
+
+    weights.push_back(shrinkage_);
+
+  } else if (normalize_type == NormalizationType::NONE) {
+
+    weights.push_back(shrinkage_);
+
+  } else if (normalize_type == NormalizationType::WEIGHTED) {
+
+    weights.push_back(shrinkage_);
+
+  } else if (normalize_type == NormalizationType::FOREST) {
+
+    weights.push_back(shrinkage_);
+
+  } else if (normalize_type == NormalizationType::TREE_ADAPTIVE) {
+
+    weights.push_back(shrinkage_ / (shrinkage_ + k) );
+  }
 
 }
 
