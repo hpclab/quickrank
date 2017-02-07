@@ -156,16 +156,26 @@ class Dart: public LambdaMart {
   virtual std::ostream &put(std::ostream &os) const;
 
   std::vector<int> select_trees_to_dropout(std::vector<double>& weights,
-                                           unsigned int trees_to_dropout);
+                                           size_t trees_to_dropout);
 
   void normalize_trees_restore_drop(std::vector<double> &weights,
                                     std::vector<int> dropped_trees);
 
-  void normalize_trees_permanent_drop(std::vector<double> &weights,
-                                      std::vector<int> dropped_trees);
+  void normalize_tree_permanent_drop(std::vector<double> &weights,
+                                     std::vector<int> dropped_trees);
 
   int binary_search(std::vector<double>& array, double elem);
 };
+
+template <typename T>
+std::ostream& operator<< (std::ostream& out, const std::vector<T>& v) {
+  if ( !v.empty() ) {
+    out << '[';
+    std::copy (v.begin(), v.end(), std::ostream_iterator<T>(out, ", "));
+    out << "\b\b]" << std::endl;
+  }
+  return out;
+}
 
 }  // namespace forests
 }  // namespace learning

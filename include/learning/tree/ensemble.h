@@ -62,6 +62,8 @@ class Ensemble {
 
   virtual bool update_ensemble_weights(std::vector<double>& weights);
 
+  virtual bool filter_out_zero_weighted_trees();
+
   virtual bool update_ensemble_weights(
       std::vector<double>& weights, bool remove);
 
