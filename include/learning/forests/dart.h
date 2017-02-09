@@ -36,7 +36,7 @@ class Dart: public LambdaMart {
  public:
 
   enum class SamplingType {
-    UNIFORM, WEIGHTED, WEIGHTED_INV
+    UNIFORM, WEIGHTED, WEIGHTED_INV, COUNT
   };
 
   enum class NormalizationType {
@@ -161,8 +161,8 @@ class Dart: public LambdaMart {
   void normalize_trees_restore_drop(std::vector<double> &weights,
                                     std::vector<int> dropped_trees);
 
-  void normalize_tree_permanent_drop(std::vector<double> &weights,
-                                     std::vector<int> dropped_trees);
+  void set_weight_last_tree(std::vector<double> &weights,
+                            std::vector<int> dropped_trees);
 
   int binary_search(std::vector<double>& array, double elem);
 };
