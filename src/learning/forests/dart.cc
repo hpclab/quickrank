@@ -41,7 +41,8 @@ const std::vector<std::string> Dart::samplingTypesNames = {
 };
 
 const std::vector<std::string> Dart::normalizationTypesNames = {
-    "TREE", "NONE", "WEIGHTED", "FOREST", "TREE_ADAPTIVE", "LINESEARCH"
+    "TREE", "NONE", "WEIGHTED", "FOREST", "TREE_ADAPTIVE", "LINESEARCH",
+    "TREE_BOOST3"
 };
 
 Dart::Dart(const pugi::xml_document &model) : LambdaMart(model) {
@@ -683,13 +684,18 @@ void Dart::normalize_trees_restore_drop(std::vector<double>& weights,
   size_t k = dropped_trees.size();
 
   if (normalize_type == NormalizationType::TREE ||
-      normalize_type == NormalizationType::TREE_ADAPTIVE) {
+      normalize_type == NormalizationType::TREE_ADAPTIVE ||
+      normalize_type == NormalizationType::TREE_BOOST3) {
+
+    double alpha = 1;
+    if (normalize_type == NormalizationType::TREE_BOOST3)
+      alpha = 3;
 
     // Normalize last added tree
-    weights.push_back(shrinkage_ / (shrinkage_ + k) );
+    weights.push_back( (shrinkage_ * alpha) / ( (shrinkage_ * alpha) + k) );
 
     // Normalize dropped trees and last added tree
-    double norm = (double) k / (k + shrinkage_);
+    double norm = (double) k / (k + (shrinkage_ * alpha) );
     for (int idx: dropped_trees)
       weights[idx] *= norm;
 
@@ -759,6 +765,11 @@ double Dart::get_weight_last_tree(std::shared_ptr<data::Dataset> dataset,
   } else if (normalize_type == NormalizationType::TREE_ADAPTIVE) {
 
     return shrinkage_ / (shrinkage_ + k);
+
+  } else if (normalize_type == NormalizationType::TREE_BOOST3) {
+
+    double alfa = 3;
+    return (shrinkage_ * alfa) / ( (shrinkage_ * alfa) + k);
 
   } else if (normalize_type == NormalizationType::LINESEARCH) {
 

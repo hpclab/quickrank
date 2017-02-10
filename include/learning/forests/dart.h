@@ -40,7 +40,7 @@ class Dart: public LambdaMart {
   };
 
   enum class NormalizationType {
-    TREE, NONE, WEIGHTED, FOREST, TREE_ADAPTIVE, LINESEARCH
+    TREE, NONE, WEIGHTED, FOREST, TREE_ADAPTIVE, LINESEARCH, TREE_BOOST3
   };
 
   /// Initializes a new Dart instance with the given learning parameters.
