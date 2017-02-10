@@ -41,7 +41,7 @@ const std::vector<std::string> Dart::samplingTypesNames = {
 };
 
 const std::vector<std::string> Dart::normalizationTypesNames = {
-    "TREE", "NONE", "WEIGHTED", "FOREST", "TREE_ADAPTIVE"
+    "TREE", "NONE", "WEIGHTED", "FOREST", "TREE_ADAPTIVE", "LINESEARCH"
 };
 
 Dart::Dart(const pugi::xml_document &model) : LambdaMart(model) {
@@ -240,17 +240,18 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     hist_->update(pseudoresponses_, vertical_training->num_instances());
 
     //Fit a regression tree
-    std::unique_ptr<RegressionTree> tree =
+    std::shared_ptr<RegressionTree> tree =
         fit_regressor_on_gradient(vertical_training);
 
-    // add this tree to the ensemble (our model)
-    ensemble_model_.push(tree->get_proot(), shrinkage_, 0);
+    // Calculate the weight of the new tree
+    double tree_weight = get_weight_last_tree(training_dataset,
+                                              scorer,
+                                              dropped_weights,
+                                              dropped_trees,
+                                              tree);
 
-    // Set the weight of the trained tree (it will overwrite weight in ensemble)
-    set_weight_last_tree(dropped_weights, dropped_trees);
-    // keep the 0 weights into the ensemble in order
-    // to allow the rollback at the end for saving the right model...
-    ensemble_model_.update_ensemble_weights(dropped_weights, false);
+    // add this tree to the ensemble (our model)
+    ensemble_model_.push(tree->get_proot(), tree_weight, 0);
 
     // Init the counter of the last added tree
     counts.push_back(0);
@@ -681,7 +682,8 @@ void Dart::normalize_trees_restore_drop(std::vector<double>& weights,
   size_t k = dropped_trees.size();
 
   if (normalize_type == NormalizationType::TREE ||
-      normalize_type == NormalizationType::TREE_ADAPTIVE) {
+      normalize_type == NormalizationType::TREE_ADAPTIVE ||
+      normalize_type == NormalizationType::LINESEARCH) {
 
     // Normalize last added tree
     weights.push_back(shrinkage_ / (shrinkage_ + k) );
@@ -720,34 +722,95 @@ void Dart::normalize_trees_restore_drop(std::vector<double>& weights,
   }
 }
 
-void Dart::set_weight_last_tree(std::vector<double> &weights,
-                                std::vector<int> dropped_trees) {
-
-  // This function has to add the weight of the last trained tree
-  // to the vector of weights
+double Dart::get_weight_last_tree(std::shared_ptr<data::Dataset> dataset,
+                                  std::shared_ptr<metric::ir::Metric> scorer,
+                                  std::vector<double> &weights,
+                                  std::vector<int> dropped_trees,
+                                  std::shared_ptr<RegressionTree> tree) {
 
   size_t k = dropped_trees.size();
 
   if (normalize_type == NormalizationType::TREE) {
 
-    weights.push_back(shrinkage_);
+    return shrinkage_;
 
   } else if (normalize_type == NormalizationType::NONE) {
 
-    weights.push_back(shrinkage_);
+    return shrinkage_;
 
   } else if (normalize_type == NormalizationType::WEIGHTED) {
 
-    weights.push_back(shrinkage_);
+    return shrinkage_;
 
   } else if (normalize_type == NormalizationType::FOREST) {
 
-    weights.push_back(shrinkage_);
+    return shrinkage_;
 
   } else if (normalize_type == NormalizationType::TREE_ADAPTIVE) {
 
-    weights.push_back(shrinkage_ / (shrinkage_ + k) );
+    return shrinkage_ / (shrinkage_ + k);
+
+  } else if (normalize_type == NormalizationType::LINESEARCH) {
+
+    // scores already contains the sum of scores per instance except the last
+    // trained tree
+
+    const quickrank::Feature *d = dataset->at(0, 0);
+    const size_t offset = 1;
+    const size_t num_features = dataset->num_features();
+    const size_t num_instances = dataset->num_instances();
+
+    const int num_points = 16;
+    const double window_size = 1;
+    const double starting_weight = 1.0f;
+    const double step = 2 * window_size / num_points;
+
+    std::vector<double> weights;
+    weights.reserve(num_points + 1); // don't know the exact number of points
+    for (double weight = starting_weight - window_size;
+         weight <= starting_weight + window_size; weight += step) {
+      if (weight >= 0)
+        weights.push_back(weight);
+    }
+
+    std::vector<Score> score_instance_last_tree(num_instances);
+    #pragma omp parallel for
+    for (size_t i = 0; i < dataset->num_instances(); ++i) {
+      score_instance_last_tree[i] += tree->get_proot()
+          ->score_instance(d + i * num_features, offset);
+    }
+
+
+    std::vector<Score> scores(num_instances * (weights.size()), 0.0);
+    std::vector<MetricScore> metric_scores(weights.size(), 0.0);
+
+    #pragma omp parallel for
+    for (unsigned int p = 0; p < weights.size(); ++p) {
+      for (unsigned int s = 0; s < num_instances; ++s) {
+        // Scores without last tree + weight * score_last_tree
+        scores[s + (num_instances * p)] = scores_on_training_[s] +
+            weights[p] * score_instance_last_tree[s];
+      }
+    }
+
+    #pragma omp parallel for
+    for (unsigned int p = 0; p < weights.size(); ++p) {
+      // Each thread computes the metric on some points of the window.
+      // Thread p-th computes score on a part of the training_score vector
+      // Operator & is used to obtain the first position of the sub-array
+      metric_scores[p] = scorer->evaluate_dataset(
+          dataset, &scores[num_instances * p]);
+    }
+
+    // Find the best metric score
+    auto i_max_metric_score = std::max_element(metric_scores.cbegin(),
+                                               metric_scores.cbegin() +
+                                                   weights.size());
+    auto idx = std::distance(metric_scores.cbegin(), i_max_metric_score);
+    return weights[idx];
   }
+
+  return 0;
 }
 
 int Dart::binary_search(std::vector<double>& array, double key) {
