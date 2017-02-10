@@ -36,7 +36,7 @@ class Dart: public LambdaMart {
  public:
 
   enum class SamplingType {
-    UNIFORM, WEIGHTED, WEIGHTED_INV, COUNT
+    UNIFORM, WEIGHTED, WEIGHTED_INV, COUNT2, COUNT3
   };
 
   enum class NormalizationType {

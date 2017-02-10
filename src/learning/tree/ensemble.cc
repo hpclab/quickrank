@@ -174,6 +174,7 @@ bool Ensemble::update_ensemble_weights(
   if (weights.size() != size) {
     std::cerr << "# ## ERROR!! Ensemble size does not match size of the "
         "weight vector in updating the weights" << std::endl;
+    std::exit(-1);
     return false;
   }
 

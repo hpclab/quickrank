@@ -37,7 +37,7 @@ namespace forests {
 const std::string Dart::NAME_ = "DART";
 
 const std::vector<std::string> Dart::samplingTypesNames = {
-    "UNIFORM" , "WEIGHTED", "WEIGHTED_INV", "COUNT"
+    "UNIFORM" , "WEIGHTED", "WEIGHTED_INV", "COUNT2", "COUNT3"
 };
 
 const std::vector<std::string> Dart::normalizationTypesNames = {
@@ -119,6 +119,11 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     memset(scores_on_validation_, 0, validation_dataset->num_instances());
   }
 
+  // for count method for dropping trees, keep_drop is useless
+  if (sample_type == SamplingType::COUNT2 ||
+      sample_type == SamplingType::COUNT3)
+    keep_drop = false;
+
   // if the ensemble size is greater than zero, it means the learn method has
   // to start not from scratch but from a previously saved (intermediate) model
   if (ensemble_model_.is_notempty()) {
@@ -176,7 +181,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   // start iterations from 0 or (ensemble_size - 1)
   size_t m = -1;
   size_t last_iteration_global_scoring = 0;
-  std::vector<unsigned int> counts;
+  std::vector<int> counts;
   while (ensemble_model_.get_size() < ntrees_) {
     ++m;
 //  for (size_t m = ensemble_model_.get_size(); m < ntrees_; ++m) {
@@ -247,8 +252,12 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     // to allow the rollback at the end for saving the right model...
     ensemble_model_.update_ensemble_weights(dropped_weights, false);
 
-    double metric_on_training_fit;
-    double metric_on_validation_fit;
+    // Init the counter of the last added tree
+    counts.push_back(0);
+
+    double metric_on_training_fit = std::numeric_limits<double>::lowest();
+    double metric_on_validation_fit = std::numeric_limits<double>::lowest();
+
     int lastTreeIndex = (int) ensemble_model_.get_size() - 1;
     std::vector<int> lastTree = {lastTreeIndex};
     update_modelscores(training_dataset, true,
@@ -274,41 +283,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
       }
     }
 
-    if (sample_type == SamplingType::COUNT) {
-
-      if (fit_after_dropout_better_than_full) {
-        for (auto t: dropped_trees) {
-          ++counts[t];
-        }
-        std::cout << "Counts: " << counts << std::endl;
-        std::vector<double> new_weights(orig_weights);
-        dropped_trees.clear();
-
-        for (size_t i=0; i<orig_weights.size(); ++i) {
-          if (counts[i] >= 2 && orig_weights[i] > 0) {
-            dropped_trees.push_back(i);
-            new_weights[i] = 0;
-          }
-        }
-
-        std::cout << "Dropped Trees: " << dropped_trees << std::endl;
-
-        update_modelscores(training_dataset, false,
-                           scores_on_training_, dropped_trees);
-        metric_on_training = scorer->evaluate_dataset(training_dataset,
-                                                          scores_on_training_);
-
-        if (validation_dataset) {
-          update_modelscores(validation_dataset, false,
-                             scores_on_validation_, dropped_trees);
-          metric_on_validation = scorer->evaluate_dataset(validation_dataset,
-                                                          scores_on_validation_);
-        }
-
-        dropped_before_cleaning += dropped_trees.size();
-        ensemble_model_.update_ensemble_weights(new_weights, false);
-      }
-    } else if (keep_drop && fit_after_dropout_better_than_full) {
+    if (keep_drop && fit_after_dropout_better_than_full) {
 
       dropped_before_cleaning += trees_to_dropout;
 
@@ -348,6 +323,47 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
       }
     }
 
+    // Find trees with count above the threshold
+    std::vector<int> trees_to_drop_by_count;
+
+    if (sample_type == SamplingType::COUNT2 ||
+        sample_type == SamplingType::COUNT3) {
+
+      if (fit_after_dropout_better_than_full) {
+        dropped_trees.pop_back(); // remove last added tree from vector
+        for (auto t: dropped_trees) {
+          counts[t] += 1;
+        }
+
+        int threshold = 2;
+        if (sample_type == SamplingType::COUNT3)
+          threshold = 3;
+        for (size_t i = 0; i < orig_weights.size(); ++i) {
+          if (counts[i] >= threshold && orig_weights[i] > 0) {
+            trees_to_drop_by_count.push_back(i);
+            orig_weights[i] = 0;
+          }
+        }
+      }
+
+      if (trees_to_drop_by_count.size() > 0) {
+        update_modelscores(training_dataset, false,
+                           scores_on_training_, trees_to_drop_by_count);
+        metric_on_training = scorer->evaluate_dataset(training_dataset,
+                                                      scores_on_training_);
+
+        if (validation_dataset) {
+          update_modelscores(validation_dataset, false,
+                             scores_on_validation_, trees_to_drop_by_count);
+          metric_on_validation = scorer->evaluate_dataset(validation_dataset,
+                                                          scores_on_validation_);
+        }
+
+        dropped_before_cleaning += trees_to_drop_by_count.size();
+        ensemble_model_.update_ensemble_weights(orig_weights, false);
+      }
+    }
+
     //show results
     std::cout << std::setw(7) << m + 1 << std::setw(9) << metric_on_training;
 
@@ -373,9 +389,11 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
       best_iter_ = m;
       std::cout << " *";
 
-      if (sample_type == SamplingType::COUNT) {
+      if (sample_type == SamplingType::COUNT2 ||
+          sample_type == SamplingType::COUNT3) {
+
         std::vector<double> weights = ensemble_model_.get_weights();
-        std::vector<unsigned int> filt_counts;
+        std::vector<int> filt_counts;
         filt_counts.reserve(counts.size());
         // need to update the count vector to reflect the removal of the tree
         for (size_t i=0; i<weights.size(); ++i) {
@@ -393,9 +411,6 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
       best_weights = ensemble_model_.get_weights();
       best_model_ = ensemble_model_.get_size();
       dropped_before_cleaning = 0;
-
-      if (sample_type == SamplingType::COUNT)
-        assert(best_weights.size() == counts.size());
     }
 
     std::string improved = " ";
@@ -426,6 +441,8 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
         std::cout << " - Keep Dropout";
     else if (trees_to_dropout > 1)
       std::cout << " - Dropout";
+    if (trees_to_drop_by_count.size() > 0)
+      std::cout << " - Count Drop: " << trees_to_drop_by_count.size();
 
     if (best_improved) {
       std::cout << " - CLEANED";
@@ -433,7 +450,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
         score_dataset(training_dataset, scores_on_training_);
         if (validation_dataset)
           score_dataset(validation_dataset, scores_on_validation_);
-        std::cout << " - Update Scores";
+        std::cout << " (update)";
         last_iteration_global_scoring = m;
       }
     }
@@ -596,7 +613,8 @@ std::vector<int> Dart::select_trees_to_dropout(std::vector<double>& weights,
   std::vector<int> dropped;
 
   if (sample_type == SamplingType::UNIFORM ||
-      sample_type == SamplingType::COUNT) {
+      sample_type == SamplingType::COUNT2 ||
+      sample_type == SamplingType::COUNT3) {
 
     std::vector<int> idx(weights.size());
     std::iota(idx.begin(), idx.end(), 0);
@@ -666,7 +684,7 @@ void Dart::normalize_trees_restore_drop(std::vector<double>& weights,
       normalize_type == NormalizationType::TREE_ADAPTIVE) {
 
     // Normalize last added tree
-    weights.push_back(shrinkage_ / (k + shrinkage_) );
+    weights.push_back(shrinkage_ / (shrinkage_ + k) );
 
     // Normalize dropped trees and last added tree
     double norm = (double) k / (k + shrinkage_);
