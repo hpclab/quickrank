@@ -159,7 +159,8 @@ class Dart: public LambdaMart {
                                            size_t trees_to_dropout);
 
   void normalize_trees_restore_drop(std::vector<double> &weights,
-                                    std::vector<int> dropped_trees);
+                                    std::vector<int> dropped_trees,
+                                    double last_tree_weight);
 
   double get_weight_last_tree(std::shared_ptr<data::Dataset> dataset,
                               std::shared_ptr<metric::ir::Metric> scorer,

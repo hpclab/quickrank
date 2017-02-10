@@ -303,7 +303,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
 
       if (trees_to_dropout > 0) {
         // Normalize the weight vector and add the last tree
-        normalize_trees_restore_drop(orig_weights, dropped_trees);
+        normalize_trees_restore_drop(orig_weights, dropped_trees, tree_weight);
         ensemble_model_.update_ensemble_weights(orig_weights, false);
       }
 
@@ -674,7 +674,8 @@ std::vector<int> Dart::select_trees_to_dropout(std::vector<double>& weights,
 }
 
 void Dart::normalize_trees_restore_drop(std::vector<double>& weights,
-                                        std::vector<int> dropped_trees) {
+                                        std::vector<int> dropped_trees,
+                                        double last_tree_weight) {
 
   // This function has to add the weight of the last trained tree
   // to the vector of weights
@@ -682,8 +683,7 @@ void Dart::normalize_trees_restore_drop(std::vector<double>& weights,
   size_t k = dropped_trees.size();
 
   if (normalize_type == NormalizationType::TREE ||
-      normalize_type == NormalizationType::TREE_ADAPTIVE ||
-      normalize_type == NormalizationType::LINESEARCH) {
+      normalize_type == NormalizationType::TREE_ADAPTIVE) {
 
     // Normalize last added tree
     weights.push_back(shrinkage_ / (shrinkage_ + k) );
@@ -717,6 +717,16 @@ void Dart::normalize_trees_restore_drop(std::vector<double>& weights,
     weights.push_back(shrinkage_ / (1 + shrinkage_));
 
     double norm = 1 / (1 + shrinkage_);
+    for (int idx: dropped_trees)
+      weights[idx] *= norm;
+
+  } else if (normalize_type == NormalizationType::LINESEARCH) {
+
+    // Normalize last added tree
+    weights.push_back(last_tree_weight / (last_tree_weight + k) );
+
+    // Normalize dropped trees and last added tree
+    double norm = (double) k / (k + last_tree_weight);
     for (int idx: dropped_trees)
       weights[idx] *= norm;
   }
