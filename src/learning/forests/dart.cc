@@ -623,10 +623,14 @@ std::vector<int> Dart::select_trees_to_dropout(std::vector<double>& weights,
   std::vector<int> dropped;
 
   if (sample_type == SamplingType::UNIFORM ||
+      sample_type == SamplingType::TOP_FIFTY ||
       sample_type == SamplingType::COUNT2 ||
       sample_type == SamplingType::COUNT3) {
 
-    std::vector<int> idx(weights.size());
+    size_t size = weights.size();
+    if (sample_type == SamplingType::TOP_FIFTY)
+      size = (size_t) round(size / 2);
+    std::vector<int> idx(size);
     std::iota(idx.begin(), idx.end(), 0);
 
     struct RNG {
@@ -798,7 +802,7 @@ double Dart::get_weight_last_tree(std::shared_ptr<data::Dataset> dataset,
     weights.reserve(num_points + 1); // don't know the exact number of points
     for (double weight = starting_weight - window_size;
          weight <= starting_weight + window_size; weight += step) {
-      if (weight >= 0)
+      if (weight > 0)
         weights.push_back(weight);
     }
 
