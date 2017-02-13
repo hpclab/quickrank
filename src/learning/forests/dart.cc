@@ -37,7 +37,7 @@ namespace forests {
 const std::string Dart::NAME_ = "DART";
 
 const std::vector<std::string> Dart::samplingTypesNames = {
-    "UNIFORM" , "WEIGHTED", "WEIGHTED_INV", "COUNT2", "COUNT3"
+    "UNIFORM" , "WEIGHTED", "WEIGHTED_INV", "COUNT2", "COUNT3", "UNIFORM_MAX3"
 };
 
 const std::vector<std::string> Dart::normalizationTypesNames = {
@@ -614,7 +614,11 @@ std::vector<int> Dart::select_trees_to_dropout(std::vector<double>& weights,
 
   std::vector<int> dropped;
 
+  if (sample_type == SamplingType::UNIFORM && trees_to_dropout > 3)
+    trees_to_dropout = 3;
+
   if (sample_type == SamplingType::UNIFORM ||
+      sample_type == SamplingType::UNIFORM_MAX3 ||
       sample_type == SamplingType::COUNT2 ||
       sample_type == SamplingType::COUNT3) {
 
