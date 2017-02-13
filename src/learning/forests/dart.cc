@@ -37,7 +37,7 @@ namespace forests {
 const std::string Dart::NAME_ = "DART";
 
 const std::vector<std::string> Dart::samplingTypesNames = {
-    "UNIFORM" , "WEIGHTED", "WEIGHTED_INV", "COUNT2", "COUNT3", "UNIFORM_MAX3"
+    "UNIFORM" , "WEIGHTED", "WEIGHTED_INV", "COUNT2", "COUNT3", "TOP_FIFTY"
 };
 
 const std::vector<std::string> Dart::normalizationTypesNames = {
@@ -194,8 +194,16 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
 
     double prob_skip_dropout = (double)rand() / (double)(RAND_MAX);
     int trees_to_dropout = 0;
-    if (prob_skip_dropout > skip_drop)
-      trees_to_dropout = (int) round(rate_drop * orig_weights.size());
+    if (prob_skip_dropout > skip_drop) {
+      if (rate_drop > 1) {
+        // Avoid removing trees if the ensemble size is smaller than two times
+        // the number of trees to remove
+        if ( (rate_drop * 2) <= ensemble_model_.get_size())
+          trees_to_dropout = rate_drop;
+      } else {
+        trees_to_dropout = (int) round(rate_drop * orig_weights.size());
+      }
+    }
 
     double metric_on_training_dropout = 0;
     double metric_on_validation_dropout = 0;
@@ -618,7 +626,6 @@ std::vector<int> Dart::select_trees_to_dropout(std::vector<double>& weights,
     trees_to_dropout = 3;
 
   if (sample_type == SamplingType::UNIFORM ||
-      sample_type == SamplingType::UNIFORM_MAX3 ||
       sample_type == SamplingType::COUNT2 ||
       sample_type == SamplingType::COUNT3) {
 
