@@ -37,7 +37,8 @@ namespace forests {
 const std::string Dart::NAME_ = "DART";
 
 const std::vector<std::string> Dart::samplingTypesNames = {
-    "UNIFORM" , "WEIGHTED", "WEIGHTED_INV", "COUNT2", "COUNT3", "TOP_FIFTY"
+    "UNIFORM" , "WEIGHTED", "WEIGHTED_INV", "COUNT2", "COUNT3",
+    "COUNT2N", "COUNT3N", "TOP_FIFTY"
 };
 
 const std::vector<std::string> Dart::normalizationTypesNames = {
@@ -122,7 +123,9 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
 
   // for count method for dropping trees, keep_drop is useless
   if (sample_type == SamplingType::COUNT2 ||
-      sample_type == SamplingType::COUNT3)
+      sample_type == SamplingType::COUNT3 ||
+      sample_type == SamplingType::COUNT2N ||
+      sample_type == SamplingType::COUNT3N)
     keep_drop = false;
 
   // if the ensemble size is greater than zero, it means the learn method has
@@ -195,7 +198,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     double prob_skip_dropout = (double)rand() / (double)(RAND_MAX);
     int trees_to_dropout = 0;
     if (prob_skip_dropout > skip_drop) {
-      if (rate_drop > 1) {
+      if (rate_drop >= 1) {
         // Avoid removing trees if the ensemble size is smaller than two times
         // the number of trees to remove
         if ( (rate_drop * 2) <= ensemble_model_.get_size())
@@ -337,40 +340,88 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     std::vector<int> trees_to_drop_by_count;
 
     if (sample_type == SamplingType::COUNT2 ||
-        sample_type == SamplingType::COUNT3) {
+        sample_type == SamplingType::COUNT3 ||
+        sample_type == SamplingType::COUNT2N ||
+        sample_type == SamplingType::COUNT3N) {
 
       if (fit_after_dropout_better_than_full) {
-        dropped_trees.pop_back(); // remove last added tree from vector
-        for (auto t: dropped_trees) {
-          counts[t] += 1;
-        }
 
         int threshold = 2;
-        if (sample_type == SamplingType::COUNT3)
+        if (sample_type == SamplingType::COUNT3 ||
+            sample_type == SamplingType::COUNT3N) {
           threshold = 3;
-        for (size_t i = 0; i < orig_weights.size(); ++i) {
-          if (counts[i] >= threshold && orig_weights[i] > 0) {
-            trees_to_drop_by_count.push_back(i);
-            orig_weights[i] = 0;
+        }
+
+        // Do not consider last added tree (present in dropped trees)
+        for(std::vector<int>::iterator it = dropped_trees.begin();
+            it != dropped_trees.end() - 1; ++it) {
+          counts[*it] += 1;
+          if (counts[*it] >= threshold && orig_weights[*it] > 0)
+            trees_to_drop_by_count.push_back(*it);
+        }
+
+        if (trees_to_drop_by_count.size() > 0) {
+
+          dropped_before_cleaning += trees_to_drop_by_count.size();
+
+          if (sample_type == SamplingType::COUNT2N ||
+              sample_type == SamplingType::COUNT3N) {
+
+            // Remove the contribution of the dropped trees (+ last one)
+            update_modelscores(training_dataset, false,
+                               scores_on_training_, dropped_trees);
+            if (validation_dataset) {
+              update_modelscores(validation_dataset, false,
+                                 scores_on_validation_, dropped_trees);
+            }
+
+            // Remaining trees between the dropped out (temporary) and the
+            // permanent drop (the ones with count > threshold)
+            size_t denom = trees_to_dropout - trees_to_drop_by_count.size() + 1;
+
+            // Normalize the weight of the remaining trees
+            orig_weights[lastTreeIndex] *= (float) 1 / denom;
+
+            // Do not consider last added tree (present in dropped trees)
+            for(std::vector<int>::iterator it = dropped_trees.begin();
+                it != dropped_trees.end() - 1; ++it) {
+              orig_weights[*it] *= (float) trees_to_dropout / denom;
+            }
+
+            for (auto t: trees_to_drop_by_count)
+              orig_weights[t] = 0;
+            ensemble_model_.update_ensemble_weights(orig_weights, false);
+
+            // Remove the contribution of the dropped trees (+ last one)
+            update_modelscores(training_dataset, true,
+                               scores_on_training_, dropped_trees);
+            if (validation_dataset) {
+              update_modelscores(validation_dataset, true,
+                                 scores_on_validation_, dropped_trees);
+            }
+
+          } else {
+
+            update_modelscores(training_dataset, false,
+                               scores_on_training_, trees_to_drop_by_count);
+
+            if (validation_dataset) {
+              update_modelscores(validation_dataset, false,
+                                 scores_on_validation_, trees_to_drop_by_count);
+            }
+
+            for (auto t: trees_to_drop_by_count)
+              orig_weights[t] = 0;
+            ensemble_model_.update_ensemble_weights(orig_weights, false);
+          }
+
+          metric_on_training = scorer->evaluate_dataset(training_dataset,
+                                                        scores_on_training_);
+          if (validation_dataset) {
+            metric_on_validation = scorer->evaluate_dataset(validation_dataset,
+                                                            scores_on_validation_);
           }
         }
-      }
-
-      if (trees_to_drop_by_count.size() > 0) {
-        update_modelscores(training_dataset, false,
-                           scores_on_training_, trees_to_drop_by_count);
-        metric_on_training = scorer->evaluate_dataset(training_dataset,
-                                                      scores_on_training_);
-
-        if (validation_dataset) {
-          update_modelscores(validation_dataset, false,
-                             scores_on_validation_, trees_to_drop_by_count);
-          metric_on_validation = scorer->evaluate_dataset(validation_dataset,
-                                                          scores_on_validation_);
-        }
-
-        dropped_before_cleaning += trees_to_drop_by_count.size();
-        ensemble_model_.update_ensemble_weights(orig_weights, false);
       }
     }
 
@@ -400,7 +451,9 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
       std::cout << " *";
 
       if (sample_type == SamplingType::COUNT2 ||
-          sample_type == SamplingType::COUNT3) {
+          sample_type == SamplingType::COUNT3 ||
+          sample_type == SamplingType::COUNT2N ||
+          sample_type == SamplingType::COUNT3N) {
 
         std::vector<double> weights = ensemble_model_.get_weights();
         std::vector<int> filt_counts;
@@ -625,7 +678,9 @@ std::vector<int> Dart::select_trees_to_dropout(std::vector<double>& weights,
   if (sample_type == SamplingType::UNIFORM ||
       sample_type == SamplingType::TOP_FIFTY ||
       sample_type == SamplingType::COUNT2 ||
-      sample_type == SamplingType::COUNT3) {
+      sample_type == SamplingType::COUNT3 ||
+      sample_type == SamplingType::COUNT2N ||
+      sample_type == SamplingType::COUNT3N) {
 
     size_t size = weights.size();
     if (sample_type == SamplingType::TOP_FIFTY)
