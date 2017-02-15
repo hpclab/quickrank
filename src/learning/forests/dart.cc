@@ -38,7 +38,8 @@ const std::string Dart::NAME_ = "DART";
 
 const std::vector<std::string> Dart::samplingTypesNames = {
     "UNIFORM" , "WEIGHTED", "WEIGHTED_INV", "COUNT2", "COUNT3",
-    "COUNT2N", "COUNT3N", "TOP_FIFTY"
+    "COUNT2N", "COUNT3N", "TOP_FIFTY", "CONTR", "CONTR_INV", "WCONTR",
+    "WCONTR_INV", "TOP_WCONTR", "LESS_WCONTR"
 };
 
 const std::vector<std::string> Dart::normalizationTypesNames = {
@@ -61,7 +62,7 @@ Dart::Dart(const pugi::xml_document &model) : LambdaMart(model) {
 }
 
 Dart::~Dart() {
-  // TODO: fix the destructor...
+  delete(scores_contribution_);
 }
 
 std::ostream &Dart::put(std::ostream &os) const {
@@ -425,6 +426,9 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
       }
     }
 
+    // Update scores_contribution_
+    update_contribution_scores(training_dataset);
+
     //show results
     std::cout << std::setw(7) << m + 1 << std::setw(9) << metric_on_training;
 
@@ -469,6 +473,8 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
 
       // Removes trees with 0-weight from the ensemble
       ensemble_model_.filter_out_zero_weighted_trees();
+      // Removes also the contributions from the scores array
+      filter_out_zero_weighted_contributions(ensemble_model_.get_weights());
 
       // Update the best weights vector with remaining trees
       best_weights = ensemble_model_.get_weights();
@@ -521,7 +527,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     std::cout << std::endl;
 
     if (partial_save != 0 and !output_basename.empty()
-        and (ensemble_model_.get_size()) % partial_save == 0) {
+        and (ensemble_model_.get_size() - dropped_before_cleaning) % partial_save == 0) {
       save(output_basename, m + 1);
     }
   }
@@ -667,6 +673,24 @@ void Dart::update_modelscores(std::shared_ptr<data::VerticalDataset> dataset,
   }
 }
 
+void Dart::update_contribution_scores(std::shared_ptr<data::Dataset> dataset) {
+
+  const quickrank::Feature *d = dataset->at(0, 0);
+  const size_t offset = 1;
+  const size_t num_features = dataset->num_features();
+  const size_t num_instances = dataset->num_instances();
+  const size_t last_tree_idx = ensemble_model_.get_size() - 1;
+
+  double contribution = 0;
+//  #pragma omp parallel for reduction(+:contribution)
+  for (size_t i = 0; i < dataset->num_instances(); ++i) {
+    contribution += fabs(ensemble_model_.getTree(last_tree_idx)->score_instance(
+        d + i * num_features, offset));
+  }
+
+  scores_contribution_[last_tree_idx] = contribution / num_instances;
+}
+
 std::vector<int> Dart::select_trees_to_dropout(std::vector<double>& weights,
                                                size_t trees_to_dropout) {
 
@@ -736,6 +760,84 @@ std::vector<int> Dart::select_trees_to_dropout(std::vector<double>& weights,
       sumWeights -= weights[index];
       prob[index] = 0;
     }
+
+  } else if ( sample_type == SamplingType::CONTR ||
+              sample_type == SamplingType::CONTR_INV ||
+              sample_type == SamplingType::WCONTR ||
+              sample_type == SamplingType::WCONTR_INV) {
+
+    double sumContributions = 0;
+    for (size_t i = 0; i < weights.size(); ++i) {
+      if (weights[i] == 0) // avoid considering the 0-weighted trees (removed)
+        continue;
+
+      double weight = 1;
+      if (sample_type == SamplingType::WCONTR ||
+          sample_type == SamplingType::WCONTR_INV)
+        weight = weights[i];
+      sumContributions += weight * scores_contribution_[i];
+    }
+
+    std::vector<double> prob(weights);
+    std::vector<double> cumProb(weights.size());
+
+    for(int i=0; dropped.size() < trees_to_dropout; ++i) {
+
+      // Simulate the generation of a random permutation with
+      // different probability for each element to be selected
+      for (unsigned int i=0; i<weights.size(); ++i) {
+
+        double weight = 1;
+        if (sample_type == SamplingType::WCONTR ||
+            sample_type == SamplingType::WCONTR_INV)
+          weight = weights[i];
+
+        if (weights[i] > 0)
+          prob[i] = weight * scores_contribution_[i] / sumContributions;
+
+        if (sample_type == SamplingType::CONTR_INV ||
+            sample_type == SamplingType::WCONTR_INV)
+          prob[i] = 1 - prob[i];
+        cumProb[i] = prob[i];
+        if (i > 0)
+          cumProb[i] += cumProb[i-1];
+      }
+
+      double select = (double) rand() / (double) (RAND_MAX);
+
+      int index = binary_search(cumProb, select);
+      // We are trying to drop-out more than valid elements (!= 0)
+      if (index == -1)
+        break;
+
+      dropped.push_back(index);
+      double weight = 1;
+      if (sample_type == SamplingType::WCONTR ||
+          sample_type == SamplingType::WCONTR_INV)
+        weight = weights[i];
+      sumContributions -= weight * scores_contribution_[i];
+      prob[index] = 0;
+    }
+
+  } else if ( sample_type == SamplingType::TOP_WCONTR ||
+      sample_type == SamplingType::LESS_WCONTR) {
+
+    std::vector<double> contr(weights);
+    for (unsigned int i=0; i<weights.size(); ++i)
+      contr[i] = weights[i] * scores_contribution_[i];
+
+    for(int i=0; dropped.size() < trees_to_dropout; ++i) {
+
+      std::vector<double>::const_iterator i_contr;
+      if (sample_type == SamplingType::TOP_WCONTR)
+        i_contr = std::max_element(contr.cbegin(), contr.cend());
+      else
+        i_contr = std::min_element(contr.cbegin(), contr.cend());
+      auto p = std::distance(contr.cbegin(), i_contr);
+
+      dropped.push_back(p);
+    }
+
   }
 
   return dropped;
@@ -917,6 +1019,21 @@ int Dart::binary_search(std::vector<double>& array, double key) {
   }
 
   return -1;
+}
+
+void Dart::filter_out_zero_weighted_contributions(
+    const std::vector<double>& weights) {
+
+  size_t idx_curr = 0;
+  for (size_t i = 0; i < weights.size(); ++i) {
+    if (weights[i] > 0)
+      scores_contribution_[idx_curr++] = scores_contribution_[i];
+  }
+
+  // erase previously saved values outside the new shape of contribution array
+  for (size_t i = idx_curr; i < weights.size() && i < ntrees_; ++i) {
+    scores_contribution_[i] = 0;
+  }
 }
 
 }  // namespace forests

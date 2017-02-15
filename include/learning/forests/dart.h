@@ -36,7 +36,8 @@ class Dart: public LambdaMart {
  public:
 
   enum class SamplingType {
-    UNIFORM, WEIGHTED, WEIGHTED_INV, COUNT2, COUNT3, COUNT2N, COUNT3N, TOP_FIFTY
+    UNIFORM, WEIGHTED, WEIGHTED_INV, COUNT2, COUNT3, COUNT2N, COUNT3N,
+    TOP_FIFTY, CONTR, CONTR_INV, WCONTR, WCONTR_INV, TOP_WCONTR, LESS_WCONTR
   };
 
   enum class NormalizationType {
@@ -62,6 +63,8 @@ class Dart: public LambdaMart {
         rate_drop(rate_drop),
         skip_drop(skip_drop),
         keep_drop(keep_drop) {
+
+    scores_contribution_ = new double[ntrees]();  //0.0f initialized
   }
 
   /// Generates a LTR_Algorithm instance from a previously saved XML model.
@@ -143,12 +146,15 @@ class Dart: public LambdaMart {
                                   bool add, Score *scores,
                                   std::vector<int>& dropped_trees);
 
+  virtual void update_contribution_scores(std::shared_ptr<data::Dataset> dataset);
+
  protected:
   SamplingType sample_type;
   NormalizationType normalize_type;
   double rate_drop;           // dropout rate
   double skip_drop;           // probability of skipping dropout
   bool keep_drop;
+  quickrank::Score* scores_contribution_  = NULL;
 
  private:
 
@@ -169,6 +175,9 @@ class Dart: public LambdaMart {
                               std::shared_ptr<RegressionTree> tree);
 
   int binary_search(std::vector<double>& array, double elem);
+
+  virtual void filter_out_zero_weighted_contributions(
+      const std::vector<double>& weights);
 };
 
 template <typename T>
