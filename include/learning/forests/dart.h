@@ -41,7 +41,8 @@ class Dart: public LambdaMart {
   };
 
   enum class NormalizationType {
-    TREE, NONE, WEIGHTED, FOREST, TREE_ADAPTIVE, LINESEARCH, TREE_BOOST3
+    TREE, NONE, WEIGHTED, FOREST, TREE_ADAPTIVE, LINESEARCH, TREE_BOOST3,
+    CONTR, WCONTR
   };
 
   /// Initializes a new Dart instance with the given learning parameters.
@@ -146,7 +147,9 @@ class Dart: public LambdaMart {
                                   bool add, Score *scores,
                                   std::vector<int>& dropped_trees);
 
-  virtual void update_contribution_scores(std::shared_ptr<data::Dataset> dataset);
+  virtual void update_contribution_scores(std::shared_ptr<data::Dataset> dataset,
+                                          std::shared_ptr<RegressionTree> tree,
+                                          int index);
 
  protected:
   SamplingType sample_type;

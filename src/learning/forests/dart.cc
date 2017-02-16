@@ -44,7 +44,7 @@ const std::vector<std::string> Dart::samplingTypesNames = {
 
 const std::vector<std::string> Dart::normalizationTypesNames = {
     "TREE", "NONE", "WEIGHTED", "FOREST", "TREE_ADAPTIVE", "LINESEARCH",
-    "TREE_BOOST3"
+    "TREE_BOOST3", "CONTR", "WCONTR"
 };
 
 Dart::Dart(const pugi::xml_document &model) : LambdaMart(model) {
@@ -252,9 +252,13 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     // (the feature histogram will be used to find the best tree rtnode)
     hist_->update(pseudoresponses_, vertical_training->num_instances());
 
-    //Fit a regression tree
+    // Fit a regression tree
     std::shared_ptr<RegressionTree> tree =
         fit_regressor_on_gradient(vertical_training);
+
+    // Update scores_contribution_ including last tree
+    update_contribution_scores(training_dataset, tree,
+                               ensemble_model_.get_size());
 
     // Calculate the weight of the new tree
     double tree_weight = get_weight_last_tree(training_dataset,
@@ -425,9 +429,6 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
         }
       }
     }
-
-    // Update scores_contribution_
-    update_contribution_scores(training_dataset);
 
     //show results
     std::cout << std::setw(7) << m + 1 << std::setw(9) << metric_on_training;
@@ -673,22 +674,23 @@ void Dart::update_modelscores(std::shared_ptr<data::VerticalDataset> dataset,
   }
 }
 
-void Dart::update_contribution_scores(std::shared_ptr<data::Dataset> dataset) {
+void Dart::update_contribution_scores(std::shared_ptr<data::Dataset> dataset,
+                                      std::shared_ptr<RegressionTree> tree,
+                                      int new_index) {
 
   const quickrank::Feature *d = dataset->at(0, 0);
   const size_t offset = 1;
   const size_t num_features = dataset->num_features();
   const size_t num_instances = dataset->num_instances();
-  const size_t last_tree_idx = ensemble_model_.get_size() - 1;
 
   double contribution = 0;
-//  #pragma omp parallel for reduction(+:contribution)
+  RTNode* root = tree->get_proot();
+  #pragma omp parallel for reduction(+:contribution)
   for (size_t i = 0; i < dataset->num_instances(); ++i) {
-    contribution += fabs(ensemble_model_.getTree(last_tree_idx)->score_instance(
-        d + i * num_features, offset));
+    contribution += fabs(root->score_instance(d + i * num_features, offset));
   }
 
-  scores_contribution_[last_tree_idx] = contribution / num_instances;
+  scores_contribution_[new_index] = contribution / num_instances;
 }
 
 std::vector<int> Dart::select_trees_to_dropout(std::vector<double>& weights,
@@ -833,7 +835,7 @@ std::vector<int> Dart::select_trees_to_dropout(std::vector<double>& weights,
         i_contr = std::max_element(contr.cbegin(), contr.cend());
       else
         i_contr = std::min_element(contr.cbegin(), contr.cend());
-      auto p = std::distance(contr.cbegin(), i_contr);
+      int p = (int) std::distance(contr.cbegin(), i_contr);
 
       dropped.push_back(p);
     }
@@ -904,6 +906,43 @@ void Dart::normalize_trees_restore_drop(std::vector<double>& weights,
     double norm = (double) k / (k + last_tree_weight);
     for (int idx: dropped_trees)
       weights[idx] *= norm;
+
+  } else if ( normalize_type == NormalizationType::CONTR ||
+              normalize_type == NormalizationType::WCONTR) {
+
+    double dropped_contribution = 0;
+    double weight = 1;
+    for (auto t: dropped_trees) {
+      if (normalize_type == NormalizationType::WCONTR)
+        weight = weights[t];
+      dropped_contribution += weight * scores_contribution_[t];
+    }
+
+    // weights contains the weights excluding the last added tree
+    // so, size is the index of the new tree
+    weight = 1;
+    if (normalize_type == NormalizationType::WCONTR)
+      weight = last_tree_weight;
+    double contribution_last_tree = weight *
+                                    scores_contribution_[weights.size()];
+
+    double sum_contribution = dropped_contribution + contribution_last_tree;
+    double norm = dropped_contribution / sum_contribution;
+    weights.push_back(contribution_last_tree / sum_contribution);
+    for (int t: dropped_trees)
+      weights[t] *= norm;
+
+    std::cout << "Contributions: ";
+    for (int i=0; i<weights.size(); ++i) {
+      std::cout << i << ":" << scores_contribution_[i] << " , ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "Weights: ";
+    for (int i=0; i<weights.size(); ++i) {
+      std::cout << i << ":" << weights[i] << " , ";
+    }
+    std::cout << std::endl;
   }
 }
 
@@ -998,6 +1037,23 @@ double Dart::get_weight_last_tree(std::shared_ptr<data::Dataset> dataset,
                                                    weights.size());
     auto idx = std::distance(metric_scores.cbegin(), i_max_metric_score);
     return weights[idx];
+
+  } else if ( normalize_type == NormalizationType::CONTR ||
+              normalize_type == NormalizationType::WCONTR) {
+
+    double dropped_contribution = 0;
+    for (auto t: dropped_trees) {
+      dropped_contribution += scores_contribution_[t];
+    }
+
+    // weights contains the weights excluding the last added tree
+    // so, size is the index of the new tree
+    double contribution_last_tree = scores_contribution_[weights.size()];
+
+    if (k <= 0)
+      return shrinkage_;
+    else
+      return (dropped_contribution / contribution_last_tree) * shrinkage_;
   }
 
   return 0;
