@@ -57,8 +57,13 @@ Dart::Dart(const pugi::xml_document &model) : LambdaMart(model) {
       .child("sample_type").text().as_string());
   normalize_type = get_normalization_type(model.child("ranker").child("info")
       .child("normalize_type").text().as_string());
-  adaptive_type = get_adaptive_type(model.child("ranker").child("info")
-      .child("adaptive_type").text().as_string());
+
+  if (model.child("ranker").child("info").child("adaptive_type")) {
+    adaptive_type = get_adaptive_type(model.child("ranker").child("info")
+                                .child("adaptive_type").text().as_string());
+  } else
+    adaptive_type = AdaptiveType::FIXED;
+
   rate_drop = model.child("ranker").child("info")
       .child("rate_drop").text().as_double();
   skip_drop = model.child("ranker").child("info")
