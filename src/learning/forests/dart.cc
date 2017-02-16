@@ -48,7 +48,7 @@ const std::vector<std::string> Dart::normalizationTypesNames = {
 };
 
 const std::vector<std::string> Dart::adaptiveTypeNames = {
-    "FIXED"
+    "FIXED", "PLUS1_DIV2", "PLUSHALF_DIV2", "PLUSONETHIRD_DIV2", "PLUSHALF_RESET"
 };
 
 Dart::Dart(const pugi::xml_document &model) : LambdaMart(model) {
@@ -200,6 +200,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   size_t last_iteration_global_scoring = 0;
   std::vector<int> counts;
   std::vector<double> performance_on_validation;
+  std::vector<double> dropout_factor_per_iter;
   while (ensemble_model_.get_size() < ntrees_) {
     ++m;
 //  for (size_t m = ensemble_model_.get_size(); m < ntrees_; ++m) {
@@ -210,7 +211,9 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     std::vector<double> orig_weights = ensemble_model_.get_weights();
 
     int trees_to_dropout = get_number_of_trees_to_dropout(
-        performance_on_validation, best_metric_on_validation_);
+        performance_on_validation, dropout_factor_per_iter,
+        best_metric_on_validation_,
+        dropped_before_cleaning);
 
     double metric_on_training_dropout = 0;
     double metric_on_validation_dropout = 0;
@@ -1096,24 +1099,68 @@ void Dart::filter_out_zero_weighted_contributions(
 }
 
 int Dart::get_number_of_trees_to_dropout(
-    std::vector<double>& performance_on_validation,
-    double best_metric_on_validation) {
+    std::vector<double>& performance_on_validation_per_iter,
+    std::vector<double>& dropout_factor_per_iter,
+    double best_on_validation,
+    int dropped_before_cleaning) {
 
-  if (adaptive_type == AdaptiveType::FIXED) {
-    double prob_skip_dropout = (double)rand() / (double)(RAND_MAX);
-    if (prob_skip_dropout > skip_drop) {
+  double prob_skip_dropout = (double) rand() / (double) (RAND_MAX);
+  int  model_size = (int) ensemble_model_.get_size() - dropped_before_cleaning;
+  double trees_to_dropout = 0;
+  if (prob_skip_dropout > skip_drop && model_size > 0) {
+
+    if (adaptive_type == AdaptiveType::FIXED) {
+
       if (rate_drop >= 1) {
         // Avoid removing trees if the ensemble size is smaller than two times
         // the number of trees to remove
-        if ( (rate_drop * 2) <= ensemble_model_.get_size())
-          return (int) rate_drop;
+        if ((rate_drop * 2) <= model_size)
+          trees_to_dropout = rate_drop;
       } else {
-        return (int) round(rate_drop * ensemble_model_.get_size());
+        trees_to_dropout = rate_drop * model_size;
       }
+
+    } else if (adaptive_type == AdaptiveType::PLUS1_DIV2) {
+
+      double last_dropout = dropout_factor_per_iter.back();
+      if (performance_on_validation_per_iter.back() >= best_on_validation)
+        trees_to_dropout = last_dropout / 2;
+      else
+        trees_to_dropout = last_dropout + 1;
+
+    } else if (adaptive_type == AdaptiveType::PLUSHALF_DIV2) {
+
+      double last_dropout = dropout_factor_per_iter.back();
+      if (performance_on_validation_per_iter.back() >= best_on_validation)
+        trees_to_dropout = last_dropout / 2;
+      else
+        trees_to_dropout = last_dropout + 0.5;
+
+    } else if (adaptive_type == AdaptiveType::PLUSONETHIRD_DIV2) {
+
+      double last_dropout = dropout_factor_per_iter.back();
+      if (performance_on_validation_per_iter.back() >= best_on_validation)
+        trees_to_dropout = last_dropout / 2;
+      else
+        trees_to_dropout = last_dropout + (1.0f / 3);
+
+    } else if (adaptive_type == AdaptiveType::PLUSHALF_RESET) {
+
+      double last_dropout = dropout_factor_per_iter.back();
+      if (performance_on_validation_per_iter.back() >= best_on_validation)
+        trees_to_dropout = 0;
+      else
+        trees_to_dropout = last_dropout + 0.5;
     }
   }
 
-  return 0;
+
+  // At maximum we drop half of the trees
+  trees_to_dropout = trees_to_dropout > model_size / 2
+                     ? model_size / 2
+                     : trees_to_dropout;
+  dropout_factor_per_iter.push_back(trees_to_dropout);
+  return (int) round(trees_to_dropout);
 }
 
 }  // namespace forests

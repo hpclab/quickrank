@@ -46,7 +46,7 @@ class Dart: public LambdaMart {
   };
 
   enum class AdaptiveType {
-    FIXED
+    FIXED, PLUS1_DIV2, PLUSHALF_DIV2, PLUSONETHIRD_DIV2, PLUSHALF_RESET
   };
 
   /// Initializes a new Dart instance with the given learning parameters.
@@ -211,7 +211,9 @@ class Dart: public LambdaMart {
 
   int get_number_of_trees_to_dropout(
       std::vector<double>& performance_on_validation,
-      double best_metric_on_validation);
+      std::vector<double>& dropout_factor_per_iter,
+      double best_on_validation,
+      int dropped_before_cleaning);
 };
 
 template <typename T>
