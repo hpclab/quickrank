@@ -112,6 +112,9 @@ int main(int argc, char *argv[]) {
   std::string normalize_type
       = quickrank::learning::forests::Dart::get_normalization_type(
           quickrank::learning::forests::Dart::NormalizationType::TREE);
+  std::string adaptive_type
+      = quickrank::learning::forests::Dart::get_adaptive_type(
+          quickrank::learning::forests::Dart::AdaptiveType::FIXED);
   double rate_drop = 0.1;
   double skip_drop = 0;
 
@@ -256,6 +259,17 @@ int main(int argc, char *argv[]) {
                         {"normalization type of trees. "
                              "[" + normalizationMethods + "]."},
                         normalize_type);
+
+  std::string adaptiveMethods = "";
+  for (auto i: quickrank::learning::forests::Dart::adaptiveTypeNames) {
+    adaptiveMethods += i + "|";
+  }
+  adaptiveMethods = adaptiveMethods.substr(0, adaptiveMethods.size() - 1);
+
+  pmap.addOptionWithArg("adaptive-type",
+                        {"adaptive type for choosing number of trees to dropout. "
+                             "[" + adaptiveMethods + "]."},
+                        adaptive_type);
 
   pmap.addOptionWithArg("rate-drop",
                         {"set dropout rate"},

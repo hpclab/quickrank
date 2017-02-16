@@ -44,7 +44,11 @@ const std::vector<std::string> Dart::samplingTypesNames = {
 
 const std::vector<std::string> Dart::normalizationTypesNames = {
     "TREE", "NONE", "WEIGHTED", "FOREST", "TREE_ADAPTIVE", "LINESEARCH",
-    "TREE_BOOST3", "CONTR", "WCONTR"
+    "TREE_BOOST3", "CONTR", "WCONTR", "LMART_ADAPTIVE", "LMART_ADAPTIVE_SIZE"
+};
+
+const std::vector<std::string> Dart::adaptiveTypeNames = {
+    "FIXED"
 };
 
 Dart::Dart(const pugi::xml_document &model) : LambdaMart(model) {
@@ -53,6 +57,8 @@ Dart::Dart(const pugi::xml_document &model) : LambdaMart(model) {
       .child("sample_type").text().as_string());
   normalize_type = get_normalization_type(model.child("ranker").child("info")
       .child("normalize_type").text().as_string());
+  adaptive_type = get_adaptive_type(model.child("ranker").child("info")
+      .child("adaptive_type").text().as_string());
   rate_drop = model.child("ranker").child("info")
       .child("rate_drop").text().as_double();
   skip_drop = model.child("ranker").child("info")
@@ -82,6 +88,7 @@ std::ostream &Dart::put(std::ostream &os) const {
   os << "# sample type = " << get_sampling_type(sample_type) << std::endl;
   os << "# normalization type = " << get_normalization_type(normalize_type)
      << std::endl;
+  os << "# adaptive type = " << get_adaptive_type(adaptive_type) << std::endl;
   os << "# rate drop = " << rate_drop << std::endl;
   os << "# skip drop = " << skip_drop << std::endl;
   os << "# keep drop = " << keep_drop << std::endl;
@@ -187,6 +194,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   size_t m = -1;
   size_t last_iteration_global_scoring = 0;
   std::vector<int> counts;
+  std::vector<double> performance_on_validation;
   while (ensemble_model_.get_size() < ntrees_) {
     ++m;
 //  for (size_t m = ensemble_model_.get_size(); m < ntrees_; ++m) {
@@ -196,18 +204,8 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
 
     std::vector<double> orig_weights = ensemble_model_.get_weights();
 
-    double prob_skip_dropout = (double)rand() / (double)(RAND_MAX);
-    int trees_to_dropout = 0;
-    if (prob_skip_dropout > skip_drop) {
-      if (rate_drop >= 1) {
-        // Avoid removing trees if the ensemble size is smaller than two times
-        // the number of trees to remove
-        if ( (rate_drop * 2) <= ensemble_model_.get_size())
-          trees_to_dropout = rate_drop;
-      } else {
-        trees_to_dropout = (int) round(rate_drop * orig_weights.size());
-      }
-    }
+    int trees_to_dropout = get_number_of_trees_to_dropout(
+        performance_on_validation, best_metric_on_validation_);
 
     double metric_on_training_dropout = 0;
     double metric_on_validation_dropout = 0;
@@ -266,6 +264,8 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
                                               dropped_weights,
                                               dropped_trees,
                                               tree);
+
+    std::cout << "Weight: " << tree_weight << " ";
 
     // add this tree to the ensemble (our model)
     ensemble_model_.push(tree->get_proot(), tree_weight, 0);
@@ -526,6 +526,8 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     }
 
     std::cout << std::endl;
+
+    performance_on_validation.push_back(metric_on_validation);
 
     if (partial_save != 0 and !output_basename.empty()
         and (ensemble_model_.get_size() - dropped_before_cleaning) % partial_save == 0) {
@@ -931,18 +933,6 @@ void Dart::normalize_trees_restore_drop(std::vector<double>& weights,
     weights.push_back(contribution_last_tree / sum_contribution);
     for (int t: dropped_trees)
       weights[t] *= norm;
-
-    std::cout << "Contributions: ";
-    for (int i=0; i<weights.size(); ++i) {
-      std::cout << i << ":" << scores_contribution_[i] << " , ";
-    }
-    std::cout << std::endl;
-
-    std::cout << "Weights: ";
-    for (int i=0; i<weights.size(); ++i) {
-      std::cout << i << ":" << weights[i] << " , ";
-    }
-    std::cout << std::endl;
   }
 }
 
@@ -1054,6 +1044,16 @@ double Dart::get_weight_last_tree(std::shared_ptr<data::Dataset> dataset,
       return shrinkage_;
     else
       return (dropped_contribution / contribution_last_tree) * shrinkage_;
+
+  } else if (normalize_type == NormalizationType::LMART_ADAPTIVE) {
+
+    return shrinkage_ / (rate_drop * ensemble_model_.get_size() + 1);
+
+  } else if (normalize_type == NormalizationType::LMART_ADAPTIVE_SIZE) {
+
+    double min_shrinkage = shrinkage_ / 100;
+    size_t cur_size = ensemble_model_.get_size();
+    return shrinkage_ - (shrinkage_ - min_shrinkage) * cur_size / ntrees_;
   }
 
   return 0;
@@ -1090,6 +1090,27 @@ void Dart::filter_out_zero_weighted_contributions(
   for (size_t i = idx_curr; i < weights.size() && i < ntrees_; ++i) {
     scores_contribution_[i] = 0;
   }
+}
+
+int Dart::get_number_of_trees_to_dropout(
+    std::vector<double>& performance_on_validation,
+    double best_metric_on_validation) {
+
+  if (adaptive_type == AdaptiveType::FIXED) {
+    double prob_skip_dropout = (double)rand() / (double)(RAND_MAX);
+    if (prob_skip_dropout > skip_drop) {
+      if (rate_drop >= 1) {
+        // Avoid removing trees if the ensemble size is smaller than two times
+        // the number of trees to remove
+        if ( (rate_drop * 2) <= ensemble_model_.get_size())
+          return (int) rate_drop;
+      } else {
+        return (int) round(rate_drop * ensemble_model_.get_size());
+      }
+    }
+  }
+
+  return 0;
 }
 
 }  // namespace forests

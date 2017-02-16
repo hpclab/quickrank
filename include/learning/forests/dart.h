@@ -42,7 +42,11 @@ class Dart: public LambdaMart {
 
   enum class NormalizationType {
     TREE, NONE, WEIGHTED, FOREST, TREE_ADAPTIVE, LINESEARCH, TREE_BOOST3,
-    CONTR, WCONTR
+    CONTR, WCONTR, LMART_ADAPTIVE, LMART_ADAPTIVE_SIZE
+  };
+
+  enum class AdaptiveType {
+    FIXED
   };
 
   /// Initializes a new Dart instance with the given learning parameters.
@@ -56,11 +60,13 @@ class Dart: public LambdaMart {
        size_t ntreeleaves, size_t minleafsupport,
        size_t valid_iterations,
        SamplingType sample_type, NormalizationType normalize_type,
+       AdaptiveType adaptive_rate,
        double rate_drop, double skip_drop, bool keep_drop)
       : LambdaMart(ntrees, shrinkage, nthresholds, ntreeleaves,
              minleafsupport, valid_iterations),
         sample_type(sample_type),
         normalize_type(normalize_type),
+        adaptive_type(adaptive_rate),
         rate_drop(rate_drop),
         skip_drop(skip_drop),
         keep_drop(keep_drop) {
@@ -134,6 +140,26 @@ class Dart: public LambdaMart {
     return normalizationTypesNames[static_cast<int>(normalizationType)];
   }
 
+  static const std::vector<std::string> adaptiveTypeNames;
+
+  static AdaptiveType get_adaptive_type(std::string name) {
+    auto i_item = std::find(adaptiveTypeNames.cbegin(),
+                            adaptiveTypeNames.cend(),
+                            name);
+    if (i_item != adaptiveTypeNames.cend()) {
+
+      return AdaptiveType(std::distance(adaptiveTypeNames.cbegin(), i_item));
+    }
+
+    // TODO: Fix return value...
+    throw std::invalid_argument("adaptive type " + name + " is not valid");
+//    return NULL;
+  }
+
+  static std::string get_adaptive_type(AdaptiveType adaptiveType) {
+    return adaptiveTypeNames[static_cast<int>(adaptiveType)];
+  }
+
  protected:
 
   virtual pugi::xml_document *get_xml_model() const;
@@ -154,6 +180,7 @@ class Dart: public LambdaMart {
  protected:
   SamplingType sample_type;
   NormalizationType normalize_type;
+  AdaptiveType adaptive_type;
   double rate_drop;           // dropout rate
   double skip_drop;           // probability of skipping dropout
   bool keep_drop;
@@ -181,6 +208,10 @@ class Dart: public LambdaMart {
 
   virtual void filter_out_zero_weighted_contributions(
       const std::vector<double>& weights);
+
+  int get_number_of_trees_to_dropout(
+      std::vector<double>& performance_on_validation,
+      double best_metric_on_validation);
 };
 
 template <typename T>
