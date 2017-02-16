@@ -265,8 +265,6 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
                                               dropped_trees,
                                               tree);
 
-    std::cout << "Weight: " << tree_weight << " ";
-
     // add this tree to the ensemble (our model)
     ensemble_model_.push(tree->get_proot(), tree_weight, 0);
 
