@@ -48,7 +48,8 @@ const std::vector<std::string> Dart::normalizationTypesNames = {
 };
 
 const std::vector<std::string> Dart::adaptiveTypeNames = {
-    "FIXED", "PLUS1_DIV2", "PLUSHALF_DIV2", "PLUSONETHIRD_DIV2", "PLUSHALF_RESET"
+    "FIXED", "PLUS1_DIV2", "PLUSHALF_DIV2", "PLUSONETHIRD_DIV2",
+    "PLUSHALF_RESET", "PLUSHALF_RESET_LB1_UB5", "PLUSHALF_RESET_LB1_UB10"
 };
 
 Dart::Dart(const pugi::xml_document &model) : LambdaMart(model) {
@@ -1169,6 +1170,22 @@ int Dart::get_number_of_trees_to_dropout(
         trees_to_dropout = 0;
       else
         trees_to_dropout = last_dropout + 0.5;
+
+    } else if (adaptive_type == AdaptiveType::PLUSHALF_RESET_LB1_UB5) {
+
+      double last_dropout = dropout_factor_per_iter.back();
+      if (performance_on_validation_per_iter.back() >= best_on_validation)
+        trees_to_dropout = 1;
+      else
+        trees_to_dropout = std::min(5.0, last_dropout + 0.5);
+
+    } else if (adaptive_type == AdaptiveType::PLUSHALF_RESET_LB1_UB10) {
+
+      double last_dropout = dropout_factor_per_iter.back();
+      if (performance_on_validation_per_iter.back() >= best_on_validation)
+        trees_to_dropout = 1;
+      else
+        trees_to_dropout = std::min(10.0, last_dropout + 0.5);
     }
   }
 

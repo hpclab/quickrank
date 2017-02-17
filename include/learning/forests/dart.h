@@ -46,7 +46,8 @@ class Dart: public LambdaMart {
   };
 
   enum class AdaptiveType {
-    FIXED, PLUS1_DIV2, PLUSHALF_DIV2, PLUSONETHIRD_DIV2, PLUSHALF_RESET
+    FIXED, PLUS1_DIV2, PLUSHALF_DIV2, PLUSONETHIRD_DIV2, PLUSHALF_RESET,
+    PLUSHALF_RESET_LB1_UB5, PLUSHALF_RESET_LB1_UB10
   };
 
   /// Initializes a new Dart instance with the given learning parameters.
