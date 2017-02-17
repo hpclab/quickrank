@@ -283,6 +283,9 @@ int main(int argc, char *argv[]) {
                 {"keep the dropped trees out of the ensemble"
                  "if the performance of the model improved"});
 
+  pmap.addOption("best-on-train",
+                 {"Calculate the best performance on training (o/w valid)"});
+
   // --------------------------------------------------------
   // CoordinateAscent and LineSearch options
   // add by Chiara Pierucci and Salvatore Trani

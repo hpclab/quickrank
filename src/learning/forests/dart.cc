@@ -70,10 +70,45 @@ Dart::Dart(const pugi::xml_document &model) : LambdaMart(model) {
       .child("skip_drop").text().as_double();
   keep_drop = model.child("ranker").child("info")
       .child("keep_drop").text().as_bool();
+
+  if (model.child("ranker").child("info").child("best_on_train")) {
+    best_on_train = model.child("ranker").child("info")
+        .child("best_on_train").text().as_bool();
+  } else
+    best_on_train = false;
 }
 
 Dart::~Dart() {
   delete(scores_contribution_);
+}
+
+pugi::xml_document *Dart::get_xml_model() const {
+
+  pugi::xml_document *doc = new pugi::xml_document();
+  pugi::xml_node root = doc->append_child("ranker");
+  pugi::xml_node info = root.append_child("info");
+
+  info.append_child("type").text() = name().c_str();
+  info.append_child("trees").text() = ntrees_;
+  info.append_child("leaves").text() = nleaves_;
+  info.append_child("shrinkage").text() = shrinkage_;
+  info.append_child("leafsupport").text() = minleafsupport_;
+  info.append_child("discretization").text() = nthresholds_;
+  info.append_child("estop").text() = valid_iterations_;
+
+  info.append_child("sample_type").text() =
+      get_sampling_type(sample_type).c_str();
+  info.append_child("normalize_type").text() =
+      get_normalization_type(normalize_type).c_str();
+  info.append_child("adaptive_type").text() =
+      get_adaptive_type(adaptive_type).c_str();
+  info.append_child("rate_drop").text() = rate_drop;
+  info.append_child("skip_drop").text() = skip_drop;
+  info.append_child("best_on_train").text() = best_on_train;
+
+  ensemble_model_.append_xml_model(root);
+
+  return doc;
 }
 
 std::ostream &Dart::put(std::ostream &os) const {
@@ -97,6 +132,7 @@ std::ostream &Dart::put(std::ostream &os) const {
   os << "# rate drop = " << rate_drop << std::endl;
   os << "# skip drop = " << skip_drop << std::endl;
   os << "# keep drop = " << keep_drop << std::endl;
+  os << "# best on train = " << best_on_train << std::endl;
   return os;
 }
 
@@ -201,7 +237,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   std::vector<int> counts;
   std::vector<double> performance_on_validation;
   std::vector<double> dropout_factor_per_iter;
-  while (ensemble_model_.get_size() < ntrees_) {
+  while ((ensemble_model_.get_size() - dropped_before_cleaning) < ntrees_) {
     ++m;
 //  for (size_t m = ensemble_model_.get_size(); m < ntrees_; ++m) {
     if (validation_dataset
@@ -440,7 +476,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     std::cout << std::setw(7) << m + 1 << std::setw(9) << metric_on_training;
 
     bool best_improved = false;
-    if (validation_dataset) {
+    if (validation_dataset && !best_on_train) {
 
       // run metric
       std::cout << std::setw(9) << metric_on_validation;
@@ -454,10 +490,18 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
         best_improved = true;
     }
 
+    bool best_vali_improved = false;
+    if (validation_dataset && best_on_train &&
+        metric_on_validation > best_metric_on_validation_) {
+      best_vali_improved = true;
+      best_metric_on_validation_ = metric_on_validation;
+    }
+
     if (best_improved) {
 
       best_metric_on_training_ = metric_on_training;
-      best_metric_on_validation_ = metric_on_validation;
+      if (!best_on_train)
+        best_metric_on_validation_ = metric_on_validation;
       best_iter_ = m;
       std::cout << " *";
 
@@ -490,7 +534,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     }
 
     std::string improved = " ";
-    if (best_improved)
+    if (best_vali_improved)
       improved += "*";
     else
       improved += " ";
@@ -569,32 +613,6 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   std::cout << std::endl;
   std::cout << "#\t Training Time: " << std::setprecision(2) << train_time
             << " s." << std::endl;
-}
-
-pugi::xml_document *Dart::get_xml_model() const {
-
-  pugi::xml_document *doc = new pugi::xml_document();
-  pugi::xml_node root = doc->append_child("ranker");
-  pugi::xml_node info = root.append_child("info");
-
-  info.append_child("type").text() = name().c_str();
-  info.append_child("trees").text() = ntrees_;
-  info.append_child("leaves").text() = nleaves_;
-  info.append_child("shrinkage").text() = shrinkage_;
-  info.append_child("leafsupport").text() = minleafsupport_;
-  info.append_child("discretization").text() = nthresholds_;
-  info.append_child("estop").text() = valid_iterations_;
-
-  info.append_child("sample_type").text() =
-      get_sampling_type(sample_type).c_str();
-  info.append_child("normalize_type").text() =
-      get_normalization_type(normalize_type).c_str();
-  info.append_child("rate_drop").text() = rate_drop;
-  info.append_child("skip_drop").text() = skip_drop;
-
-  ensemble_model_.append_xml_model(root);
-
-  return doc;
 }
 
 bool Dart::import_model_state(LTR_Algorithm &other) {

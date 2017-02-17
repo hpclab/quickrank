@@ -98,7 +98,8 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
                   pmap.get<std::string>("adaptive-type")),
               pmap.get<double>("rate-drop"),
               pmap.get<double>("skip-drop"),
-              pmap.isSet("keep-drop")
+              pmap.isSet("keep-drop"),
+              pmap.isSet("best-on-train")
           ));
     } else if (algo_name
         == quickrank::learning::forests::ObliviousMart::NAME_) {
