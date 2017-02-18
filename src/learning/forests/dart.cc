@@ -261,7 +261,8 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
         dropped_before_cleaning);
 
     double prob_random_keep = (double) rand() / (double) (RAND_MAX);
-    bool random_keep_iter = prob_random_keep <= random_keep;
+    bool random_keep_iter = trees_to_dropout > 0 &&
+        prob_random_keep <= random_keep;
 
     double metric_on_training_dropout = 0;
     double metric_on_validation_dropout = 0;
