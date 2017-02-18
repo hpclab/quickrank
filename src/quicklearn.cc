@@ -117,6 +117,7 @@ int main(int argc, char *argv[]) {
           quickrank::learning::forests::Dart::AdaptiveType::FIXED);
   double rate_drop = 0.1;
   double skip_drop = 0;
+  double random_keep = 0;
 
   // ------------------------------------------
   // Coordinate ascent added by Chiara Pierucci
@@ -285,6 +286,11 @@ int main(int argc, char *argv[]) {
 
   pmap.addOption("best-on-train",
                  {"Calculate the best performance on training (o/w valid)"});
+
+  pmap.addOptionWithArg("random-keep",
+                        {"keep the dropped trees out of the ensemble",
+                         "for every drop"},
+                        random_keep);
 
   // --------------------------------------------------------
   // CoordinateAscent and LineSearch options

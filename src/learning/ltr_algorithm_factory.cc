@@ -99,7 +99,8 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
               pmap.get<double>("rate-drop"),
               pmap.get<double>("skip-drop"),
               pmap.isSet("keep-drop"),
-              pmap.isSet("best-on-train")
+              pmap.isSet("best-on-train"),
+              pmap.get<double>("random-keep")
           ));
     } else if (algo_name
         == quickrank::learning::forests::ObliviousMart::NAME_) {

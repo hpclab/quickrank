@@ -77,6 +77,12 @@ Dart::Dart(const pugi::xml_document &model) : LambdaMart(model) {
         .child("best_on_train").text().as_bool();
   } else
     best_on_train = false;
+
+  if (model.child("ranker").child("info").child("random_keep")) {
+    random_keep = model.child("ranker").child("info")
+        .child("random_keep").text().as_double();
+  } else
+    random_keep = 0;
 }
 
 Dart::~Dart() {
@@ -106,6 +112,7 @@ pugi::xml_document *Dart::get_xml_model() const {
   info.append_child("rate_drop").text() = rate_drop;
   info.append_child("skip_drop").text() = skip_drop;
   info.append_child("best_on_train").text() = best_on_train;
+  info.append_child("random_keep").text() = random_keep;
 
   ensemble_model_.append_xml_model(root);
 
@@ -134,6 +141,7 @@ std::ostream &Dart::put(std::ostream &os) const {
   os << "# skip drop = " << skip_drop << std::endl;
   os << "# keep drop = " << keep_drop << std::endl;
   os << "# best on train = " << best_on_train << std::endl;
+  os << "# keep dropout at random = " << random_keep << std::endl;
   return os;
 }
 
@@ -161,7 +169,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   size_t best_iter_ = 0;
   std::vector<double> best_weights;
 
-  ensemble_model_.set_capacity(ntrees_);
+  ensemble_model_.set_capacity(ntrees_ + valid_iterations_);
 
   init(vertical_training);
   memset(scores_on_training_, 0, vertical_training->num_instances());
@@ -252,10 +260,14 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
         best_metric_on_validation_,
         dropped_before_cleaning);
 
+    double prob_random_keep = (double) rand() / (double) (RAND_MAX);
+    bool random_keep_iter = prob_random_keep <= random_keep;
+
     double metric_on_training_dropout = 0;
     double metric_on_validation_dropout = 0;
     std::vector<int> dropped_trees;
     bool dropout_better_than_full = false;
+
     std::vector<double> dropped_weights(orig_weights);
     if (trees_to_dropout > 0) {
 
@@ -333,6 +345,8 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
                                                           scores_on_validation_);
     }
 
+
+    // TODO: consider keep_at_random
     bool fit_after_dropout_better_than_full = false;
     if (trees_to_dropout > 0) {
       if (validation_dataset) {
@@ -344,7 +358,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
       }
     }
 
-    if (keep_drop && fit_after_dropout_better_than_full) {
+    if (keep_drop && (fit_after_dropout_better_than_full || random_keep_iter)) {
 
       dropped_before_cleaning += trees_to_dropout;
 
@@ -560,7 +574,9 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
               << ensemble_model_.get_size() - dropped_before_cleaning;
     if (keep_drop && fit_after_dropout_better_than_full)
         std::cout << " - Keep Dropout";
-    else if (trees_to_dropout > 1)
+    else if (random_keep_iter)
+      std::cout << " - Keep Dropout (RANDOM)";
+    else if (trees_to_dropout > 0)
       std::cout << " - Dropout";
     if (trees_to_drop_by_count.size() > 0)
       std::cout << " - Count Drop: " << trees_to_drop_by_count.size();
@@ -1188,7 +1204,6 @@ int Dart::get_number_of_trees_to_dropout(
         trees_to_dropout = std::min(10.0, last_dropout + 0.5);
     }
   }
-
 
   // At maximum we drop half of the trees
   trees_to_dropout = trees_to_dropout > model_size / 2
