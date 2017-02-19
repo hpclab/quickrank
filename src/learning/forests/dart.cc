@@ -599,7 +599,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
 
     if (partial_save != 0 and !output_basename.empty()
         and (ensemble_model_.get_size() - dropped_before_cleaning) % partial_save == 0) {
-      save(output_basename, m + 1);
+      save(output_basename, ensemble_model_.get_size() - dropped_before_cleaning);
     }
   }
 
