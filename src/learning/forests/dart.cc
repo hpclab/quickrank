@@ -92,7 +92,20 @@ Dart::Dart(const pugi::xml_document &model) : LambdaMart(model) {
 }
 
 Dart::~Dart() {
-  delete(scores_contribution_);
+  // TODO: fix the destructor...
+}
+
+void
+Dart::init(std::shared_ptr<quickrank::data::VerticalDataset> training_dataset) {
+  LambdaMart::init(training_dataset);
+  const size_t nentries = training_dataset->num_instances();
+  scores_contribution_ = new double[nentries]();  //0.0f initialized
+}
+
+void Dart::clear(size_t num_features) {
+  LambdaMart::clear(num_features);
+  if (scores_contribution_)
+    delete[] scores_contribution_;
 }
 
 pugi::xml_document *Dart::get_xml_model() const {
@@ -111,6 +124,7 @@ pugi::xml_document *Dart::get_xml_model() const {
 
   info.append_child("sample_type").text() =
       get_sampling_type(sample_type).c_str();
+  info.append_child("normalize_type").text() =
   info.append_child("normalize_type").text() =
       get_normalization_type(normalize_type).c_str();
   info.append_child("adaptive_type").text() =

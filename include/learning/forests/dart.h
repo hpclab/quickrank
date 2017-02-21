@@ -74,10 +74,7 @@ class Dart: public LambdaMart {
         keep_drop(keep_drop),
         best_on_train(best_on_train),
         random_keep(random_keep),
-        drop_on_best(drop_on_best) {
-
-    scores_contribution_ = new double[ntrees]();  //0.0f initialized
-  }
+        drop_on_best(drop_on_best) {}
 
   /// Generates a LTR_Algorithm instance from a previously saved XML model.
   Dart(const pugi::xml_document &model);
@@ -193,6 +190,12 @@ class Dart: public LambdaMart {
   double random_keep;
   bool drop_on_best;
   quickrank::Score* scores_contribution_  = NULL;
+
+  /// Prepares private data structurs befor training takes place.
+  virtual void init(std::shared_ptr<data::VerticalDataset> training_dataset);
+
+  /// De-allocates private data structure after training has taken place.
+  virtual void clear(size_t num_features);
 
  private:
 
