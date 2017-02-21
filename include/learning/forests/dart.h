@@ -63,7 +63,7 @@ class Dart: public LambdaMart {
        SamplingType sample_type, NormalizationType normalize_type,
        AdaptiveType adaptive_rate,
        double rate_drop, double skip_drop, bool keep_drop,
-       bool best_on_train, double random_keep)
+       bool best_on_train, double random_keep, double drop_on_best)
       : LambdaMart(ntrees, shrinkage, nthresholds, ntreeleaves,
              minleafsupport, valid_iterations),
         sample_type(sample_type),
@@ -73,7 +73,8 @@ class Dart: public LambdaMart {
         skip_drop(skip_drop),
         keep_drop(keep_drop),
         best_on_train(best_on_train),
-        random_keep(random_keep) {
+        random_keep(random_keep),
+        drop_on_best(drop_on_best) {
 
     scores_contribution_ = new double[ntrees]();  //0.0f initialized
   }
@@ -190,6 +191,7 @@ class Dart: public LambdaMart {
   bool keep_drop;
   bool best_on_train;
   double random_keep;
+  bool drop_on_best;
   quickrank::Score* scores_contribution_  = NULL;
 
  private:

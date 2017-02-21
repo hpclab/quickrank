@@ -83,6 +83,12 @@ Dart::Dart(const pugi::xml_document &model) : LambdaMart(model) {
         .child("random_keep").text().as_double();
   } else
     random_keep = 0;
+
+  if (model.child("ranker").child("info").child("drop_on_best")) {
+    best_on_train = model.child("ranker").child("info")
+        .child("drop_on_best").text().as_bool();
+  } else
+    best_on_train = false;
 }
 
 Dart::~Dart() {
@@ -113,6 +119,7 @@ pugi::xml_document *Dart::get_xml_model() const {
   info.append_child("skip_drop").text() = skip_drop;
   info.append_child("best_on_train").text() = best_on_train;
   info.append_child("random_keep").text() = random_keep;
+  info.append_child("drop_on_best").text() = drop_on_best;
 
   ensemble_model_.append_xml_model(root);
 
@@ -142,6 +149,7 @@ std::ostream &Dart::put(std::ostream &os) const {
   os << "# keep drop = " << keep_drop << std::endl;
   os << "# best on train = " << best_on_train << std::endl;
   os << "# keep dropout at random = " << random_keep << std::endl;
+  os << "# keep dropout based on best = " << drop_on_best << std::endl;
   return os;
 }
 
@@ -350,12 +358,25 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     // TODO: consider keep_at_random
     bool fit_after_dropout_better_than_full = false;
     if (trees_to_dropout > 0) {
-      if (validation_dataset) {
-        if (metric_on_validation_fit > metric_on_validation)
-          fit_after_dropout_better_than_full = true;
-      } else {
-        if (metric_on_training_fit > metric_on_training)
-          fit_after_dropout_better_than_full = true;
+
+      if (drop_on_best) {
+
+        if (validation_dataset) {
+          if (metric_on_validation_fit > best_metric_on_validation_)
+            fit_after_dropout_better_than_full = true;
+        } else {
+          if (metric_on_training_fit > best_metric_on_training_)
+            fit_after_dropout_better_than_full = true;
+        }
+
+      } else {  // Drop on last iteration
+        if (validation_dataset) {
+          if (metric_on_validation_fit > metric_on_validation)
+            fit_after_dropout_better_than_full = true;
+        } else {
+          if (metric_on_training_fit > metric_on_training)
+            fit_after_dropout_better_than_full = true;
+        }
       }
     }
 

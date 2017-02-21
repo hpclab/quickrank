@@ -292,6 +292,9 @@ int main(int argc, char *argv[]) {
                          "for every drop"},
                         random_keep);
 
+  pmap.addOption("drop-on-best",
+                 {"Perform the drop-out based on best perfomance (o/w last)"});
+
   // --------------------------------------------------------
   // CoordinateAscent and LineSearch options
   // add by Chiara Pierucci and Salvatore Trani
