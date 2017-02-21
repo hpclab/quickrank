@@ -106,6 +106,9 @@ void Dart::clear(size_t num_features) {
   LambdaMart::clear(num_features);
   if (scores_contribution_)
     delete[] scores_contribution_;
+
+  // Reset pointers to internal data structures
+  scores_contribution_ = NULL;
 }
 
 pugi::xml_document *Dart::get_xml_model() const {
@@ -373,24 +376,19 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     bool fit_after_dropout_better_than_full = false;
     if (trees_to_dropout > 0) {
 
+      double reference_metric_training = metric_on_training;
+      double reference_metric_validation = metric_on_validation;
       if (drop_on_best) {
+        reference_metric_training = best_metric_on_training_;
+        reference_metric_validation = best_metric_on_validation_;
+      }
 
-        if (validation_dataset) {
-          if (metric_on_validation_fit > best_metric_on_validation_)
-            fit_after_dropout_better_than_full = true;
-        } else {
-          if (metric_on_training_fit > best_metric_on_training_)
-            fit_after_dropout_better_than_full = true;
-        }
-
-      } else {  // Drop on last iteration
-        if (validation_dataset) {
-          if (metric_on_validation_fit > metric_on_validation)
-            fit_after_dropout_better_than_full = true;
-        } else {
-          if (metric_on_training_fit > metric_on_training)
-            fit_after_dropout_better_than_full = true;
-        }
+      if (validation_dataset) {
+        if (metric_on_validation_fit > reference_metric_validation)
+          fit_after_dropout_better_than_full = true;
+      } else {
+        if (metric_on_training_fit > reference_metric_training)
+          fit_after_dropout_better_than_full = true;
       }
     }
 

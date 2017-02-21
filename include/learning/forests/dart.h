@@ -189,7 +189,7 @@ class Dart: public LambdaMart {
   bool best_on_train;
   double random_keep;
   bool drop_on_best;
-  quickrank::Score* scores_contribution_  = NULL;
+  quickrank::Score* scores_contribution_ = NULL;
 
   /// Prepares private data structurs befor training takes place.
   virtual void init(std::shared_ptr<data::VerticalDataset> training_dataset);
