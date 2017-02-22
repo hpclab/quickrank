@@ -370,9 +370,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
                                                           scores_on_validation_);
     }
 
-
-    // TODO: consider keep_at_random
-    bool fit_after_dropout_better_than_full = false;
+    bool fit_after_dropout_improvement = false;
     if (trees_to_dropout > 0) {
 
       double reference_metric_training = metric_on_training;
@@ -384,14 +382,14 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
 
       if (validation_dataset) {
         if (metric_on_validation_fit > reference_metric_validation)
-          fit_after_dropout_better_than_full = true;
+          fit_after_dropout_improvement = true;
       } else {
         if (metric_on_training_fit > reference_metric_training)
-          fit_after_dropout_better_than_full = true;
+          fit_after_dropout_improvement = true;
       }
     }
 
-    if (keep_drop && (fit_after_dropout_better_than_full || random_keep_iter)) {
+    if (keep_drop && (fit_after_dropout_improvement || random_keep_iter)) {
 
       dropped_before_cleaning += trees_to_dropout;
 
@@ -439,7 +437,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
         sample_type == SamplingType::COUNT2N ||
         sample_type == SamplingType::COUNT3N) {
 
-      if (fit_after_dropout_better_than_full) {
+      if (fit_after_dropout_improvement) {
 
         int threshold = 2;
         if (sample_type == SamplingType::COUNT3 ||
@@ -591,7 +589,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     std::string betterFit = "  ";
     if (dropout_better_than_full)
       betterDrop = " *";
-    if (fit_after_dropout_better_than_full)
+    if (fit_after_dropout_improvement)
       betterFit = " *";
 
     std::cout << "\t[ " << metric_on_training_dropout << " - "
@@ -605,7 +603,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     std::cout << " \t" << trees_to_dropout << " Dropped Trees "
               << "- Ensemble size: "
               << ensemble_model_.get_size() - dropped_before_cleaning;
-    if (keep_drop && fit_after_dropout_better_than_full)
+    if (keep_drop && fit_after_dropout_improvement)
         std::cout << " - Keep Dropout";
     else if (random_keep_iter)
       std::cout << " - Keep Dropout (RANDOM)";
