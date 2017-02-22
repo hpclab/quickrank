@@ -88,7 +88,7 @@ Dart::Dart(const pugi::xml_document &model) : LambdaMart(model) {
     best_on_train = model.child("ranker").child("info")
         .child("drop_on_best").text().as_bool();
   } else
-    best_on_train = false;
+    drop_on_best = false;
 }
 
 Dart::~Dart() {
@@ -127,7 +127,6 @@ pugi::xml_document *Dart::get_xml_model() const {
 
   info.append_child("sample_type").text() =
       get_sampling_type(sample_type).c_str();
-  info.append_child("normalize_type").text() =
   info.append_child("normalize_type").text() =
       get_normalization_type(normalize_type).c_str();
   info.append_child("adaptive_type").text() =
