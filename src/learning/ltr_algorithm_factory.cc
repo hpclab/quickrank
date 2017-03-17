@@ -85,7 +85,7 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
       ltr_algo = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
           new quickrank::learning::forests::ObliviousMart(
               pmap.get<size_t>("num-trees"),
-              pmap.get<float>("shrinkage"),
+              pmap.get<double>("shrinkage"),
               pmap.get<size_t>("num-thresholds"),
               pmap.get<size_t>("tree-depth"),
               pmap.get<size_t>("min-leaf-support"),
@@ -96,7 +96,7 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
       ltr_algo = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
           new quickrank::learning::forests::ObliviousLambdaMart(
               pmap.get<size_t>("num-trees"),
-              pmap.get<float>("shrinkage"),
+              pmap.get<double>("shrinkage"),
               pmap.get<size_t>("num-thresholds"),
               pmap.get<size_t>("tree-depth"),
               pmap.get<size_t>("min-leaf-support"),
