@@ -49,7 +49,6 @@ pugi::xml_node RTNode::append_xml_model(pugi::xml_node parent,
                                         const std::string &pos) const {
 
   std::stringstream ss;
-  ss << std::setprecision(std::numeric_limits<double>::max_digits10);
 
   pugi::xml_node split = parent.append_child("split");
 
@@ -58,6 +57,7 @@ pugi::xml_node RTNode::append_xml_model(pugi::xml_node parent,
 
   if (featureid == uint_max) {
 
+    ss << std::setprecision(std::numeric_limits<double>::max_digits10);
     ss << avglabel;
     split.append_child("output").text() = ss.str().c_str();
 
@@ -65,6 +65,7 @@ pugi::xml_node RTNode::append_xml_model(pugi::xml_node parent,
 
     split.append_child("feature").text() = featureid;
 
+    ss << std::setprecision(std::numeric_limits<float>::max_digits10);
     ss << threshold;
     split.append_child("threshold").text() = ss.str().c_str();
 
