@@ -1120,7 +1120,7 @@ double Dart::get_weight_last_tree(std::shared_ptr<data::Dataset> dataset,
 
   } else if (normalize_type == NormalizationType::LMART_ADAPTIVE) {
 
-    return shrinkage_ / (rate_drop * ensemble_model_.get_size() + 1);
+    return shrinkage_ / (rate_drop * ensemble_model_.get_size() + shrinkage_);
 
   } else if (normalize_type == NormalizationType::LMART_ADAPTIVE_SIZE) {
 

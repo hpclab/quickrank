@@ -268,7 +268,7 @@ int main(int argc, char *argv[]) {
   adaptiveMethods = adaptiveMethods.substr(0, adaptiveMethods.size() - 1);
 
   pmap.addOptionWithArg("adaptive-type",
-                        {"adaptive type for choosing number of trees to dropout. "
+                        {"adaptive type for choosing number of trees to dropout:",
                              "[" + adaptiveMethods + "]."},
                         adaptive_type);
 
