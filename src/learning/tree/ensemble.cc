@@ -137,7 +137,7 @@ pugi::xml_node Ensemble::append_xml_model(pugi::xml_node parent) const {
   for (size_t i = 0; i < size; ++i) {
     pugi::xml_node tree = ensemble.append_child("tree");
     tree.append_attribute("id") = i + 1;
-    tree.append_attribute("weight") = arr[i].weight;
+    tree.append_attribute("weight") = (float) arr[i].weight;
     if (arr[i].root) {
       arr[i].root->append_xml_model(tree);
     }
@@ -146,26 +146,18 @@ pugi::xml_node Ensemble::append_xml_model(pugi::xml_node parent) const {
   return ensemble;
 }
 
-bool Ensemble::update_ensemble_weights(std::vector<double>& weights) {
-
-  if (weights.size() != size) {
-    std::cerr << "# ## ERROR!! Ensemble size does not match size of the "
-        "weight vector in updating the weights" << std::endl;
-    return false;
-  }
+bool Ensemble::filter_out_zero_weighted_trees() {
 
   size_t idx_curr = 0;
-
   for (size_t i = 0; i < size; ++i) {
-    // Use a small epsilon to check for 0-weight trees...
-    if (weights[i] < 0.0000001) {
+    if (arr[i].weight == 0) {
       // Remove 0-weight tree
       delete arr[i].root;
     } else {
       // Check if we need to move back the tree in the array of root trees
       if (idx_curr < i)
         arr[idx_curr] = arr[i];
-      arr[idx_curr].weight = weights[i];
+      arr[idx_curr].weight = arr[i].weight;
       ++idx_curr;
     }
   }
@@ -176,8 +168,31 @@ bool Ensemble::update_ensemble_weights(std::vector<double>& weights) {
   return true;
 }
 
+bool Ensemble::update_ensemble_weights(
+    std::vector<double>& weights, bool remove) {
+
+  if (weights.size() != size) {
+    std::cerr << "# ## ERROR!! Ensemble size does not match size of the "
+        "weight vector in updating the weights" << std::endl;
+    std::exit(-1);
+    return false;
+  }
+
+  for (size_t i = 0; i < size; ++i)
+    arr[i].weight = weights[i];
+
+  if (remove)
+    return filter_out_zero_weighted_trees();
+
+  return true;
+}
+
+bool Ensemble::update_ensemble_weights(std::vector<double>& weights) {
+  return update_ensemble_weights(weights, true);
+}
+
 std::vector<double> Ensemble::get_weights() const {
-  std::vector<double> weights = std::vector<double>(size);
+  std::vector<double> weights(size);
   for (unsigned int i = 0; i < size; ++i)
     weights[i] = arr[i].weight;
   return weights;

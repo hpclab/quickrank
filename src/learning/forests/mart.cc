@@ -373,33 +373,25 @@ std::unique_ptr<RegressionTree> Mart::fit_regressor_on_gradient(
 
 void Mart::update_modelscores(std::shared_ptr<data::Dataset> dataset,
                               Score *scores, RegressionTree *tree) {
-  quickrank::Score *score_i = scores;
-  for (size_t q = 0; q < dataset->num_queries(); q++) {
-    std::shared_ptr<quickrank::data::QueryResults> results =
-        dataset->getQueryResults(q);
-    const size_t offset = 1;
-    const Feature *d = results->features();
-    for (size_t i = 0; i < results->num_results(); i++) {
-      score_i[i] += shrinkage_ * tree->get_proot()->score_instance(d, offset);
-      d += dataset->num_features();
-    }
-    score_i += results->num_results();
+  const quickrank::Feature *d = dataset->at(0, 0);
+  const size_t offset = 1;
+  const size_t num_features = dataset->num_features();
+  #pragma omp parallel for
+  for (size_t i = 0; i < dataset->num_instances(); ++i) {
+    scores[i] += shrinkage_ * tree->get_proot()->score_instance(
+        d + i * num_features, offset);
   }
 }
 
 void Mart::update_modelscores(std::shared_ptr<data::VerticalDataset> dataset,
                               Score *scores, RegressionTree *tree) {
-  quickrank::Score *score_i = scores;
-  for (size_t q = 0; q < dataset->num_queries(); q++) {
-    std::shared_ptr<quickrank::data::QueryResults>
-        results = dataset->getQueryResults(q);
-    const size_t offset = dataset->num_instances();
-    const Feature *d = results->features();
-    for (size_t i = 0; i < results->num_results(); i++) {
-      score_i[i] += shrinkage_ * tree->get_proot()->score_instance(d, offset);
-      d++;
-    }
-    score_i += results->num_results();
+
+  const quickrank::Feature *d = dataset->at(0, 0);
+  const size_t offset = dataset->num_instances();
+  #pragma omp parallel for
+  for (size_t i = 0; i < dataset->num_instances(); ++i) {
+    scores[i] += shrinkage_ * tree->get_proot()->score_instance(
+        d + i, offset);
   }
 }
 

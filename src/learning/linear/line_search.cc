@@ -210,7 +210,7 @@ void LineSearch::learn(
   if (validation_dataset)
     validation_score.resize(num_train_instances, 0.0);
 
-  // compute training and validatixon scores using starting weights
+  // compute training and validation scores using starting weights
   score(training_dataset->at(0, 0), num_train_instances, num_features,
         &weights[0], &training_score[0]);
   best_metric_on_training = scorer->evaluate_dataset(training_dataset,

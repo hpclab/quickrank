@@ -25,6 +25,7 @@
 #include "learning/ltr_algorithm.h"
 
 #include "learning/forests/mart.h"
+#include "learning/forests/dart.h"
 #include "learning/forests/lambdamart.h"
 #include "learning/forests/obliviouslambdamart.h"
 #include "learning/forests/obliviousmart.h"
@@ -89,6 +90,9 @@ std::shared_ptr<LTR_Algorithm> LTR_Algorithm::load_model_from_xml(
   if (ranker_type == forests::Mart::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
         new forests::Mart(xml_model));
+  else if (ranker_type == forests::Dart::NAME_)
+    return std::shared_ptr<LTR_Algorithm>(
+        new forests::Dart(xml_model));
   else if (ranker_type == forests::LambdaMart::NAME_)
     return std::shared_ptr<LTR_Algorithm>(
         new forests::LambdaMart(xml_model));
