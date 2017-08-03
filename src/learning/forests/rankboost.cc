@@ -527,10 +527,12 @@ Score Rankboost::score_document(const quickrank::Feature *d) const {
 }
 
 std::shared_ptr<std::vector<Score>> Rankboost::partial_scores_document(
-    const Feature *d) const {
+    const Feature *d, bool ignore_weights) const {
   std::vector<quickrank::Score> scores(best_T);
   for (unsigned int t = 0; t < best_T; t++) {
-    scores[t] = alphas[t] * weak_rankers[t]->score_document(d);
+    scores[t] = weak_rankers[t]->score_document(d);
+    if (!ignore_weights)
+      scores[t] *= alphas[t];
   }
   return std::make_shared<std::vector<quickrank::Score>>(std::move(scores));
 }
@@ -573,11 +575,11 @@ bool Rankboost::update_weights(std::vector<double> &weights) {
   return true;
 }
 
-std::shared_ptr<std::vector<double>> Rankboost::get_weights() const {
+std::vector<double> Rankboost::get_weights() const {
   std::vector<double> weights(best_T);
   for (unsigned int i = 0; i < best_T; ++i)
     weights[i] = weights[i];
-  return std::make_shared<std::vector<double>>(std::move(weights));
+  return weights;
 }
 
 } // namespace forests

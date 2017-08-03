@@ -22,8 +22,7 @@
 
 #include <numeric>
 
-#include "optimization/post_learning/pruning/score_loss_pruning.h"
-
+#include "optimization/post_learning/cleaver/low_weights_pruning.h"
 
 namespace quickrank {
 namespace optimization {
@@ -31,42 +30,25 @@ namespace post_learning {
 namespace pruning {
 
 /// Returns the pruning method of the algorithm.
-Cleaver::PruningMethod ScoreLossPruning::pruning_method() const {
-  return Cleaver::PruningMethod::SCORE_LOSS;
+Cleaver::PruningMethod LowWeightsPruning::pruning_method() const {
+  return Cleaver::PruningMethod::LOW_WEIGHTS;
 }
 
-bool ScoreLossPruning::line_search_pre_pruning() const {
+bool LowWeightsPruning::line_search_pre_pruning() const {
   return true;
 }
 
-void ScoreLossPruning::pruning(std::set<unsigned int> &pruned_estimators,
-                               std::shared_ptr<data::Dataset> dataset,
-                               std::shared_ptr<metric::ir::Metric> scorer) {
+void LowWeightsPruning::pruning(std::set<unsigned int> &pruned_estimators,
+                                std::shared_ptr<data::Dataset> dataset,
+                                std::shared_ptr<metric::ir::Metric> scorer) {
 
-  unsigned int num_features = dataset->num_features();
-  unsigned int num_instances = dataset->num_instances();
-  std::vector<Score> feature_scores(num_features, 0);
-  std::vector<Score> instance_scores(num_instances, 0);
+  size_t start_last = dataset->num_features() - last_estimators_to_optimize_;
 
-  // compute the per instance score
-  this->score(dataset.get(), &instance_scores[0]);
-
-  Feature *features = dataset->at(0, 0);
-#pragma omp parallel for
-  for (unsigned int s = 0; s < num_instances; s++) {
-    unsigned int offset_feature = s * num_features;
-    for (unsigned int f = 0; f < num_features; f++) {
-      feature_scores[f] +=
-          weights_[f] * features[offset_feature + f] / instance_scores[s];
-    }
-  }
-
-  // Find the last feature scores
-  std::vector<unsigned int> idx(num_features);
-  std::iota(idx.begin(), idx.end(), 0);
+  std::vector<unsigned int> idx(last_estimators_to_optimize_);
+  std::iota(idx.begin(), idx.end(), start_last);
   std::sort(idx.begin(), idx.end(),
-            [&feature_scores](const unsigned int &a, const unsigned int &b) {
-              return feature_scores[a] < feature_scores[b];
+            [this](const unsigned int &a, const unsigned int &b) {
+              return this->weights_[a] < this->weights_[b];
             });
 
   for (unsigned int f = 0; f < estimators_to_prune_; f++) {
@@ -74,7 +56,7 @@ void ScoreLossPruning::pruning(std::set<unsigned int> &pruned_estimators,
   }
 }
 
-}  // namespace pruning
+}  // namespace cleaver
 }  // namespace post_learning
 }  // namespace optimization
 }  // namespace quickrank

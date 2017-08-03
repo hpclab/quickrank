@@ -22,7 +22,7 @@
 #include "learning/tree/rtnode_histogram.h"
 
 RTNodeHistogram::RTNodeHistogram(float **thresholds,
-                                 size_t const *thresholds_size,
+                                 size_t *thresholds_size,
                                  size_t nfeatures)
     : thresholds(thresholds),
       thresholds_size(thresholds_size),
@@ -80,10 +80,56 @@ RTNodeHistogram::RTNodeHistogram(RTNodeHistogram const *parent,
   squares_sum_ = parent->squares_sum_ - left->squares_sum_;
 }
 
+RTNodeHistogram::RTNodeHistogram(const RTNodeHistogram& source)
+    : nfeatures(source.nfeatures) {
+  squares_sum_ = source.squares_sum_;
+
+  thresholds_size = new size_t[nfeatures];
+  for (unsigned int i=0; i<nfeatures; ++i) {
+    thresholds_size[i] = source.thresholds_size[i];
+  }
+
+  thresholds = new float*[nfeatures];
+  for (unsigned int i=0; i<nfeatures; ++i) {
+    thresholds[i] = new float[thresholds_size[i]];
+    for (unsigned int j=0; j<thresholds_size[i]; ++j) {
+      thresholds[i][j] = source.thresholds[i][j];
+    }
+  }
+
+  stmap = new size_t*[nfeatures];
+  for (unsigned int i=0; i<nfeatures; ++i) {
+    stmap[i] = new size_t[thresholds_size[i]];
+    for (unsigned int j=0; j<thresholds_size[i]; ++j) {
+      stmap[i][j] = source.stmap[i][j];
+    }
+  }
+
+  sumlbl = new double*[nfeatures];
+  for (unsigned int i=0; i<nfeatures; ++i) {
+    sumlbl[i] = new double[thresholds_size[i]];
+    for (unsigned int j=0; j<thresholds_size[i]; ++j) {
+      sumlbl[i][j] = source.sumlbl[i][j];
+    }
+  }
+
+  count = new size_t*[nfeatures];
+  for (unsigned int i=0; i<nfeatures; ++i) {
+    count[i] = new size_t[thresholds_size[i]];
+    for (unsigned int j=0; j<thresholds_size[i]; ++j) {
+      count[i][j] = source.count[i][j];
+    }
+  }
+}
+
 RTNodeHistogram::~RTNodeHistogram() {
-  for (size_t i = 0; i < nfeatures; ++i)
-    delete[] sumlbl[i], delete[] count[i];
-  delete[] sumlbl, delete[] count;
+  for (size_t i = 0; i < nfeatures; ++i) {
+    delete[] sumlbl[i];
+    delete[] count[i];
+
+  }
+  delete[] sumlbl;
+  delete[] count;
 }
 
 void RTNodeHistogram::update(double *labels, const size_t nlabels) {
@@ -133,7 +179,7 @@ void RTNodeHistogram::quick_dump(size_t f, size_t num_t) {
 RTRootHistogram::RTRootHistogram(quickrank::data::VerticalDataset *dps,
                                  size_t **sortedidx,
                                  size_t sortedidxsize, float **thresholds,
-                                 size_t const *thresholds_size)
+                                 size_t *thresholds_size)
     : RTNodeHistogram(thresholds, thresholds_size, dps->num_features()) {
   stmap = new size_t *[nfeatures];
 #pragma omp parallel for

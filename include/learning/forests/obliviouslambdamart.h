@@ -61,6 +61,8 @@ class ObliviousLambdaMart: public LambdaMart {
 
   virtual pugi::xml_document *get_xml_model() const;
 
+  virtual bool import_model_state(LTR_Algorithm &other);
+
   static const std::string NAME_;
 
  protected:

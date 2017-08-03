@@ -19,44 +19,38 @@
  * Contributors:
  *  - Salvatore Trani(salvatore.trani@isti.cnr.it)
  */
+#pragma once
 
-#include <math.h>
-
-#include "optimization/post_learning/pruning/skip_pruning.h"
+#include "optimization/post_learning/cleaver/cleaver.h"
 
 namespace quickrank {
 namespace optimization {
 namespace post_learning {
 namespace pruning {
 
-/// Returns the pruning method of the algorithm.
-Cleaver::PruningMethod SkipPruning::pruning_method() const {
-  return Cleaver::PruningMethod::SKIP;
-}
+/// This implements low weights pruning strategy for pruning ensemble.
+class LowWeightsPruning: public Cleaver {
 
-bool SkipPruning::line_search_pre_pruning() const {
-  return false;
-}
+ public:
+  LowWeightsPruning(double pruning_rate) : Cleaver(pruning_rate) {};
 
-void SkipPruning::pruning(std::set<unsigned int> &pruned_estimators,
-                          std::shared_ptr<data::Dataset> dataset,
-                          std::shared_ptr<metric::ir::Metric> scorer) {
+  LowWeightsPruning(double pruning_rate,
+                    std::shared_ptr<learning::linear::LineSearch> lineSearch) :
+      Cleaver(pruning_rate, lineSearch) {};
 
-  unsigned int num_features = (unsigned int) weights_.size();
-  double step = (double) num_features / estimators_to_select_;
+  LowWeightsPruning(const pugi::xml_document &model) :
+      Cleaver(model) {};
 
-  std::set<unsigned int> selected_estimators;
-  for (unsigned int i = 0; i < estimators_to_select_; i++) {
-    selected_estimators.insert((unsigned int) ceil(i * step));
-  }
+  Cleaver::PruningMethod pruning_method() const;
 
-  for (unsigned int f = 0; f < num_features; f++) {
-    if (!selected_estimators.count(f))
-      pruned_estimators.insert(f);
-  }
-}
+  bool line_search_pre_pruning() const;
 
-}  // namespace pruning
+  void pruning(std::set<unsigned int> &pruned_estimators,
+               std::shared_ptr<data::Dataset> dataset,
+               std::shared_ptr<metric::ir::Metric> scorer);
+};
+
+}  // namespace cleaver
 }  // namespace post_learning
 }  // namespace optimization
 }  // namespace quickrank

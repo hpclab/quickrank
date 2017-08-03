@@ -57,10 +57,11 @@ add_library(quickrank_common STATIC ${all_sources})
 target_link_libraries(quickrank_common pugixml)
 
 # managing QuickRank headers and libraries
-file(GLOB_RECURSE all_headers ${CMAKE_SOURCE_DIR}/include/*.h)
-file(GLOB_RECURSE all_headers ${CMAKE_SOURCE_DIR}/lib/pugixml/src/*.hpp)
-file(GLOB_RECURSE all_headers ${CMAKE_SOURCE_DIR}/lib/catch/include/catch.hpp)
-file(GLOB_RECURSE all_headers ${CMAKE_SOURCE_DIR}/lib/paramsmap/*.h)
+file(GLOB_RECURSE all_headers
+        ${CMAKE_SOURCE_DIR}/include/*.h
+        ${CMAKE_SOURCE_DIR}/lib/pugixml/src/*.hpp
+        ${CMAKE_SOURCE_DIR}/lib/catch/include/catch.hpp
+        ${CMAKE_SOURCE_DIR}/lib/paramsmap/*.h)
 
 # ---------------------------------
 # quicklearn target

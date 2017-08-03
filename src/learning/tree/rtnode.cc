@@ -49,7 +49,7 @@ pugi::xml_node RTNode::append_xml_model(pugi::xml_node parent,
                                         const std::string &pos) const {
 
   std::stringstream ss;
-  ss << std::setprecision(std::numeric_limits<double>::digits10);
+  ss << std::setprecision(std::numeric_limits<double>::max_digits10);
 
   pugi::xml_node split = parent.append_child("split");
 

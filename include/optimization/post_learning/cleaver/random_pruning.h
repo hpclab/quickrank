@@ -19,40 +19,36 @@
  * Contributors:
  *  - Salvatore Trani(salvatore.trani@isti.cnr.it)
  */
+#pragma once
 
-#include <numeric>
-
-#include "optimization/post_learning/pruning/low_weights_pruning.h"
+#include "optimization/post_learning/cleaver/cleaver.h"
 
 namespace quickrank {
 namespace optimization {
 namespace post_learning {
 namespace pruning {
 
-/// Returns the pruning method of the algorithm.
-Cleaver::PruningMethod LowWeightsPruning::pruning_method() const {
-  return Cleaver::PruningMethod::LOW_WEIGHTS;
-}
+/// This implements random pruning strategy for pruning ensemble.
+class RandomPruning: public Cleaver {
 
-bool LowWeightsPruning::line_search_pre_pruning() const {
-  return true;
-}
+ public:
+  RandomPruning(double pruning_rate) : Cleaver(pruning_rate) {};
 
-void LowWeightsPruning::pruning(std::set<unsigned int> &pruned_estimators,
-                                std::shared_ptr<data::Dataset> dataset,
-                                std::shared_ptr<metric::ir::Metric> scorer) {
+  RandomPruning(double pruning_rate,
+                std::shared_ptr<learning::linear::LineSearch> lineSearch) :
+      Cleaver(pruning_rate, lineSearch) {};
 
-  std::vector<unsigned int> idx(weights_.size());
-  std::iota(idx.begin(), idx.end(), 0);
-  std::sort(idx.begin(), idx.end(),
-            [this](const unsigned int &a, const unsigned int &b) {
-              return this->weights_[a] < this->weights_[b];
-            });
+  RandomPruning(const pugi::xml_document &model) :
+      Cleaver(model) {};
 
-  for (unsigned int f = 0; f < estimators_to_prune_; f++) {
-    pruned_estimators.insert(idx[f]);
-  }
-}
+  Cleaver::PruningMethod pruning_method() const;
+
+  bool line_search_pre_pruning() const;
+
+  void pruning(std::set<unsigned int> &pruned_estimators,
+               std::shared_ptr<data::Dataset> dataset,
+               std::shared_ptr<metric::ir::Metric> scorer);
+};
 
 }  // namespace pruning
 }  // namespace post_learning

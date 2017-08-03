@@ -24,6 +24,10 @@
 #include <cctype>
 #include <string>
 
+#include <iostream>
+#include <string>
+#include <vector>
+
 /*! \file strutils.hpp
  * \brief some useful functions for strings
  */
@@ -57,3 +61,5 @@ unsigned int atou(char *str, const char *sep);
  *  \brief delete spaces from start/end of a string (in place modification)
  */
 std::string &trim(std::string &str);
+
+void print_weights(std::vector<double> weights, std::string header);

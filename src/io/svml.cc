@@ -173,8 +173,11 @@ void Svml::write(std::shared_ptr<data::Dataset> dataset,
     for (size_t r = 0; r < results->num_results(); r++) {
       outFile << std::setprecision(0) << labels[r] << " qid:" << q + 1;
       for (size_t f = 0; f < dataset->num_features(); f++) {
-        outFile << " " << f + 1 << ":" <<
-                std::fixed << std::setprecision(8) << features[f];
+        outFile << " " << f + 1 << ":"
+                << std::fixed
+                << std::setprecision(
+                    std::numeric_limits<quickrank::Feature>::max_digits10)
+                << features[f];
       }
       outFile << std::endl;
       features += dataset->num_features();

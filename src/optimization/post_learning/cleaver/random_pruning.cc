@@ -19,38 +19,41 @@
  * Contributors:
  *  - Salvatore Trani(salvatore.trani@isti.cnr.it)
  */
-#pragma once
 
-#include "optimization/post_learning/pruning/cleaver.h"
+#include "optimization/post_learning/cleaver/random_pruning.h"
 
 namespace quickrank {
 namespace optimization {
 namespace post_learning {
 namespace pruning {
 
-/// This implements random pruning strategy for pruning ensembles.
-class QualityLossPruning: public Cleaver {
+/// Returns the pruning method of the algorithm.
+Cleaver::PruningMethod RandomPruning::pruning_method() const {
+  return Cleaver::PruningMethod::RANDOM;
+}
 
- public:
-  QualityLossPruning(double pruning_rate) : Cleaver(pruning_rate) {};
+bool RandomPruning::line_search_pre_pruning() const {
+  return false;
+}
 
-  QualityLossPruning(double pruning_rate,
-                     std::shared_ptr<learning::linear::LineSearch> lineSearch) :
-      Cleaver(pruning_rate, lineSearch) {};
+void RandomPruning::pruning(std::set<unsigned int> &pruned_estimators,
+                            std::shared_ptr<data::Dataset> dataset,
+                            std::shared_ptr<metric::ir::Metric> scorer) {
 
-  QualityLossPruning(const pugi::xml_document &model) :
-      Cleaver(model) {};
+  size_t num_features = weights_.size();
+  size_t start_last = num_features - last_estimators_to_optimize_;
 
-  Cleaver::PruningMethod pruning_method() const;
+  /* initialize random seed: */
+  srand(time(NULL));
 
-  bool line_search_pre_pruning() const;
+  while (pruned_estimators.size() < estimators_to_prune_) {
+    size_t index = ( rand() % last_estimators_to_optimize_) + start_last;
+    if (!pruned_estimators.count(index))
+      pruned_estimators.insert(index);
+  }
+}
 
-  void pruning(std::set<unsigned int> &pruned_estimators,
-               std::shared_ptr<data::Dataset> dataset,
-               std::shared_ptr<metric::ir::Metric> scorer);
-};
-
-}  // namespace pruning
+}  // namespace cleaver
 }  // namespace post_learning
 }  // namespace optimization
 }  // namespace quickrank

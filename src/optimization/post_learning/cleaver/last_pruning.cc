@@ -16,22 +16,38 @@
  * PURPOSE, QUIET ENJOYMENT, OR NON-INFRINGEMENT. See the RPL for specific
  * language governing rights and limitations under the RPL.
  *
- * Contributor:
- *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
+ * Contributors:
+ *  - Salvatore Trani(salvatore.trani@isti.cnr.it)
  */
-#pragma once
 
-#include "utils/symmatrix.h"
+#include "optimization/post_learning/cleaver/last_pruning.h"
 
 namespace quickrank {
+namespace optimization {
+namespace post_learning {
+namespace pruning {
 
-typedef float Label;  /// data type for instance truth label
-typedef double Score;  /// data type for instance predicted label
-typedef float Feature;  /// data type for instance feature
-typedef unsigned int QueryID;  /// data type for QueryID in L-t-R datasets
-typedef double MetricScore;  /// data type for evaluation metric final outcome
+/// Returns the pruning method of the algorithm.
+Cleaver::PruningMethod LastPruning::pruning_method() const {
+  return Cleaver::PruningMethod::LAST;
+}
 
-typedef SymMatrix<double>
-    Jacobian;  /// data type for a Metric's Jacobian Matrix
+bool LastPruning::line_search_pre_pruning() const {
+  return false;
+}
 
+void LastPruning::pruning(std::set<unsigned int> &pruned_estimators,
+                          std::shared_ptr<data::Dataset> dataset,
+                          std::shared_ptr<metric::ir::Metric> scorer) {
+
+  size_t num_features = (unsigned int) weights_.size();
+
+  for (unsigned int i = 1; i <= estimators_to_prune_; i++) {
+    pruned_estimators.insert(num_features - i);
+  }
+}
+
+}  // namespace cleaver
+}  // namespace post_learning
+}  // namespace optimization
 }  // namespace quickrank

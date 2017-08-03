@@ -21,8 +21,8 @@
  */
 
 #include "optimization/optimization_factory.h"
-#include "optimization/post_learning/pruning/cleaver.h"
-#include "optimization/post_learning/pruning/ensemble_pruning_factory.h"
+#include "optimization/post_learning/cleaver/cleaver.h"
+#include "optimization/post_learning/cleaver/cleaver_factory.h"
 
 namespace quickrank {
 namespace optimization {
@@ -48,16 +48,13 @@ std::shared_ptr<learning::linear::LineSearch> linesearch_opt_factory(
       // We have to create an empty model
       lineSearch = std::shared_ptr<learning::linear::LineSearch>(
           new quickrank::learning::linear::LineSearch(
-              pmap.get < unsigned
-      int > ("num-samples"),
-          pmap.get<double>("window-size"),
-          pmap.get<double>("reduction-factor"),
-          pmap.get < unsigned
-      int > ("max-iterations"),
-          pmap.get < unsigned
-      int > ("max-failed-valid"),
-          pmap.isSet("adaptive")
-      ));
+              pmap.get <unsigned int> ("num-samples"),
+              pmap.get<double>("window-size"),
+              pmap.get<double>("reduction-factor"),
+              pmap.get <unsigned int> ("max-iterations"),
+              pmap.get <unsigned int> ("max-failed-valid"),
+              pmap.isSet("adaptive")
+          ));
     }
   }
 
@@ -75,8 +72,8 @@ std::shared_ptr<quickrank::optimization::Optimization> optimization_factory(
 
     std::string opt_algo = pmap.get<std::string>("opt-algo");
 
-    if (opt_algo == quickrank::optimization::post_learning::pruning
-    ::Cleaver::NAME_) {
+    if (opt_algo ==
+        quickrank::optimization::post_learning::pruning::Cleaver::NAME_) {
 
       optimizer =
           quickrank::optimization::post_learning::pruning::create_pruner(
@@ -85,8 +82,9 @@ std::shared_ptr<quickrank::optimization::Optimization> optimization_factory(
               lineSearch
           );
     }
-  } else if (pmap.isSet("opt_model")) {
-    std::string opt_model = pmap.get<std::string>("opt_model");
+  } else if (pmap.isSet("opt-model")) {
+    std::string opt_model = pmap.get<std::string>("opt-model");
+
 
     optimizer =
         quickrank::optimization::Optimization::load_model_from_file(opt_model);

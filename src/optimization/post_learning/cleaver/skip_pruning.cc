@@ -20,7 +20,9 @@
  *  - Salvatore Trani(salvatore.trani@isti.cnr.it)
  */
 
-#include "optimization/post_learning/pruning/last_pruning.h"
+#include <math.h>
+
+#include "optimization/post_learning/cleaver/skip_pruning.h"
 
 namespace quickrank {
 namespace optimization {
@@ -28,26 +30,36 @@ namespace post_learning {
 namespace pruning {
 
 /// Returns the pruning method of the algorithm.
-Cleaver::PruningMethod LastPruning::pruning_method() const {
-  return Cleaver::PruningMethod::LAST;
+Cleaver::PruningMethod SkipPruning::pruning_method() const {
+  return Cleaver::PruningMethod::SKIP;
 }
 
-bool LastPruning::line_search_pre_pruning() const {
+bool SkipPruning::line_search_pre_pruning() const {
   return false;
 }
 
-void LastPruning::pruning(std::set<unsigned int> &pruned_estimators,
+void SkipPruning::pruning(std::set<unsigned int> &pruned_estimators,
                           std::shared_ptr<data::Dataset> dataset,
                           std::shared_ptr<metric::ir::Metric> scorer) {
 
-  unsigned int num_features = (unsigned int) weights_.size();
+  size_t num_features = dataset->num_features();
+  size_t start_last = num_features - last_estimators_to_optimize_;
+  size_t estimators_to_select =
+      last_estimators_to_optimize_ - estimators_to_prune_;
+  double step = (double) last_estimators_to_optimize_ / estimators_to_select;
 
-  for (unsigned int i = 1; i <= estimators_to_prune_; i++) {
-    pruned_estimators.insert(num_features - i);
+  std::set<size_t> selected_estimators;
+  for (size_t i = 0; i < estimators_to_select; ++i) {
+    selected_estimators.insert((size_t) ceil(step * i + start_last));
+  }
+
+  for (size_t f = start_last; f < num_features; ++f) {
+    if (!selected_estimators.count(f))
+      pruned_estimators.insert(f);
   }
 }
 
-}  // namespace pruning
+}  // namespace cleaver
 }  // namespace post_learning
 }  // namespace optimization
 }  // namespace quickrank

@@ -30,7 +30,7 @@ namespace quickrank {
 namespace learning {
 
 std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
-    ParamsMap &pmap, bool verbose = true);
+    ParamsMap &pmap);
 
 }
 }

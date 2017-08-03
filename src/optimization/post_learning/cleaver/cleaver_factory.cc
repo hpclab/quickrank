@@ -19,14 +19,16 @@
 * Contributors:
 *  - Salvatore Trani(salvatore.trani@isti.cnr.it)
 */
-#include "optimization/post_learning/pruning/ensemble_pruning_factory.h"
+#include "optimization/post_learning/cleaver/cleaver_factory.h"
 
-#include "optimization/post_learning/pruning/random_pruning.h"
-#include "optimization/post_learning/pruning/last_pruning.h"
-#include "optimization/post_learning/pruning/skip_pruning.h"
-#include "optimization/post_learning/pruning/score_loss_pruning.h"
-#include "optimization/post_learning/pruning/low_weights_pruning.h"
-#include "optimization/post_learning/pruning/quality_loss_pruning.h"
+#include "optimization/post_learning/cleaver/random_pruning.h"
+#include "optimization/post_learning/cleaver/random_adv_pruning.h"
+#include "optimization/post_learning/cleaver/last_pruning.h"
+#include "optimization/post_learning/cleaver/skip_pruning.h"
+#include "optimization/post_learning/cleaver/score_loss_pruning.h"
+#include "optimization/post_learning/cleaver/low_weights_pruning.h"
+#include "optimization/post_learning/cleaver/quality_loss_pruning.h"
+#include "optimization/post_learning/cleaver/quality_loss_adv_pruning.h"
 
 namespace quickrank {
 namespace optimization {
@@ -34,20 +36,32 @@ namespace post_learning {
 namespace pruning {
 
 std::shared_ptr<quickrank::optimization::Optimization> create_pruner(
-    const pugi::xml_document &model) {
+    const pugi::xml_document& model) {
 
   pugi::xml_node model_info = model.child("optimizer").child("info");
 
   std::string pruningMethodName =
       model_info.child("opt-method").text().as_string();
+
+  if (pruningMethodName.empty()) {
+    std::cerr << "Unable to find the name of the optimization method inside "
+        "the xml." << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+
   Cleaver::PruningMethod pruningMethod =
-      Cleaver::getPruningMethod(pruningMethodName);
+      Cleaver::get_pruning_method(pruningMethodName);
 
   Optimization *optimizer = nullptr;
 
   switch (pruningMethod) {
     case Cleaver::PruningMethod::RANDOM: {
       optimizer = new RandomPruning(model);
+      break;
+    }
+    case Cleaver::PruningMethod::RANDOM_ADV: {
+      optimizer = new RandomAdvPruning(model);
       break;
     }
     case Cleaver::PruningMethod::LOW_WEIGHTS: {
@@ -60,6 +74,10 @@ std::shared_ptr<quickrank::optimization::Optimization> create_pruner(
     }
     case Cleaver::PruningMethod::QUALITY_LOSS: {
       optimizer = new QualityLossPruning(model);
+      break;
+    }
+    case Cleaver::PruningMethod::QUALITY_LOSS_ADV: {
+      optimizer = new QualityLossAdvPruning(model);
       break;
     }
     case Cleaver::PruningMethod::SKIP: {
@@ -86,6 +104,10 @@ std::shared_ptr<quickrank::optimization::Optimization> create_pruner(
       optimizer = new RandomPruning(pruning_rate, lineSearch);
       break;
     }
+    case Cleaver::PruningMethod::RANDOM_ADV: {
+      optimizer = new RandomAdvPruning(pruning_rate, lineSearch);
+      break;
+    }
     case Cleaver::PruningMethod::LOW_WEIGHTS: {
       optimizer = new LowWeightsPruning(pruning_rate, lineSearch);
       break;
@@ -96,6 +118,10 @@ std::shared_ptr<quickrank::optimization::Optimization> create_pruner(
     }
     case Cleaver::PruningMethod::QUALITY_LOSS: {
       optimizer = new QualityLossPruning(pruning_rate, lineSearch);
+      break;
+    }
+    case Cleaver::PruningMethod::QUALITY_LOSS_ADV: {
+      optimizer = new QualityLossAdvPruning(pruning_rate, lineSearch);
       break;
     }
     case Cleaver::PruningMethod::SKIP: {
@@ -122,7 +148,7 @@ std::shared_ptr<quickrank::optimization::Optimization> create_pruner(
     std::shared_ptr<learning::linear::LineSearch> lineSearch) {
 
   return create_pruner(
-      Cleaver::getPruningMethod(pruningMethodName),
+      Cleaver::get_pruning_method(pruningMethodName),
       pruning_rate, lineSearch);
 
 }

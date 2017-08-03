@@ -255,14 +255,13 @@ Score CoordinateAscent::score_document(const Feature *d) const {
   return score;
 }
 
-bool CoordinateAscent::update_weights(
-    std::shared_ptr<std::vector<double>> weights) {
+bool CoordinateAscent::update_weights(std::vector<double>& weights) {
 
-  if (weights->size() != best_weights_.size())
+  if (weights.size() != best_weights_.size())
     return false;
 
-  for (size_t k = 0; k < weights->size(); k++) {
-    best_weights_[k] = (*weights)[k];
+  for (size_t k = 0; k < weights.size(); k++) {
+    best_weights_[k] = weights[k];
   }
 
   return true;
@@ -283,7 +282,7 @@ pugi::xml_document *CoordinateAscent::get_xml_model() const {
   info.append_child("max-failed-vali").text() = max_failed_vali_;
 
   std::stringstream ss;
-  ss << std::setprecision(std::numeric_limits<double>::digits10);
+  ss << std::setprecision(std::numeric_limits<double>::max_digits10);
 
   pugi::xml_node model = root.append_child("model");
   for (size_t i = 0; i < best_weights_.size(); i++) {

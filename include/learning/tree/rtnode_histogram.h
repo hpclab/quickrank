@@ -26,24 +26,31 @@
 class RTNodeHistogram {
  public:
   float **thresholds = NULL;  //[0..nfeatures-1]x[0..thresholds_size[i]-1]
-  size_t const *thresholds_size = NULL;
+  size_t *thresholds_size = NULL;
   size_t **stmap = NULL;  //[0..nfeatures-1]x[0..nthresholds-1]
   const size_t nfeatures = 0;
   double **sumlbl = NULL;  //[0..nfeatures-1]x[0..nthresholds-1]
   size_t **count = NULL;  //[0..nfeatures-1]x[0..nthresholds-1]
   double squares_sum_ = 0.0;
- public:
-  RTNodeHistogram(float **thresholds, size_t const *thresholds_size,
+
+  RTNodeHistogram(float **thresholds,
+                  size_t *thresholds_size,
                   size_t nfeatures);
 
-  RTNodeHistogram(RTNodeHistogram const *parent, size_t const *sampleids,
-                  const size_t nsampleids, double const *labels);
+  RTNodeHistogram(RTNodeHistogram const *parent,
+                  size_t const *sampleids,
+                  const size_t nsampleids,
+                  double const *labels);
 
-  RTNodeHistogram(RTNodeHistogram const *parent, RTNodeHistogram const *left);
+  RTNodeHistogram(RTNodeHistogram const *parent,
+                  RTNodeHistogram const *left);
+
+  RTNodeHistogram(const RTNodeHistogram& source);
 
   ~RTNodeHistogram();
 
-  void update(double *labels, const size_t nlabels);
+  void update(double *labels,
+              const size_t nlabels);
 
   void transform_intorightchild(RTNodeHistogram const *left);
 
@@ -52,9 +59,11 @@ class RTNodeHistogram {
 
 class RTRootHistogram: public RTNodeHistogram {
  public:
-  RTRootHistogram(quickrank::data::VerticalDataset *dps, size_t **sortedidx,
-                  size_t sortedidxsize, float **thresholds,
-                  size_t const *thresholds_size);
+  RTRootHistogram(quickrank::data::VerticalDataset *dps,
+                  size_t **sortedidx,
+                  size_t sortedidxsize,
+                  float **thresholds,
+                  size_t *thresholds_size);
 
   ~RTRootHistogram();
 };

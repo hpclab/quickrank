@@ -24,6 +24,7 @@
 #include <limits>
 #include <numeric>
 #include <io/generate_oblivious.h>
+#include <learning/meta/meta_cleaver.h>
 
 #include "driver/driver.h"
 #include "io/svml.h"
@@ -51,6 +52,7 @@ int Driver::run(ParamsMap &pmap) {
 
   if (pmap.isSet("train") || pmap.isSet("train-partial") ||
       pmap.isSet("test")) {
+
     std::shared_ptr<quickrank::learning::LTR_Algorithm> ranking_algorithm =
         quickrank::learning::ltr_algorithm_factory(pmap);
     if (!ranking_algorithm) {
@@ -62,31 +64,36 @@ int Driver::run(ParamsMap &pmap) {
 
     // If there is the training dataset, it means we have to execute
     // the training phase and/or the optimization phase (at least one of them)
-    if (pmap.count("train") || pmap.count("train-partial")) {
+    if (pmap.isSet("train") || pmap.isSet("train-partial")) {
 
       std::shared_ptr<quickrank::optimization::Optimization> opt_algorithm;
-      if (pmap.count("opt-algo") || pmap.count("opt-model")) {
+      if ((pmap.isSet("opt-algo") || pmap.isSet("opt-model")) &&
+          (ranking_algorithm->name() != learning::meta::MetaCleaver::NAME_
+              || (!pmap.isSet("meta-algo") && !pmap.isSet("restart-train")) )) {
+
         opt_algorithm = quickrank::optimization::optimization_factory(pmap);
         if (!opt_algorithm) {
           std::cerr << " !! Optimization Algorithm was not set properly"
                     << std::endl;
           exit(EXIT_FAILURE);
         }
+
+        std::cout << *opt_algorithm << std::endl;
       }
 
       std::string training_filename = pmap.get<std::string>("train");
       std::string validation_filename = pmap.get<std::string>("valid");
       std::string features_filename = pmap.get<std::string>("features");
-      std::string model_filename = pmap.get<std::string>("model");
+      std::string model_filename_out = pmap.get<std::string>("model-out");
       std::string opt_model_filename = pmap.get<std::string>("opt-model");
       std::string opt_algo_model_filename =
           pmap.get<std::string>("opt-algo-model");
       size_t partial_save = pmap.get<std::size_t>("partial");
       std::string training_partial_filename;
       std::string validation_partial_filename;
-      if (pmap.count("train-partial"))
+      if (pmap.isSet("train-partial"))
         training_partial_filename = pmap.get<std::string>("train-partial");
-      if (pmap.count("valid-partial"))
+      if (pmap.isSet("valid-partial"))
         validation_partial_filename = pmap.get<std::string>("valid-partial");
 
       std::shared_ptr<quickrank::data::Dataset> training_dataset;
@@ -127,7 +134,8 @@ int Driver::run(ParamsMap &pmap) {
 
       // If the training algorithm has been created from scratch (not loaded
       // from file), we have to run the training phase
-      if (pmap.count("algo")) {
+      if (pmap.isSet("train") && !pmap.isSet("skip-train") && (
+          !pmap.isSet("model-in") || pmap.isSet("restart-train")) ) {
 
         //show ranker parameters
         std::cout << "#" << std::endl << *ranking_algorithm;
@@ -139,7 +147,7 @@ int Driver::run(ParamsMap &pmap) {
                        training_metric,
                        training_dataset,
                        validation_dataset,
-                       model_filename,
+                       model_filename_out,
                        partial_save);
       }
 
@@ -172,7 +180,7 @@ int Driver::run(ParamsMap &pmap) {
               pmap.get<std::string>("test-metric"),
               pmap.get<size_t>("test-cutoff"));
       if (!testing_metric) {
-        std::cerr << " !! Train Metric was not set properly" << std::endl;
+        std::cerr << " !! Test Metric was not set properly" << std::endl;
         exit(EXIT_FAILURE);
       }
 
@@ -231,7 +239,8 @@ void Driver::training_phase(
 
   if (!output_filename.empty()) {
     std::cout << std::endl;
-    std::cout << "# Writing model to file: " << output_filename << std::endl;
+    std::cout << "# Writing model to file: " << output_filename
+              << std::endl << std::endl;
     algo->save(output_filename);
   }
 }
@@ -251,6 +260,7 @@ void Driver::optimization_phase(
   std::shared_ptr<quickrank::data::Dataset> training_partial_dataset;
   std::shared_ptr<quickrank::data::Dataset> validation_partial_dataset;
 
+  // Variable meaning the algo needs partial scores
   bool need_ps = opt_algorithm->need_partial_score_dataset();
 
   if (opt_algorithm && need_ps) {
@@ -270,7 +280,8 @@ void Driver::optimization_phase(
 
       training_partial_dataset = Driver::extract_partial_scores(
           ranking_algo,
-          training_dataset);
+          training_dataset,
+          true);
 
       if (!training_partial_filename.empty())
         svml.write(training_partial_dataset, training_partial_filename);
@@ -280,7 +291,8 @@ void Driver::optimization_phase(
 
       validation_partial_dataset = Driver::extract_partial_scores(
           ranking_algo,
-          validation_dataset);
+          validation_dataset,
+          true);
 
       if (!validation_partial_filename.empty())
         svml.write(validation_partial_dataset, validation_partial_filename);
@@ -320,10 +332,20 @@ void Driver::testing_phase(
 
   if (test_metric and test_dataset) {
 
-    std::vector<Score> scores(test_dataset->num_instances());
+    std::vector<Score> scores(test_dataset->num_instances(), 0.0);
     if (detailed_testing) {
       std::shared_ptr<data::Dataset> datasetPartScores =
           Driver::extract_partial_scores(algo, test_dataset);
+
+      Feature *features = datasetPartScores->at(0, 0);
+#pragma omp parallel for
+      for (unsigned int s = 0; s < datasetPartScores->num_instances(); ++s) {
+        size_t offset_feature = s * datasetPartScores->num_features();
+        // compute partialScore * weight for all the trees
+        for (unsigned int f = 0; f < datasetPartScores->num_features(); ++f) {
+          scores[s] += features[offset_feature + f];
+        }
+      }
 
       quickrank::MetricScore test_score = test_metric->evaluate_dataset(
           test_dataset, &scores[0]);
@@ -333,6 +355,9 @@ void Driver::testing_phase(
 
       quickrank::io::Svml svml;
       svml.write(datasetPartScores, scores_filename);
+
+      std::cout << "# Partial Scores written to file: " << scores_filename
+                << std::endl;
 
     } else {
       algo->score_dataset(test_dataset, &scores[0]);
@@ -345,7 +370,7 @@ void Driver::testing_phase(
 
       if (!scores_filename.empty()) {
         std::ofstream os;
-        os << std::setprecision(std::numeric_limits<Score>::digits10);
+        os << std::setprecision(std::numeric_limits<Score>::max_digits10);
         os.open(scores_filename, std::fstream::out);
         for (size_t i = 0; i < test_dataset->num_instances(); ++i)
           os << scores[i] << std::endl;
@@ -385,17 +410,18 @@ std::shared_ptr<quickrank::data::Dataset> Driver::load_dataset(
 
 std::shared_ptr<data::Dataset> Driver::extract_partial_scores(
     std::shared_ptr<learning::LTR_Algorithm> algo,
-    std::shared_ptr<data::Dataset> input_dataset) {
+    std::shared_ptr<data::Dataset> dataset,
+    bool ignore_weights) {
 
   data::Dataset *datasetPartScores = nullptr;
-
-  for (size_t q = 0; q < input_dataset->num_queries(); q++) {
-    auto results = input_dataset->getQueryResults(q);
+  for (size_t q = 0; q < dataset->num_queries(); q++) {
+    auto results = dataset->getQueryResults(q);
     // score_query_results(r, scores, 1, test_dataset->num_features());
     const Feature *features = results->features();
     const Label *labels = results->labels();
     for (size_t i = 0; i < results->num_results(); i++) {
-      auto detailed_scores = algo->partial_scores_document(features);
+      auto detailed_scores = algo->partial_scores_document(features,
+                                                           ignore_weights);
 
       if (!detailed_scores) {
         std::cerr << "# ## ERROR!! Only Ensemble methods support the "
@@ -403,16 +429,16 @@ std::shared_ptr<data::Dataset> Driver::extract_partial_scores(
         exit(EXIT_FAILURE);
       }
 
-      // Initilized on iterating the first instance in the dataset
+      // Initilizing on the first instance of the dataset
       if (datasetPartScores == nullptr)
-        datasetPartScores = new data::Dataset(input_dataset->num_instances(),
+        datasetPartScores = new data::Dataset(dataset->num_instances(),
                                               detailed_scores->size());
       // It performs a copy for casting Score to Feature (double to float)
       std::vector<Feature> featuresScore(detailed_scores->begin(),
                                          detailed_scores->end());
       datasetPartScores->addInstance(q, labels[i], featuresScore);
 
-      features += input_dataset->num_features();
+      features += dataset->num_features();
     }
   }
 

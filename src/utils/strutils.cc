@@ -24,6 +24,8 @@
 #include <algorithm>
 #include <iostream>
 
+#include <iomanip>
+
 /*! \file strutils.hpp
  * \brief some useful functions for strings
  */
@@ -87,4 +89,14 @@ std::string &trim(std::string &str) {
   }
 
   return str;
+}
+
+void print_weights(std::vector<double> weights, std::string header) {
+  return;
+  std::cout << std::endl << "# " << header << std::endl;
+  for (size_t i=0; i < weights.size(); ++i) {
+    std::cout << std::setprecision(0) << i << ":"
+              << std::setprecision(3) << weights[i] << " ";
+  }
+  std::cout << std::endl << std::endl;
 }

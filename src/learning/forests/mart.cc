@@ -73,6 +73,10 @@ Mart::Mart(const pugi::xml_document &model) {
   }
 }
 
+Mart::~Mart() {
+  // TODO: fix the destructor...
+}
+
 std::ostream &Mart::put(std::ostream &os) const {
   os << "# Ranker: " << name() << std::endl
      << "# max no. of trees = " << ntrees_ << std::endl
@@ -89,14 +93,14 @@ std::ostream &Mart::put(std::ostream &os) const {
   return os;
 }
 
-void
-Mart::init(std::shared_ptr<quickrank::data::VerticalDataset> training_dataset) {
+void Mart::init(
+    std::shared_ptr<quickrank::data::VerticalDataset> training_dataset) {
 
   const size_t nentries = training_dataset->num_instances();
   scores_on_training_ = new double[nentries]();  //0.0f initialized
   pseudoresponses_ = new double[nentries]();  //0.0f initialized
   const size_t nfeatures = training_dataset->num_features();
-  sortedsid_ = new size_t *[nfeatures];
+  sortedsid_ = new size_t * [nfeatures];
   sortedsize_ = nentries;
 
 #pragma omp parallel for
@@ -109,7 +113,7 @@ Mart::init(std::shared_ptr<quickrank::data::VerticalDataset> training_dataset) {
 
 #pragma omp parallel for
   for (size_t i = 0; i < nfeatures; ++i) {
-    //select feature array realted to the current feature index
+    //select feature array related to the current feature index
     float const *features = training_dataset->at(0, i);  // ->get_fvector(i);
     //init with values with the 1st sample
     size_t *idx = sortedsid_[i];
@@ -122,8 +126,7 @@ Mart::init(std::shared_ptr<quickrank::data::VerticalDataset> training_dataset) {
     uniqs[uniqs_size++] = features[idx[0]];
     for (size_t j = 1;
          j < sortedsize_
-             && (nthresholds_ == 0 || uniqs_size != nthresholds_ + 1);
-         ++j) {
+             && (nthresholds_ == 0 || uniqs_size != nthresholds_ + 1); ++j) {
       const float fval = features[idx[j]];
       if (uniqs[uniqs_size - 1] < fval)
         uniqs[uniqs_size++] = fval;
@@ -170,7 +173,18 @@ void Mart::clear(size_t num_features) {
       delete[] sortedsid_[i];
       free(thresholds_[i]);
     }
+    delete[] sortedsid_;
+    delete[] thresholds_;
   }
+
+  // Reset pointers to internal data structures
+  scores_on_training_ = NULL;
+  scores_on_validation_ = NULL;
+  pseudoresponses_ = NULL;
+  thresholds_size_ = NULL;
+  sortedsid_ = NULL;
+  thresholds_ = NULL;
+  hist_ = NULL;
 }
 
 void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
@@ -188,12 +202,37 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   std::shared_ptr<quickrank::data::VerticalDataset> vertical_training(
       new quickrank::data::VerticalDataset(training_dataset));
 
+  best_metric_on_validation_ = std::numeric_limits<double>::lowest();
+  best_metric_on_training_ = std::numeric_limits<double>::lowest();
+  best_model_ = 0;
+
+  ensemble_model_.set_capacity(ntrees_);
+
   init(vertical_training);
 
   if (validation_dataset) {
     scores_on_validation_ = new Score[validation_dataset->num_instances()]();
   }
 
+  // if the ensemble size is greater than zero, it means the learn method has
+  // to start not from scratch but from a previously saved (intermediate) model
+  if (ensemble_model_.is_notempty()) {
+    best_model_ = ensemble_model_.get_size() - 1;
+
+    // Update the model's outputs on all training samples
+    score_dataset(training_dataset, scores_on_training_);
+    // run metric
+    best_metric_on_training_ = scorer->evaluate_dataset(
+        vertical_training, scores_on_training_);
+
+    if (validation_dataset) {
+      // Update the model's outputs on all validation samples
+      score_dataset(validation_dataset, scores_on_validation_);
+      // run metric
+      best_metric_on_validation_ = scorer->evaluate_dataset(
+          validation_dataset, scores_on_validation_);
+    }
+  }
 
   auto chrono_init_end = std::chrono::high_resolution_clock::now();
   double init_time = std::chrono::duration_cast<std::chrono::duration<double>>(
@@ -208,23 +247,29 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   std::cout << "# iter. training validation" << std::endl;
   std::cout << "# -------------------------" << std::endl;
 
+  // shows the performance of the already trained model..
+  if (ensemble_model_.is_notempty()) {
+    std::cout << std::setw(7) << ensemble_model_.get_size()
+              << std::setw(9) << best_metric_on_training_;
+
+    if (validation_dataset)
+      std::cout << std::setw(9) << best_metric_on_validation_;
+
+    std::cout << " *" << std::endl;
+  }
+
   auto chrono_train_start = std::chrono::high_resolution_clock::now();
 
-  quickrank::MetricScore best_metric_on_validation = 0.0;
-  quickrank::MetricScore best_metric_on_training = 0.0;
-  ensemble_model_.set_capacity(ntrees_);
-
-  //start iterations
-  for (size_t m = 0; m < ntrees_; ++m) {
+  // start iterations from 0 or (ensemble_size - 1)
+  for (size_t m = ensemble_model_.get_size(); m < ntrees_; ++m) {
     if (validation_dataset
-        && (valid_iterations_ != 0
-            && m > validation_bestmodel_ + valid_iterations_))
+        && (valid_iterations_ && m > best_model_ + valid_iterations_))
       break;
 
     compute_pseudoresponses(vertical_training, scorer.get());
 
-    //update the histogram with these training_seting labels
-    //(the feature histogram will be used to find the best tree rtnode)
+    // update the histogram with these training_setting labels
+    // (the feature histogram will be used to find the best tree rtnode)
     hist_->update(pseudoresponses_, training_dataset->num_instances());
 
     //Fit a regression tree
@@ -242,6 +287,7 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
 
     //show results
     std::cout << std::setw(7) << m + 1 << std::setw(9) << metric_on_training;
+
     //Evaluate the current model on the validation data (if available)
     if (validation_dataset) {
       // update validation scores
@@ -252,15 +298,18 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
           validation_dataset, scores_on_validation_);
       std::cout << std::setw(9) << metric_on_validation;
 
-      if (metric_on_validation > best_metric_on_validation
-          || best_metric_on_validation == 0.0f) {
-        best_metric_on_training = metric_on_training;
-        best_metric_on_validation = metric_on_validation;
-        validation_bestmodel_ = ensemble_model_.get_size() - 1;
+      if (metric_on_validation > best_metric_on_validation_) {
+        best_metric_on_training_ = metric_on_training;
+        best_metric_on_validation_ = metric_on_validation;
+        best_model_ = ensemble_model_.get_size() - 1;
         std::cout << " *";
       }
     } else {
-      best_metric_on_training = metric_on_training;
+      if (metric_on_training > best_metric_on_training_) {
+        best_metric_on_training_ = metric_on_training;
+        best_model_ = ensemble_model_.get_size() - 1;
+        std::cout << " *";
+      }
     }
     std::cout << std::endl;
 
@@ -272,10 +321,12 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   }
 
   //Rollback to the best model observed on the validation data
-  if (validation_dataset)
+  if (validation_dataset) {
     while (ensemble_model_.is_notempty()
-        && ensemble_model_.get_size() > validation_bestmodel_ + 1)
+        && ensemble_model_.get_size() > best_model_ + 1) {
       ensemble_model_.pop();
+    }
+  }
 
   auto chrono_train_end = std::chrono::high_resolution_clock::now();
   double train_time = std::chrono::duration_cast<std::chrono::duration<double>>(
@@ -283,12 +334,12 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
 
   //Finishing up
   std::cout << std::endl;
-  std::cout << *scorer << " on training data = " << best_metric_on_training
+  std::cout << *scorer << " on training data = " << best_metric_on_training_
             << std::endl;
 
   if (validation_dataset) {
     std::cout << *scorer << " on validation data = "
-              << best_metric_on_validation << std::endl;
+              << best_metric_on_validation_ << std::endl;
   }
 
   clear(vertical_training->num_features());
@@ -324,8 +375,8 @@ void Mart::update_modelscores(std::shared_ptr<data::Dataset> dataset,
                               Score *scores, RegressionTree *tree) {
   quickrank::Score *score_i = scores;
   for (size_t q = 0; q < dataset->num_queries(); q++) {
-    std::shared_ptr<quickrank::data::QueryResults> results = dataset
-        ->getQueryResults(q);
+    std::shared_ptr<quickrank::data::QueryResults> results =
+        dataset->getQueryResults(q);
     const size_t offset = 1;
     const Feature *d = results->features();
     for (size_t i = 0; i < results->num_results(); i++) {
@@ -371,7 +422,33 @@ pugi::xml_document *Mart::get_xml_model() const {
   return doc;
 }
 
-bool Mart::update_weights(std::shared_ptr<std::vector<double>> weights) {
+bool Mart::import_model_state(LTR_Algorithm &other) {
+
+  // Check the object is derived from Mart
+  try
+  {
+    Mart& otherCast = dynamic_cast<Mart&>(other);
+
+    if (std::abs(shrinkage_ - otherCast.shrinkage_) > 0.000001 ||
+        nthresholds_ != otherCast.nthresholds_ ||
+        nleaves_ != otherCast.nleaves_ ||
+        minleafsupport_ != otherCast.minleafsupport_ ||
+        valid_iterations_ != otherCast.valid_iterations_)
+      return false;
+
+    // Move assignemnt operator
+    // Move the ownership of the ensemble object to the current model
+    ensemble_model_ = std::move(otherCast.ensemble_model_);
+  }
+  catch(std::bad_cast)
+  {
+    return false;
+  }
+
+  return true;
+}
+
+bool Mart::update_weights(std::vector<double>& weights) {
   return ensemble_model_.update_ensemble_weights(weights);
 }
 

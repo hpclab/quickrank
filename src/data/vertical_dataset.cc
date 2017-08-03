@@ -42,13 +42,14 @@ VerticalDataset::VerticalDataset(std::shared_ptr<Dataset> h_dataset) {
   }
 
   quickrank::Feature *h_data = h_dataset->at(0, 0);
-  for (size_t i = 0; i < num_instances_; i++) {
-    for (size_t f = 0; f < num_features_; f++) {
+  #pragma omp parallel for
+  for (size_t i = 0; i < num_instances_; ++i) {
+    for (size_t f = 0; f < num_features_; ++f) {
       data_[f * num_instances_ + i] = h_data[i * num_features_ + f];
     }
   }
 
-  // copy labels
+  // allocate labels
   if (posix_memalign((void **) &labels_, 16, num_instances_ * sizeof(Label))
       != 0) {
     std::cerr
@@ -57,12 +58,15 @@ VerticalDataset::VerticalDataset(std::shared_ptr<Dataset> h_dataset) {
     exit(EXIT_FAILURE);
   }
 
-  for (size_t i = 0; i < num_instances_; i++)
+  #pragma omp parallel for
+  for (size_t i = 0; i < num_instances_; ++i)
     labels_[i] = h_dataset->getLabel(i);
 
-  offsets_.reserve(num_queries_ + 1);
-  for (size_t i = 0; i < num_queries_ + 1; i++)
-    offsets_.push_back(h_dataset->offset(i));
+  offsets_.resize(num_queries_ + 1);
+
+  #pragma omp parallel for
+  for (size_t i = 0; i < num_queries_ + 1; ++i)
+    offsets_[i] = h_dataset->offset(i);
 }
 
 VerticalDataset::~VerticalDataset() {

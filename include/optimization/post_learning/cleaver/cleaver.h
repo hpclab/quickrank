@@ -46,7 +46,8 @@ class Cleaver: public PostLearningOptimization {
  public:
 
   enum class PruningMethod {
-    RANDOM, LOW_WEIGHTS, SKIP, LAST, QUALITY_LOSS, SCORE_LOSS
+    RANDOM, RANDOM_ADV, LOW_WEIGHTS, SKIP, LAST,
+    QUALITY_LOSS, QUALITY_LOSS_ADV, SCORE_LOSS
   };
 
   Cleaver(double pruning_rate);
@@ -89,9 +90,27 @@ class Cleaver: public PostLearningOptimization {
   /// Return the xml model representing the current object
   virtual pugi::xml_document *get_xml_model() const;
 
+  // Return the pruining rate of the model
+  virtual double get_pruning_rate() {
+    return pruning_rate_;
+  }
+
+  // Set the pruining rate of the model
+  virtual void set_pruning_rate(double pruning_rate) {
+    pruning_rate_ = pruning_rate;
+  }
+
+  virtual void set_update_model(bool update_model) {
+    update_model_ = update_model;
+  }
+
+  virtual bool get_update_model() {
+    return update_model_;
+  }
+
   static const std::vector<std::string> pruningMethodNames;
 
-  static PruningMethod getPruningMethod(std::string name) {
+  static PruningMethod get_pruning_method(std::string name) {
     auto i_item = std::find(pruningMethodNames.cbegin(),
                             pruningMethodNames.cend(),
                             name);
@@ -105,24 +124,51 @@ class Cleaver: public PostLearningOptimization {
 //    return NULL;
   }
 
-  static std::string getPruningMethod(PruningMethod pruningMethod) {
+  static std::string get_pruning_method(PruningMethod pruningMethod) {
     return pruningMethodNames[static_cast<int>(pruningMethod)];
   }
 
   /// Returns the learned weights
-  virtual std::vector<float> &get_weigths() {
-    return weights_;
+  virtual std::vector<double> get_weigths() {
+    return std::vector<double>(weights_);
+  }
+
+  virtual bool update_weights(std::vector<double>& weights);
+
+  // Return the line search model
+  virtual std::shared_ptr<learning::linear::LineSearch> get_line_search() {
+    return lineSearch_;
   }
 
   static const std::string NAME_;
 
+  size_t get_last_estimators_to__work_on() const {
+    return last_estimators_to_optimize_;
+  }
+
+  void set_last_estimators_to_optimize(size_t last_estimators_to_optimize) {
+    last_estimators_to_optimize_ = last_estimators_to_optimize;
+  }
+
+  MetricScore get_metric_on_training() {
+    return metric_on_training_;
+  }
+
+  MetricScore get_metric_on_validation() {
+    return metric_on_validation_;
+  }
+
  protected:
   double pruning_rate_;
   unsigned int estimators_to_prune_;
-  unsigned int estimators_to_select_;
   std::shared_ptr<learning::linear::LineSearch> lineSearch_;
+  unsigned int last_estimators_to_optimize_;
+  bool update_model_;
 
-  std::vector<float> weights_;
+  MetricScore metric_on_training_;
+  MetricScore metric_on_validation_;
+
+  std::vector<double> weights_;
 
   /// Prints the description of Algorithm, including its parameters
   std::ostream &put(std::ostream &os) const;
@@ -133,7 +179,7 @@ class Cleaver: public PostLearningOptimization {
       std::set<unsigned int> &pruned_estimators);
 };
 
-}  // namespace pruning
+}  // namespace cleaver
 }  // namespace post_learning
 }  // namespace optimization
 }  // namespace quickrank

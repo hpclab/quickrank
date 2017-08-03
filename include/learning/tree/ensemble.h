@@ -28,7 +28,16 @@
 class Ensemble {
 
  public:
+  Ensemble() {};
+
+  // move constructor
+  Ensemble(Ensemble&& source);
+
   virtual ~Ensemble();
+
+  // move assignment operator
+  Ensemble& operator=(Ensemble&& other);
+
   void set_capacity(const size_t n);
   void push(RTNode *root, const double weight, const float maxlabel);
   void pop();
@@ -45,28 +54,39 @@ class Ensemble {
                                           const size_t offset = 1) const;
 
   virtual std::shared_ptr<std::vector<quickrank::Score>>
-  partial_scores_instance(const quickrank::Feature *d,
-                          const size_t offset = 1) const;
+      partial_scores_instance(const quickrank::Feature *d,
+                              bool ignore_weights = false,
+                              const size_t offset = 1) const;
 
-  pugi::xml_node append_xml_model(pugi::xml_node parent,
-                                  bool skip_useless_trees = true) const;
+  pugi::xml_node append_xml_model(pugi::xml_node parent) const;
 
-  virtual bool update_ensemble_weights(
-      std::shared_ptr<std::vector<double>> weights);
+  virtual bool update_ensemble_weights(std::vector<double>& weights);
 
-  virtual std::shared_ptr<std::vector<double>> get_weights() const;
+  virtual std::vector<double> get_weights() const;
 
  private:
-  struct wt {
-    wt(RTNode *root, double weight, float maxlabel)
+
+  struct weighted_tree {
+
+    weighted_tree(RTNode *root, double weight, float maxlabel)
         : root(root),
           weight(weight),
-          maxlabel(maxlabel) {
+          maxlabel(maxlabel) { }
+
+    weighted_tree(const weighted_tree& source) {
+      weight = source.weight;
+      maxlabel = source.maxlabel;
+      root = new RTNode(*(source.root));
     }
-    RTNode *root = NULL;
+
+    RTNode* root = nullptr;
     double weight = 0.0;
     float maxlabel = 0.0f;
   };
+
   size_t size = 0;
-  wt *arr = NULL;
+  size_t capacity = 0;
+  weighted_tree* arr = nullptr;
+
+  void reset_state();
 };

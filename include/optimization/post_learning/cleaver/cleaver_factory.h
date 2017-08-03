@@ -25,7 +25,7 @@
 
 #include "optimization/optimization.h"
 #include "learning/linear/line_search.h"
-#include "optimization/post_learning/pruning/cleaver.h"
+#include "optimization/post_learning/cleaver/cleaver.h"
 
 #include <memory>
 

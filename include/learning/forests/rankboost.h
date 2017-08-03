@@ -129,14 +129,14 @@ class Rankboost: public LTR_Algorithm {
   /// Returns the partial scores of a given document, tree.
   /// \param d is a pointer to the document to be evaluated
   virtual std::shared_ptr<std::vector<Score>> partial_scores_document(
-      const Feature *d) const;
+      const Feature *d, bool ignore_weights=false) const;
 
   /// Return the xml model representing the current object
   virtual pugi::xml_document *get_xml_model() const;
 
   virtual bool update_weights(std::vector<double> &weights);
 
-  virtual std::shared_ptr<std::vector<double>> get_weights() const;
+  virtual std::vector<double> get_weights() const;
 
  private:
   float ***D = NULL;

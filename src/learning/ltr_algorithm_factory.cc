@@ -19,6 +19,7 @@
  * Contributors:
  *  - Salvatore Trani(salvatore.trani@isti.cnr.it)
  */
+#include <optimization/optimization_factory.h>
 #include "learning/ltr_algorithm_factory.h"
 
 #include "learning/forests/mart.h"
@@ -34,27 +35,26 @@ namespace quickrank {
 namespace learning {
 
 std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
-    ParamsMap &pmap, bool verbose) {
+    ParamsMap &pmap) {
 
+  std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algo_model = nullptr;
   std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algo = nullptr;
 
-  // If there is the model (file) option from the CLI but not the train option
-  // it means we have to load an existing model from file in place of saving it
-  if (pmap.isSet("model") && !pmap.isSet("algo")) {
-    std::string model_filename = pmap.get<std::string>("model");
+  // If it is set the source model (file) option, we need to load the LtR model
+  if (pmap.isSet("model-in")) {
+    std::string model_filename = pmap.get<std::string>("model-in");
 
-    if (verbose)
-      std::cout << "# Loading model from file " << model_filename << std::endl;
+    std::cout << "# Loading model from file " << model_filename << std::endl;
 
-    ltr_algo = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
-        quickrank::learning::LTR_Algorithm::load_model_from_file(
-            model_filename));
+    ltr_algo_model =
+        learning::LTR_Algorithm::load_model_from_file(model_filename);
 
-    if (verbose && !ltr_algo) {
+    if (!ltr_algo_model)
       std::cerr << " !! Unable to load model from file." << std::endl;
-    }
+  }
 
-  } else {
+  if (!pmap.isSet("model-in") || pmap.isSet("restart-train")) {
+
     // We have to create a model from scratch
     std::string algo_name = pmap.get<std::string>("algo");
     std::transform(algo_name.begin(), algo_name.end(),
@@ -111,32 +111,65 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
         == quickrank::learning::linear::CoordinateAscent::NAME_) {
       ltr_algo = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
           new quickrank::learning::linear::CoordinateAscent(
-              pmap.get < unsigned
-      int > ("num-samples"),
-          pmap.get<double>("window-size"),
-          pmap.get<double>("reduction-factor"),
-          pmap.get < unsigned
-      int > ("max-iterations"),
-          pmap.get < unsigned
-      int > ("max-failed-valid")
-      ));
+              pmap.get <unsigned int> ("num-samples"),
+              pmap.get<double>("window-size"),
+              pmap.get<double>("reduction-factor"),
+              pmap.get <unsigned int> ("max-iterations"),
+              pmap.get <unsigned int> ("max-failed-valid")
+          ));
     } else if (algo_name == quickrank::learning::linear::LineSearch::NAME_) {
       ltr_algo = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
           new quickrank::learning::linear::LineSearch(
-              pmap.get < unsigned
-      int > ("num-samples"),
-          pmap.get<double>("window-size"),
-          pmap.get<double>("reduction-factor"),
-          pmap.get < unsigned
-      int > ("max-iterations"),
-          pmap.get < unsigned
-      int > ("max-failed-valid"),
-          pmap.isSet("adaptive")
-      ));
+              pmap.get <unsigned int> ("num-samples"),
+              pmap.get<double>("window-size"),
+              pmap.get<double>("reduction-factor"),
+              pmap.get <unsigned int > ("max-iterations"),
+              pmap.get <unsigned int > ("max-failed-valid"),
+              pmap.isSet("adaptive")
+          ));
     } else if (algo_name == quickrank::learning::CustomLTR::NAME_) {
       ltr_algo = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
           new quickrank::learning::CustomLTR());
     }
+  }
+
+  if (pmap.isSet("meta-algo")) {
+    std::string meta_algo_name = pmap.get<std::string>("meta-algo");
+
+    auto opt_algorithm =
+        std::dynamic_pointer_cast<optimization::post_learning::pruning::Cleaver>(
+            quickrank::optimization::optimization_factory(pmap));
+    if (!opt_algorithm) {
+      std::cerr << " !! Optimization Algorithm is required but it is not set "
+          "properly" << std::endl;
+      exit(EXIT_FAILURE);
+    }
+
+    if (meta_algo_name == quickrank::learning::meta::MetaCleaver::NAME_) {
+      ltr_algo = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
+          new quickrank::learning::meta::MetaCleaver(
+              ltr_algo,
+              opt_algorithm,
+              pmap.get<size_t>("final-num-trees"),
+              pmap.get<size_t>("num-trees"),
+              pmap.get<double>("pruning-rate"),
+              pmap.isSet("opt-last-only"),
+              pmap.get<size_t>("meta-end-after-rounds"),
+              pmap.isSet("meta-verbose")
+          )
+      );
+    }
+  }
+
+  if (ltr_algo_model) {
+    if (ltr_algo && pmap.isSet("restart-train")) {
+      bool res = ltr_algo->import_model_state(*ltr_algo_model);
+      if (!res) {
+        std::cerr << " !! Models not compatible for restart!" << std::endl;
+        exit(EXIT_FAILURE);
+      }
+    } else
+      ltr_algo = ltr_algo_model;
   }
 
   return ltr_algo;
