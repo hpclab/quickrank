@@ -12,6 +12,9 @@ The LtR algorithms currently implemented are:
  - **CoordinateAscent**: Metzler, D., Croft, W.B.. *Linear feature-based models for information retrieval*. Information Retrieval 10(3), pages 257–274, 2007.
  - **LineSearch**: D. G. Luenberger. *Linear and nonlinear programming*. Addison Wesley, 1984.
  - **RankBoost**: Freund, Y., Iyer, R., Schapire, R. E., & Singer, Y. *An efficient boosting algorithm for combining preferences*. The Journal of machine learning research, 4, 933-969 (2003).
+ - **Dart**: K.V. Rashmi and R. Gilad-Bachrach. *Dart: Dropouts meet multiple additive regression trees*. Journal of Machine Learning Research, 38 (2015).
+ - **X-Dart**: C. Lucchese, F. M. Nardini, S. Orlando, R. Perego and S. Trani. *X-DART: Blending Dropout and Pruning for Efficient Learning to Rank*. ACM SIGIR, 2017.
+ - **X-CLEAVER**: C. Lucchese, F. M. Nardini, S. Orlando, R. Perego, F. Silvestri, S. Trani. *X-CLEaVER: Learning Ranking Ensembles by Growing and Pruning Trees*. Paper under revision.
 
 QuickRank introduces also the concept of pre and post learning optimizations which are pipelined with the LtR algorithms. Currently implemented optimizers are:
  - **CLEAVER**: C. Lucchese, F. M. Nardini, S. Orlando, R. Perego, F. Silvestri, S. Trani. *Post-Learning Optimization of Tree Ensembles for Efficient Ranking*. ACM SIGIR, 2016.
@@ -75,70 +78,113 @@ Running the QuickRank binary with the `-h` option, it shows the help:
 
 
 Training phase - general options:
-  --algo <arg> (LAMBDAMART)             LtR algorithm [MART|LAMBDAMART|OBVMART|OBVLAMBDAMART|RANKBOOST|COORDASC|LINESEARCH|CUSTOM]
-  --train-metric <arg> (NDCG)           set train metric [DCG|NDCG|TNDCG|MAP]
-  --train-cutoff <arg> (10)             set train metric cutoff
-  --partial <arg> (100)                 set partial file save frequency
-  --train <arg>                         set training file
-  --valid <arg>                         set validation file
-  --features <arg>                      set features file
-  --model <arg>                         set output model file for training or input model file for testing
+  --algo <arg> (LAMBDAMART)             LtR algorithm:
+                                        [MART|LAMBDAMART|OBVMART|OBVLAMBDAMART|DART|
+                                        RANKBOOST|COORDASC|LINESEARCH|CUSTOM].
+  --train-metric <arg> (NDCG)           set train metric: [DCG|NDCG|TNDCG|MAP].
+  --train-cutoff <arg> (10)             set train metric cutoff.
+  --partial <arg> (100)                 set partial file save frequency.
+  --train <arg>                         set training file.
+  --valid <arg>                         set validation file.
+  --features <arg>                      set features file.
+  --model-in <arg>                      set input model file
+                                        (for testing, re-training or optimization)
+  --model-out <arg>                     set output model file
+  --skip-train                          skip training phase.
+  --restart-train                       restart training phase from a previous trained model.
 
 Training phase - specific options for tree-based models:
-  --num-trees <arg> (1000)              set number of trees
-  --shrinkage <arg> (0.1)               set shrinkage
-  --num-thresholds <arg> (0)            set number of thresholds
-  --min-leaf-support <arg> (1)          set minimum number of leaf support
-  --end-after-rounds <arg> (100)        set num. rounds with no boost in validation before ending (if 0 disabled)
-  --num-leaves <arg> (10)               set number of leaves [applies only to Mart/LambdaMart]
-  --tree-depth <arg> (3)                set tree depth [applies only to Oblivious Mart/LambdaMart]
+  --num-trees <arg> (1000)              set number of trees.
+  --shrinkage <arg> (0.1)               set shrinkage.
+  --num-thresholds <arg> (0)            set number of thresholds.
+  --min-leaf-support <arg> (1)          set minimum number of leaf support.
+  --end-after-rounds <arg> (100)        set num. rounds with no gain in validation
+                                        before ending (if 0 disabled).
+  --num-leaves <arg> (10)               set number of leaves
+                                        [applies only to MART/LambdaMART].
+  --tree-depth <arg> (3)                set tree depth
+                                        [applies only to ObliviousMART/ObliviousLambdaMART].
+
+Training phase - specific options for Meta LtR models:
+  --meta-algo <arg>                     Meta LtR algorithm:
+                                        [METACLEAVER].
+  --final-num-trees <arg>               set number of final trees.
+  --opt-last-only                       optimization executed only on trees learned
+                                        in last iteration.
+  --meta-end-after-rounds <arg>         set num. rounds with no gain in validation
+                                        before ending (if 0 disabled) on meta LtR models.
+  --meta-verbose                        Increase verbosity of Meta Algorithm,
+                                        showing each step in detail.
+
+Training phase - specific options for Dart:
+  --sample-type <arg> (UNIFORM)         sampling type of trees. [UNIFORM|WEIGHTED|WEIGHTED_INV|COUNT2|COUNT3|COUNT2N|COUNT3N|TOP_FIFTY|CONTR|CONTR_INV|WCONTR|WCONTR_INV|TOP_WCONTR|LESS_WCONTR].
+  --normalize-type <arg> (TREE)         normalization type of trees. [TREE|NONE|WEIGHTED|FOREST|TREE_ADAPTIVE|LINESEARCH|TREE_BOOST3|CONTR|WCONTR|LMART_ADAPTIVE|LMART_ADAPTIVE_SIZE].
+  --adaptive-type <arg> (FIXED)         adaptive type for choosing number of trees to dropout:
+                                        [FIXED|PLUS1_DIV2|PLUSHALF_DIV2|PLUSONETHIRD_DIV2|PLUSHALF_RESET|PLUSHALF_RESET_LB1_UB5|PLUSHALF_RESET_LB1_UB10|PLUSHALF_RESET_LB1_UBRD].
+  --rate-drop <arg> (0.1)               set dropout rate
+  --skip-drop <arg> (0)                 set probability of skipping dropout
+  --keep-drop                           keep the dropped trees out of the ensembleif the performance of the model improved
+  --best-on-train                       Calculate the best performance on training (o/w valid)
+  --random-keep <arg> (0)               keep the dropped trees out of the ensemble
+                                        for every drop
+  --drop-on-best                        Perform the drop-out based on best perfomance (o/w last)
 
 Training phase - specific options for Coordinate Ascent and Line Search:
-  --num-samples <arg> (21)              set number of samples in search window
-  --window-size <arg> (10)              set search window size
-  --reduction-factor <arg> (0.95)       set window reduction factor
-  --max-iterations <arg> (100)          set number of max iterations
-  --max-failed-valid <arg> (20)         set number of fails on validation before exit
+  --num-samples <arg> (21)              set number of samples in search window.
+  --window-size <arg> (10)              set search window size.
+  --reduction-factor <arg> (0.95)       set window reduction factor.
+  --max-iterations <arg> (100)          set number of max iterations.
+  --max-failed-valid <arg> (20)         set number of fails on validation before exit.
 
 Training phase - specific options for Line Search:
-  --adaptive                            enable adaptive reduction factor (based on last iteration metric gain)
-  --train-partial <arg>                 set training file with partial scores (input for loading or output for saving)
-  --valid-partial <arg>                 set validation file with partial scores (input for loading or output for saving)
+  --adaptive                            enable adaptive reduction factor
+                                        (based on last iteration metric gain).
+  --train-partial <arg>                 set training file with partial scores
+                                        (input for loading or output for saving).
+  --valid-partial <arg>                 set validation file with partial scores
+                                        (input for loading or output for saving).
 
 Optimization phase - general options:
-  --opt-algo <arg>                      Optimization alghoritm [CLEAVER]
-  --opt-method <arg>                    Optimization method: CLEAVER [RANDOM|LOW_WEIGHTS|SKIP|LAST|QUALITY_LOSS|SCORE_LOSS]
-  --opt-model <arg>                     set output model file for optimization or input model file for testing
-  --opt-algo-model <arg>                set output algorithm model file post optimization
+  --opt-algo <arg>                      Optimization algorithm: [CLEAVER].
+  --opt-method <arg>                    Optimization method: CLEAVER
+                                        [RANDOM|RANDOM_ADV|LOW_WEIGHTS|SKIP|LAST|QUALITY_LOSS|QUALITY_LOSS_ADV|SCORE_LOSS].
+  --opt-model <arg>                     set output model file for optimization
+                                        or input model file for testing.
+  --opt-algo-model <arg>                set output algorithm model file post optimization.
 
 Optimization phase - specific options for ensemble pruning:
-  --pruning-rate <arg>                  ensemble to prune (either as a ratio with respect to ensemble size or as an absolute number of estimators to prune)
-  --with-line-search                    ensemble pruning is made in conjunction with line search [related parameters accepted]
-  --line-search-model <arg>             set line search XML file path for loading line search model (options and already trained weights)
+  --pruning-rate <arg>                  ensemble to prune (either as a ratio with
+                                        respect to ensemble size or as an absolute
+                                        number of estimators to prune).
+  --with-line-search                    ensemble pruning is made in conjunction
+                                        with line search [related parameters accepted].
+  --line-search-model <arg>             set line search XML file path for
+                                        loading line search model (options
+                                        and already trained weights).
 
 Test phase - general options:
-  --test-metric <arg> (NDCG)            set test metric [DCG|NDCG|TNDCG|MAP]
-  --test-cutoff <arg> (10)              set test metric cutoff
-  --test <arg>                          set testing file
-  --scores <arg>                        set output scores file
-  --detailed                            enable detailed testing [applies only to ensemble models]
+  --test-metric <arg> (NDCG)            set test metric: [DCG|NDCG|TNDCG|RMSE|MAP].
+  --test-cutoff <arg> (10)              set test metric cutoff.
+  --test <arg>                          set testing file.
+  --scores <arg>                        set output scores file.
+  --detailed                            enable detailed testing [applies only to ensemble models].
 
 Code generation - general options:
-  --model-file <arg>                    set XML model file path
-  --code-file <arg>                     set C code file path
+  --model-file <arg>                    set XML model file path.
+  --code-file <arg>                     set C code file path.
   --generator <arg> (condop)            set C code generation strategy. Allowed options are:
                                         -  "condop" (conditional operators),
                                         -  "oblivious" (optimized code for oblivious trees),
                                         -  "vpred" (intermediate code used by VPRED).
 
 Help options:
-  -h,--help                             print help message
+  -h,--help                             print help message.
 ```
 
 Some parameters have a default value (described in round brackets), which means you can skip their assignation if the default value is ok for you.
 
 ### Training
-Training a model with QuickRank is straightforward. Looking at the training options, you need to specify the learning algorithm, the training dataset (optionally also the validation dataset) and the metric to use. If you would like to save the trained model on a file, you need to pass also the model parameter:
+Training a model with QuickRank is straightforward. Looking at the training options, you need to specify the learning algorithm, the training dataset (optionally also the validation dataset) and the metric to use. If you would like to save the trained model on a file, you need to pass also the `model-out` parameter:
 ```
 ./bin/quicklearn \
   --algo LAMBDAMART \
@@ -146,7 +192,7 @@ Training a model with QuickRank is straightforward. Looking at the training opti
   --valid quickranktestdata/msn1/msn1.fold1.vali.5k.txt \
   --train-metric NDCG \
   --train-cutoff 10 \ 
-  --model lambdamart-model.xml
+  --model-out lambdamart-model.xml
 ```
 
 Depending from the learning algorithm adopted, you have to pass additional parameters, e.g., the number of trees for ensemble-based models (and many others). Some parameters have a default value, which means if you can skip them they will use that value for training.
@@ -157,7 +203,7 @@ To test a model, you could specify the test option in the previous command, or l
 
 ```
 ./bin/quicklearn \
-  --model lambdamart-model.xml \
+  --model-in lambdamart-model.xml \
   --test quickranktestdata/msn1/msn1.fold1.test.5k.txt \
   --test-metric NDCG \
   --test-cutoff 10 \ 
@@ -180,7 +226,7 @@ The optimizer can be executed in pipeline with the training phase by setting the
 
 ```
 ./bin/quicklearn \
-  --model lambdamart-model.xml \
+  --model-in lambdamart-model.xml \
   --train quickranktestdata/msn1/msn1.fold1.train.5k.txt \
   --valid quickranktestdata/msn1/msn1.fold1.vali.5k.txt \
   --opt-algo CLEAVER \

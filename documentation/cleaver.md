@@ -23,7 +23,7 @@ Being CLEAVER an optimization method inside QuickRank, it can be ran in pipeline
   --algo LAMBDAMART \
   --train quickranktestdata/msn1/msn1.fold1.train.5k.txt \
   --valid quickranktestdata/msn1/msn1.fold1.vali.5k.txt \
-  --model lambdamart-model.xml \
+  --model-out lambdamart-model.xml \
   --opt-algo CLEAVER \
   --opt-method QUALITY_LOSS \
   --opt-model optmization-model.xml \
@@ -45,7 +45,7 @@ Running CLEAVER as a standalone process requires to separately train a model. Th
 
 ```
 ./bin/quicklearn \
-  --model lambdamart-model.xml \
+  --model-in lambdamart-model.xml \
   --train quickranktestdata/msn1/msn1.fold1.train.5k.txt \
   --valid quickranktestdata/msn1/msn1.fold1.vali.5k.txt \
   --opt-algo CLEAVER \
@@ -67,7 +67,7 @@ Since it is popular to try different pruning level and different pruning strateg
 
 ```
 ./bin/quicklearn \
-  --model lambdamart-model.xml \
+  --model-in lambdamart-model.xml \
   --test quickranktestdata/msn1/msn1.fold1.train.5k.txt \
   --scores partial-score-train.txt \
   --detailed
@@ -75,7 +75,7 @@ Since it is popular to try different pruning level and different pruning strateg
 
 ```
 ./bin/quicklearn \
-  --model lambdamart-model.xml \
+  --model-in lambdamart-model.xml \
   --test quickranktestdata/msn1/msn1.fold1.valid.5k.txt \
   --scores partial-score-vali.txt \
   --detailed
@@ -93,14 +93,14 @@ Then to execute the LINESEARCH process above these datasets:
   --reduction-factor 0.95 \
   --max-iterations 100 \
   --max-failed-valid 20
-  --model line-search-model.xml
+  --model-out line-search-model.xml
 ```
 
 Having done these tasks, it is now possible to efficiently test various pruning strategies and pruning levels:
 
 ```
 ./bin/quicklearn \
-  --model lambdamart-model.xml \
+  --model-in lambdamart-model.xml \
   --train-partial partial-score-train.txt \
   --valid-partial partial-score-vali.txt \
   --opt-algo CLEAVER \
