@@ -242,12 +242,12 @@ void GenOblivious::generate_oblivious_code(const std::string model_filename,
   source_code << std::endl;
 
   // print tree weights
-  source_code.setf(std::ios::floatfield, std::ios::fixed);
+  source_code << std::setprecision(std::numeric_limits<float>::max_digits10);
   source_code << "const float tree_weights[N] = { ";
   for (size_t i = 0; i < tree_weights.size(); i++) {
     if (i != 0)
       source_code << ", ";
-    source_code << tree_weights[tree_mapping[i]] << "f";
+    source_code << tree_weights[tree_mapping[i]];
   }
   source_code << " };" << std::endl << std::endl;
 
@@ -294,7 +294,7 @@ void GenOblivious::generate_oblivious_code(const std::string model_filename,
     for (size_t j = 0; j < thresholds[tree_mapping[i]].size(); j++) {
       if (j != 0)
         source_code << ", ";
-      source_code << thresholds[tree_mapping[i]][j] << "f";
+      source_code << thresholds[tree_mapping[i]][j];
     }
     source_code << " }";
   }

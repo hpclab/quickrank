@@ -45,6 +45,10 @@ void model_node_to_conditional_operators(pugi::xml_node &nodes,
     } else if (strcmp(node.name(), "threshold") == 0) {
       threshold = node.text().as_string();
       trim(threshold);
+      // dealing with integer values
+      if (threshold.find(".") == std::string::npos)
+      // adding ".0" to deal with the integer found
+        threshold += ".0";
     } else if (strcmp(node.name(), "split") == 0) {
       std::string pos = node.attribute("pos").as_string();
 
