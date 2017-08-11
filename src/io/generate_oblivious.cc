@@ -304,7 +304,7 @@ void GenOblivious::generate_oblivious_code(const std::string model_filename,
 
   source_code
       << "unsigned int leaf_id(float *v, unsigned int const *fids, float const *thresh, const unsigned int m) {"
-      << std::endl << "  unsigned int leafidx;" << std::endl
+      << std::endl << "  unsigned int leafidx=0;" << std::endl
       << "  for (unsigned int i=0; i<m; ++i)" << std::endl
       << "    leafidx |= SHL( v[fids[i]]>thresh[i], m-1-i);" << std::endl
       << "  return leafidx;" << std::endl << "}" << std::endl << std::endl;
