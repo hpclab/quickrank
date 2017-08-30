@@ -281,7 +281,7 @@ int main(int argc, char *argv[]) {
                         skip_drop);
 
   pmap.addOption("keep-drop",
-                {"keep the dropped trees out of the ensemble"
+                {"keep the dropped trees out of the ensemble "
                  "if the performance of the model improved"});
 
   pmap.addOption("best-on-train",
