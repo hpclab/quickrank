@@ -42,7 +42,7 @@ class Dart: public LambdaMart {
 
   enum class NormalizationType {
     TREE, NONE, WEIGHTED, FOREST, TREE_ADAPTIVE, LINESEARCH, TREE_BOOST3,
-    CONTR, WCONTR, LMART_ADAPTIVE, LMART_ADAPTIVE_SIZE
+    CONTR, WCONTR, LMART_ADAPTIVE
   };
 
   enum class AdaptiveType {
