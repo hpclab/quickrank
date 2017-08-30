@@ -12,8 +12,10 @@ The LtR algorithms currently implemented are:
  - **CoordinateAscent**: Metzler, D., Croft, W.B.. *Linear feature-based models for information retrieval*. Information Retrieval 10(3), pages 257–274, 2007.
  - **LineSearch**: D. G. Luenberger. *Linear and nonlinear programming*. Addison Wesley, 1984.
  - **RankBoost**: Freund, Y., Iyer, R., Schapire, R. E., & Singer, Y. *An efficient boosting algorithm for combining preferences*. The Journal of machine learning research, 4, 933-969 (2003).
- - **Dart**: K.V. Rashmi and R. Gilad-Bachrach. *Dart: Dropouts meet multiple additive regression trees*. Journal of Machine Learning Research, 38 (2015).
- - **X-Dart**: C. Lucchese, F. M. Nardini, S. Orlando, R. Perego and S. Trani. *X-DART: Blending Dropout and Pruning for Efficient Learning to Rank*. ACM SIGIR, 2017.
+ - **DART**: K.V. Rashmi and R. Gilad-Bachrach. *Dart: Dropouts meet multiple 
+ additive regression trees*. Journal of Machine Learning Research, 38 (2015).
+ - **X-DART**: C. Lucchese, F. M. Nardini, S. Orlando, R. Perego and S. Trani. 
+ *X-DART: Blending Dropout and Pruning for Efficient Learning to Rank*. ACM SIGIR, 2017.
  - **X-CLEAVER**: C. Lucchese, F. M. Nardini, S. Orlando, R. Perego, F. Silvestri, S. Trani. *X-CLEaVER: Learning Ranking Ensembles by Growing and Pruning Trees*. Paper under revision.
 
 QuickRank introduces also the concept of pre and post learning optimizations which are pipelined with the LtR algorithms. Currently implemented optimizers are:
@@ -293,11 +295,19 @@ If you use QuickRank, please acknowledge the following paper:
  *Information Processing & Management* (2016).
  [LINK](http://dx.doi.org/10.1016/j.ipm.2016.05.004).
 
-If you use the **CLEAVER**, please acknowledge the following paper:
+If you use **CLEAVER**, please acknowledge the following paper:
  - C. Lucchese, F. M. Nardini, S. Orlando, R. Perego, F. Silvestri, S. Trani.
  **Post-Learning Optimization of Tree Ensembles for Efficient Ranking**.
  *ACM SIGIR Conference on Research and Development in Information Retrieval*, (2016).
  [LINK](http://dx.doi.org/10.1145/2911451.2914763).
+ 
+If you use **X-DART**, please acknowledge the following paper:
+
+ - C. Lucchese, F. M. Nardini, S. Orlando, R. Perego, and S. Trani. 
+ **X-DART: Blending Dropout and Pruning for Efficient Learning to Rank**.
+ *ACM SIGIR Conference on Research and Development in Information Retrieval*,
+  (2017).
+[LINK](https://doi.org/10.1145/3077136.3080725).
 
 
 We will be happy to know that you are using QuickRank and to acknowledge you.

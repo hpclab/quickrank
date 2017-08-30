@@ -230,12 +230,12 @@ each iteration (as well using a dropout_rate=0.015)
   --best-on-train
 ```
 
-Given that the sample datasets used here for testing are not big enough, you 
-can experience unexpected performance when comparing the different runs. We 
-suggest to train the same models on bigger letor datasets (msn, istella, yahoo, 
-etc.)
+The examples above are done on sample data. We recommend to train DART/X-DART
+on standard letor datasets (istella, msn, yahoo, etc.) for results that are 
+consistent with the reference paper.
 
-Scoring a DART or X-DART model is trivial:
+Finally, to score a DART or X-DART model (that is a standard ensemble of 
+regression trees):
 
  ```
  ./bin/quicklearn \
@@ -255,7 +255,8 @@ Proceedings of ACM SIGIR 2016.
 Acknowledgements
 -------
 
-**X-DART** has beed presented in the following paper:
+If you use the **X-DART**, please acknowledge the following paper:
+
  - C. Lucchese, F. M. Nardini, S. Orlando, R. Perego, and S. Trani. 
  **X-DART: Blending Dropout and Pruning for Efficient Learning to Rank**.
  *ACM SIGIR Conference on Research and Development in Information Retrieval*,
