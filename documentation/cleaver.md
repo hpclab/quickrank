@@ -9,8 +9,9 @@ CLEAVER implements various pruning strategies. Let be *n* the number of weak ran
 - **LAST**: The last *k* weak rankers are pruned. The conjecture is that initial weak rankers are more precise due to boosting algorithms.
 - **SKIP**: Two close weak rankers are considered more similar in terms of discriminative power. The strategy keep one every *[n/(n-k)]* weak rankers.
 - **LOW_WEIGHTS**: The weights associated with each tree are optimized using line search (see below). The *k* weak rankers with lowest weight are then removed.
-- **SCORE_LOSS**: The normalized contribution of each weak rankers to the final score is computed with *s_i(q,d) / S(q,d)* and we remove the *k* weak rankers that contribute less.
-- **QUALITY_LOSS**: For each weak rankers, we compute the average quality drop (in terms of loss function) by scoring the documents without that tree. We remove the *k* weak rankers with the smallest quality drop.
+- **SCORE_LOSS**: The normalized contribution of each weak rankers to the final score is computed with *s_i(q,d) / S(q,d)* and the *k* weak rankers that contribute less are removed.
+- **QUALITY_LOSS**: For each weak rankers, the average quality drop (in terms of loss function) is computed by scoring the documents without that tree. Then the *k* weak rankers with the smallest quality drop are removed.
+- **QUALITY_LOSS_ADV**: At each iteration, the average quality drop (in terms of loss function) is computed by scoring the documents without each of the weak rankers. Then, the weak ranker with the smallest quality drop is removed. The process is repeated until *k* weak rankers are pruned out.  
 
 In order to optimize the weights associated with each weak rankers, CLEAVER makes use of a greedy Line Search process which iteratively tries to find the best weight vector.
 
