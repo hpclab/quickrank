@@ -233,14 +233,9 @@ void Cleaver::optimize(
   std::vector<double> starting_weights(weights_);
 
   // Some pruning methods needs to perform line search before the pruning
-  if (line_search_pre_pruning() && estimators_to_prune_ > 0) {
+  if (line_search_pre_pruning() && estimators_to_prune_ > 0 && lineSearch_) {
 
     print_weights(weights_, "Cleaver Weights ANTE LS pre-pruning");
-
-    if (!lineSearch_) {
-      std::cerr << "This pruning method requires line search" << std::endl;
-      exit(EXIT_FAILURE);
-    }
 
     // Set to optimize only last estimators
     if (opt_last_only)
