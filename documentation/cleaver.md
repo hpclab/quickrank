@@ -9,10 +9,14 @@ CLEAVER implements various pruning strategies. Let be *n* the number of weak ran
 - **LAST**: The last *k* weak rankers are pruned. The conjecture is that initial weak rankers are more precise due to boosting algorithms.
 - **SKIP**: Two close weak rankers are considered more similar in terms of discriminative power. The strategy keep one every *[n/(n-k)]* weak rankers.
 - **LOW_WEIGHTS**: The weights associated with each tree are optimized using line search (see below). The *k* weak rankers with lowest weight are then removed.
-- **SCORE_LOSS**: The normalized contribution of each weak rankers to the final score is computed with *s_i(q,d) / S(q,d)* and we remove the *k* weak rankers that contribute less.
-- **QUALITY_LOSS**: For each weak rankers, we compute the average quality drop (in terms of loss function) by scoring the documents without that tree. We remove the *k* weak rankers with the smallest quality drop.
+- **SCORE_LOSS**: The normalized contribution of each weak rankers to the final score is computed with *s_i(q,d) / S(q,d)* and the *k* weak rankers that contribute less are removed.
+- **QUALITY_LOSS**: For each weak rankers, the average quality drop (in terms of loss function) is computed by scoring the documents without that tree. Then the *k* weak rankers with the smallest quality drop are removed.
+- **QUALITY_LOSS_ADV**: At each iteration, the average quality drop (in terms of loss function) is computed by scoring the documents without each of the weak rankers. Then, the weak ranker with the smallest quality drop is removed. The process is repeated until *k* weak rankers are pruned out.  
 
-In order to optimize the weights associated with each weak rankers, CLEAVER makes use of a greedy Line Search process which iteratively tries to find the best weight vector.
+In order to optimize the weights associated with each weak rankers, CLEAVER 
+makes use of a greedy Line Search process which iteratively tries to find the 
+best weight vector. In addition to the traditional Line Search behaviour, in 
+QuickRank 
 
 Since QuickRank is a framework with efficiency in mind, CLEAVER makes use of some "optimizations" in order to be as fast as possible in performing the optimization on the model. To do that, it transforms the original dataset in a new dataset with the same rows of the original ones (query-document pairs), but with columns representing the partial score of each weak rankers on these pairs (i.e., the new dataset is model dependent, which means it has to be recomputed for different models and for different datasets).
 
@@ -112,7 +116,27 @@ Having done these tasks, it is now possible to efficiently test various pruning 
   --line-search-model line-search-model.xml
 ```
 
+Experiments Reproducibility
+-------
+In order to reproduce the experiments reported in the paper where CLEAVER has
+been presented, in this section we report the values of the parameters adopted:
 
+- Optimization method: QUALITY_LOSS
+- Num samples: 20
+- Window size: 2
+- Reduction factor: 0.95
+- Max iterations: 100
+- Max failed valid: 20
+- Adaptive reduction factor: true 
+- Pruning rate: 10 - 90% 
+
+The adaptive parameter in CLEAVER adapts the window size depending from the gain
+observed in the previous iteration of the line search process. It has been 
+used to fasten the greedy search process and it works by multiplying the 
+previous window size by a factor in the range [0.5 - 2.0].
+ 
+At the following link it is also possible to download the models as well as the 
+training and test output: [CLEAVER.tar.gz](hpc.isti.cnr.it/~trani/CLEAVER.tar.gz)  
 
 Acknowledgements
 -------
