@@ -20,7 +20,7 @@ QuickRank also provides novel learning optimizations. Currently implemented opti
 
   - **CLEAVER**: C. Lucchese, F. M. Nardini, S. Orlando, R. Perego, F. Silvestri, S. Trani. *Post-Learning Optimization of Tree Ensembles for Efficient Ranking*. In Proc. ACM SIGIR, 2016. [README](documentation/cleaver.md)
   - **X-CLEAVER**: C. Lucchese, F. M. Nardini, S. Orlando, R. Perego, F. Silvestri, S. Trani. *X-CLEaVER: Learning Ranking Ensembles by Growing and Pruning Trees*. Paper under revision.
-  - **X-DART**: C. Lucchese, F. M. Nardini, S. Orlando, R. Perego and S. Trani. *X-DART: Blending Dropout and Pruning for Efficient Learning to Rank*. In Proc. ACM SIGIR, 2017. [README](documentation/x-dart.md)
+  - **X-DART**: C. Lucchese, F. M. Nardini, S. Orlando, R. Perego and S. Trani. *X-DART: Blending Dropout and Pruning for Efficient Learning to Rank*. In Proc. ACM SIGIR, 2017. [README](documentation/xdart.md)
 
 How to build
 -------
