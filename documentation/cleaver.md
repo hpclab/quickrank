@@ -136,7 +136,7 @@ used to fasten the greedy search process and it works by multiplying the
 previous window size by a factor in the range [0.5 - 2.0].
  
 At the following link it is also possible to download the models as well as the 
-training and test output: [CLEAVER.tar.gz](hpc.isti.cnr.it/~trani/CLEAVER.tar.gz)  
+training and test output: [CLEAVER.tar.gz](http://hpc.isti.cnr.it/~trani/CLEAVER.tar.gz)  
 
 Acknowledgements
 -------
