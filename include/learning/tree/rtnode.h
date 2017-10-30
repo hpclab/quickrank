@@ -26,6 +26,7 @@
 #include "learning/tree/rtnode_histogram.h"
 #include "types.h"
 #include "pugixml/src/pugixml.hpp"
+#include <math.h>
 
 #ifdef QUICKRANK_PERF_STATS
 #include <atomic>
@@ -70,8 +71,7 @@ class RTNode {
      */
   }
 
-  RTNode(size_t *new_sampleids, size_t new_nsampleids,
-         double prediction) {
+  RTNode(size_t *new_sampleids, size_t new_nsampleids, double prediction) {
     sampleids = new_sampleids;
     nsampleids = new_nsampleids;
     avglabel = prediction;
@@ -100,10 +100,7 @@ class RTNode {
     nsampleids = hist->count[0][hist->thresholds_size[0] - 1];
     double sumlabel = hist->sumlbl[0][hist->thresholds_size[0] - 1];
     avglabel = nsampleids ? sumlabel / (double) nsampleids : 0.0;
-    deviance = hist->squares_sum_
-        - hist->sumlbl[0][hist->thresholds_size[0] - 1]
-            * hist->sumlbl[0][hist->thresholds_size[0] - 1]
-            / (double) hist->count[0][hist->thresholds_size[0] - 1];
+    deviance = hist->squares_sum_ - pow(sumlabel, 2) / nsampleids;
   }
 
   ~RTNode() {

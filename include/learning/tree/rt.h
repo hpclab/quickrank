@@ -30,7 +30,18 @@
 #include "learning/tree/rtnode.h"
 #include "learning/tree/rtnode_histogram.h"
 
+class RTNodeEnriched {
+ public:
+  RTNode* node = nullptr;
+  RTNode* parent = nullptr;
+  size_t depth;
+
+  RTNodeEnriched(RTNode* node, RTNode* parent, size_t depth) :
+      node(node), parent(parent), depth(depth) {};
+};
+
 typedef MaxHeap<RTNode *> rt_maxheap;
+typedef MaxHeap<RTNodeEnriched *> rt_maxheap_enriched;
 
 class DevianceMaxHeap: public rt_maxheap {
  public:
@@ -51,13 +62,16 @@ class RegressionTree {
   RTNode **leaves = NULL;
   size_t nleaves = 0;
   RTNode *root = NULL;
+  float collapse_leaves_factor; // see collapse_leaves_ in mart
+
  public:
   RegressionTree(size_t nrequiredleaves, quickrank::data::VerticalDataset *dps,
-                 double *labels, size_t minls)
+                 double *labels, size_t minls, float collapse_leaves_factor)
       : nrequiredleaves(nrequiredleaves),
         minls(minls),
         training_dataset(dps),
-        training_labels(labels) {
+        training_labels(labels),
+        collapse_leaves_factor(collapse_leaves_factor) {
   }
   ~RegressionTree();
 
@@ -77,5 +91,7 @@ class RegressionTree {
   bool split(RTNode *node, const float featuresamplingrate,
              const bool require_devianceltparent);
 
-};
+  size_t inline tree_heap_nodes(rt_maxheap_enriched& heap, RTNode* node,
+                                size_t depth, double max_deviance);
 
+};

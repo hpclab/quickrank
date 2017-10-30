@@ -48,13 +48,14 @@ class Mart: public LTR_Algorithm {
   /// on the validation set.
   Mart(size_t ntrees, double shrinkage, size_t nthresholds,
        size_t ntreeleaves, size_t minleafsupport,
-       size_t valid_iterations)
+       size_t valid_iterations, float collapse_leaves_factor)
       : ntrees_(ntrees),
         shrinkage_(shrinkage),
         nthresholds_(nthresholds),
         nleaves_(ntreeleaves),
         minleafsupport_(minleafsupport),
-        valid_iterations_(valid_iterations) {
+        valid_iterations_(valid_iterations),
+        collapse_leaves_factor_(collapse_leaves_factor) {
   }
 
   /// Generates a LTR_Algorithm instance from a previously saved XML model.
@@ -165,6 +166,14 @@ class Mart: public LTR_Algorithm {
   size_t valid_iterations_;  // If no performance gain on validation data is
                           // observed in 'esr' rounds, stop the training
                           // process right away (if esr==0 feature is disabled).
+
+  float collapse_leaves_factor_; // >= 0
+  // used to implement the strategy proposed by Lin and Asadi to build the
+  // tree with a focus on depth and balance. If the value is zero it means
+  // the algorithm will behave in a standard way. Otherwise, it prune
+  // deepest leaves until the total number of nodes in the tree is greater or
+  // equals than the fraction of the maximum possible number of nodes in the
+  // tree given its depth.
 
   size_t **sortedsid_ = NULL;
   size_t sortedsize_ = 0;

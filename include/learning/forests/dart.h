@@ -59,13 +59,13 @@ class Dart: public LambdaMart {
   /// \param skip_drop Probability to skip the dropout phase
   Dart(size_t ntrees, double shrinkage, size_t nthresholds,
        size_t ntreeleaves, size_t minleafsupport,
-       size_t valid_iterations,
+       size_t valid_iterations, float collapse_leaves_factor,
        SamplingType sample_type, NormalizationType normalize_type,
        AdaptiveType adaptive_rate,
        double rate_drop, double skip_drop, bool keep_drop,
        bool best_on_train, double random_keep, double drop_on_best)
       : LambdaMart(ntrees, shrinkage, nthresholds, ntreeleaves,
-             minleafsupport, valid_iterations),
+             minleafsupport, valid_iterations, collapse_leaves_factor_),
         sample_type(sample_type),
         normalize_type(normalize_type),
         adaptive_type(adaptive_rate),

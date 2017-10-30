@@ -43,9 +43,10 @@ class ObliviousLambdaMart: public LambdaMart {
   /// on the validation set.
   ObliviousLambdaMart(size_t ntrees, double shrinkage,
                       size_t nthresholds, size_t treedepth,
-                      size_t minleafsupport, size_t esr)
+                      size_t minleafsupport, size_t esr,
+                      float collapse_leaves_factor)
       : LambdaMart(ntrees, shrinkage, nthresholds, 1 << treedepth,
-                   minleafsupport, esr),
+                   minleafsupport, esr, collapse_leaves_factor),
         treedepth_(treedepth) {
   }
 

@@ -56,7 +56,7 @@ std::unique_ptr<RegressionTree> ObliviousMart::fit_regressor_on_gradient(
     std::shared_ptr<data::VerticalDataset> training_dataset) {
   ObliviousRT *tree = new ObliviousRT(nleaves_, training_dataset.get(),
                                       pseudoresponses_, minleafsupport_,
-                                      treedepth_);
+                                      treedepth_, collapse_leaves_factor_);
   tree->fit(hist_);
   //update the outputs of the tree (with gamma computed using the Newton-Raphson pruning_method)
   tree->update_output(pseudoresponses_);

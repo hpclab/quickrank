@@ -69,7 +69,8 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
               pmap.get<size_t>("num-thresholds"),
               pmap.get<size_t>("num-leaves"),
               pmap.get<size_t>("min-leaf-support"),
-              pmap.get<size_t>("end-after-rounds")
+              pmap.get<size_t>("end-after-rounds"),
+              pmap.get<float>("collapse-leaves-factor")
           ));
     } else if (algo_name == quickrank::learning::forests::Mart::NAME_) {
       ltr_algo = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
@@ -79,7 +80,8 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
               pmap.get<size_t>("num-thresholds"),
               pmap.get<size_t>("num-leaves"),
               pmap.get<size_t>("min-leaf-support"),
-              pmap.get<size_t>("end-after-rounds")
+              pmap.get<size_t>("end-after-rounds"),
+              pmap.get<float>("collapse-leaves-factor")
           ));
     } else if (algo_name == quickrank::learning::forests::Dart::NAME_) {
       ltr_algo = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
@@ -90,6 +92,7 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
               pmap.get<size_t>("num-leaves"),
               pmap.get<size_t>("min-leaf-support"),
               pmap.get<size_t>("end-after-rounds"),
+              pmap.get<float>("collapse-leaves-factor"),
               quickrank::learning::forests::Dart::get_sampling_type(
                   pmap.get<std::string>("sample-type")),
               quickrank::learning::forests::Dart::get_normalization_type(
@@ -112,7 +115,8 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
               pmap.get<size_t>("num-thresholds"),
               pmap.get<size_t>("tree-depth"),
               pmap.get<size_t>("min-leaf-support"),
-              pmap.get<size_t>("end-after-rounds")
+              pmap.get<size_t>("end-after-rounds"),
+              pmap.get<float>("collapse-leaves-factor")
           ));
     } else if (algo_name
         == quickrank::learning::forests::ObliviousLambdaMart::NAME_) {
@@ -123,7 +127,8 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
               pmap.get<size_t>("num-thresholds"),
               pmap.get<size_t>("tree-depth"),
               pmap.get<size_t>("min-leaf-support"),
-              pmap.get<size_t>("end-after-rounds")
+              pmap.get<size_t>("end-after-rounds"),
+              pmap.get<float>("collapse-leaves-factor")
           ));
     } else if (algo_name == quickrank::learning::forests::Rankboost::NAME_) {
       ltr_algo = std::shared_ptr<quickrank::learning::LTR_Algorithm>(

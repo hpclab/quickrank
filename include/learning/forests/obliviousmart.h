@@ -43,9 +43,9 @@ class ObliviousMart: public Mart {
   /// on the validation set.
   ObliviousMart(size_t ntrees, double shrinkage, size_t nthresholds,
                 size_t treedepth, size_t minleafsupport,
-                size_t esr)
+                size_t esr, float collapse_leaves_factor)
       : Mart(ntrees, shrinkage, nthresholds, 1 << treedepth, minleafsupport,
-             esr),
+             esr, collapse_leaves_factor),
         treedepth_(treedepth) {
   }
 

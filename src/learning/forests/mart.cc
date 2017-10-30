@@ -40,6 +40,7 @@ Mart::Mart(const pugi::xml_document &model) {
   nleaves_ = 0;
   minleafsupport_ = 0;
   valid_iterations_ = 0;
+  collapse_leaves_factor_ = 0;
 
   pugi::xml_node model_info = model.child("ranker").child("info");
   pugi::xml_node model_tree = model.child("ranker").child("ensemble");
@@ -51,6 +52,8 @@ Mart::Mart(const pugi::xml_document &model) {
   nthresholds_ = model_info.child("discretization").text().as_int();
   valid_iterations_ = model_info.child("estop").text().as_int();
   shrinkage_ = model_info.child("shrinkage").text().as_double();
+  collapse_leaves_factor_ =
+      model_info.child("collapse_leaves_factor").text().as_float();
 
   // read ensemble
   ensemble_model_.set_capacity(ntrees_);
@@ -83,6 +86,8 @@ std::ostream &Mart::put(std::ostream &os) const {
      << "# no. of tree leaves = " << nleaves_ << std::endl
      << "# shrinkage = " << shrinkage_ << std::endl
      << "# min leaf support = " << minleafsupport_ << std::endl;
+  if (collapse_leaves_factor_)
+    os << "# collapse leaves factor = " << collapse_leaves_factor_ << std::endl;
   if (nthresholds_)
     os << "# no. of thresholds = " << nthresholds_ << std::endl;
   else
@@ -363,7 +368,8 @@ std::unique_ptr<RegressionTree> Mart::fit_regressor_on_gradient(
   //Fit a regression tree
   /// \todo TODO: memory management of regression tree is wrong!!!
   RegressionTree *tree = new RegressionTree(nleaves_, training_dataset.get(),
-                                            pseudoresponses_, minleafsupport_);
+                                            pseudoresponses_, minleafsupport_,
+                                            collapse_leaves_factor_);
   tree->fit(hist_);
   //update the outputs of the tree (with gamma computed using the Newton-Raphson pruning_method)
   //float maxlabel =

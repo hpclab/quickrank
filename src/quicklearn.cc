@@ -105,6 +105,7 @@ int main(int argc, char *argv[]) {
   std::string test_metric_string = quickrank::metric::ir::Ndcg::NAME_;
   size_t test_cutoff = 10;
   size_t partial_save = 100;
+  float collapse_leaves_factor = 0;
 
   std::string sample_type =
       quickrank::learning::forests::Dart::get_sampling_type(
@@ -216,6 +217,13 @@ int main(int argc, char *argv[]) {
                         {"set tree depth",
                          "[applies only to ObliviousMART/ObliviousLambdaMART]."},
                         treedepth);
+
+  pmap.addOptionWithArg("collapse-leaves-factor",
+                        {"prune the deepest leaves until the total number of ",
+                         "nodes in the tree is greater or equals than the ",
+                         "fraction of the maximum possible number of nodes in ",
+                         "the tree given its depth (if 0 disabled)."},
+                        collapse_leaves_factor);
 
 // --------------------------------------------------------
   pmap.addMessage({"Training phase - specific options for Meta LtR models:"});
