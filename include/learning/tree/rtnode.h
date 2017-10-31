@@ -112,7 +112,6 @@ class RTNode {
       delete[] sampleids;
   }
   void set_feature(size_t fidx, size_t fid) {
-    //if(fidx==uint_max or fid==uint_max) exit(7);
     featureidx = fidx, featureid = fid;
   }
   size_t get_feature_id() {

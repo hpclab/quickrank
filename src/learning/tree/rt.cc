@@ -103,26 +103,23 @@ void RegressionTree::fit(RTNodeHistogram *hist) {
 
   size_t n_leaves = nrequiredleaves;
   if (collapse_leaves_factor > 0) {
-    // TODO: collapse the leaves and clean unused resources (e.g., samplesids)
 
     rt_maxheap_enriched heap_nodes(n_nodes);
     // Add the root
     heap_nodes.push(0, new RTNodeEnriched(root, nullptr, 0));
     // Full the heap of nodes, navigating the tree
-    size_t depth = tree_heap_nodes(heap_nodes, root, 0, max_deviance);
+    tree_heap_nodes(heap_nodes, root, 0, max_deviance);
 
-    while (true) {
+    while (heap_nodes.is_notempty()) {
 
       RTNodeEnriched* enriched_node = heap_nodes.top();
 
       // We skip leaf already merged in the parent node!
       if (!enriched_node->parent->is_leaf()) {
 
-        size_t cur_n_nodes = heap_nodes.get_size();
-        size_t max_n_nodes = (size_t) ceil(
-            (pow(2, enriched_node->depth) - 1));
+        auto max_n_nodes = (size_t) ceil((pow(2, enriched_node->depth) - 1));
 
-        if ( (float) cur_n_nodes / max_n_nodes > collapse_leaves_factor)
+        if ( (float) n_nodes / max_n_nodes > collapse_leaves_factor)
           break;
 
         // create a new leaf node in the parent
@@ -134,9 +131,10 @@ void RegressionTree::fit(RTNodeHistogram *hist) {
         enriched_node->parent->set_feature(uint_max, uint_max);
 
         --n_leaves;
+        n_nodes -= 2;
       }
 
-      delete(enriched_node);
+      delete (enriched_node);
       heap_nodes.pop();
     }
 
@@ -160,7 +158,8 @@ void RegressionTree::fit(RTNodeHistogram *hist) {
   size_t capacity = nrequiredleaves > 0 ? n_leaves : 0;
   leaves = capacity ?
            (RTNode **) malloc(sizeof(RTNode *) * capacity) :
-           NULL, nleaves = 0;
+           NULL;
+  nleaves = 0;
   root->save_leaves(leaves, nleaves, capacity);
 
   // TODO: (by cla) is memory of "unpopped" de-allocated?
@@ -248,10 +247,11 @@ bool RegressionTree::split(RTNode *node, const float featuresamplingrate,
         new size_t[nth];  // size_t thread_best_featureidx[nth];
     size_t *thread_best_thresholdid =
         new size_t[nth];  // size_t thread_best_thresholdid[nth];
-    for (int i = 0; i < nth; ++i)
-      thread_best_score[i] = initvar, thread_best_featureidx[i] = uint_max,
-      thread_best_thresholdid[i] =
-          uint_max;
+    for (int i = 0; i < nth; ++i) {
+      thread_best_score[i] = initvar;
+      thread_best_featureidx[i] = uint_max;
+      thread_best_thresholdid[i] = uint_max;
+    }
 
 #pragma omp parallel for
     for (size_t i = 0; i < nfeaturesamples; ++i) {
@@ -356,11 +356,11 @@ bool RegressionTree::split(RTNode *node, const float featuresamplingrate,
   return false;
 }
 
-size_t inline RegressionTree::tree_heap_nodes(
-    rt_maxheap_enriched& heap, RTNode* node, size_t depth, double max_deviance) {
+size_t inline RegressionTree::tree_heap_nodes(rt_maxheap_enriched& heap,
+                                              RTNode* node, size_t depth,
+                                              double max_deviance) {
 
-    // key of maxheap ranges in [depth, depth]
-
+    // key of maxheap ranges in [depth, depth+1]
   if (!node->is_leaf()) {
 
     heap.push(depth+1 + node->left->deviance / max_deviance,
