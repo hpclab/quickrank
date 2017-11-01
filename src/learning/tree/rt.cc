@@ -123,9 +123,9 @@ void RegressionTree::fit(RTNodeHistogram *hist) {
           break;
 
         // create a new leaf node in the parent
-        delete (enriched_node->parent->left);
+        delete enriched_node->parent->left;
         enriched_node->parent->left = NULL;
-        delete (enriched_node->parent->right);
+        delete enriched_node->parent->right;
         enriched_node->parent->right = NULL;
         enriched_node->parent->threshold = 0.0f;
         enriched_node->parent->set_feature(uint_max, uint_max);
@@ -149,7 +149,7 @@ void RegressionTree::fit(RTNodeHistogram *hist) {
         enriched_node->node->nsampleids = 0;
       }
 
-      delete(enriched_node);
+      delete enriched_node;
       heap_nodes.pop();
     }
   }
