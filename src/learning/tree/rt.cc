@@ -88,9 +88,11 @@ void RegressionTree::fit(RTNodeHistogram *hist) {
       n_nodes += 2;
       max_deviance = std::max(node->left->deviance, max_deviance);
       max_deviance = std::max(node->right->deviance, max_deviance);
-    } else
+    } else {
       ++taken;  // unsplitable (i.e. null variance, or after split variance
                 // is higher than before, or #samples<minlsd)
+    }
+
     // remove node from heap (and clean sampleids, nsampleids, hist)
     heap.pop();
 
@@ -115,14 +117,20 @@ void RegressionTree::fit(RTNodeHistogram *hist) {
       RTNodeEnriched* enriched_node = heap_nodes.top();
 
       // We skip leaf already merged in the parent node!
-      if (!enriched_node->parent->is_leaf()) {
+      if (enriched_node->depth > 0 && !enriched_node->parent->is_leaf()) {
 
         auto max_n_nodes = (size_t) ceil((pow(2, enriched_node->depth) - 1));
 
         if ( (float) n_nodes / max_n_nodes > collapse_leaves_factor)
           break;
 
-        // create a new leaf node in the parent
+//        // delte hist of leaves if they are != NULL (and not root)
+        if (enriched_node->parent->right->hist != NULL)
+          delete enriched_node->parent->right->hist;
+        if (enriched_node->parent->left->hist != NULL)
+          delete enriched_node->parent->left->hist;
+
+        // lets the parent become a leaf node (and delete the two children)
         delete enriched_node->parent->left;
         enriched_node->parent->left = NULL;
         delete enriched_node->parent->right;
@@ -130,11 +138,11 @@ void RegressionTree::fit(RTNodeHistogram *hist) {
         enriched_node->parent->threshold = 0.0f;
         enriched_node->parent->set_feature(uint_max, uint_max);
 
-        --n_leaves;
+          --n_leaves;
         n_nodes -= 2;
       }
 
-      delete (enriched_node);
+      delete enriched_node;
       heap_nodes.pop();
     }
 
@@ -334,7 +342,8 @@ bool RegressionTree::split(RTNode *node, const float featuresamplingrate,
       rhist = new RTNodeHistogram(node->hist, lhist);
     else {
       //save some new/delete by converting parent histogram into the right-child one
-      node->hist->transform_intorightchild(lhist), rhist = node->hist;
+      node->hist->transform_intorightchild(lhist);
+      rhist = node->hist;
       node->hist = NULL;
     }
 
@@ -360,12 +369,12 @@ size_t inline RegressionTree::tree_heap_nodes(rt_maxheap_enriched& heap,
                                               RTNode* node, size_t depth,
                                               double max_deviance) {
 
-    // key of maxheap ranges in [depth, depth+1]
+  // key of maxheap ranges in [depth, depth+1]
   if (!node->is_leaf()) {
 
     heap.push(depth+1 + node->left->deviance / max_deviance,
               new RTNodeEnriched(node->left, node, depth+1));
-    heap.push(depth + node->right->deviance / max_deviance,
+    heap.push(depth+1 + node->right->deviance / max_deviance,
               new RTNodeEnriched(node->right, node, depth+1));
 
     size_t depth_l = tree_heap_nodes(heap, node->left, depth+1, max_deviance);

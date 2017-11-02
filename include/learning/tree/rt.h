@@ -54,15 +54,18 @@ class DevianceMaxHeap: public rt_maxheap {
 
 class RegressionTree {
  protected:
-  const size_t
-      nrequiredleaves;  //0 for unlimited number of nodes (the size of the tree will then be controlled only by minls)
-  const size_t minls;  //minls>0
+  // 0 for unlimited number of nodes (the size of the tree will then be
+  // controlled only by minls)
+  const size_t nrequiredleaves;
+  //minls > 0
+  const size_t minls;
   quickrank::data::VerticalDataset *training_dataset = NULL;
   double *training_labels = NULL;
   RTNode **leaves = NULL;
   size_t nleaves = 0;
   RTNode *root = NULL;
-  float collapse_leaves_factor; // see collapse_leaves_ in mart
+  // see collapse_leaves_ in mart
+  float collapse_leaves_factor;
 
  public:
   RegressionTree(size_t nrequiredleaves, quickrank::data::VerticalDataset *dps,
