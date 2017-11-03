@@ -61,7 +61,7 @@ class RegressionTree {
   }
   ~RegressionTree();
 
-  void fit(RTNodeHistogram *hist);
+  void fit(RTNodeHistogram *hist, float subsample, float max_features);
 
   double update_output(double const *pseudoresponses);
 
@@ -74,7 +74,7 @@ class RegressionTree {
 
  private:
   //if require_devianceltparent is true the node is split if minvar is lt the current node deviance (require_devianceltparent=false in RankLib)
-  bool split(RTNode *node, const float featuresamplingrate,
+  bool split(RTNode *node, const float max_features,
              const bool require_devianceltparent);
 
 };

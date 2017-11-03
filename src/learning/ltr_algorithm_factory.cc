@@ -69,6 +69,8 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
               pmap.get<size_t>("num-thresholds"),
               pmap.get<size_t>("num-leaves"),
               pmap.get<size_t>("min-leaf-support"),
+              pmap.get<float>("subsample"),
+              pmap.get<float>("max-features"),
               pmap.get<size_t>("end-after-rounds")
           ));
     } else if (algo_name == quickrank::learning::forests::Mart::NAME_) {
@@ -79,6 +81,8 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
               pmap.get<size_t>("num-thresholds"),
               pmap.get<size_t>("num-leaves"),
               pmap.get<size_t>("min-leaf-support"),
+              pmap.get<float>("subsample"),
+              pmap.get<float>("max-features"),
               pmap.get<size_t>("end-after-rounds")
           ));
     } else if (algo_name == quickrank::learning::forests::Dart::NAME_) {
@@ -89,6 +93,8 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
               pmap.get<size_t>("num-thresholds"),
               pmap.get<size_t>("num-leaves"),
               pmap.get<size_t>("min-leaf-support"),
+              pmap.get<float>("subsample"),
+              pmap.get<float>("max-features"),
               pmap.get<size_t>("end-after-rounds"),
               quickrank::learning::forests::Dart::get_sampling_type(
                   pmap.get<std::string>("sample-type")),
@@ -112,6 +118,8 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
               pmap.get<size_t>("num-thresholds"),
               pmap.get<size_t>("tree-depth"),
               pmap.get<size_t>("min-leaf-support"),
+              pmap.get<float>("subsample"),
+              pmap.get<float>("max-features"),
               pmap.get<size_t>("end-after-rounds")
           ));
     } else if (algo_name
@@ -123,6 +131,8 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
               pmap.get<size_t>("num-thresholds"),
               pmap.get<size_t>("tree-depth"),
               pmap.get<size_t>("min-leaf-support"),
+              pmap.get<float>("subsample"),
+              pmap.get<float>("max-features"),
               pmap.get<size_t>("end-after-rounds")
           ));
     } else if (algo_name == quickrank::learning::forests::Rankboost::NAME_) {

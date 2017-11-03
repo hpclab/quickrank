@@ -50,7 +50,7 @@ std::unique_ptr<RegressionTree> LambdaMart::fit_regressor_on_gradient(
   /// \todo TODO: memory management of regression tree is wrong!!!
   RegressionTree *tree = new RegressionTree(nleaves_, training_dataset.get(),
                                             pseudoresponses_, minleafsupport_);
-  tree->fit(hist_);
+  tree->fit(hist_, subsample_, max_features_);
   //update the outputs of the tree (with gamma computed using the Newton-Raphson pruning_method)
   //float maxlabel =
   tree->update_output(pseudoresponses_, instance_weights_);

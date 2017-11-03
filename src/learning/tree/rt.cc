@@ -23,6 +23,9 @@
 
 #ifdef _OPENMP
 #include <omp.h>
+#include <random>
+#include <chrono>
+#include <algorithm>
 #else
 #include "utils/omp-stubs.h"
 #endif
@@ -55,18 +58,35 @@ RegressionTree::~RegressionTree() {
   free(leaves);
 }
 
-void RegressionTree::fit(RTNodeHistogram *hist) {
+void RegressionTree::fit(RTNodeHistogram *hist,
+                         float subsample, float max_features) {
   DevianceMaxHeap heap(nrequiredleaves);
   size_t taken = 0;
-  size_t
-      nsampleids = training_dataset->num_instances();  //set->get_ndatapoints();
+
+  size_t nsampleids = training_dataset->num_instances();
   size_t *sampleids = new size_t[nsampleids];
-#pragma omp parallel for
+
+  #pragma omp parallel for
   for (size_t i = 0; i < nsampleids; ++i)
     sampleids[i] = i;
 
+//  //need to make a sub-sampling of query-doc pairs
+//  if (subsample != 1.0f) {
+//
+//    featuresamples = new size_t[nfeaturesamples];
+//    for (size_t i = 0; i < nfeaturesamples; ++i)
+//      featuresamples[i] = i;
+//    //need to make a sub-sampling
+//    const size_t reduced_nfeaturesamples = (size_t) std::floor(
+//        featuresamplingrate * nfeaturesamples);
+//    while (nfeaturesamples > reduced_nfeaturesamples && nfeaturesamples > 1) {
+//      const size_t i = rand() % nfeaturesamples;
+//      featuresamples[i] = featuresamples[--nfeaturesamples];
+//    }
+//  }
+
   root = new RTNode(sampleids, hist);
-  if (split(root, 1.0f, false))
+  if (split(root, max_features, false))
     heap.push_chidrenof(root);
   while (heap.is_notempty()
       && (nrequiredleaves == 0 or taken + heap.get_size() < nrequiredleaves)) {
@@ -74,7 +94,7 @@ void RegressionTree::fit(RTNodeHistogram *hist) {
     RTNode *node = heap.top();
     // TODO: Cla missing check non leaf size or avoid putting them into the heap
     //try split current node
-    if (split(node, 1.0f, false))
+    if (split(node, max_features, false))
       heap.push_chidrenof(node);
     else
       ++taken;  //unsplitable (i.e. null variance, or after split variance is higher than before, or #samples<minlsd)
@@ -136,46 +156,57 @@ double RegressionTree::update_output(double const *pseudoresponses,
   return maxlabel;
 }
 
-bool RegressionTree::split(RTNode *node, const float featuresamplingrate,
+bool RegressionTree::split(RTNode *node, const float max_features,
                            const bool require_devianceltparent) {
-  //			printf("### Splitting a node of size: %d and deviance: %f\n", node->nsampleids, node->deviance);
 
   if (node->deviance > 0.0f) {
-    // const double initvar = require_devianceltparent ? node->deviance : -1; //DBL_MAX;
     const double initvar = -1;  // minimum split score
-    //get current nod hidtogram pointer
+    // get current node histogram pointer
     RTNodeHistogram *h = node->hist;
-    //featureidxs to be used for tree splitnodeting
-    size_t nfeaturesamples =
-        training_dataset->num_features();  //training_set->get_nfeatures();
-    size_t *featuresamples = NULL;
+
+    // feature idx to be used for tree split node
+    size_t nfeaturesamples = training_dataset->num_features();
+    size_t *featuresamples = NULL; // NULL means it will use all the features
+
     //need to make a sub-sampling
-    if (featuresamplingrate < 1.0f) {
-      featuresamples = new size_t[nfeaturesamples];
-      for (size_t i = 0; i < nfeaturesamples; ++i)
-        featuresamples[i] = i;
-      //need to make a sub-sampling
-      const size_t reduced_nfeaturesamples = floor(
-          featuresamplingrate * nfeaturesamples);
-      while (nfeaturesamples > reduced_nfeaturesamples && nfeaturesamples > 1) {
-        const size_t i = rand() % nfeaturesamples;
-        featuresamples[i] = featuresamples[--nfeaturesamples];
+    if (max_features != 1.0f) {
+
+      size_t nfeatures = training_dataset->num_features();
+
+      if (max_features > 1.0f) {
+        // >1: Max feature is the number of features to use
+        nfeaturesamples = (size_t) max_features;
+      } else {
+        // <1: Max feature is the fraction of features to use
+        nfeaturesamples = std::min(nfeatures,
+                                   (size_t) std::round(
+                                       max_features * nfeatures));
       }
+
+      featuresamples = new size_t[nfeatures];
+      #pragma omp parallel for
+      for (size_t i = 0; i < nfeatures; ++i)
+        featuresamples[i] = i;
+
+      // shuffle the sample idx
+      auto seed = std::chrono::system_clock::now().time_since_epoch().count();
+      auto rng = std::default_random_engine(seed);
+      std::shuffle(&featuresamples[0], &featuresamples[nfeatures], rng);
     }
+
     // ---------------------------
     // find best split
     const int nth = omp_get_num_procs();
-    double *thread_best_score = new double[nth];  // double thread_minvar[nth];
-    size_t *thread_best_featureidx =
-        new size_t[nth];  // size_t thread_best_featureidx[nth];
-    size_t *thread_best_thresholdid =
-        new size_t[nth];  // size_t thread_best_thresholdid[nth];
-    for (int i = 0; i < nth; ++i)
-      thread_best_score[i] = initvar, thread_best_featureidx[i] = uint_max,
-      thread_best_thresholdid[i] =
-          uint_max;
+    double *thread_best_score = new double[nth];
+    size_t *thread_best_featureidx = new size_t[nth];
+    size_t *thread_best_thresholdid = new size_t[nth];
+    for (int i = 0; i < nth; ++i) {
+      thread_best_score[i] = initvar;
+      thread_best_featureidx[i] = uint_max;
+      thread_best_thresholdid[i] = uint_max;
+    }
 
-#pragma omp parallel for
+    #pragma omp parallel for
     for (size_t i = 0; i < nfeaturesamples; ++i) {
       //get feature idx
       const size_t f = featuresamples ? featuresamples[i] : i;
@@ -206,20 +237,22 @@ bool RegressionTree::split(RTNode *node, const float featuresamplingrate,
         }
       }
     }
+
     //free feature samples
     delete[] featuresamples;
     //get best minvar among thread partial results
     double best_score = thread_best_score[0];
     size_t best_featureidx = thread_best_featureidx[0];
     size_t best_thresholdid = thread_best_thresholdid[0];
-    for (int i = 1; i < nth; ++i)
-      if (thread_best_score[i] > best_score)
-        best_score = thread_best_score[i], best_featureidx =
-            thread_best_featureidx[i], best_thresholdid =
-            thread_best_thresholdid[i];
+    for (int i = 1; i < nth; ++i) {
+      if (thread_best_score[i] > best_score) {
+        best_score = thread_best_score[i];
+        best_featureidx = thread_best_featureidx[i];
+        best_thresholdid = thread_best_thresholdid[i];
+      }
+    }
     // free some memory
     delete[] thread_best_score;
-    delete[] featuresamples;
     delete[] thread_best_featureidx;
     delete[] thread_best_thresholdid;
     //if minvar is the same of initvalue then the node is unsplitable
@@ -227,8 +260,7 @@ bool RegressionTree::split(RTNode *node, const float featuresamplingrate,
       return false;
 
     //set some result values related to minvar
-    const size_t last_thresholdidx = h->thresholds_size[best_featureidx]
-        - 1;
+    const size_t last_thresholdidx = h->thresholds_size[best_featureidx] - 1;
     const float best_threshold =
         h->thresholds[best_featureidx][best_thresholdid];
 
@@ -239,10 +271,8 @@ bool RegressionTree::split(RTNode *node, const float featuresamplingrate,
     //split samples between left and right child
     size_t *lsamples = new size_t[lcount], lsize = 0;
     size_t *rsamples = new size_t[rcount], rsize = 0;
-    float const *features = training_dataset->at(0,
-                                                 best_featureidx);  //training_set->get_fvector(best_featureidx);
-    for (size_t i = 0, nsampleids = node->nsampleids; i < nsampleids;
-         ++i) {
+    float const *features = training_dataset->at(0, best_featureidx);
+    for (size_t i = 0, nsampleids = node->nsampleids; i < nsampleids; ++i) {
       size_t k = node->sampleids[i];
       if (features[k] <= best_threshold)
         lsamples[lsize++] = k;
@@ -264,15 +294,12 @@ bool RegressionTree::split(RTNode *node, const float featuresamplingrate,
     //update current node
     node->set_feature(
         best_featureidx,
-        best_featureidx + 1/*training_set->get_featureid(best_featureidx)*/);
+        best_featureidx + 1);
     node->threshold = best_threshold;
 
     //create children
     node->left = new RTNode(lsamples, lhist);
     node->right = new RTNode(rsamples, rhist);
-
-    // rhist->quick_dump(128,10);
-    // lhist->quick_dump(25,10);
 
     return true;
   }

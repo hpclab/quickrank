@@ -47,13 +47,15 @@ class Mart: public LTR_Algorithm {
   /// \param valid_iterations Early stopping if no improvement after \esr iterations
   /// on the validation set.
   Mart(size_t ntrees, double shrinkage, size_t nthresholds,
-       size_t ntreeleaves, size_t minleafsupport,
-       size_t valid_iterations)
+       size_t ntreeleaves, size_t minleafsupport, float subsample,
+       float max_features, size_t valid_iterations)
       : ntrees_(ntrees),
         shrinkage_(shrinkage),
         nthresholds_(nthresholds),
         nleaves_(ntreeleaves),
         minleafsupport_(minleafsupport),
+        subsample_(subsample),
+        max_features_(max_features),
         valid_iterations_(valid_iterations) {
   }
 
@@ -162,6 +164,8 @@ class Mart: public LTR_Algorithm {
   size_t nthresholds_;  //if ==0 then no. of thresholds is not limited
   size_t nleaves_;  //>0
   size_t minleafsupport_;  //>0
+  float subsample_;
+  float max_features_;
   size_t valid_iterations_;  // If no performance gain on validation data is
                           // observed in 'esr' rounds, stop the training
                           // process right away (if esr==0 feature is disabled).

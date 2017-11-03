@@ -105,6 +105,8 @@ int main(int argc, char *argv[]) {
   std::string test_metric_string = quickrank::metric::ir::Ndcg::NAME_;
   size_t test_cutoff = 10;
   size_t partial_save = 100;
+  float subsample = 1.0f;
+  float max_features = 1.0f;
 
   std::string sample_type =
       quickrank::learning::forests::Dart::get_sampling_type(
@@ -216,6 +218,16 @@ int main(int argc, char *argv[]) {
                         {"set tree depth",
                          "[applies only to ObliviousMART/ObliviousLambdaMART]."},
                         treedepth);
+
+  pmap.addOptionWithArg("subsample",
+                        {"the fraction of samples to be used for individual",
+                         "base learners."},
+                        subsample);
+
+  pmap.addOptionWithArg("max-features",
+                        {"The number of features to consider when looking for",
+                         "the best split."},
+                        max_features);
 
 // --------------------------------------------------------
   pmap.addMessage({"Training phase - specific options for Meta LtR models:"});
