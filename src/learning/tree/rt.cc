@@ -44,10 +44,6 @@ void DevianceMaxHeap::pop() {
 
 /// \todo TODO: memory management of regression tree is wrong!!!
 RegressionTree::~RegressionTree() {
-  if (root) {
-//    delete[] root->sampleids;
-    root->sampleids = NULL, root->nsampleids = 0;
-  }
   //if leaves[0] is the root, hist cannot be deallocated and sampleids has been already deallocated
   for (size_t i = 0; i < nleaves; ++i)
     if (leaves[i] != root) {
@@ -82,7 +78,7 @@ void RegressionTree::fit(RTNodeHistogram *hist,
                 // is higher than before, or #samples < minls)
 
     //remove node from heap
-    if (node != root) {
+    if (node != root && !node->is_leaf()) {
       delete[] node->sampleids;
       node->sampleids = NULL;
     }
@@ -262,6 +258,8 @@ bool RegressionTree::split(RTNode *node, const float max_features,
         rsamples[rsize++] = s;
     }
     assert(lsize + rsize == node->nsampleids);
+    assert(lsize > 0);
+    assert(rsize > 0);
 
     //create histograms for children
     RTNodeHistogram *lhist = new RTNodeHistogram(node->hist, lsamples, lsize,
