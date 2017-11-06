@@ -45,12 +45,13 @@ void LambdaMart::clear(size_t num_features) {
 }
 
 std::unique_ptr<RegressionTree> LambdaMart::fit_regressor_on_gradient(
-    std::shared_ptr<data::VerticalDataset> training_dataset) {
+    std::shared_ptr<data::VerticalDataset> training_dataset,
+    size_t *sampleids) {
   //Fit a regression tree
   /// \todo TODO: memory management of regression tree is wrong!!!
   RegressionTree *tree = new RegressionTree(nleaves_, training_dataset.get(),
                                             pseudoresponses_, minleafsupport_);
-  tree->fit(hist_, subsample_, max_features_);
+  tree->fit(hist_, sampleids, max_features_);
   //update the outputs of the tree (with gamma computed using the Newton-Raphson pruning_method)
   //float maxlabel =
   tree->update_output(pseudoresponses_, instance_weights_);

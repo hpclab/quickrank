@@ -26,6 +26,7 @@
 #include <random>
 #include <chrono>
 #include <algorithm>
+#include <assert.h>
 #else
 #include "utils/omp-stubs.h"
 #endif
@@ -36,54 +37,34 @@ void DevianceMaxHeap::push_chidrenof(RTNode *parent) {
 }
 void DevianceMaxHeap::pop() {
   RTNode *node = top();
-  delete[] node->sampleids, delete node->hist;
-  node->sampleids = NULL, node->nsampleids = 0, node->hist = NULL;
+  delete node->hist;
+  node->hist = NULL;
   rt_maxheap::pop();
 }
 
 /// \todo TODO: memory management of regression tree is wrong!!!
 RegressionTree::~RegressionTree() {
   if (root) {
-    delete[] root->sampleids;
+//    delete[] root->sampleids;
     root->sampleids = NULL, root->nsampleids = 0;
   }
   //if leaves[0] is the root, hist cannot be deallocated and sampleids has been already deallocated
   for (size_t i = 0; i < nleaves; ++i)
     if (leaves[i] != root) {
-      delete[] leaves[i]->sampleids, delete leaves[i]->hist;
-      leaves[i]->hist = NULL, leaves[i]->sampleids = NULL,
-          leaves[i]->nsampleids =
-              0;
+      delete[] leaves[i]->sampleids;
+      delete leaves[i]->hist;
+      leaves[i]->hist = NULL;
+      leaves[i]->sampleids = NULL;
+      leaves[i]->nsampleids = 0;
     }
   free(leaves);
 }
 
 void RegressionTree::fit(RTNodeHistogram *hist,
-                         float subsample, float max_features) {
+                         size_t *sampleids,
+                         float max_features) {
   DevianceMaxHeap heap(nrequiredleaves);
   size_t taken = 0;
-
-  size_t nsampleids = training_dataset->num_instances();
-  size_t *sampleids = new size_t[nsampleids];
-
-  #pragma omp parallel for
-  for (size_t i = 0; i < nsampleids; ++i)
-    sampleids[i] = i;
-
-//  //need to make a sub-sampling of query-doc pairs
-//  if (subsample != 1.0f) {
-//
-//    featuresamples = new size_t[nfeaturesamples];
-//    for (size_t i = 0; i < nfeaturesamples; ++i)
-//      featuresamples[i] = i;
-//    //need to make a sub-sampling
-//    const size_t reduced_nfeaturesamples = (size_t) std::floor(
-//        featuresamplingrate * nfeaturesamples);
-//    while (nfeaturesamples > reduced_nfeaturesamples && nfeaturesamples > 1) {
-//      const size_t i = rand() % nfeaturesamples;
-//      featuresamples[i] = featuresamples[--nfeaturesamples];
-//    }
-//  }
 
   root = new RTNode(sampleids, hist);
   if (split(root, max_features, false))
@@ -97,15 +78,21 @@ void RegressionTree::fit(RTNodeHistogram *hist,
     if (split(node, max_features, false))
       heap.push_chidrenof(node);
     else
-      ++taken;  //unsplitable (i.e. null variance, or after split variance is higher than before, or #samples<minlsd)
+      ++taken;  // unsplitable (i.e. null variance, or after split variance
+                // is higher than before, or #samples < minls)
+
     //remove node from heap
+    if (node != root) {
+      delete[] node->sampleids;
+      node->sampleids = NULL;
+    }
     heap.pop();
   }
   //visit tree and save leaves in a leaves[] array
   size_t capacity = nrequiredleaves;
-  leaves = capacity ? (RTNode **) malloc(sizeof(RTNode *) * capacity) : NULL,
-      nleaves =
-          0;
+  leaves = capacity ?
+           (RTNode **) malloc(sizeof(RTNode *) * capacity) :
+           NULL, nleaves = 0;
   root->save_leaves(leaves, nleaves, capacity);
 
   // TODO: (by cla) is memory of "unpopped" de-allocated?
@@ -113,7 +100,7 @@ void RegressionTree::fit(RTNodeHistogram *hist,
 
 double RegressionTree::update_output(double const *pseudoresponses) {
   double maxlabel = -DBL_MAX;
-#pragma omp parallel for reduction(max:maxlabel)
+  #pragma omp parallel for reduction(max:maxlabel)
   for (size_t i = 0; i < nleaves; ++i) {
     double psum = 0.0f;
     const size_t nsampleids = leaves[i]->nsampleids;
@@ -133,7 +120,7 @@ double RegressionTree::update_output(double const *pseudoresponses) {
 double RegressionTree::update_output(double const *pseudoresponses,
                                      double const *cachedweights) {
   double maxlabel = -DBL_MAX;
-#pragma omp parallel for reduction(max:maxlabel)
+  #pragma omp parallel for reduction(max:maxlabel)
   for (size_t i = 0; i < nleaves; ++i) {
     double s1 = 0.0;
     double s2 = 0.0;
@@ -143,11 +130,8 @@ double RegressionTree::update_output(double const *pseudoresponses,
       size_t k = sampleids[j];
       s1 += pseudoresponses[k];
       s2 += cachedweights[k];
-      //					printf("## %d: %.15f \t %.15f \n", k, pseudoresponses[k], cachedweights[k]);
     }
     leaves[i]->avglabel = s2 >= DBL_EPSILON ? s1 / s2 : 0.0;
-
-    //				printf("## Leaf with size: %d  ##  s1/s2: %.15f / %.15f = %.15f\n", nsampleids, s1, s2, leaves[i]->avglabel);
 
     if (leaves[i]->avglabel > maxlabel)
       maxlabel = leaves[i]->avglabel;
@@ -178,9 +162,7 @@ bool RegressionTree::split(RTNode *node, const float max_features,
         nfeaturesamples = (size_t) max_features;
       } else {
         // <1: Max feature is the fraction of features to use
-        nfeaturesamples = std::min(nfeatures,
-                                   (size_t) std::round(
-                                       max_features * nfeatures));
+        nfeaturesamples = (size_t) std::ceil(max_features * nfeatures);
       }
 
       featuresamples = new size_t[nfeatures];
@@ -228,7 +210,7 @@ bool RegressionTree::split(RTNode *node, const float max_features,
           double lsum = sumlabels[t];
           double rsum = s - lsum;
           double score = lsum * lsum / (double) lcount
-              + rsum * rsum / (double) rcount;
+                       + rsum * rsum / (double) rcount;
           if (score > thread_best_score[ith]) {
             thread_best_score[ith] = score;
             thread_best_featureidx[ith] = f;
@@ -273,12 +255,14 @@ bool RegressionTree::split(RTNode *node, const float max_features,
     size_t *rsamples = new size_t[rcount], rsize = 0;
     float const *features = training_dataset->at(0, best_featureidx);
     for (size_t i = 0, nsampleids = node->nsampleids; i < nsampleids; ++i) {
-      size_t k = node->sampleids[i];
-      if (features[k] <= best_threshold)
-        lsamples[lsize++] = k;
+      size_t s = node->sampleids[i];
+      if (features[s] <= best_threshold)
+        lsamples[lsize++] = s;
       else
-        rsamples[rsize++] = k;
+        rsamples[rsize++] = s;
     }
+    assert(lsize + rsize == node->nsampleids);
+
     //create histograms for children
     RTNodeHistogram *lhist = new RTNodeHistogram(node->hist, lsamples, lsize,
                                                  training_labels);
@@ -287,7 +271,8 @@ bool RegressionTree::split(RTNode *node, const float max_features,
       rhist = new RTNodeHistogram(node->hist, lhist);
     else {
       //save some new/delete by converting parent histogram into the right-child one
-      node->hist->transform_intorightchild(lhist), rhist = node->hist;
+      node->hist->transform_intorightchild(lhist);
+      rhist = node->hist;
       node->hist = NULL;
     }
 
@@ -296,6 +281,9 @@ bool RegressionTree::split(RTNode *node, const float max_features,
         best_featureidx,
         best_featureidx + 1);
     node->threshold = best_threshold;
+
+    assert(lsize == lhist->count[0][lhist->thresholds_size[0] - 1]);
+    assert(rsize == rhist->count[0][rhist->thresholds_size[0] - 1]);
 
     //create children
     node->left = new RTNode(lsamples, lhist);

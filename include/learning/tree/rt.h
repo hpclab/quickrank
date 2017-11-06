@@ -61,7 +61,9 @@ class RegressionTree {
   }
   ~RegressionTree();
 
-  void fit(RTNodeHistogram *hist, float subsample, float max_features);
+  void fit(RTNodeHistogram *hist,
+           size_t *sampleids,
+           float max_features);
 
   double update_output(double const *pseudoresponses);
 

@@ -257,6 +257,18 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
       std::numeric_limits<double>::lowest();
 
   size_t dropped_before_cleaning = 0;
+
+  // Used for document sampling and node splitting
+  size_t nsampleids = training_dataset->num_instances();
+  size_t *sampleids = new size_t[nsampleids];
+
+  // If we do not use document sampling, we fill the sampleids only once
+  if (subsample_ == 1.0f) {
+    #pragma omp parallel for
+    for (size_t i = 0; i < nsampleids; ++i)
+      sampleids[i] = i;
+  }
+
   // start iterations from 0 or (ensemble_size - 1)
   size_t m = -1;
   size_t last_iteration_global_scoring = 0;
@@ -327,7 +339,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
 
     // Fit a regression tree
     std::shared_ptr<RegressionTree> tree =
-        fit_regressor_on_gradient(vertical_training);
+        fit_regressor_on_gradient(vertical_training, sampleids);
 
     // Update scores_contribution_ including last tree
     update_contribution_scores(training_dataset, tree,
@@ -522,6 +534,8 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
       save(output_basename, ensemble_model_.get_size() - dropped_before_cleaning);
     }
   }
+
+  delete(sampleids);
 
   //Rollback to the best model observed on the validation data
   if (validation_dataset) {

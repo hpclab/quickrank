@@ -22,6 +22,7 @@
 #pragma once
 
 #include <string>
+#include <cmath>
 
 #include "learning/tree/rtnode_histogram.h"
 #include "types.h"
@@ -70,8 +71,7 @@ class RTNode {
      */
   }
 
-  RTNode(size_t *new_sampleids, size_t new_nsampleids,
-         double prediction) {
+  RTNode(size_t *new_sampleids, size_t new_nsampleids, double prediction) {
     sampleids = new_sampleids;
     nsampleids = new_nsampleids;
     avglabel = prediction;
@@ -94,16 +94,31 @@ class RTNode {
      */
   }
 
-  RTNode(size_t *new_sampleids, RTNodeHistogram *new_hist) {
-    hist = new_hist;
-    sampleids = new_sampleids;
-    nsampleids = hist->count[0][hist->thresholds_size[0] - 1];
-    double sumlabel = hist->sumlbl[0][hist->thresholds_size[0] - 1];
+
+//  RTNode(size_t *new_sampleids, RTNodeHistogram *new_hist) {
+//    hist = new_hist;
+//    sampleids = new_sampleids;
+//    nsampleids = hist->count[0][hist->thresholds_size[0] - 1];
+//    double sumlabel = hist->sumlbl[0][hist->thresholds_size[0] - 1];
+//    avglabel = nsampleids ? sumlabel / (double) nsampleids : 0.0;
+//    deviance = hist->squares_sum_
+//        - hist->sumlbl[0][hist->thresholds_size[0] - 1]
+//            * hist->sumlbl[0][hist->thresholds_size[0] - 1]
+//            / (double) hist->count[0][hist->thresholds_size[0] - 1];
+//  }
+
+  RTNode(size_t *sampleids, RTNodeHistogram *hist) {
+
+    size_t last_threshold = hist->thresholds_size[0] - 1;
+
+    this->hist = hist;
+    this->sampleids = sampleids;
+    nsampleids = hist->count[0][last_threshold];
+    double sumlabel = hist->sumlbl[0][last_threshold];
     avglabel = nsampleids ? sumlabel / (double) nsampleids : 0.0;
     deviance = hist->squares_sum_
-        - hist->sumlbl[0][hist->thresholds_size[0] - 1]
-            * hist->sumlbl[0][hist->thresholds_size[0] - 1]
-            / (double) hist->count[0][hist->thresholds_size[0] - 1];
+        - pow(hist->sumlbl[0][last_threshold], 2)
+        / (double) hist->count[0][last_threshold];
   }
 
   ~RTNode() {
@@ -111,8 +126,8 @@ class RTNode {
       delete left;
     if (right)
       delete right;
-    if (sampleids != NULL)
-      delete[] sampleids;
+//    if (sampleids != NULL)
+//      delete[] sampleids;
   }
   void set_feature(size_t fidx, size_t fid) {
     //if(fidx==uint_max or fid==uint_max) exit(7);

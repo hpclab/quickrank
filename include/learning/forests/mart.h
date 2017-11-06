@@ -130,7 +130,8 @@ class Mart: public LTR_Algorithm {
   ///
   /// \param training_dataset The dataset used for training
   virtual std::unique_ptr<RegressionTree> fit_regressor_on_gradient(
-      std::shared_ptr<data::VerticalDataset> training_dataset);
+      std::shared_ptr<data::VerticalDataset> training_dataset,
+      size_t *sampleids);
 
   /// Updates scores with the last learnt regression tree.
   ///
