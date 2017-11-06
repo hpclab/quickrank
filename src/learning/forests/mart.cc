@@ -267,6 +267,14 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   for (size_t i = 0; i < nsampleids; ++i)
     sampleids[i] = i;
 
+  if (subsample_ > 1.0f) {
+    // >1: Max feature is the number of features to use
+    nsampleids = (size_t) subsample_;
+  } else if (subsample_ < 1.0f) {
+    // <1: Max feature is the fraction of features to use
+    nsampleids = (size_t) std::ceil(subsample_ * nsampleids);
+  }
+
   // start iterations from 0 or (ensemble_size - 1)
   for (size_t m = ensemble_model_.get_size(); m < ntrees_; ++m) {
     if (validation_dataset
@@ -276,14 +284,6 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     compute_pseudoresponses(vertical_training, scorer.get());
 
     if (subsample_ != 1.0f) {
-
-      if (subsample_ > 1.0f) {
-        // >1: Max feature is the number of features to use
-        nsampleids = (size_t) subsample_;
-      } else {
-        // <1: Max feature is the fraction of features to use
-        nsampleids = (size_t) std::ceil(subsample_ * nsampleids);
-      }
 
       // shuffle the sample idx
       auto seed = std::chrono::system_clock::now().time_since_epoch().count();

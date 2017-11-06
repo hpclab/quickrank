@@ -65,7 +65,7 @@ void LambdaMart::compute_pseudoresponses(
   const size_t cutoff = scorer->cutoff();
 
   const size_t nrankedlists = training_dataset->num_queries();
-#pragma omp parallel for
+  #pragma omp parallel for
   for (size_t i = 0; i < nrankedlists; ++i) {
     std::shared_ptr<data::QueryResults> qr = training_dataset->getQueryResults(
         i);

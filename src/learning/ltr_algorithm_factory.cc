@@ -23,6 +23,7 @@
 #include "learning/ltr_algorithm_factory.h"
 
 #include "learning/forests/mart.h"
+#include <learning/forests/randomforest.h>
 #include "learning/forests/dart.h"
 #include "learning/forests/lambdamart.h"
 #include "learning/forests/obliviousmart.h"
@@ -85,6 +86,18 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
               pmap.get<float>("max-features"),
               pmap.get<size_t>("end-after-rounds")
           ));
+    } else if (algo_name == quickrank::learning::forests::RandomForest::NAME_) {
+        ltr_algo = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
+            new quickrank::learning::forests::RandomForest(
+                pmap.get<size_t>("num-trees"),
+                pmap.get<double>("shrinkage"),
+                pmap.get<size_t>("num-thresholds"),
+                pmap.get<size_t>("num-leaves"),
+                pmap.get<size_t>("min-leaf-support"),
+                pmap.get<float>("subsample"),
+                pmap.get<float>("max-features"),
+                pmap.get<size_t>("end-after-rounds")
+            ));
     } else if (algo_name == quickrank::learning::forests::Dart::NAME_) {
       ltr_algo = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
           new quickrank::learning::forests::Dart(

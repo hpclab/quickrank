@@ -38,6 +38,7 @@
 #include <unistd.h>
 #include <fstream>
 #include <metric/ir/rmse.h>
+#include <learning/forests/randomforest.h>
 
 #include "paramsmap/paramsmap.h"
 
@@ -138,6 +139,8 @@ int main(int argc, char *argv[]) {
       + quickrank::learning::forests::Mart::NAME_
       + "|"
       + quickrank::learning::forests::LambdaMart::NAME_
+      + "|"
+      + quickrank::learning::forests::RandomForest::NAME_
       + "|"
       + quickrank::learning::forests::ObliviousMart::NAME_
       + "|"
