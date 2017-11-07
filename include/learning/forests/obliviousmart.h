@@ -43,10 +43,10 @@ class ObliviousMart: public Mart {
   /// on the validation set.
   ObliviousMart(size_t ntrees, double shrinkage, size_t nthresholds,
                 size_t treedepth, size_t minleafsupport, float subsample,
-                float max_features, size_t esr)
+                float max_features, size_t esr, float collapse_leaves_factor)
       : Mart(ntrees, shrinkage, nthresholds, 1 << treedepth, minleafsupport,
-             subsample, max_features, esr),
-        treedepth_(treedepth) {
+             subsample, max_features, esr, collapse_leaves_factor),
+             treedepth_(treedepth) {
   }
 
   ObliviousMart(const pugi::xml_document &model);

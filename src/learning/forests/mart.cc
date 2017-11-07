@@ -41,6 +41,7 @@ Mart::Mart(const pugi::xml_document &model) {
   nleaves_ = 0;
   minleafsupport_ = 0;
   valid_iterations_ = 0;
+  collapse_leaves_factor_ = 0;
 
   pugi::xml_node model_info = model.child("ranker").child("info");
   pugi::xml_node model_tree = model.child("ranker").child("ensemble");
@@ -52,6 +53,19 @@ Mart::Mart(const pugi::xml_document &model) {
   nthresholds_ = model_info.child("discretization").text().as_int();
   valid_iterations_ = model_info.child("estop").text().as_int();
   shrinkage_ = model_info.child("shrinkage").text().as_double();
+
+  if (model_info.child("subsample")) {
+    subsample_ = model_info.child("subsample").text().as_float();
+  }
+
+  if (model_info.child("max_features")) {
+    max_features_ = model_info.child("max_features").text().as_float();
+  }
+
+  if (model_info.child("collapse_leaves_factor")) {
+    collapse_leaves_factor_ =
+        model_info.child("collapse_leaves_factor").text().as_float();
+  }
 
   // read ensemble
   ensemble_model_.set_capacity(ntrees_);
@@ -84,6 +98,12 @@ std::ostream &Mart::put(std::ostream &os) const {
      << "# no. of tree leaves = " << nleaves_ << std::endl
      << "# shrinkage = " << shrinkage_ << std::endl
      << "# min leaf support = " << minleafsupport_ << std::endl;
+  if (subsample_)
+    os << "# subsample = " << subsample_ << std::endl;
+  if (max_features_)
+    os << "# max_features = " << max_features_ << std::endl;
+  if (collapse_leaves_factor_)
+    os << "# collapse leaves factor = " << collapse_leaves_factor_ << std::endl;
   if (nthresholds_)
     os << "# no. of thresholds = " << nthresholds_ << std::endl;
   else
@@ -392,7 +412,8 @@ std::unique_ptr<RegressionTree> Mart::fit_regressor_on_gradient(
   //Fit a regression tree
   /// \todo TODO: memory management of regression tree is wrong!!!
   RegressionTree *tree = new RegressionTree(nleaves_, training_dataset.get(),
-                                            pseudoresponses_, minleafsupport_);
+                                            pseudoresponses_, minleafsupport_,
+                                            collapse_leaves_factor_);
   tree->fit(hist_, sampleids, max_features_);
   //update the outputs of the tree (with gamma computed using the Newton-Raphson pruning_method)
   tree->update_output(pseudoresponses_);
@@ -435,6 +456,10 @@ pugi::xml_document *Mart::get_xml_model() const {
   info.append_child("leafsupport").text() = minleafsupport_;
   info.append_child("discretization").text() = nthresholds_;
   info.append_child("estop").text() = valid_iterations_;
+
+  info.append_child("subsample").text() = subsample_;
+  info.append_child("max_features").text() = max_features_;
+  info.append_child("collapse_leaves_factor").text() = collapse_leaves_factor_;
 
   ensemble_model_.append_xml_model(root);
 

@@ -27,6 +27,7 @@
 #include "learning/tree/rtnode_histogram.h"
 #include "types.h"
 #include "pugixml/src/pugixml.hpp"
+#include <math.h>
 
 #ifdef QUICKRANK_PERF_STATS
 #include <atomic>
@@ -94,6 +95,19 @@ class RTNode {
      */
   }
 
+
+//  RTNode(size_t *new_sampleids, RTNodeHistogram *new_hist) {
+//    hist = new_hist;
+//    sampleids = new_sampleids;
+//    nsampleids = hist->count[0][hist->thresholds_size[0] - 1];
+//    double sumlabel = hist->sumlbl[0][hist->thresholds_size[0] - 1];
+//    avglabel = nsampleids ? sumlabel / (double) nsampleids : 0.0;
+//    deviance = hist->squares_sum_
+//        - hist->sumlbl[0][hist->thresholds_size[0] - 1]
+//            * hist->sumlbl[0][hist->thresholds_size[0] - 1]
+//            / (double) hist->count[0][hist->thresholds_size[0] - 1];
+//  }
+
   RTNode(size_t *sampleids, RTNodeHistogram *hist) {
 
     size_t last_threshold = hist->thresholds_size[0] - 1;
@@ -103,7 +117,13 @@ class RTNode {
     nsampleids = hist->count[0][last_threshold];
     double sumlabel = hist->sumlbl[0][last_threshold];
     avglabel = nsampleids ? sumlabel / (double) nsampleids : 0.0;
+<<<<<<< HEAD
+    deviance = hist->squares_sum_
+        - pow(hist->sumlbl[0][last_threshold], 2)
+        / (double) hist->count[0][last_threshold];
+=======
     deviance = hist->squares_sum_ - pow(sumlabel, 2) / nsampleids;
+>>>>>>> pruning-leaves
   }
 
   ~RTNode() {

@@ -33,8 +33,9 @@ class ObliviousRT: public RegressionTree {
               quickrank::data::VerticalDataset *dps,
               double *labels,
               size_t minls,
-              size_t treedepth)
-      : RegressionTree(nodes, dps, labels, minls),
+              size_t treedepth,
+              float collapse_leaves_factor)
+      : RegressionTree(nodes, dps, labels, minls, collapse_leaves_factor),
         treedepth(treedepth) {
   }
   void fit(RTNodeHistogram *hist);

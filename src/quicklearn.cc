@@ -108,6 +108,7 @@ int main(int argc, char *argv[]) {
   size_t partial_save = 100;
   float subsample = 1.0f;
   float max_features = 1.0f;
+  float collapse_leaves_factor = 0;
 
   std::string sample_type =
       quickrank::learning::forests::Dart::get_sampling_type(
@@ -231,6 +232,13 @@ int main(int argc, char *argv[]) {
                         {"The number of features to consider when looking for",
                          "the best split."},
                         max_features);
+
+  pmap.addOptionWithArg("collapse-leaves-factor",
+                        {"prune the deepest leaves until the total number of ",
+                         "nodes in the tree is greater or equals than the ",
+                         "fraction of the maximum possible number of nodes in ",
+                         "the tree given its depth (if 0 disabled)."},
+                        collapse_leaves_factor);
 
 // --------------------------------------------------------
   pmap.addMessage({"Training phase - specific options for Meta LtR models:"});

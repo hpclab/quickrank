@@ -41,12 +41,13 @@ class ObliviousLambdaMart: public LambdaMart {
   /// \param minleafsupport Minimum number of instances in each leaf.
   /// \param esr Early stopping if no improvement after \esr iterations
   /// on the validation set.
-  ObliviousLambdaMart(size_t ntrees, double shrinkage,
-                      size_t nthresholds, size_t treedepth,
-                      size_t minleafsupport, float subsample, float
-                      max_features, size_t esr)
+  ObliviousLambdaMart(size_t ntrees, double shrinkage, size_t nthresholds,
+                      size_t treedepth, size_t minleafsupport,
+                      float subsample, float max_features,
+                      size_t esr, float collapse_leaves_factor)
       : LambdaMart(ntrees, shrinkage, nthresholds, 1 << treedepth,
-                   minleafsupport, subsample, max_features, esr),
+                   minleafsupport, subsample, max_features,
+                   esr, collapse_leaves_factor),
         treedepth_(treedepth) {
   }
 
