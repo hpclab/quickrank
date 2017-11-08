@@ -100,8 +100,7 @@ void LambdaMart::compute_pseudoresponses(
                 / (1.0
                     + exp(
                         scores_on_training_[offset + ranked->pos_of_rank(j)]
-                            - scores_on_training_[offset
-                                + ranked->pos_of_rank(k)]));
+                      - scores_on_training_[offset + ranked->pos_of_rank(k)]));
             double lambda = rho * deltandcg;
             double delta = rho * (1.0 - rho) * deltandcg;
             lambdas[ranked->pos_of_rank(j)] += lambda;

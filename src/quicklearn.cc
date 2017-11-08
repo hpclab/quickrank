@@ -45,6 +45,7 @@
 #include "learning/forests/mart.h"
 #include "learning/forests/dart.h"
 #include "learning/forests/lambdamart.h"
+#include "learning/forests/lambdamartsampling.h"
 #include "learning/forests/obliviousmart.h"
 #include "learning/forests/obliviouslambdamart.h"
 #include "learning/forests/rankboost.h"
@@ -109,6 +110,8 @@ int main(int argc, char *argv[]) {
   float subsample = 1.0f;
   float max_features = 1.0f;
   float collapse_leaves_factor = 0;
+  int sampling_iterations = 0;
+  float max_sampling_factor = 1.0;
 
   std::string sample_type =
       quickrank::learning::forests::Dart::get_sampling_type(
@@ -140,6 +143,8 @@ int main(int argc, char *argv[]) {
       + quickrank::learning::forests::Mart::NAME_
       + "|"
       + quickrank::learning::forests::LambdaMart::NAME_
+      + "|"
+      + quickrank::learning::forests::LambdaMartSampling::NAME_
       + "|"
       + quickrank::learning::forests::RandomForest::NAME_
       + "|"
@@ -239,6 +244,18 @@ int main(int argc, char *argv[]) {
                          "fraction of the maximum possible number of nodes in ",
                          "the tree given its depth (if 0 disabled)."},
                         collapse_leaves_factor);
+
+  pmap.addOptionWithArg("sampling-iterations",
+                        {"describe the number of iterations between two ",
+                         "consecutive dataset sampling operations.",
+                         "(if 0 disabled)."},
+                        sampling_iterations);
+
+  pmap.addOptionWithArg("max-sampling-factor",
+                        {"describe the maximum fraction of documents to sample",
+                         "during a sampling iteration. The sampling ratio",
+                         "varies from 0 to the max. (if 1.0 disabled)"},
+                        max_sampling_factor);
 
 // --------------------------------------------------------
   pmap.addMessage({"Training phase - specific options for Meta LtR models:"});

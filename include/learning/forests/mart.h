@@ -191,6 +191,7 @@ class Mart: public LTR_Algorithm {
     return a.put(os);
   }
 
+ protected:
   /// Prints the description of Algorithm, including its parameters.
   virtual std::ostream &put(std::ostream &os) const;
 
