@@ -19,7 +19,7 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#include "learning/forests/lambdamartsampling.h"
+#include "learning/forests/lambdamartsampling2.h"
 
 #include <fstream>
 #include <iomanip>
@@ -30,20 +30,20 @@ namespace quickrank {
 namespace learning {
 namespace forests {
 
-const std::string LambdaMartSampling::NAME_ = "LAMBDAMART-SAMPLING";
+const std::string LambdaMartSampling2::NAME_ = "LAMBDAMART-SAMPLING2";
 
 
 void
-LambdaMartSampling::init(
+LambdaMartSampling2::init(
     std::shared_ptr<quickrank::data::VerticalDataset> training_dataset) {
   LambdaMart::init(training_dataset);
 }
 
-void LambdaMartSampling::clear(size_t num_features) {
+void LambdaMartSampling2::clear(size_t num_features) {
   LambdaMart::clear(num_features);
 }
 
-void LambdaMartSampling::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
+void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
                  std::shared_ptr<quickrank::data::Dataset> validation_dataset,
                  std::shared_ptr<quickrank::metric::ir::Metric> scorer,
                  size_t partial_save, const std::string output_basename) {
@@ -122,9 +122,7 @@ void LambdaMartSampling::learn(std::shared_ptr<quickrank::data::Dataset> trainin
 
   size_t step_size_sampling = 0;
   if (sampling_iterations > 0 && max_sampling_factor > 0) {
-    step_size_sampling = (size_t) std::round(
-      max_sampling_factor * nsampleids /
-          (((float) ntrees_ / sampling_iterations) - 1));
+    step_size_sampling = (size_t) std::ceil(max_sampling_factor * nsampleids);
   }
 
   // If we do not use document sampling, we fill the sampleids only once
@@ -140,6 +138,8 @@ void LambdaMartSampling::learn(std::shared_ptr<quickrank::data::Dataset> trainin
 
     compute_pseudoresponses(vertical_training, scorer.get());
 
+    size_t nsampleids_iter = nsampleids;
+
     if (step_size_sampling > 0 && m > 0 && m % sampling_iterations == 0) {
 
       std::sort(&sampleids[0], &sampleids[nsampleids],
@@ -150,22 +150,21 @@ void LambdaMartSampling::learn(std::shared_ptr<quickrank::data::Dataset> trainin
                       scores_on_training_[i1] > scores_on_training_[i2];
                 });
 
-      nsampleids -= step_size_sampling;
+      nsampleids_iter -= step_size_sampling;
 
       std::cout << "Reducing training size from "
-                << nsampleids + step_size_sampling << " to "
-                << nsampleids << std::endl;
+                << nsampleids << " to "
+                << nsampleids_iter << std::endl;
     }
 
-    size_t nsampleids_iter = nsampleids;
     if (subsample_ != 1.0f) {
 
       if (subsample_ > 1.0f) {
         // >1: Max feature is the number of features to use
-        nsampleids_iter = (size_t) std::min((size_t) subsample_, nsampleids);
+        nsampleids_iter = (size_t) std::min((size_t) subsample_, nsampleids_iter);
       } else {
         // <1: Max feature is the fraction of features to use
-        nsampleids_iter = (size_t) std::ceil(subsample_ * nsampleids);
+        nsampleids_iter = (size_t) std::ceil(subsample_ * nsampleids_iter);
       }
 
       // shuffle the sample idx
@@ -259,7 +258,7 @@ void LambdaMartSampling::learn(std::shared_ptr<quickrank::data::Dataset> trainin
             << " s." << std::endl;
 }
 
-std::ostream &LambdaMartSampling::put(std::ostream &os) const {
+std::ostream &LambdaMartSampling2::put(std::ostream &os) const {
   Mart::put(os);
   if (sampling_iterations != 0)
     os << "# sampling iterations = " << sampling_iterations << std::endl;
