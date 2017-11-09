@@ -138,9 +138,9 @@ void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> traini
 
     compute_pseudoresponses(vertical_training, scorer.get());
 
-    size_t nsampleids_iter = nsampleids;
+    size_t nsampleids_iter = nsampleids - step_size_sampling;
 
-    if (step_size_sampling > 0 && m > 0 && m % sampling_iterations == 0) {
+    if (step_size_sampling > 0 && m % sampling_iterations == 0) {
 
       std::sort(&sampleids[0], &sampleids[nsampleids],
                 [this, &training_dataset](size_t i1, size_t i2) {
@@ -149,8 +149,6 @@ void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> traini
                       training_dataset->getLabel(i2) == 0) &&
                       scores_on_training_[i1] > scores_on_training_[i2];
                 });
-
-      nsampleids_iter -= step_size_sampling;
 
       std::cout << "Reducing training size from "
                 << nsampleids << " to "
