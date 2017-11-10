@@ -144,10 +144,13 @@ void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> traini
 
       std::sort(&sampleids[0], &sampleids[nsampleids],
                 [this, &training_dataset](size_t i1, size_t i2) {
+
+                  bool grt = scores_on_training_[i1] > scores_on_training_[i2];
+
                   return
-                      (training_dataset->getLabel(i1) > 0 ||
-                      training_dataset->getLabel(i2) == 0) &&
-                      scores_on_training_[i1] > scores_on_training_[i2];
+                      training_dataset->getLabel(i1) > 0 ?
+                        training_dataset->getLabel(i2) == 0 || grt :
+                        training_dataset->getLabel(i2) == 0 && grt;
                 });
 
       std::cout << "Reducing training size from "

@@ -19,9 +19,9 @@ find_package(OpenMP REQUIRED)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 
 # explicitly set default CMAKE_CXX_FLAGS_RELEASE options
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -D_GLIBCXX_PARALLEL")
 # explicitly set default CMAKE_CXX_FLAGS_DEBUG options
-set(CMAKE_CXX_FLAGS_DEBUG "-g")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -D_GLIBCXX_PARALLEL")
 
 # Compiler flags
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
