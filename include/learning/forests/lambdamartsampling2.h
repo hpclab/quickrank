@@ -86,7 +86,8 @@ class LambdaMartSampling2: public LambdaMart {
 
   size_t sampling_query_level(
       std::shared_ptr<data::Dataset> training_dataset,
-      size_t *sampleids
+      size_t *sampleids,
+      size_t *npositives
   );
 
  private:
