@@ -84,6 +84,11 @@ class LambdaMartSampling2: public LambdaMart {
   /// Prints the description of Algorithm, including its parameters.
   virtual std::ostream &put(std::ostream &os) const;
 
+  size_t sampling_query_level(
+      std::shared_ptr<data::Dataset> training_dataset,
+      size_t *sampleids
+  );
+
  private:
   int sampling_iterations;
   float max_sampling_factor;

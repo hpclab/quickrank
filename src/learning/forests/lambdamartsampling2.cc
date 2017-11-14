@@ -120,11 +120,6 @@ void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> traini
   size_t nsampleids = training_dataset->num_instances();
   size_t *sampleids = new size_t[nsampleids];
 
-  size_t step_size_sampling = 0;
-  if (sampling_iterations > 0 && max_sampling_factor > 0) {
-    step_size_sampling = (size_t) std::ceil(max_sampling_factor * nsampleids);
-  }
-
   // If we do not use document sampling, we fill the sampleids only once
   #pragma omp parallel for
   for (size_t i = 0; i < nsampleids; ++i)
@@ -138,20 +133,11 @@ void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> traini
 
     compute_pseudoresponses(vertical_training, scorer.get());
 
-    size_t nsampleids_iter = nsampleids - step_size_sampling;
+    size_t nsampleids_iter = nsampleids;
 
-    if (step_size_sampling > 0 && m % sampling_iterations == 0) {
+    if (max_sampling_factor > 0 && m % sampling_iterations == 0) {
 
-      std::sort(&sampleids[0], &sampleids[nsampleids],
-                [this, &training_dataset](size_t i1, size_t i2) {
-
-                  bool grt = scores_on_training_[i1] > scores_on_training_[i2];
-
-                  return
-                      training_dataset->getLabel(i1) > 0 ?
-                        training_dataset->getLabel(i2) == 0 || grt :
-                        training_dataset->getLabel(i2) == 0 && grt;
-                });
+      nsampleids_iter = sampling_query_level(training_dataset, sampleids);
 
       std::cout << "Reducing training size from "
                 << nsampleids << " to "
@@ -165,7 +151,7 @@ void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> traini
         nsampleids_iter = (size_t) std::min((size_t) subsample_, nsampleids_iter);
       } else {
         // <1: Max feature is the fraction of features to use
-        nsampleids_iter = (size_t) std::ceil(subsample_ * nsampleids_iter);
+        nsampleids_iter = (size_t) std::floor(subsample_ * nsampleids_iter);
       }
 
       // shuffle the sample idx
@@ -266,6 +252,54 @@ std::ostream &LambdaMartSampling2::put(std::ostream &os) const {
   if (max_sampling_factor != 0)
     os << "# max sampling factor = " << max_sampling_factor << std::endl;
   return os;
+}
+
+size_t LambdaMartSampling2::sampling_query_level(
+    std::shared_ptr<data::Dataset> dataset,
+    size_t *sampleids) {
+
+  if (!sampling_iterations || !max_sampling_factor)
+    return dataset->num_instances();
+
+  size_t cursor = 0;
+  for (size_t i=0; i<dataset->num_queries(); ++i) {
+
+    size_t start_offset = dataset->offset(i);
+    size_t end_offset = dataset->offset(i + 1);
+    size_t nresults = end_offset - start_offset;
+
+    size_t nnegatives = 0;
+    #pragma omp parallel for reduction(+:nnegatives)
+    for (size_t j=start_offset; j<end_offset; ++j) {
+      if (dataset->getLabel(j) == 0)
+        ++nnegatives;
+    }
+    size_t npositives = nresults - nnegatives;
+
+    size_t nsample_neg = (size_t) std::floor(
+        max_sampling_factor * nnegatives);
+
+    std::sort(&sampleids[start_offset], &sampleids[end_offset],
+              [this, &dataset](size_t i1, size_t i2) {
+
+                bool grt = scores_on_training_[i1] > scores_on_training_[i2];
+
+                return dataset->getLabel(i1) > 0 ?
+                        dataset->getLabel(i2) == 0 || grt :
+                        dataset->getLabel(i2) == 0 && grt;
+              });
+
+    if (cursor > 0) {
+      for (size_t j = 0; j < npositives + nsample_neg; ++j) {
+        std::swap(sampleids[cursor + j],
+                  sampleids[start_offset + npositives + nsample_neg - j - 1]);
+      }
+    }
+
+    cursor += npositives + nsample_neg;
+  }
+
+  return cursor;
 }
 
 }  // namespace forests
