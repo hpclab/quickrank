@@ -103,24 +103,12 @@ void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> traini
   std::cout << "# iter. training validation" << std::endl;
   std::cout << "# -------------------------" << std::endl;
 
-  // shows the performance of the already trained model..
-  if (ensemble_model_.is_notempty()) {
-    std::cout << std::setw(7) << ensemble_model_.get_size()
-              << std::setw(9) << best_metric_on_training_;
-
-    if (validation_dataset)
-      std::cout << std::setw(9) << best_metric_on_validation_;
-
-    std::cout << " *" << std::endl;
-  }
-
-  auto chrono_train_start = std::chrono::high_resolution_clock::now();
-
   // Used for document sampling and node splitting
   size_t nsampleids = training_dataset->num_instances();
   size_t *sampleids = new size_t[nsampleids];
   size_t *sampleids_orig = NULL;
   size_t *npositives = NULL;
+  size_t nsampleids_iter = nsampleids;
 
   // If we do not use document sampling, we fill the sampleids only once
   #pragma omp parallel for
@@ -148,13 +136,25 @@ void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> traini
     }
   }
 
+  // shows the performance of the already trained model..
+  if (ensemble_model_.is_notempty()) {
+    std::cout << std::setw(7) << ensemble_model_.get_size()
+              << std::setw(9) << best_metric_on_training_;
+
+    if (validation_dataset)
+      std::cout << std::setw(9) << best_metric_on_validation_;
+
+    std::cout << " *" << std::endl;
+  }
+
+  auto chrono_train_start = std::chrono::high_resolution_clock::now();
+
   // start iterations from 0 or (ensemble_size - 1)
   for (size_t m = ensemble_model_.get_size(); m < ntrees_; ++m) {
     if (validation_dataset
         && (valid_iterations_ && m > best_model_ + valid_iterations_))
       break;
 
-    size_t nsampleids_iter = nsampleids;
     if (max_sampling_factor > 0 && m % sampling_iterations == 0 && m > 0) {
 
       // Reset sampleids and reorder on a query basis
