@@ -154,11 +154,10 @@ void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> traini
         && (valid_iterations_ && m > best_model_ + valid_iterations_))
       break;
 
-    compute_pseudoresponses(vertical_training, scorer.get());
-
     size_t nsampleids_iter = nsampleids;
-    if (max_sampling_factor > 0 && m % sampling_iterations == 0) {
+    if (max_sampling_factor > 0 && m % sampling_iterations == 0 && m > 0) {
 
+      // Reset sampleids and reorder on a query basis
       memcpy(sampleids, sampleids_orig, sizeof(size_t) * nsampleids);
       nsampleids_iter = sampling_query_level(training_dataset,
                                              sampleids,
@@ -186,6 +185,8 @@ void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> traini
                    &sampleids[nsampleids],
                    rng);
     }
+
+    compute_pseudoresponses(vertical_training, scorer.get());
 
     // update the histogram with these training_setting labels
     // (the feature histogram will be used to find the best tree rtnode)
@@ -241,6 +242,7 @@ void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> traini
 
   delete(sampleids);
   delete(sampleids_orig);
+  delete(npositives);
 
   //Rollback to the best model observed on the validation data
   if (validation_dataset) {
@@ -310,7 +312,7 @@ size_t LambdaMartSampling2::sampling_query_level(
     if (cursor > 0) {
       for (size_t j = 0; j < npositives[q] + nsample_neg; ++j) {
         std::swap(sampleids[cursor + j],
-                  sampleids[start_offset + npositives[q] + nsample_neg - j - 1]);
+                  sampleids[start_offset + j]);
       }
     }
 
