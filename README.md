@@ -6,20 +6,21 @@ QuickRank: A C++ suite of Learning-to-Rank algorithms
 QuickRank is an efficient Learning-to-Rank toolkit providing several C++ implementation of LtR algorithms. QuickRank was designed and developed with efficiency in mind.
 
 The LtR algorithms currently implemented are:
+
  - **GBRT**: J. H. Friedman. *Greedy function approximation: a gradient boosting machine*. Annals of Statistics, pages 1189–1232, 2001.
  - **LamdaMART**: Q. Wu, C. Burges, K. Svore, and J. Gao. *Adapting boosting for information retrieval measures*. Information Retrieval, 2010.
- - **Oblivious GBRT / LamdaMART**: Inspired to I. Segalovich. *Machine learning in search quality at yandex*. Invited Talk, SIGIR, 2010.
+ - **Oblivious GBRT / LamdaMART**: Inspired to I. Segalovich. *Machine learning in search quality at yandex*. Invited Talk, ACM SIGIR, 2010.
  - **CoordinateAscent**: Metzler, D., Croft, W.B.. *Linear feature-based models for information retrieval*. Information Retrieval 10(3), pages 257–274, 2007.
  - **LineSearch**: D. G. Luenberger. *Linear and nonlinear programming*. Addison Wesley, 1984.
- - **RankBoost**: Freund, Y., Iyer, R., Schapire, R. E., & Singer, Y. *An efficient boosting algorithm for combining preferences*. The Journal of machine learning research, 4, 933-969 (2003).
+ - **RankBoost**: Freund, Y., Iyer, R., Schapire, R. E., & Singer, Y. *An efficient boosting algorithm for combining preferences*. JMLR, 4, 933-969 (2003).
  - **DART**: K.V. Rashmi and R. Gilad-Bachrach. *Dart: Dropouts meet multiple 
- additive regression trees*. Journal of Machine Learning Research, 38 (2015).
- - **X-DART**: C. Lucchese, F. M. Nardini, S. Orlando, R. Perego and S. Trani. 
- *X-DART: Blending Dropout and Pruning for Efficient Learning to Rank*. ACM SIGIR, 2017.
- - **X-CLEAVER**: C. Lucchese, F. M. Nardini, S. Orlando, R. Perego, F. Silvestri, S. Trani. *X-CLEaVER: Learning Ranking Ensembles by Growing and Pruning Trees*. Paper under revision.
+ additive regression trees*. JMLR, 38 (2015).
 
-QuickRank introduces also the concept of pre and post learning optimizations which are pipelined with the LtR algorithms. Currently implemented optimizers are:
- - **CLEAVER**: C. Lucchese, F. M. Nardini, S. Orlando, R. Perego, F. Silvestri, S. Trani. *Post-Learning Optimization of Tree Ensembles for Efficient Ranking*. ACM SIGIR, 2016.
+QuickRank also provides novel learning optimizations. Currently implemented optimizers are:
+
+  - **CLEAVER**: C. Lucchese, F. M. Nardini, S. Orlando, R. Perego, F. Silvestri, S. Trani. *Post-Learning Optimization of Tree Ensembles for Efficient Ranking*. In Proc. ACM SIGIR, 2016. [README](documentation/cleaver.md)
+  - **X-CLEAVER**: C. Lucchese, F. M. Nardini, S. Orlando, R. Perego, F. Silvestri, S. Trani. *X-CLEaVER: Learning Ranking Ensembles by Growing and Pruning Trees*. Paper under revision.
+  - **X-DART**: C. Lucchese, F. M. Nardini, S. Orlando, R. Perego and S. Trani. *X-DART: Blending Dropout and Pruning for Efficient Learning to Rank*. In Proc. ACM SIGIR, 2017. [README](documentation/xdart.md)
 
 How to build
 -------
