@@ -137,7 +137,7 @@ pugi::xml_node Ensemble::append_xml_model(pugi::xml_node parent) const {
   for (size_t i = 0; i < size; ++i) {
     pugi::xml_node tree = ensemble.append_child("tree");
     tree.append_attribute("id") = i + 1;
-    tree.append_attribute("weight") = (float) arr[i].weight;
+    tree.append_attribute("weight") = arr[i].weight;
     if (arr[i].root) {
       arr[i].root->append_xml_model(tree);
     }
