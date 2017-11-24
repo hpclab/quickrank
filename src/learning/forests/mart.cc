@@ -52,7 +52,7 @@ Mart::Mart(const pugi::xml_document &model) {
   minleafsupport_ = model_info.child("leafsupport").text().as_int();
   nthresholds_ = model_info.child("discretization").text().as_int();
   valid_iterations_ = model_info.child("estop").text().as_int();
-  shrinkage_ = model_info.child("shrinkage").text().as_double();
+  shrinkage_ = model_info.child("shrinkage").text(). as_double();
 
   if (model_info.child("subsample")) {
     subsample_ = model_info.child("subsample").text().as_float();
@@ -73,7 +73,7 @@ Mart::Mart(const pugi::xml_document &model) {
   // loop over trees
   for (const auto &tree: model_tree.children()) {
     RTNode *root = NULL;
-    float tree_weight = tree.attribute("weight").as_float();
+    double tree_weight = tree.attribute("weight").as_double();
 
     const auto &root_split = tree.child("split");
     if (root_split)
