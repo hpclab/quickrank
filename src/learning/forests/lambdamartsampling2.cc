@@ -126,13 +126,13 @@ void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> traini
       size_t start_offset = training_dataset->offset(q);
       size_t end_offset = training_dataset->offset(q + 1);
 
-      size_t cur_pos = 0;
+      size_t num_pos = 0;
       for (size_t d = start_offset; d < end_offset; ++d) {
         if (training_dataset->getLabel(d) > 0)
-          ++cur_pos;
+          ++num_pos;
       }
 
-      npositives[q] = cur_pos;
+      npositives[q] = num_pos;
     }
   }
 

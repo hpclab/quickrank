@@ -292,7 +292,7 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     nsampleids = (size_t) subsample_;
   } else if (subsample_ < 1.0f) {
     // <1: Max feature is the fraction of features to use
-    nsampleids = (size_t) std::ceil(subsample_ * nsampleids);
+    nsampleids = (size_t) std::floor(subsample_ * nsampleids);
   }
 
   // start iterations from 0 or (ensemble_size - 1)
