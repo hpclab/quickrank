@@ -76,7 +76,8 @@ class LambdaMart: public Mart {
   /// \param metric The metric to be optimized.
   virtual void compute_pseudoresponses(
       std::shared_ptr<data::VerticalDataset> training_dataset,
-      metric::ir::Metric *metric);
+      metric::ir::Metric *metric,
+      bool *sample_presence);
 
   /// Fits a regression tree on the gradient given by the pseudo residuals
   ///

@@ -109,18 +109,25 @@ void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> traini
   size_t *sampleids_orig = NULL;
   size_t *npositives = NULL;
   size_t nsampleids_iter = nsampleids;
+  bool *sample_presence = NULL;
+
+  if (max_sampling_factor > 0)
+    sample_presence = new bool[nsampleids];
 
   // If we do not use document sampling, we fill the sampleids only once
   #pragma omp parallel for
-  for (size_t i = 0; i < nsampleids; ++i)
+  for (size_t i = 0; i < nsampleids; ++i) {
     sampleids[i] = i;
+    if (sample_presence != NULL)
+      sample_presence[i] = true;
+  }
 
   if (max_sampling_factor > 0) {
     sampleids_orig = new size_t[nsampleids];
     memcpy(sampleids_orig, sampleids, sizeof(size_t) * nsampleids);
 
     npositives = new size_t[training_dataset->num_queries()];
-    #pragma omp parallel
+    #pragma omp parallel for
     for (size_t q=0; q<training_dataset->num_queries(); ++q) {
 
       size_t start_offset = training_dataset->offset(q);
@@ -159,9 +166,9 @@ void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> traini
 
       // Reset sampleids and reorder on a query basis
       memcpy(sampleids, sampleids_orig, sizeof(size_t) * nsampleids);
-      nsampleids_iter = sampling_query_level(training_dataset,
-                                             sampleids,
-                                             npositives);
+      nsampleids_iter = top_negative_sampling_query_level(training_dataset,
+                                                          sampleids,
+                                                          npositives);
 
       std::cout << "Reducing training size from "
                 << nsampleids << " to "
@@ -170,6 +177,13 @@ void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> traini
 
     if (subsample_ != 1.0f) {
 
+      // shuffle the sample idx with the current sample size (previous sampling)
+      auto seed = std::chrono::system_clock::now().time_since_epoch().count();
+      auto rng = std::default_random_engine(seed);
+      std::shuffle(&sampleids[0],
+                   &sampleids[nsampleids_iter],
+                   rng);
+
       if (subsample_ > 1.0f) {
         // >1: Max feature is the number of features to use
         nsampleids_iter = (size_t) std::min((size_t) subsample_, nsampleids_iter);
@@ -177,16 +191,18 @@ void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> traini
         // <1: Max feature is the fraction of features to use
         nsampleids_iter = (size_t) std::floor(subsample_ * nsampleids_iter);
       }
-
-      // shuffle the sample idx
-      auto seed = std::chrono::system_clock::now().time_since_epoch().count();
-      auto rng = std::default_random_engine(seed);
-      std::shuffle(&sampleids[0],
-                   &sampleids[nsampleids],
-                   rng);
     }
 
-    compute_pseudoresponses(vertical_training, scorer.get());
+    // If we are training on a sample of the full dataset, we need to update
+    // the presence map
+    if (nsampleids_iter < nsampleids) {
+      #pragma omp parallel for
+      for (size_t i=0; i<training_dataset->num_instances(); ++i) {
+        sample_presence[sampleids[i]] = i < nsampleids_iter;
+      }
+    }
+
+    compute_pseudoresponses(vertical_training, scorer.get(), sample_presence);
 
     // update the histogram with these training_setting labels
     // (the feature histogram will be used to find the best tree rtnode)
@@ -243,6 +259,7 @@ void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> traini
   delete(sampleids);
   delete(sampleids_orig);
   delete(npositives);
+  delete(sample_presence);
 
   //Rollback to the best model observed on the validation data
   if (validation_dataset) {
@@ -282,7 +299,7 @@ std::ostream &LambdaMartSampling2::put(std::ostream &os) const {
   return os;
 }
 
-size_t LambdaMartSampling2::sampling_query_level(
+size_t LambdaMartSampling2::top_negative_sampling_query_level(
     std::shared_ptr<data::Dataset> dataset,
     size_t *sampleids,
     size_t *npositives) {
@@ -320,6 +337,36 @@ size_t LambdaMartSampling2::sampling_query_level(
   }
 
   return cursor;
+}
+
+size_t LambdaMartSampling2::top_negative_sampling_overall(
+    std::shared_ptr<data::Dataset> dataset,
+    size_t *sampleids,
+    size_t *npositives) {
+
+  size_t nsample_ids = dataset->num_instances();
+
+  if (!sampling_iterations || !max_sampling_factor)
+    return nsample_ids;
+
+  size_t n_positives_overall = 0;
+  for (size_t q=0; q<dataset->num_queries(); ++q) {
+    n_positives_overall += npositives[q];
+  }
+
+  std::sort(&sampleids[0], &sampleids[nsample_ids],
+            [this, &dataset](size_t i1, size_t i2) {
+
+              bool grt = scores_on_training_[i1] > scores_on_training_[i2];
+
+              return dataset->getLabel(i1) > 0 ?
+                     dataset->getLabel(i2) == 0 || grt :
+                     dataset->getLabel(i2) == 0 && grt;
+            });
+
+  size_t n_negatives_overall = nsample_ids - n_positives_overall;
+  return n_positives_overall +
+      (size_t) std::floor(max_sampling_factor * n_negatives_overall);
 }
 
 }  // namespace forests

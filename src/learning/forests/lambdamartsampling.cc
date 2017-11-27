@@ -119,18 +119,49 @@ void LambdaMartSampling::learn(std::shared_ptr<quickrank::data::Dataset> trainin
   // Used for document sampling and node splitting
   size_t nsampleids = training_dataset->num_instances();
   size_t *sampleids = new size_t[nsampleids];
+  size_t *npositives = NULL;
+  size_t n_positives_overall = 0;
+  size_t n_negatives_overall = 0;
+  size_t nsampleids_iter = nsampleids;
+  size_t sampling_count = 0;
+  bool *sample_presence = NULL;
 
-  size_t step_size_sampling = 0;
+  float step_factor_sampling = 0;
   if (sampling_iterations > 0 && max_sampling_factor > 0) {
-    step_size_sampling = (size_t) std::round(
-      max_sampling_factor * nsampleids /
-          (((float) ntrees_ / sampling_iterations) - 1));
+    step_factor_sampling = (1.0f - max_sampling_factor) /
+            (((float) ntrees_ / sampling_iterations) - 1);
+  }
+
+  if (step_factor_sampling > 0 || subsample_ != 1.0f) {
+    sample_presence = new bool[nsampleids];
+
+    npositives = new size_t[training_dataset->num_queries()];
+    #pragma omp parallel for
+    for (size_t q = 0; q < training_dataset->num_queries(); ++q) {
+
+      size_t start_offset = training_dataset->offset(q);
+      size_t end_offset = training_dataset->offset(q + 1);
+
+      size_t num_pos = 0;
+      for (size_t d = start_offset; d < end_offset; ++d) {
+        if (training_dataset->getLabel(d) > 0)
+          ++num_pos;
+      }
+
+      npositives[q] = num_pos;
+      n_positives_overall += num_pos;
+    }
+
+    n_negatives_overall = nsampleids - n_positives_overall;
   }
 
   // If we do not use document sampling, we fill the sampleids only once
   #pragma omp parallel for
-  for (size_t i = 0; i < nsampleids; ++i)
+  for (size_t i = 0; i < nsampleids; ++i) {
     sampleids[i] = i;
+    if (sample_presence != NULL)
+      sample_presence[i] = true;
+  }
 
   // start iterations from 0 or (ensemble_size - 1)
   for (size_t m = ensemble_model_.get_size(); m < ntrees_; ++m) {
@@ -138,34 +169,38 @@ void LambdaMartSampling::learn(std::shared_ptr<quickrank::data::Dataset> trainin
         && (valid_iterations_ && m > best_model_ + valid_iterations_))
       break;
 
-    compute_pseudoresponses(vertical_training, scorer.get());
+    if (step_factor_sampling > 0 && m > 0 && m % sampling_iterations == 0) {
 
-    if (step_size_sampling > 0 && m > 0 && m % sampling_iterations == 0) {
+      size_t prev_nsample = n_positives_overall + (size_t) std::floor(
+          (1 - (sampling_count * step_factor_sampling)) * n_negatives_overall);
 
-      std::sort(&sampleids[0], &sampleids[nsampleids],
+      std::sort(&sampleids[0], &sampleids[prev_nsample],
                 [this, &training_dataset](size_t i1, size_t i2) {
-                  return
-                      (training_dataset->getLabel(i1) > 0 ||
-                      training_dataset->getLabel(i2) == 0) &&
-                      scores_on_training_[i1] > scores_on_training_[i2];
+
+                  bool grt = scores_on_training_[i1] > scores_on_training_[i2];
+
+                  return training_dataset->getLabel(i1) > 0 ?
+                         training_dataset->getLabel(i2) == 0 || grt :
+                         training_dataset->getLabel(i2) == 0 && grt;
                 });
 
-      nsampleids -= step_size_sampling;
+      ++sampling_count;
+      nsampleids_iter = n_positives_overall + (size_t) std::floor(
+          (1 - (sampling_count * step_factor_sampling)) * n_negatives_overall);
 
       std::cout << "Reducing training size from "
-                << nsampleids + step_size_sampling << " to "
-                << nsampleids << std::endl;
+                << prev_nsample << " to "
+                << nsampleids_iter << std::endl;
     }
 
-    size_t nsampleids_iter = nsampleids;
     if (subsample_ != 1.0f) {
 
       if (subsample_ > 1.0f) {
         // >1: Max feature is the number of features to use
-        nsampleids_iter = (size_t) std::min((size_t) subsample_, nsampleids);
+        nsampleids_iter = (size_t) std::min((size_t) subsample_, nsampleids_iter);
       } else {
         // <1: Max feature is the fraction of features to use
-        nsampleids_iter = (size_t) std::ceil(subsample_ * nsampleids);
+        nsampleids_iter = (size_t) std::ceil(subsample_ * nsampleids_iter);
       }
 
       // shuffle the sample idx
@@ -175,6 +210,17 @@ void LambdaMartSampling::learn(std::shared_ptr<quickrank::data::Dataset> trainin
                    &sampleids[nsampleids],
                    rng);
     }
+
+    // If we are training on a sample of the full dataset, we need to update
+    // the presence map
+    if (nsampleids_iter < nsampleids) {
+      #pragma omp parallel for
+      for (size_t i=0; i<training_dataset->num_instances(); ++i) {
+        sample_presence[sampleids[i]] = i < nsampleids_iter;
+      }
+    }
+
+    compute_pseudoresponses(vertical_training, scorer.get(), sample_presence);
 
     // update the histogram with these training_setting labels
     // (the feature histogram will be used to find the best tree rtnode)
@@ -229,6 +275,8 @@ void LambdaMartSampling::learn(std::shared_ptr<quickrank::data::Dataset> trainin
   }
 
   delete(sampleids);
+  delete(sample_presence);
+  delete(npositives);
 
   //Rollback to the best model observed on the validation data
   if (validation_dataset) {
