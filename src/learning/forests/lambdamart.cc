@@ -62,7 +62,9 @@ std::unique_ptr<RegressionTree> LambdaMart::fit_regressor_on_gradient(
 
 void LambdaMart::compute_pseudoresponses(
     std::shared_ptr<quickrank::data::VerticalDataset> training_dataset,
-    quickrank::metric::ir::Metric *scorer) {
+    quickrank::metric::ir::Metric *scorer,
+    bool *sample_presence) {
+
   const size_t cutoff = scorer->cutoff();
 
   const size_t nrankedlists = training_dataset->num_queries();
@@ -86,7 +88,17 @@ void LambdaMart::compute_pseudoresponses(
     // \todo TODO: avoid n^2 loop ?
     for (size_t j = 0; j < ranked->num_results(); j++) {
       Label jthlabel = ranked->sorted_labels()[j];
-      for (size_t k = 0; k < ranked->num_results(); k++)
+
+      size_t j_abs = offset + ranked->pos_of_rank(j);
+      if (sample_presence != NULL && !sample_presence[j_abs])
+        continue;
+
+      for (size_t k = 0; k < ranked->num_results(); k++) {
+
+        size_t k_abs = offset + ranked->pos_of_rank(k);
+        if (sample_presence != NULL && !sample_presence[k_abs])
+          continue;
+
         if (k != j) {
           // skip if we are beyond the top-K results
           if (j >= cutoff && k >= cutoff)
@@ -100,8 +112,7 @@ void LambdaMart::compute_pseudoresponses(
                 / (1.0
                     + exp(
                         scores_on_training_[offset + ranked->pos_of_rank(j)]
-                            - scores_on_training_[offset
-                                + ranked->pos_of_rank(k)]));
+                      - scores_on_training_[offset + ranked->pos_of_rank(k)]));
             double lambda = rho * deltandcg;
             double delta = rho * (1.0 - rho) * deltandcg;
             lambdas[ranked->pos_of_rank(j)] += lambda;
@@ -110,6 +121,7 @@ void LambdaMart::compute_pseudoresponses(
             weights[ranked->pos_of_rank(k)] += delta;
           }
         }
+      }
     }
   }
 }

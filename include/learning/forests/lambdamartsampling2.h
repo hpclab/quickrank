@@ -23,6 +23,7 @@
 
 #include "types.h"
 #include "learning/forests/mart.h"
+#include "learning/forests/lambdamart.h"
 #include "learning/tree/rt.h"
 #include "learning/tree/ensemble.h"
 
@@ -30,7 +31,7 @@ namespace quickrank {
 namespace learning {
 namespace forests {
 
-class LambdaMart: public Mart {
+class LambdaMartSampling2: public LambdaMart {
  public:
   /// Initializes a new LambdaMart instance with the given learning parameters.
   ///
@@ -41,25 +42,35 @@ class LambdaMart: public Mart {
   /// \param minleafsupport Minimum number of instances in each leaf.
   /// \param esr Early stopping if no improvement after \esr iterations
   /// on the validation set.
-  LambdaMart(size_t ntrees, double shrinkage, size_t nthresholds,
+  LambdaMartSampling2(size_t ntrees, double shrinkage, size_t nthresholds,
              size_t ntreeleaves, size_t minleafsupport, float subsample,
-             float max_features, size_t esr, float collapse_leaves_factor)
-      : Mart(ntrees, shrinkage, nthresholds, ntreeleaves, minleafsupport,
-             subsample, max_features, esr, collapse_leaves_factor) {
+             float max_features, size_t esr, float collapse_leaves_factor,
+             int sampling_iterations, float max_sampling_factor)
+      : LambdaMart(ntrees, shrinkage, nthresholds, ntreeleaves, minleafsupport,
+             subsample, max_features, esr, collapse_leaves_factor),
+        sampling_iterations(sampling_iterations),
+        max_sampling_factor(max_sampling_factor) {
   }
 
   /// Generates a LTR_Algorithm instance from a previously saved XML model.
-  LambdaMart(const pugi::xml_document &model)
-      : Mart(model) {
+  LambdaMartSampling2(const pugi::xml_document &model)
+      : LambdaMart(model) {
   }
 
-  virtual ~LambdaMart() {
+  virtual ~LambdaMartSampling2() {
   }
 
   /// Returns the name of the ranker.
   virtual std::string name() const {
     return NAME_;
   }
+
+  /// Start the learning process.
+  virtual void learn(std::shared_ptr<data::Dataset> training_dataset,
+                     std::shared_ptr<data::Dataset> validation_dataset,
+                     std::shared_ptr<metric::ir::Metric> training_metric,
+                     size_t partial_save,
+                     const std::string output_basename);
 
   static const std::string NAME_;
 
@@ -70,25 +81,24 @@ class LambdaMart: public Mart {
   /// De-allocates private data structure after training has taken place.
   virtual void clear(size_t num_features);
 
-  /// Computes pseudo responses.
-  ///
-  /// \param training_dataset The training data.
-  /// \param metric The metric to be optimized.
-  virtual void compute_pseudoresponses(
-      std::shared_ptr<data::VerticalDataset> training_dataset,
-      metric::ir::Metric *metric,
-      bool *sample_presence);
+  /// Prints the description of Algorithm, including its parameters.
+  virtual std::ostream &put(std::ostream &os) const;
 
-  /// Fits a regression tree on the gradient given by the pseudo residuals
-  ///
-  /// \param training_dataset The dataset used for training
-  virtual std::unique_ptr<RegressionTree> fit_regressor_on_gradient(
-      std::shared_ptr<data::VerticalDataset> training_dataset,
-      size_t *sampleids);
+  size_t top_negative_sampling_query_level(
+      std::shared_ptr<data::Dataset> training_dataset,
+      size_t *sampleids,
+      size_t *npositives
+  );
 
- protected:
-  double *instance_weights_ = NULL;  //corresponds to datapoint.cache
+  size_t top_negative_sampling_overall(
+      std::shared_ptr<data::Dataset> training_dataset,
+      size_t *sampleids,
+      size_t *npositives
+  );
 
+ private:
+  int sampling_iterations;
+  float max_sampling_factor;
 };
 
 }  // namespace forests

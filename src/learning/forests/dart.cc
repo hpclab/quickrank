@@ -261,12 +261,26 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   // Used for document sampling and node splitting
   size_t nsampleids = training_dataset->num_instances();
   size_t *sampleids = new size_t[nsampleids];
+  size_t nsampleids_iter = nsampleids;
+  bool *sample_presence = NULL;
+
+  if (subsample_ != 1) {
+    sample_presence = new bool[nsampleids];
+    if (subsample_ > 1.0f) {
+      // >1: Max feature is the number of features to use
+      nsampleids_iter = (size_t) subsample_;
+    } else {
+      // <1: Max feature is the fraction of features to use
+      nsampleids_iter = (size_t) std::floor(subsample_ * nsampleids);
+    }
+  }
 
   // If we do not use document sampling, we fill the sampleids only once
-  if (subsample_ == 1.0f) {
-    #pragma omp parallel for
-    for (size_t i = 0; i < nsampleids; ++i)
-      sampleids[i] = i;
+  #pragma omp parallel for
+  for (size_t i = 0; i < nsampleids; ++i) {
+    sampleids[i] = i;
+    if (sample_presence != NULL)
+      sample_presence[i] = true;
   }
 
   // start iterations from 0 or (ensemble_size - 1)
@@ -281,6 +295,25 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
     if (validation_dataset
         && (valid_iterations_ && m > best_iter_ + valid_iterations_))
       break;
+
+    if (subsample_ != 1.0f) {
+
+      // shuffle the sample idx
+      auto seed = std::chrono::system_clock::now().time_since_epoch().count();
+      auto rng = std::default_random_engine(seed);
+      std::shuffle(&sampleids[0],
+                   &sampleids[nsampleids],
+                   rng);
+    }
+
+    // If we are training on a sample of the full dataset, we need to update
+    // the presence map
+    if (nsampleids_iter < nsampleids) {
+      #pragma omp parallel for
+      for (size_t i=0; i<training_dataset->num_instances(); ++i) {
+        sample_presence[sampleids[i]] = i < nsampleids_iter;
+      }
+    }
 
     std::vector<double> orig_weights = ensemble_model_.get_weights();
 
@@ -331,11 +364,11 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
       ensemble_model_.update_ensemble_weights(dropped_weights, false);
     }
 
-    compute_pseudoresponses(vertical_training, scorer.get());
+    compute_pseudoresponses(vertical_training, scorer.get(), sample_presence);
 
     // update the histogram with these training_setting labels
     // (the feature histogram will be used to find the best tree rtnode)
-    hist_->update(pseudoresponses_, vertical_training->num_instances());
+    hist_->update(pseudoresponses_, nsampleids_iter, sampleids);
 
     // Fit a regression tree
     std::shared_ptr<RegressionTree> tree =
@@ -536,6 +569,7 @@ void Dart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   }
 
   delete(sampleids);
+  delete(sample_presence);
 
   //Rollback to the best model observed on the validation data
   if (validation_dataset) {

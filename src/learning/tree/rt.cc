@@ -44,7 +44,8 @@ void DevianceMaxHeap::pop() {
 
 /// \todo TODO: memory management of regression tree is wrong!!!
 RegressionTree::~RegressionTree() {
-  //if leaves[0] is the root, hist cannot be deallocated and sampleids has been already deallocated
+  // if leaves[0] is the root, hist cannot be deallocated and sampleids has
+  // been already deallocated
   for (size_t i = 0; i < nleaves; ++i)
     if (leaves[i] != root) {
       delete[] leaves[i]->sampleids;
@@ -70,8 +71,8 @@ void RegressionTree::fit(RTNodeHistogram *hist,
     n_nodes += 2;
     max_deviance = root->deviance;
   }
-  while (heap.is_notempty()
-      && (nrequiredleaves == 0 or taken + heap.get_size() < nrequiredleaves)) {
+  while (heap.is_notempty() &&
+      (nrequiredleaves == 0 or taken + heap.get_size() < nrequiredleaves)) {
     //get node with highest deviance from heap
     RTNode *node = heap.top();
     // TODO: Cla missing check non leaf size or avoid putting them into the heap
@@ -85,6 +86,11 @@ void RegressionTree::fit(RTNodeHistogram *hist,
       ++taken;  // unsplitable (i.e. null variance, or after split variance
                 // is higher than before, or #samples < minls)
     heap.pop();
+
+    if (!collapse_leaves_factor && node != root && !node->is_leaf()) {
+      delete[] node->sampleids;
+      node->sampleids = NULL;
+    }
   }
 
   size_t n_leaves = nrequiredleaves;

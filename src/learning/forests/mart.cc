@@ -52,7 +52,7 @@ Mart::Mart(const pugi::xml_document &model) {
   minleafsupport_ = model_info.child("leafsupport").text().as_int();
   nthresholds_ = model_info.child("discretization").text().as_int();
   valid_iterations_ = model_info.child("estop").text().as_int();
-  shrinkage_ = model_info.child("shrinkage").text().as_double();
+  shrinkage_ = model_info.child("shrinkage").text(). as_double();
 
   if (model_info.child("subsample")) {
     subsample_ = model_info.child("subsample").text().as_float();
@@ -73,7 +73,7 @@ Mart::Mart(const pugi::xml_document &model) {
   // loop over trees
   for (const auto &tree: model_tree.children()) {
     RTNode *root = NULL;
-    float tree_weight = tree.attribute("weight").as_float();
+    double tree_weight = tree.attribute("weight").as_double();
 
     const auto &root_split = tree.child("split");
     if (root_split)
@@ -281,18 +281,26 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   // Used for document sampling and node splitting
   size_t nsampleids = training_dataset->num_instances();
   size_t *sampleids = new size_t[nsampleids];
+  size_t nsampleids_iter = nsampleids;
+  bool *sample_presence = NULL;
+
+  if (subsample_ != 1) {
+    sample_presence = new bool[nsampleids];
+    if (subsample_ > 1.0f) {
+      // >1: Max feature is the number of features to use
+      nsampleids_iter = (size_t) std::min((size_t) subsample_, nsampleids);
+    } else {
+      // <1: Max feature is the fraction of features to use
+      nsampleids_iter = (size_t) std::floor(subsample_ * nsampleids);
+    }
+  }
 
   // If we do not use document sampling, we fill the sampleids only once
   #pragma omp parallel for
-  for (size_t i = 0; i < nsampleids; ++i)
+  for (size_t i = 0; i < nsampleids; ++i) {
     sampleids[i] = i;
-
-  if (subsample_ > 1.0f) {
-    // >1: Max feature is the number of features to use
-    nsampleids = (size_t) subsample_;
-  } else if (subsample_ < 1.0f) {
-    // <1: Max feature is the fraction of features to use
-    nsampleids = (size_t) std::ceil(subsample_ * nsampleids);
+    if (sample_presence != NULL)
+      sample_presence[i] = true;
   }
 
   // start iterations from 0 or (ensemble_size - 1)
@@ -301,21 +309,30 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
         && (valid_iterations_ && m > best_model_ + valid_iterations_))
       break;
 
-    compute_pseudoresponses(vertical_training, scorer.get());
-
     if (subsample_ != 1.0f) {
 
       // shuffle the sample idx
       auto seed = std::chrono::system_clock::now().time_since_epoch().count();
       auto rng = std::default_random_engine(seed);
       std::shuffle(&sampleids[0],
-                   &sampleids[training_dataset->num_instances()],
+                   &sampleids[nsampleids],
                    rng);
     }
 
+    // If we are training on a sample of the full dataset, we need to update
+    // the presence map
+    if (nsampleids_iter < nsampleids) {
+      #pragma omp parallel for
+      for (size_t i=0; i<training_dataset->num_instances(); ++i) {
+        sample_presence[sampleids[i]] = i < nsampleids_iter;
+      }
+    }
+
+    compute_pseudoresponses(vertical_training, scorer.get(), sample_presence);
+
     // update the histogram with these training_setting labels
     // (the feature histogram will be used to find the best tree rtnode)
-    hist_->update(pseudoresponses_, nsampleids, sampleids);
+    hist_->update(pseudoresponses_, nsampleids_iter, sampleids);
 
     // Fit a regression tree
     std::unique_ptr<RegressionTree> tree =
@@ -366,6 +383,7 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   }
 
   delete(sampleids);
+  delete(sample_presence);
 
   //Rollback to the best model observed on the validation data
   if (validation_dataset) {
@@ -398,11 +416,16 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
 
 void Mart::compute_pseudoresponses(
     std::shared_ptr<quickrank::data::VerticalDataset> training_dataset,
-    quickrank::metric::ir::Metric *scorer) {
+    quickrank::metric::ir::Metric *scorer,
+    bool *sample_presence) {
+
   const size_t nentries = training_dataset->num_instances();
   for (size_t i = 0; i < nentries; i++) {
-    pseudoresponses_[i] = training_dataset->getLabel(i) -
-                          scores_on_training_[i];
+
+    if (sample_presence == NULL || sample_presence[i]) {
+      pseudoresponses_[i] = training_dataset->getLabel(i) -
+                            scores_on_training_[i];
+    }
   }
 }
 
