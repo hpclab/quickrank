@@ -262,7 +262,6 @@ bool RegressionTree::split(RTNode *node, const float max_features,
       size_t threshold_size = h->thresholds_size[f];
       double s = sumlabels[threshold_size - 1];
       size_t c = samplecount[threshold_size - 1];
-      double parent_error = s*s/(double) c;
 
       //looking for the feature that minimizes sumvar
       for (size_t t = 0; t < threshold_size; ++t) {
@@ -272,8 +271,12 @@ bool RegressionTree::split(RTNode *node, const float max_features,
           double lsum = sumlabels[t];
           double rsum = s - lsum;
           double score = lsum * lsum / (double) lcount
-                       + rsum * rsum / (double) rcount
-                       - parent_error;
+                       + rsum * rsum / (double) rcount;
+          // NOTE by cla: to compute the correct squared error reduction
+          // the variable score should be decreases by ( s*s/(double) c ).
+          // Since this is invariant within the same node, and since
+          // score is not user later, e.g., to select next splitting node,
+          // we avoid such computation.
           if (score > thread_best_score[ith]) {
             thread_best_score[ith] = score;
             thread_best_featureidx[ith] = f;
