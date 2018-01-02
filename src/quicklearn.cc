@@ -46,6 +46,8 @@
 #include "learning/forests/dart.h"
 #include "learning/forests/lambdamart.h"
 #include "learning/forests/lambdamartsampling.h"
+#include "learning/forests/lambdamartsampling2.h"
+#include "learning/forests/stochasticnegative.h"
 #include "learning/forests/obliviousmart.h"
 #include "learning/forests/obliviouslambdamart.h"
 #include "learning/forests/rankboost.h"
@@ -145,6 +147,10 @@ int main(int argc, char *argv[]) {
       + quickrank::learning::forests::LambdaMart::NAME_
       + "|"
       + quickrank::learning::forests::LambdaMartSampling::NAME_
+      + "|"
+      + quickrank::learning::forests::LambdaMartSampling2::NAME_
+      + "|"
+      + quickrank::learning::forests::StochasticNegative::NAME_
       + "|"
       + quickrank::learning::forests::RandomForest::NAME_
       + "|"
