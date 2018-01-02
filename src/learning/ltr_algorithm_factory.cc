@@ -26,6 +26,7 @@
 #include <learning/forests/randomforest.h>
 #include <learning/forests/lambdamartsampling.h>
 #include <learning/forests/lambdamartsampling2.h>
+#include <learning/forests/stochasticnegative.h>
 #include "learning/forests/dart.h"
 #include "learning/forests/lambdamart.h"
 #include "learning/forests/obliviousmart.h"
@@ -106,6 +107,19 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
               pmap.get<float>("collapse-leaves-factor"),
               pmap.get<int>("sampling-iterations"),
               pmap.get<float>("max-sampling-factor")
+          ));
+    }  else if (algo_name == quickrank::learning::forests::StochasticNegative::NAME_) {
+      ltr_algo = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
+          new quickrank::learning::forests::StochasticNegative(
+              pmap.get<size_t>("num-trees"),
+              pmap.get<double>("shrinkage"),
+              pmap.get<size_t>("num-thresholds"),
+              pmap.get<size_t>("num-leaves"),
+              pmap.get<size_t>("min-leaf-support"),
+              pmap.get<float>("subsample"),
+              pmap.get<float>("max-features"),
+              pmap.get<size_t>("end-after-rounds"),
+              pmap.get<float>("collapse-leaves-factor")
           ));
     } else if (algo_name == quickrank::learning::forests::Mart::NAME_) {
       ltr_algo = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
