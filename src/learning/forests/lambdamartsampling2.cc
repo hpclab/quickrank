@@ -256,10 +256,14 @@ void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> traini
 
   }
 
-  delete(sampleids);
-  delete(sampleids_orig);
-  delete(npositives);
-  delete(sample_presence);
+  delete[] sampleids;
+  if (sampleids_orig)
+    delete[] sampleids_orig;
+  if (npositives)
+    delete[] npositives;
+  if (sample_presence)
+    delete[] sample_presence;
+
 
   //Rollback to the best model observed on the validation data
   if (validation_dataset) {
@@ -312,8 +316,9 @@ size_t LambdaMartSampling2::top_negative_sampling_query_level(
 
     size_t start_offset = dataset->offset(q);
     size_t end_offset = dataset->offset(q + 1);
+    size_t query_size = end_offset - start_offset;
 
-    size_t nneg_query = end_offset - start_offset - npositives[q];
+    size_t nneg_query = query_size - npositives[q];
     size_t nsample_neg = (size_t) std::floor(max_sampling_factor * nneg_query);
 
     std::sort(&sampleids[start_offset], &sampleids[end_offset],
@@ -337,36 +342,6 @@ size_t LambdaMartSampling2::top_negative_sampling_query_level(
   }
 
   return cursor;
-}
-
-size_t LambdaMartSampling2::top_negative_sampling_overall(
-    std::shared_ptr<data::Dataset> dataset,
-    size_t *sampleids,
-    size_t *npositives) {
-
-  size_t nsample_ids = dataset->num_instances();
-
-  if (!sampling_iterations || !max_sampling_factor)
-    return nsample_ids;
-
-  size_t n_positives_overall = 0;
-  for (size_t q=0; q<dataset->num_queries(); ++q) {
-    n_positives_overall += npositives[q];
-  }
-
-  std::sort(&sampleids[0], &sampleids[nsample_ids],
-            [this, &dataset](size_t i1, size_t i2) {
-
-              bool grt = scores_on_training_[i1] > scores_on_training_[i2];
-
-              return dataset->getLabel(i1) > 0 ?
-                     dataset->getLabel(i2) == 0 || grt :
-                     dataset->getLabel(i2) == 0 && grt;
-            });
-
-  size_t n_negatives_overall = nsample_ids - n_positives_overall;
-  return n_positives_overall +
-      (size_t) std::floor(max_sampling_factor * n_negatives_overall);
 }
 
 }  // namespace forests

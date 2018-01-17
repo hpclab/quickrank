@@ -383,7 +383,8 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
   }
 
   delete(sampleids);
-  delete(sample_presence);
+  if (sample_presence)
+    delete[] sample_presence;
 
   //Rollback to the best model observed on the validation data
   if (validation_dataset) {

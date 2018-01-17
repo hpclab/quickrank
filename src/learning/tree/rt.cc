@@ -31,17 +31,6 @@
 #include "utils/omp-stubs.h"
 #endif
 
-void DevianceMaxHeap::push_chidrenof(RTNode *parent) {
-  push(parent->left->deviance, parent->left);
-  push(parent->right->deviance, parent->right);
-}
-void DevianceMaxHeap::pop() {
-  RTNode *node = top();
-  delete node->hist;
-  node->hist = NULL;
-  rt_maxheap::pop();
-}
-
 /// \todo TODO: memory management of regression tree is wrong!!!
 RegressionTree::~RegressionTree() {
   // if leaves[0] is the root, hist cannot be deallocated and sampleids has
@@ -60,14 +49,15 @@ RegressionTree::~RegressionTree() {
 void RegressionTree::fit(RTNodeHistogram *hist,
                          size_t *sampleids,
                          float max_features) {
-  DevianceMaxHeap heap(nrequiredleaves);
+  rt_maxheap heap(nrequiredleaves);
   size_t taken = 0;
   size_t n_nodes = 1; // root
   double max_deviance = 0.0;
 
   root = new RTNode(sampleids, hist);
   if (split(root, max_features, false)) {
-    heap.push_chidrenof(root);
+    heap.push(root->left->deviance, root->left);
+    heap.push(root->right->deviance, root->right);
     n_nodes += 2;
     max_deviance = root->deviance;
   }
@@ -75,17 +65,23 @@ void RegressionTree::fit(RTNodeHistogram *hist,
       (nrequiredleaves == 0 or taken + heap.get_size() < nrequiredleaves)) {
     //get node with highest deviance from heap
     RTNode *node = heap.top();
+    heap.pop();
+
     // TODO: Cla missing check non leaf size or avoid putting them into the heap
     // try split current node
     if (split(node, max_features, false)) {
-      heap.push_chidrenof(node);
+      heap.push(node->left->deviance, node->left);
+      heap.push(node->right->deviance, node->right);
       n_nodes += 2;
       max_deviance = std::max(node->left->deviance, max_deviance);
       max_deviance = std::max(node->right->deviance, max_deviance);
     } else
       ++taken;  // unsplitable (i.e. null variance, or after split variance
-                // is higher than before, or #samples < minls)
-    heap.pop();
+      // is higher than before, or #samples < minls)
+
+    // Clear node histogram
+    delete node->hist;
+    node->hist = NULL;
 
     if (!collapse_leaves_factor && node != root && !node->is_leaf()) {
       delete[] node->sampleids;
@@ -321,7 +317,7 @@ bool RegressionTree::split(RTNode *node, const float max_features,
     size_t *lsamples = new size_t[lcount], lsize = 0;
     size_t *rsamples = new size_t[rcount], rsize = 0;
     float const *features = training_dataset->at(0, best_featureidx);
-    for (size_t i = 0, nsampleids = node->nsampleids; i < nsampleids; ++i) {
+    for (size_t i = 0; i < node->nsampleids; ++i) {
       size_t s = node->sampleids[i];
       if (features[s] <= best_threshold)
         lsamples[lsize++] = s;
@@ -339,7 +335,7 @@ bool RegressionTree::split(RTNode *node, const float max_features,
       //save some new/delete by converting parent histogram into the right-child one
       node->hist->transform_intorightchild(lhist);
       rhist = node->hist;
-      node->hist = NULL;
+      node->hist = NULL; // Used to avoid deleting it!
     }
 
     //update current node
