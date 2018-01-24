@@ -82,10 +82,11 @@ void LambdaMart::compute_pseudoresponses(
     std::shared_ptr<data::RankedResults> ranked;
     size_t *map_from_cleaned = new size_t[qr->num_results()];
     Label *labels_cleaned;
+    Score *training_scores_cleaned;
     if (sample_presence) {
       // Clean the query results with missing samples
       labels_cleaned = new Label[qr->num_results()];
-      Score *training_scores_cleaned = new Score[qr->num_results()];
+      training_scores_cleaned = new Score[qr->num_results()];
       size_t count = 0;
       for (size_t d = 0; d < qr->num_results(); ++d) {
         if (sample_presence[offset + d]) {
@@ -101,7 +102,6 @@ void LambdaMart::compute_pseudoresponses(
       ranked = std::shared_ptr<data::RankedResults>(
           new data::RankedResults(qr_cleaned, training_scores_cleaned));
     } else {
-      #pragma omp parallel for
       for (size_t d = 0; d < qr->num_results(); ++d)
         map_from_cleaned[d] = d;
       ranked = std::shared_ptr<data::RankedResults>(
@@ -146,7 +146,7 @@ void LambdaMart::compute_pseudoresponses(
 
     if (sample_presence) {
       delete[] labels_cleaned;
-  //    delete[] training_scores_cleaned;
+      delete[] training_scores_cleaned;
       delete[] map_from_cleaned;
     }
   }
