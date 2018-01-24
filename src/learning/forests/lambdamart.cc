@@ -70,17 +70,43 @@ void LambdaMart::compute_pseudoresponses(
   const size_t nrankedlists = training_dataset->num_queries();
   #pragma omp parallel for
   for (size_t i = 0; i < nrankedlists; ++i) {
-    std::shared_ptr<data::QueryResults> qr = training_dataset->getQueryResults(
-        i);
+    std::shared_ptr<data::QueryResults> qr =
+        training_dataset->getQueryResults(i);
 
     const size_t offset = training_dataset->offset(i);
-    double *lambdas = pseudoresponses_ + offset;
-    double *weights = instance_weights_ + offset;
-    for (size_t j = 0; j < qr->num_results(); ++j)
-      lambdas[j] = weights[j] = 0.0;
+    // Reset pseudoresponses and instance_weights before updating...
+    for (size_t j = offset; j < offset + qr->num_results(); ++j)
+      pseudoresponses_[j] = instance_weights_[j] = 0.0;
 
-    auto ranked = std::shared_ptr<data::RankedResults>(
-        new data::RankedResults(qr, scores_on_training_ + offset));
+
+    std::shared_ptr<data::RankedResults> ranked;
+    size_t *map_from_cleaned = new size_t[qr->num_results()];
+    Label *labels_cleaned;
+    if (sample_presence) {
+      // Clean the query results with missing samples
+      labels_cleaned = new Label[qr->num_results()];
+      Score *training_scores_cleaned = new Score[qr->num_results()];
+      size_t count = 0;
+      for (size_t d = 0; d < qr->num_results(); ++d) {
+        if (sample_presence[offset + d]) {
+          map_from_cleaned[count] = d;
+          labels_cleaned[count] = qr->labels()[d];
+          training_scores_cleaned[count] = scores_on_training_[d];
+          ++count;
+        }
+      }
+
+      auto qr_cleaned = std::shared_ptr<data::QueryResults>(
+          new data::QueryResults(count, labels_cleaned, NULL));
+      ranked = std::shared_ptr<data::RankedResults>(
+          new data::RankedResults(qr_cleaned, training_scores_cleaned));
+    } else {
+      #pragma omp parallel for
+      for (size_t d = 0; d < qr->num_results(); ++d)
+        map_from_cleaned[d] = d;
+      ranked = std::shared_ptr<data::RankedResults>(
+          new data::RankedResults(qr, scores_on_training_ + offset));
+    }
 
     std::unique_ptr<Jacobian> jacobian = scorer->jacobian(ranked);
 
@@ -89,15 +115,11 @@ void LambdaMart::compute_pseudoresponses(
     for (size_t j = 0; j < ranked->num_results(); j++) {
       Label jthlabel = ranked->sorted_labels()[j];
 
-      size_t j_abs = offset + ranked->pos_of_rank(j);
-      if (sample_presence != NULL && !sample_presence[j_abs])
-        continue;
+      size_t j_abs = offset + map_from_cleaned[ranked->pos_of_rank(j)];
 
       for (size_t k = 0; k < ranked->num_results(); k++) {
 
-        size_t k_abs = offset + ranked->pos_of_rank(k);
-        if (sample_presence != NULL && !sample_presence[k_abs])
-          continue;
+        size_t k_abs = offset + map_from_cleaned[ranked->pos_of_rank(k)];
 
         if (k != j) {
           // skip if we are beyond the top-K results
@@ -109,19 +131,23 @@ void LambdaMart::compute_pseudoresponses(
             double deltandcg = fabs(jacobian->at(j, k));
 
             double rho = 1.0
-                / (1.0
-                    + exp(
-                        scores_on_training_[offset + ranked->pos_of_rank(j)]
-                      - scores_on_training_[offset + ranked->pos_of_rank(k)]));
+                / (1.0 + exp(scores_on_training_[j_abs]
+                                 - scores_on_training_[k_abs]) );
             double lambda = rho * deltandcg;
             double delta = rho * (1.0 - rho) * deltandcg;
-            lambdas[ranked->pos_of_rank(j)] += lambda;
-            lambdas[ranked->pos_of_rank(k)] -= lambda;
-            weights[ranked->pos_of_rank(j)] += delta;
-            weights[ranked->pos_of_rank(k)] += delta;
+            pseudoresponses_[j_abs] += lambda;
+            pseudoresponses_[k_abs] -= lambda;
+            instance_weights_[j_abs] += delta;
+            instance_weights_[k_abs] += delta;
           }
         }
       }
+    }
+
+    if (sample_presence) {
+      delete[] labels_cleaned;
+  //    delete[] training_scores_cleaned;
+      delete[] map_from_cleaned;
     }
   }
 }
