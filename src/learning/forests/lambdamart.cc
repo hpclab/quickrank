@@ -81,8 +81,8 @@ void LambdaMart::compute_pseudoresponses(
 
     std::shared_ptr<data::RankedResults> ranked;
     size_t *map_from_cleaned = new size_t[qr->num_results()];
-    Label *labels_cleaned;
-    Score *training_scores_cleaned;
+    Label *labels_cleaned = NULL;
+    Score *training_scores_cleaned = NULL;
     if (sample_presence) {
       // Clean the query results with missing samples
       labels_cleaned = new Label[qr->num_results()];
