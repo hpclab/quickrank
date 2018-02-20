@@ -109,9 +109,9 @@ void RegressionTree::fit(RTNodeHistogram *hist,
       // We skip leaf already merged in the parent node!
       if (enriched_node->depth > 0 && !enriched_node->parent->is_leaf()) {
 
-        auto max_n_nodes = (size_t) ceil((pow(2, enriched_node->depth) - 1));
+        auto max_n_nodes = pow(2, enriched_node->depth + 1) - 1;
 
-        if ( (float) n_nodes / max_n_nodes > collapse_leaves_factor)
+        if ( n_nodes > max_n_nodes * collapse_leaves_factor)
           break;
 
 //        // delte hist of leaves if they are != NULL (and not root)
