@@ -105,22 +105,24 @@ void RegressionTree::fit(RTNodeHistogram *hist,
       // We skip leaf already merged in the parent node!
       if (enriched_node->depth > 0 && !enriched_node->parent->is_leaf()) {
 
-        auto max_n_nodes = (size_t) ceil((pow(2, enriched_node->depth) - 1));
+        auto max_n_nodes = pow(2, enriched_node->depth + 1) - 1;
 
-        if ( (float) n_nodes / max_n_nodes > collapse_leaves_factor)
+        if (n_nodes > max_n_nodes * collapse_leaves_factor)
           break;
 
-//        // delte hist of leaves if they are != NULL (and not root)
-        if (enriched_node->parent->right->hist != NULL)
-          delete enriched_node->parent->right->hist;
+        // lets the parent become a leaf node (and delete the two children)
         if (enriched_node->parent->left->hist != NULL)
           delete enriched_node->parent->left->hist;
-
-        // lets the parent become a leaf node (and delete the two children)
+        delete[] enriched_node->parent->left->sampleids;
         delete enriched_node->parent->left;
         enriched_node->parent->left = NULL;
+
+        if (enriched_node->parent->right->hist != NULL)
+          delete enriched_node->parent->right->hist;
+        delete[] enriched_node->parent->right->sampleids;
         delete enriched_node->parent->right;
         enriched_node->parent->right = NULL;
+
         enriched_node->parent->threshold = 0.0f;
         enriched_node->parent->set_feature(uint_max, uint_max);
 
@@ -138,7 +140,8 @@ void RegressionTree::fit(RTNodeHistogram *hist,
 
       if (enriched_node->node != root && !enriched_node->node->is_leaf()) {
         // Free useless resources in RTNode
-        delete[] enriched_node->node->sampleids;
+        if (enriched_node->node->sampleids != NULL)
+          delete[] enriched_node->node->sampleids;
         enriched_node->node->sampleids = NULL;
         enriched_node->node->nsampleids = 0;
       }
