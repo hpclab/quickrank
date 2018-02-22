@@ -38,7 +38,8 @@ class ObliviousRT: public RegressionTree {
       : RegressionTree(nodes, dps, labels, minls, collapse_leaves_factor),
         treedepth(treedepth) {
   }
-  void fit(RTNodeHistogram *hist);
+  void fit(RTNodeHistogram *hist,
+           size_t *sampleids);
 
  protected:
   const size_t treedepth = 0;

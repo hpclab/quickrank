@@ -53,11 +53,13 @@ std::ostream &ObliviousLambdaMart::put(std::ostream &os) const {
 }
 
 std::unique_ptr<RegressionTree> ObliviousLambdaMart::fit_regressor_on_gradient(
-    std::shared_ptr<data::VerticalDataset> training_dataset) {
+    std::shared_ptr<data::VerticalDataset> training_dataset,
+    size_t *sampleids) {
+
   ObliviousRT *tree = new ObliviousRT(nleaves_, training_dataset.get(),
                                       pseudoresponses_, minleafsupport_,
                                       treedepth_, collapse_leaves_factor_);
-  tree->fit(hist_);
+  tree->fit(hist_, sampleids);
   //update the outputs of the tree (with gamma computed using the Newton-Raphson pruning_method)
   tree->update_output(pseudoresponses_, instance_weights_);
   return std::unique_ptr<RegressionTree>(tree);

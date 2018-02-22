@@ -29,18 +29,12 @@
 
 #define POWTWO(e) (1<<(e))
 
-void ObliviousRT::fit(RTNodeHistogram *hist) {
-  //by default get all sampleids in the training set
-  size_t nsampleids = training_dataset->num_instances();
-  size_t *sampleids = new size_t[nsampleids];
-#pragma omp parallel for
-  for (size_t i = 0; i < nsampleids; ++i)
-    sampleids[i] = i;
-  //featureidxs to be used for "tree"
+void ObliviousRT::fit(RTNodeHistogram *hist,
+                      size_t *sampleids) {
+
   size_t nfeaturesamples = training_dataset->num_features();
   //histarray and nodearray store histograms and treenodes used in the entire procedure (i.e. the entire tree)
-  RTNode
-      **nodearray = new RTNode *[POWTWO(treedepth + 1)]();  //initialized NULL
+  RTNode **nodearray = new RTNode *[POWTWO(treedepth + 1)](); //initialized NULL
   //init tree root
   nodearray[0] = root = new RTNode(sampleids, hist);
   //allocate a matrix for each (feature,threshold)
