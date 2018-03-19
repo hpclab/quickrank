@@ -25,6 +25,7 @@
 #include <iomanip>
 #include <chrono>
 #include <random>
+#include <assert.h>
 
 namespace quickrank {
 namespace learning {
@@ -300,6 +301,8 @@ std::ostream &LambdaMartSampling2::put(std::ostream &os) const {
     os << "# sampling iterations = " << sampling_iterations << std::endl;
   if (max_sampling_factor != 0)
     os << "# max sampling factor = " << max_sampling_factor << std::endl;
+  if (random_sampling_factor != 0)
+    os << "# random sampling factor = " << random_sampling_factor << std::endl;
   return os;
 }
 
@@ -308,7 +311,8 @@ size_t LambdaMartSampling2::top_negative_sampling_query_level(
     size_t *sampleids,
     size_t *npositives) {
 
-  if (!sampling_iterations || !max_sampling_factor)
+  if (!sampling_iterations || !max_sampling_factor ||
+      random_sampling_factor == 1.0f)
     return dataset->num_instances();
 
   size_t cursor = 0;
@@ -318,8 +322,13 @@ size_t LambdaMartSampling2::top_negative_sampling_query_level(
     size_t end_offset = dataset->offset(q + 1);
     size_t query_size = end_offset - start_offset;
 
-    size_t nneg_query = query_size - npositives[q];
-    size_t nsample_neg = (size_t) std::floor(max_sampling_factor * nneg_query);
+    size_t n_neg_query = query_size - npositives[q];
+    size_t n_top_neg = (size_t) std::floor(max_sampling_factor * n_neg_query);
+    size_t n_random_neg = (size_t) std::floor(
+        random_sampling_factor * n_neg_query);
+    size_t n_total_neg = n_top_neg + n_random_neg;
+    if (n_total_neg > n_neg_query)
+      n_total_neg = n_neg_query;
 
     std::sort(&sampleids[start_offset], &sampleids[end_offset],
               [this, &dataset](size_t i1, size_t i2) {
@@ -332,13 +341,23 @@ size_t LambdaMartSampling2::top_negative_sampling_query_level(
               });
 
     if (cursor > 0) {
-      for (size_t j = 0; j < npositives[q] + nsample_neg; ++j) {
+      for (size_t j = 0; j < npositives[q] + n_top_neg; ++j) {
         std::swap(sampleids[cursor + j],
                   sampleids[start_offset + j]);
       }
     }
 
-    cursor += npositives[q] + nsample_neg;
+    if (n_random_neg > 0) {
+      for (size_t j = npositives[q] + n_top_neg;
+           j < npositives[q] + n_top_neg + n_random_neg; ++j) {
+        size_t index = rand() % (query_size - j);
+        assert(index < query_size - j);
+        std::swap(sampleids[cursor + j],
+                  sampleids[start_offset + j + index]);
+      }
+    }
+
+    cursor += npositives[q] + n_total_neg;
   }
 
   return cursor;

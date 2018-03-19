@@ -45,11 +45,13 @@ class LambdaMartSampling2: public LambdaMart {
   LambdaMartSampling2(size_t ntrees, double shrinkage, size_t nthresholds,
              size_t ntreeleaves, size_t minleafsupport, float subsample,
              float max_features, size_t esr, float collapse_leaves_factor,
-             int sampling_iterations, float max_sampling_factor)
+             int sampling_iterations, float max_sampling_factor,
+             float random_sampling_factor)
       : LambdaMart(ntrees, shrinkage, nthresholds, ntreeleaves, minleafsupport,
              subsample, max_features, esr, collapse_leaves_factor),
         sampling_iterations(sampling_iterations),
-        max_sampling_factor(max_sampling_factor) {
+        max_sampling_factor(max_sampling_factor),
+        random_sampling_factor(random_sampling_factor){
   }
 
   /// Generates a LTR_Algorithm instance from a previously saved XML model.
@@ -99,6 +101,7 @@ class LambdaMartSampling2: public LambdaMart {
  private:
   int sampling_iterations;
   float max_sampling_factor;
+  float random_sampling_factor;
 };
 
 }  // namespace forests
