@@ -115,6 +115,7 @@ int main(int argc, char *argv[]) {
   int sampling_iterations = 0;
   float max_sampling_factor = 1.0;
   float random_sampling_factor = 0.0;
+  float normalization_factor = 0.3;
 
   std::string sample_type =
       quickrank::learning::forests::Dart::get_sampling_type(
@@ -269,6 +270,12 @@ int main(int argc, char *argv[]) {
                          "during a sampling iteration. The sampling ratio",
                          "varies from 0 to the 1.0. (if 1.0 disabled)"},
                         random_sampling_factor);
+
+  pmap.addOptionWithArg("normalization-factor",
+                        {"describe the normalization factor used to linearly",
+                         "increase the random and top ranking sampling factor",
+                         "computed on the delta score train - vali."},
+                        normalization_factor);
 
 // --------------------------------------------------------
   pmap.addMessage({"Training phase - specific options for Meta LtR models:"});

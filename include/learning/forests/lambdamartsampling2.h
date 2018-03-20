@@ -46,12 +46,13 @@ class LambdaMartSampling2: public LambdaMart {
              size_t ntreeleaves, size_t minleafsupport, float subsample,
              float max_features, size_t esr, float collapse_leaves_factor,
              int sampling_iterations, float max_sampling_factor,
-             float random_sampling_factor)
+             float random_sampling_factor, float normalization_factor)
       : LambdaMart(ntrees, shrinkage, nthresholds, ntreeleaves, minleafsupport,
              subsample, max_features, esr, collapse_leaves_factor),
         sampling_iterations(sampling_iterations),
-        max_sampling_factor(max_sampling_factor),
-        random_sampling_factor(random_sampling_factor){
+        rank_sampling_factor(max_sampling_factor),
+        random_sampling_factor(random_sampling_factor),
+        normalization_factor(normalization_factor) {
   }
 
   /// Generates a LTR_Algorithm instance from a previously saved XML model.
@@ -89,19 +90,16 @@ class LambdaMartSampling2: public LambdaMart {
   size_t top_negative_sampling_query_level(
       std::shared_ptr<data::Dataset> training_dataset,
       size_t *sampleids,
-      size_t *npositives
-  );
-
-  size_t top_negative_sampling_overall(
-      std::shared_ptr<data::Dataset> training_dataset,
-      size_t *sampleids,
-      size_t *npositives
+      size_t *npositives,
+      float rank_factor,
+      float random_factor
   );
 
  private:
   int sampling_iterations;
-  float max_sampling_factor;
+  float rank_sampling_factor;
   float random_sampling_factor;
+  float normalization_factor;
 };
 
 }  // namespace forests

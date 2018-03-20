@@ -112,7 +112,7 @@ void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> traini
   size_t nsampleids_iter = nsampleids;
   bool *sample_presence = NULL;
 
-  if (max_sampling_factor > 0)
+  if (rank_sampling_factor > 0)
     sample_presence = new bool[nsampleids];
 
   // If we do not use document sampling, we fill the sampleids only once
@@ -123,7 +123,7 @@ void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> traini
       sample_presence[i] = true;
   }
 
-  if (max_sampling_factor > 0) {
+  if (rank_sampling_factor > 0) {
     sampleids_orig = new size_t[nsampleids];
     memcpy(sampleids_orig, sampleids, sizeof(size_t) * nsampleids);
 
@@ -157,19 +157,24 @@ void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> traini
 
   auto chrono_train_start = std::chrono::high_resolution_clock::now();
 
+  float rank_factor = rank_sampling_factor;
+  float random_factor = random_sampling_factor;
+
   // start iterations from 0 or (ensemble_size - 1)
   for (size_t m = ensemble_model_.get_size(); m < ntrees_; ++m) {
     if (validation_dataset
         && (valid_iterations_ && m > best_model_ + valid_iterations_))
       break;
 
-    if (max_sampling_factor > 0 && m % sampling_iterations == 0 && m > 0) {
+    if (rank_sampling_factor > 0 && m % sampling_iterations == 0 && m > 0) {
 
       // Reset sampleids and reorder on a query basis
       memcpy(sampleids, sampleids_orig, sizeof(size_t) * nsampleids);
       nsampleids_iter = top_negative_sampling_query_level(training_dataset,
                                                           sampleids,
-                                                          npositives);
+                                                          npositives,
+                                                          rank_factor,
+                                                          random_factor);
 
       std::cout << "Reducing training size from "
                 << nsampleids << " to "
@@ -241,6 +246,20 @@ void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> traini
         best_model_ = ensemble_model_.get_size() - 1;
         std::cout << " *";
       }
+
+      MetricScore delta_score = float(
+          abs(metric_on_training - metric_on_validation)) / metric_on_validation;
+      rank_factor = std::min(0.5, rank_sampling_factor +
+          delta_score * (0.5f - rank_sampling_factor) / normalization_factor);
+      random_factor = std::min(0.5, random_sampling_factor +
+          delta_score * (0.5f - random_sampling_factor) / normalization_factor);
+
+      std::cout << std::setprecision(2) << std::endl
+                << "Delta: " << delta_score*100
+                << " - Rank Factor: " << rank_factor
+                << " - Random Factor: " << random_factor
+                << std::setprecision(4);
+
     } else {
       if (metric_on_training > best_metric_on_training_) {
         best_metric_on_training_ = metric_on_training;
@@ -299,8 +318,8 @@ std::ostream &LambdaMartSampling2::put(std::ostream &os) const {
   Mart::put(os);
   if (sampling_iterations != 0)
     os << "# sampling iterations = " << sampling_iterations << std::endl;
-  if (max_sampling_factor != 0)
-    os << "# max sampling factor = " << max_sampling_factor << std::endl;
+  if (rank_sampling_factor != 0)
+    os << "# max sampling factor = " << rank_sampling_factor << std::endl;
   if (random_sampling_factor != 0)
     os << "# random sampling factor = " << random_sampling_factor << std::endl;
   return os;
@@ -309,10 +328,11 @@ std::ostream &LambdaMartSampling2::put(std::ostream &os) const {
 size_t LambdaMartSampling2::top_negative_sampling_query_level(
     std::shared_ptr<data::Dataset> dataset,
     size_t *sampleids,
-    size_t *npositives) {
+    size_t *npositives,
+    float rank_factor,
+    float random_factor) {
 
-  if (!sampling_iterations || !max_sampling_factor ||
-      random_sampling_factor == 1.0f)
+  if (!sampling_iterations || !rank_factor || random_factor == 1.0f)
     return dataset->num_instances();
 
   size_t cursor = 0;
@@ -323,12 +343,14 @@ size_t LambdaMartSampling2::top_negative_sampling_query_level(
     size_t query_size = end_offset - start_offset;
 
     size_t n_neg_query = query_size - npositives[q];
-    size_t n_top_neg = (size_t) std::floor(max_sampling_factor * n_neg_query);
-    size_t n_random_neg = (size_t) std::floor(
-        random_sampling_factor * n_neg_query);
+    size_t n_top_neg = (size_t) std::ceil(rank_factor * n_neg_query);
+    size_t n_random_neg = (size_t) std::ceil(
+        random_factor * n_neg_query);
     size_t n_total_neg = n_top_neg + n_random_neg;
-    if (n_total_neg > n_neg_query)
+    if (n_total_neg > n_neg_query) {
       n_total_neg = n_neg_query;
+      n_random_neg = n_neg_query - n_top_neg;
+    }
 
     std::sort(&sampleids[start_offset], &sampleids[end_offset],
               [this, &dataset](size_t i1, size_t i2) {
@@ -348,12 +370,18 @@ size_t LambdaMartSampling2::top_negative_sampling_query_level(
     }
 
     if (n_random_neg > 0) {
-      for (size_t j = npositives[q] + n_top_neg;
-           j < npositives[q] + n_top_neg + n_random_neg; ++j) {
-        size_t index = rand() % (query_size - j);
-        assert(index < query_size - j);
-        std::swap(sampleids[cursor + j],
-                  sampleids[start_offset + j + index]);
+
+      /* initialize random seed: */
+        srand(0);
+//      srand(time(NULL));
+
+      std::vector<int> indices(query_size - npositives[q] - n_top_neg);
+      std::iota(indices.begin(), indices.end(), npositives[q] + n_top_neg);
+      std::random_shuffle(indices.begin(), indices.end());
+
+      for (size_t j=0; j<n_random_neg; ++j) {
+        std::swap(sampleids[cursor + npositives[q] + n_top_neg + j],
+                  sampleids[start_offset + indices[j]]);
       }
     }
 
