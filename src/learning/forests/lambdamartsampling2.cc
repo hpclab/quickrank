@@ -161,12 +161,19 @@ void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> traini
   float random_factor = random_sampling_factor;
 
   // start iterations from 0 or (ensemble_size - 1)
+  float delta_score = 0;
   for (size_t m = ensemble_model_.get_size(); m < ntrees_; ++m) {
     if (validation_dataset
         && (valid_iterations_ && m > best_model_ + valid_iterations_))
       break;
 
     if (rank_sampling_factor > 0 && m % sampling_iterations == 0 && m > 0) {
+
+      std::cout << std::setprecision(2)
+                << "Delta: " << delta_score*100
+                << " - Rank Factor: " << rank_factor
+                << " - Random Factor: " << random_factor
+                << std::setprecision(4) << std::endl;
 
       // Reset sampleids and reorder on a query basis
       memcpy(sampleids, sampleids_orig, sizeof(size_t) * nsampleids);
@@ -247,18 +254,23 @@ void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> traini
         std::cout << " *";
       }
 
-      MetricScore delta_score = float(
-          abs(metric_on_training - metric_on_validation)) / metric_on_validation;
-      rank_factor = std::min(0.5, rank_sampling_factor +
-          delta_score * (0.5f - rank_sampling_factor) / normalization_factor);
-      random_factor = std::min(0.5, random_sampling_factor +
-          delta_score * (0.5f - random_sampling_factor) / normalization_factor);
+      delta_score = float(abs(
+          metric_on_training - metric_on_validation) / metric_on_validation);
+      size_t iter_last_impr = m - best_model_;
+      rank_factor = 10.0f * delta_score *
+          rank_sampling_factor / normalization_factor;
+      random_factor = 10.0f * delta_score *
+          random_sampling_factor / normalization_factor;
 
-      std::cout << std::setprecision(2) << std::endl
-                << "Delta: " << delta_score*100
-                << " - Rank Factor: " << rank_factor
-                << " - Random Factor: " << random_factor
-                << std::setprecision(4);
+      // Rank/Random factor adaptability depending from last iter with improv.
+//      rank_factor *= 1 - (float(iter_last_impr) / valid_iterations_);
+//      random_factor *= float(iter_last_impr) / valid_iterations_;
+
+      if (rank_factor + random_factor > 1) {
+        float sum_factor = rank_factor + random_factor;
+        rank_factor /= sum_factor;
+        random_factor /= sum_factor;
+      }
 
     } else {
       if (metric_on_training > best_metric_on_training_) {
