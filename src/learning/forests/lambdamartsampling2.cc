@@ -161,6 +161,7 @@ void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> traini
   float random_factor = random_sampling_factor;
 
   // start iterations from 0 or (ensemble_size - 1)
+  std::vector<bool> improvements((int) normalization_factor, true);
   float delta_score = 0;
   for (size_t m = ensemble_model_.get_size(); m < ntrees_; ++m) {
     if (validation_dataset
@@ -169,8 +170,7 @@ void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> traini
 
     if (rank_sampling_factor > 0 && m % sampling_iterations == 0 && m > 0) {
 
-      std::cout << std::setprecision(2)
-                << "Delta: " << delta_score*100
+      std::cout << "Delta: " << delta_score*100
                 << " - Rank Factor: " << rank_factor
                 << " - Random Factor: " << random_factor
                 << std::setprecision(4) << std::endl;
@@ -254,23 +254,18 @@ void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> traini
         std::cout << " *";
       }
 
-      delta_score = float(abs(
-          metric_on_training - metric_on_validation) / metric_on_validation);
-      size_t iter_last_impr = m - best_model_;
-      rank_factor = 10.0f * delta_score *
-          rank_sampling_factor / normalization_factor;
-      random_factor = 10.0f * delta_score *
-          random_sampling_factor / normalization_factor;
+//      delta_score = float(abs(
+//          metric_on_training - metric_on_validation) / metric_on_validation);
+//      rank_factor = 10.0f * delta_score *
+//          rank_sampling_factor / normalization_factor;
+//      random_factor = 10.0f * delta_score *
+//          random_sampling_factor / normalization_factor;
 
-      // Rank/Random factor adaptability depending from last iter with improv.
-//      rank_factor *= 1 - (float(iter_last_impr) / valid_iterations_);
-//      random_factor *= float(iter_last_impr) / valid_iterations_;
-
-      if (rank_factor + random_factor > 1) {
-        float sum_factor = rank_factor + random_factor;
-        rank_factor /= sum_factor;
-        random_factor /= sum_factor;
-      }
+//      if (rank_factor + random_factor > 1) {
+//        float sum_factor = rank_factor + random_factor;
+//        rank_factor /= sum_factor;
+//        random_factor /= sum_factor;
+//      }
 
     } else {
       if (metric_on_training > best_metric_on_training_) {
@@ -280,6 +275,20 @@ void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> traini
       }
     }
     std::cout << std::endl;
+
+    // Rank/Random factor adaptability depending from last iter with improv.
+    improvements[m % improvements.size()] =
+        best_model_ == (ensemble_model_.get_size() - 1);
+
+    float iters_improvement = std::accumulate(improvements.begin(),
+                                             improvements.end(), 0.0);
+    float adapt_factor = iters_improvement / improvements.size();
+
+    std::cout << "adapt_factor: " << adapt_factor << std::endl;
+
+    float sum_factors = rank_sampling_factor + random_sampling_factor;
+    rank_factor = sum_factors * adapt_factor;
+    random_factor = sum_factors - rank_factor;
 
     if (partial_save != 0 and !output_basename.empty()
         and (m + 1) % partial_save == 0) {
