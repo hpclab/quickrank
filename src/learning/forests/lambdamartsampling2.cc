@@ -160,6 +160,10 @@ void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> traini
   float rank_factor = rank_sampling_factor;
   float random_factor = random_sampling_factor;
 
+  /* initialize random seed: */
+  srand(0);
+//      srand(time(NULL));
+
   // start iterations from 0 or (ensemble_size - 1)
   std::vector<bool> improvements((int) normalization_factor, true);
   float delta_score = 0;
@@ -391,10 +395,6 @@ size_t LambdaMartSampling2::top_negative_sampling_query_level(
     }
 
     if (n_random_neg > 0) {
-
-      /* initialize random seed: */
-        srand(0);
-//      srand(time(NULL));
 
       std::vector<int> indices(query_size - npositives[q] - n_top_neg);
       std::iota(indices.begin(), indices.end(), npositives[q] + n_top_neg);
