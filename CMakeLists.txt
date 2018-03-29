@@ -104,5 +104,4 @@ install(TARGETS quicklearn
   DESTINATION bin)
 
 install(TARGETS quickrank_common
-  DESTINATION lib
-  RENAME quickrank)
+  DESTINATION lib)
