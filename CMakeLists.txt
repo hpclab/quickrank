@@ -53,8 +53,10 @@ file(GLOB_RECURSE unit_tests_sources ${CMAKE_SOURCE_DIR}/catch-unit-tests/*.cc)
 # external libraries
 file(GLOB_RECURSE pugixml_sources ${CMAKE_SOURCE_DIR}/lib/pugixml/src/*.cpp)
 add_library(pugixml STATIC ${pugixml_sources})
-add_library(quickrank_common STATIC ${all_sources})
+add_library(quickrank_common ${all_sources})
 target_link_libraries(quickrank_common pugixml)
+
+set_target_properties(quickrank_common PROPERTIES OUTPUT_NAME "quickrank")
 
 # managing QuickRank headers and libraries
 file(GLOB_RECURSE all_headers
@@ -94,3 +96,13 @@ add_custom_target(doc
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/api-documentation
     COMMENT "Creating the documentation with doxygen"
 )
+
+install(FILES ${all_headers}
+  DESTINATION include/quickrank)
+
+install(TARGETS quicklearn
+  DESTINATION bin)
+
+install(TARGETS quickrank_common
+  DESTINATION lib
+  RENAME quickrank)
