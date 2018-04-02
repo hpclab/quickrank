@@ -97,8 +97,10 @@ add_custom_target(doc
     COMMENT "Creating the documentation with doxygen"
 )
 
-install(FILES ${all_headers}
-  DESTINATION include/quickrank)
+install(
+    DIRECTORY "${CMAKE_SOURCE_DIR}/include/"
+    DESTINATION "include/quickrank"
+    FILES_MATCHING PATTERN "*.h*")
 
 install(TARGETS quicklearn
   DESTINATION bin)
