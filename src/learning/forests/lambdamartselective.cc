@@ -19,32 +19,31 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#include "learning/forests/lambdamartsampling2.h"
+#include "learning/forests/lambdamartselective.h"
 
 #include <fstream>
 #include <iomanip>
 #include <chrono>
 #include <random>
-#include <assert.h>
 
 namespace quickrank {
 namespace learning {
 namespace forests {
 
-const std::string LambdaMartSampling2::NAME_ = "LAMBDAMART-SAMPLING2";
+const std::string LambdaMartSelective::NAME_ = "LAMBDAMART-SELECTIVE";
 
 
 void
-LambdaMartSampling2::init(
+LambdaMartSelective::init(
     std::shared_ptr<quickrank::data::VerticalDataset> training_dataset) {
   LambdaMart::init(training_dataset);
 }
 
-void LambdaMartSampling2::clear(size_t num_features) {
+void LambdaMartSelective::clear(size_t num_features) {
   LambdaMart::clear(num_features);
 }
 
-void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
+void LambdaMartSelective::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
                  std::shared_ptr<quickrank::data::Dataset> validation_dataset,
                  std::shared_ptr<quickrank::metric::ir::Metric> scorer,
                  size_t partial_save, const std::string output_basename) {
@@ -339,7 +338,7 @@ void LambdaMartSampling2::learn(std::shared_ptr<quickrank::data::Dataset> traini
             << " s." << std::endl;
 }
 
-std::ostream &LambdaMartSampling2::put(std::ostream &os) const {
+std::ostream &LambdaMartSelective::put(std::ostream &os) const {
   Mart::put(os);
   if (sampling_iterations != 0)
     os << "# sampling iterations = " << sampling_iterations << std::endl;
@@ -350,7 +349,7 @@ std::ostream &LambdaMartSampling2::put(std::ostream &os) const {
   return os;
 }
 
-size_t LambdaMartSampling2::top_negative_sampling_query_level(
+size_t LambdaMartSelective::top_negative_sampling_query_level(
     std::shared_ptr<data::Dataset> dataset,
     size_t *sampleids,
     size_t *npositives,

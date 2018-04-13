@@ -31,7 +31,7 @@ namespace quickrank {
 namespace learning {
 namespace forests {
 
-class LambdaMartSampling2: public LambdaMart {
+class LambdaMartSelective: public LambdaMart {
  public:
   /// Initializes a new LambdaMart instance with the given learning parameters.
   ///
@@ -42,7 +42,7 @@ class LambdaMartSampling2: public LambdaMart {
   /// \param minleafsupport Minimum number of instances in each leaf.
   /// \param esr Early stopping if no improvement after \esr iterations
   /// on the validation set.
-  LambdaMartSampling2(size_t ntrees, double shrinkage, size_t nthresholds,
+  LambdaMartSelective(size_t ntrees, double shrinkage, size_t nthresholds,
              size_t ntreeleaves, size_t minleafsupport, float subsample,
              float max_features, size_t esr, float collapse_leaves_factor,
              int sampling_iterations, float max_sampling_factor,
@@ -56,11 +56,11 @@ class LambdaMartSampling2: public LambdaMart {
   }
 
   /// Generates a LTR_Algorithm instance from a previously saved XML model.
-  LambdaMartSampling2(const pugi::xml_document &model)
+  LambdaMartSelective(const pugi::xml_document &model)
       : LambdaMart(model) {
   }
 
-  virtual ~LambdaMartSampling2() {
+  virtual ~LambdaMartSelective() {
   }
 
   /// Returns the name of the ranker.
