@@ -311,14 +311,10 @@ void LambdaMartSelective::learn(std::shared_ptr<quickrank::data::Dataset> traini
 
 std::ostream &LambdaMartSelective::put(std::ostream &os) const {
   Mart::put(os);
-  if (sampling_iterations != 0)
-    os << "# sampling iterations = " << sampling_iterations << std::endl;
-  if (rank_sampling_factor != 0)
-    os << "# rank sampling factor = " << rank_sampling_factor << std::endl;
-  if (random_sampling_factor != 0)
-    os << "# random sampling factor = " << random_sampling_factor << std::endl;
-  if (normalization_factor != 0)
-    os << "# normalization factor = " << normalization_factor << std::endl;
+  os << "# sampling iterations = " << sampling_iterations << std::endl;
+  os << "# rank sampling factor = " << rank_sampling_factor << std::endl;
+  os << "# random sampling factor = " << random_sampling_factor << std::endl;
+  os << "# normalization factor = " << normalization_factor << std::endl;
   os << "# adaptive strategy = " << adaptive_strategy << std::endl;
   os << "# negative strategy = " << negative_strategy << std::endl;
   return os;
