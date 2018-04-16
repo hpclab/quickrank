@@ -46,13 +46,16 @@ class LambdaMartSelective: public LambdaMart {
              size_t ntreeleaves, size_t minleafsupport, float subsample,
              float max_features, size_t esr, float collapse_leaves_factor,
              int sampling_iterations, float max_sampling_factor,
-             float random_sampling_factor, float normalization_factor)
+             float random_sampling_factor, float normalization_factor,
+             std::string adaptive_strategy, std::string negative_strategy)
       : LambdaMart(ntrees, shrinkage, nthresholds, ntreeleaves, minleafsupport,
              subsample, max_features, esr, collapse_leaves_factor),
         sampling_iterations(sampling_iterations),
         rank_sampling_factor(max_sampling_factor),
         random_sampling_factor(random_sampling_factor),
-        normalization_factor(normalization_factor) {
+        normalization_factor(normalization_factor),
+        adaptive_strategy(adaptive_strategy),
+        negative_strategy(negative_strategy) {
   }
 
   /// Generates a LTR_Algorithm instance from a previously saved XML model.
@@ -87,12 +90,11 @@ class LambdaMartSelective: public LambdaMart {
   /// Prints the description of Algorithm, including its parameters.
   virtual std::ostream &put(std::ostream &os) const;
 
-  size_t top_negative_sampling_query_level(
+  size_t sampling_query_level(
       std::shared_ptr<data::Dataset> training_dataset,
       size_t *sampleids,
       size_t *npositives,
-      float rank_factor,
-      float random_factor
+      float adapt_factor
   );
 
  private:
@@ -100,6 +102,8 @@ class LambdaMartSelective: public LambdaMart {
   float rank_sampling_factor;
   float random_sampling_factor;
   float normalization_factor;
+  std::string adaptive_strategy;
+  std::string negative_strategy;
 };
 
 }  // namespace forests

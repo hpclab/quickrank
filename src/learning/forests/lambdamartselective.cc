@@ -111,7 +111,7 @@ void LambdaMartSelective::learn(std::shared_ptr<quickrank::data::Dataset> traini
   size_t nsampleids_iter = nsampleids;
   bool *sample_presence = NULL;
 
-  if (rank_sampling_factor > 0)
+  if (rank_sampling_factor > 0 || random_sampling_factor > 0)
     sample_presence = new bool[nsampleids];
 
   // If we do not use document sampling, we fill the sampleids only once
@@ -122,7 +122,7 @@ void LambdaMartSelective::learn(std::shared_ptr<quickrank::data::Dataset> traini
       sample_presence[i] = true;
   }
 
-  if (rank_sampling_factor > 0) {
+  if (rank_sampling_factor > 0 || random_sampling_factor > 0) {
     sampleids_orig = new size_t[nsampleids];
     memcpy(sampleids_orig, sampleids, sizeof(size_t) * nsampleids);
 
@@ -156,35 +156,27 @@ void LambdaMartSelective::learn(std::shared_ptr<quickrank::data::Dataset> traini
 
   auto chrono_train_start = std::chrono::high_resolution_clock::now();
 
-  float rank_factor = rank_sampling_factor;
-  float random_factor = random_sampling_factor;
-
   /* initialize random seed: */
   srand(0);
 //      srand(time(NULL));
 
   // start iterations from 0 or (ensemble_size - 1)
   std::vector<bool> improvements((int) normalization_factor, true);
-  float delta_score = 0;
+  float adapt_factor = 1;
   for (size_t m = ensemble_model_.get_size(); m < ntrees_; ++m) {
     if (validation_dataset
         && (valid_iterations_ && m > best_model_ + valid_iterations_))
       break;
 
-    if (rank_sampling_factor > 0 && m % sampling_iterations == 0 && m > 0) {
-
-      std::cout << "Delta: " << delta_score*100
-                << " - Rank Factor: " << rank_factor
-                << " - Random Factor: " << random_factor
-                << std::setprecision(4) << std::endl;
+    if ((rank_sampling_factor > 0 || random_sampling_factor > 0) &&
+        m % sampling_iterations == 0 && m > 0) {
 
       // Reset sampleids and reorder on a query basis
       memcpy(sampleids, sampleids_orig, sizeof(size_t) * nsampleids);
-      nsampleids_iter = top_negative_sampling_query_level(training_dataset,
-                                                          sampleids,
-                                                          npositives,
-                                                          rank_factor,
-                                                          random_factor);
+      nsampleids_iter = sampling_query_level(training_dataset,
+                                             sampleids,
+                                             npositives,
+                                             adapt_factor);
 
       std::cout << "Reducing training size from "
                 << nsampleids << " to "
@@ -212,7 +204,7 @@ void LambdaMartSelective::learn(std::shared_ptr<quickrank::data::Dataset> traini
     // If we are training on a sample of the full dataset, we need to update
     // the presence map
     if (nsampleids_iter < nsampleids) {
-      #pragma omp parallel for
+//      #pragma omp parallel for
       for (size_t i=0; i<training_dataset->num_instances(); ++i) {
         sample_presence[sampleids[i]] = i < nsampleids_iter;
       }
@@ -257,19 +249,6 @@ void LambdaMartSelective::learn(std::shared_ptr<quickrank::data::Dataset> traini
         std::cout << " *";
       }
 
-//      delta_score = float(abs(
-//          metric_on_training - metric_on_validation) / metric_on_validation);
-//      rank_factor = 10.0f * delta_score *
-//          rank_sampling_factor / normalization_factor;
-//      random_factor = 10.0f * delta_score *
-//          random_sampling_factor / normalization_factor;
-
-//      if (rank_factor + random_factor > 1) {
-//        float sum_factor = rank_factor + random_factor;
-//        rank_factor /= sum_factor;
-//        random_factor /= sum_factor;
-//      }
-
     } else {
       if (metric_on_training > best_metric_on_training_) {
         best_metric_on_training_ = metric_on_training;
@@ -283,21 +262,14 @@ void LambdaMartSelective::learn(std::shared_ptr<quickrank::data::Dataset> traini
     improvements[m % improvements.size()] =
         best_model_ == (ensemble_model_.get_size() - 1);
 
-    float iters_improvement = std::accumulate(improvements.begin(),
-                                             improvements.end(), 0.0);
-    float adapt_factor = iters_improvement / improvements.size();
-
-    std::cout << "adapt_factor: " << adapt_factor << std::endl;
-
-    float sum_factors = rank_sampling_factor + random_sampling_factor;
-    rank_factor = sum_factors * adapt_factor;
-    random_factor = sum_factors - rank_factor;
+    float iters_improvement = (float) std::accumulate(improvements.begin(),
+                                                      improvements.end(), 0.0);
+    adapt_factor = iters_improvement / improvements.size();
 
     if (partial_save != 0 and !output_basename.empty()
         and (m + 1) % partial_save == 0) {
       save(output_basename, m + 1);
     }
-
   }
 
   delete[] sampleids;
@@ -307,7 +279,6 @@ void LambdaMartSelective::learn(std::shared_ptr<quickrank::data::Dataset> traini
     delete[] npositives;
   if (sample_presence)
     delete[] sample_presence;
-
 
   //Rollback to the best model observed on the validation data
   if (validation_dataset) {
@@ -343,23 +314,64 @@ std::ostream &LambdaMartSelective::put(std::ostream &os) const {
   if (sampling_iterations != 0)
     os << "# sampling iterations = " << sampling_iterations << std::endl;
   if (rank_sampling_factor != 0)
-    os << "# max sampling factor = " << rank_sampling_factor << std::endl;
+    os << "# rank sampling factor = " << rank_sampling_factor << std::endl;
   if (random_sampling_factor != 0)
     os << "# random sampling factor = " << random_sampling_factor << std::endl;
+  if (normalization_factor != 0)
+    os << "# normalization factor = " << normalization_factor << std::endl;
+  os << "# adaptive strategy = " << adaptive_strategy << std::endl;
+  os << "# negative strategy = " << negative_strategy << std::endl;
   return os;
 }
 
-size_t LambdaMartSelective::top_negative_sampling_query_level(
+size_t LambdaMartSelective::sampling_query_level(
     std::shared_ptr<data::Dataset> dataset,
     size_t *sampleids,
     size_t *npositives,
-    float rank_factor,
-    float random_factor) {
+    float adapt_factor) {
 
-  if (!sampling_iterations || !rank_factor || random_factor == 1.0f)
+  if (!sampling_iterations)
     return dataset->num_instances();
 
+  float sum_factors = rank_sampling_factor + random_sampling_factor;
+//  if (sum_factors > 1)
+//    sum_factors = 1;
+
+  float rank_factor, random_factor;
+  float inv_adapt_factor = 1 - adapt_factor;
+
+  if (adaptive_strategy == "FIXED") {
+
+    auto min_ratio = fmin(rank_sampling_factor, random_sampling_factor);
+    auto max_ratio = fmax(rank_sampling_factor, random_sampling_factor);
+    auto delta = max_ratio - min_ratio;
+    rank_factor = random_factor = min_ratio + inv_adapt_factor * delta;
+
+  } else if (adaptive_strategy == "RATIO") {
+
+    rank_factor = sum_factors * adapt_factor;
+    random_factor = sum_factors - rank_factor;
+
+  } else if (adaptive_strategy == "MIX") {
+
+    auto min_ratio = fmin(rank_sampling_factor, random_sampling_factor);
+    auto max_ratio = fmax(rank_sampling_factor, random_sampling_factor);
+    auto delta = max_ratio - min_ratio;
+    auto factor = min_ratio + inv_adapt_factor * delta;
+
+    rank_factor = factor * adapt_factor;
+    random_factor = factor - rank_factor;
+  }
+
+  std::cout << "Rank Factor: " << rank_factor
+            << " - Random Factor: " << random_factor
+            << " - Adapt Factor: " << adapt_factor
+            << std::setprecision(4) << std::endl;
+
   size_t cursor = 0;
+  size_t neg_sel_rank = 0;
+  size_t neg_sel_random = 0;
+  size_t n_pos = 0;
   for (size_t q=0; q<dataset->num_queries(); ++q) {
 
     size_t start_offset = dataset->offset(q);
@@ -367,14 +379,57 @@ size_t LambdaMartSelective::top_negative_sampling_query_level(
     size_t query_size = end_offset - start_offset;
 
     size_t n_neg_query = query_size - npositives[q];
-    size_t n_top_neg = (size_t) std::ceil(rank_factor * n_neg_query);
-    size_t n_random_neg = (size_t) std::ceil(
-        random_factor * n_neg_query);
+    size_t n_top_neg, n_random_neg;
+
+    if (negative_strategy == "RATIO") {
+      n_top_neg = (size_t) std::round(rank_factor * n_neg_query);
+      n_random_neg = (size_t) std::round(random_factor * n_neg_query);
+    } else if (negative_strategy == "MUL") {
+      n_top_neg = (size_t) std::round(rank_factor * npositives[q]);
+      n_random_neg = (size_t) std::round(random_factor * npositives[q]);
+      n_top_neg = std::min(n_top_neg, n_neg_query);
+      n_random_neg = std::min(n_random_neg, n_neg_query);
+    } else if (negative_strategy == "POS") {
+
+      std::sort(&sampleids[start_offset], &sampleids[end_offset],
+                [this](size_t i1, size_t i2) {
+                  return scores_on_training_[i1] > scores_on_training_[i2];
+                });
+
+      size_t last_pos = 0;
+      size_t num_pos_last = 0;
+      #pragma omp parallel for reduction(max : last_pos), reduction(+ : num_pos_last)
+      for (size_t i=0; i<query_size; ++i) {
+        if (dataset->getLabel(sampleids[start_offset + i]) > 0) {
+          last_pos = i;
+          ++num_pos_last;
+        }
+      }
+
+//      std::cout << "Position Last positive: " << last_pos << std::endl;
+      size_t n_neg_before_last_pos = last_pos - num_pos_last;
+      n_top_neg = (size_t) std::round(rank_factor * n_neg_before_last_pos);
+      n_random_neg = (size_t) std::round(random_factor * n_neg_before_last_pos);
+    }
+
     size_t n_total_neg = n_top_neg + n_random_neg;
     if (n_total_neg > n_neg_query) {
       n_total_neg = n_neg_query;
       n_random_neg = n_neg_query - n_top_neg;
     }
+
+    neg_sel_rank += n_top_neg;
+    neg_sel_random += n_random_neg;
+    n_pos += npositives[q];
+
+//    std::cout << std::setprecision(0)
+//              << "Query: " << q
+//              << " - Size: " << query_size
+//              << " - N. Pos: " << npositives[q]
+//              << " - N. Neg: " << n_neg_query
+//              << " - n_top_neg: " << n_top_neg
+//              << " - n_random_neg: " << n_random_neg
+//              << std::setprecision(4) << std::endl;
 
     std::sort(&sampleids[start_offset], &sampleids[end_offset],
               [this, &dataset](size_t i1, size_t i2) {
@@ -407,6 +462,12 @@ size_t LambdaMartSelective::top_negative_sampling_query_level(
 
     cursor += npositives[q] + n_total_neg;
   }
+
+  std::cout << std::setprecision(0)
+            << "N. Positives: " << n_pos
+            << " - Neg sel rank: " << neg_sel_rank
+            << " - Neg sel random: " << neg_sel_random
+            << std::setprecision(4) << std::endl;
 
   return cursor;
 }

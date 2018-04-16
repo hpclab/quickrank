@@ -112,9 +112,11 @@ int main(int argc, char *argv[]) {
   float max_features = 1.0f;
   float collapse_leaves_factor = 0;
   int sampling_iterations = 0;
-  float max_sampling_factor = 1.0;
+  float rank_sampling_factor = 1.0;
   float random_sampling_factor = 0.0;
   float normalization_factor = 0.3;
+  std::string adaptive_strategy = "FIXED";
+  std::string negative_strategy = "RATIO";
 
   std::string sample_type =
       quickrank::learning::forests::Dart::get_sampling_type(
@@ -256,16 +258,16 @@ int main(int argc, char *argv[]) {
                          "(if 0 disabled)."},
                         sampling_iterations);
 
-  pmap.addOptionWithArg("max-sampling-factor",
-                        {"describe the maximum fraction of documents to sample",
+  pmap.addOptionWithArg("rank-sampling-factor",
+                        {"describe the fraction of neg documents to top sample",
                          "during a sampling iteration. The sampling ratio",
                          "varies from 0 to the max. (if 1.0 disabled)"},
-                        max_sampling_factor);
+                        rank_sampling_factor);
 
   pmap.addOptionWithArg("random-sampling-factor",
-                        {"describe the fraction of documents to random sample",
-                         "during a sampling iteration. The sampling ratio",
-                         "varies from 0 to the 1.0. (if 1.0 disabled)"},
+                        {"describe the fraction of neg documents to random "
+                         "sample during a sampling iteration. The sampling "
+                         "ratio varies from 0 to the 1.0. (if 1.0 disabled)"},
                         random_sampling_factor);
 
   pmap.addOptionWithArg("normalization-factor",
@@ -273,6 +275,16 @@ int main(int argc, char *argv[]) {
                          "increase the random and top ranking sampling factor",
                          "computed on the delta score train - vali."},
                         normalization_factor);
+
+  pmap.addOptionWithArg("adaptive-strategy",
+                        {"Adaptive strategy for selective sampling "
+                         "[FIXED, RATIO, MIX]"},
+                        adaptive_strategy);
+
+  pmap.addOptionWithArg("negative-strategy",
+                        {"strategy for selective Negative samples"
+                         "[RATIO, MUL, POS]"},
+                        negative_strategy);
 
 // --------------------------------------------------------
   pmap.addMessage({"Training phase - specific options for Meta LtR models:"});
