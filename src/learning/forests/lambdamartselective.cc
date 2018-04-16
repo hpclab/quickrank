@@ -336,7 +336,12 @@ size_t LambdaMartSelective::sampling_query_level(
   float rank_factor, random_factor;
   float inv_adapt_factor = 1 - adapt_factor;
 
-  if (adaptive_strategy == "FIXED") {
+  if (adaptive_strategy == "NO") {
+
+    rank_factor = rank_sampling_factor;
+    random_factor = random_sampling_factor;
+
+  } else if (adaptive_strategy == "FIXED") {
 
     auto min_ratio = fmin(rank_sampling_factor, random_sampling_factor);
     auto max_ratio = fmax(rank_sampling_factor, random_sampling_factor);
