@@ -411,6 +411,8 @@ size_t LambdaMartSelective::sampling_query_level(
       size_t n_neg_before_last_pos = last_pos - num_pos_last;
       n_top_neg = (size_t) std::round(rank_factor * n_neg_before_last_pos);
       n_random_neg = (size_t) std::round(random_factor * n_neg_before_last_pos);
+    } else {
+      throw std::logic_error("Not supported!");
     }
 
     size_t n_total_neg = n_top_neg + n_random_neg;
