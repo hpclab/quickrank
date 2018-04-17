@@ -392,7 +392,7 @@ size_t LambdaMartSelective::sampling_query_level(
       n_random_neg = std::min(n_random_neg, n_neg_query);
     } else if (negative_strategy == "POS") {
 
-      if (npositives[q] > 0) {
+      if (npositives[q] == 0) {
 
         n_top_neg = 0;
         n_random_neg = 0;
