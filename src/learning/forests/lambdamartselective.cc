@@ -392,25 +392,33 @@ size_t LambdaMartSelective::sampling_query_level(
       n_random_neg = std::min(n_random_neg, n_neg_query);
     } else if (negative_strategy == "POS") {
 
-      std::sort(&sampleids[start_offset], &sampleids[end_offset],
-                [this](size_t i1, size_t i2) {
-                  return scores_on_training_[i1] > scores_on_training_[i2];
-                });
+      if (npositives[q] > 0) {
 
-      size_t last_pos = 0;
-      size_t num_pos_last = 0;
-      #pragma omp parallel for reduction(max : last_pos), reduction(+ : num_pos_last)
-      for (size_t i=0; i<query_size; ++i) {
-        if (dataset->getLabel(sampleids[start_offset + i]) > 0) {
-          last_pos = i;
-          ++num_pos_last;
+        n_top_neg = 0;
+        n_random_neg = 0;
+
+      } else {
+
+        std::sort(&sampleids[start_offset], &sampleids[end_offset],
+                  [this](size_t i1, size_t i2) {
+                    return scores_on_training_[i1] > scores_on_training_[i2];
+                  });
+
+        size_t last_pos = 0;
+        size_t num_pos_last = 0;
+        #pragma omp parallel for reduction(max : last_pos), reduction(+ : num_pos_last)
+        for (size_t i=0; i<query_size; ++i) {
+          if (dataset->getLabel(sampleids[start_offset + i]) > 0) {
+            last_pos = i;
+            ++num_pos_last;
+          }
         }
-      }
 
-//      std::cout << "Position Last positive: " << last_pos << std::endl;
-      size_t n_neg_before_last_pos = last_pos - num_pos_last;
-      n_top_neg = (size_t) std::round(rank_factor * n_neg_before_last_pos);
-      n_random_neg = (size_t) std::round(random_factor * n_neg_before_last_pos);
+  //      std::cout << "Position Last positive: " << last_pos << std::endl;
+        size_t n_neg_before_last_pos = last_pos - num_pos_last;
+        n_top_neg = (size_t) std::round(rank_factor * n_neg_before_last_pos);
+        n_random_neg = (size_t) std::round(random_factor * n_neg_before_last_pos);
+      }
     } else {
       throw std::logic_error("Not supported!");
     }
