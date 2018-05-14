@@ -414,11 +414,16 @@ size_t LambdaMartSelective::sampling_query_level(
         }
 
         size_t n_neg_before_last_pos = last_pos - npositives[q] + 1;
-        n_top_neg = (size_t) std::round(rank_factor * n_neg_before_last_pos);
-        n_random_neg = (size_t) std::round(random_factor * n_neg_before_last_pos);
+        n_top_neg = std::min(
+            (size_t) std::round(rank_factor *n_neg_before_last_pos),
+            n_neg_query);
+        n_random_neg = std::min(
+            (size_t) std::round(random_factor * n_neg_before_last_pos),
+            n_neg_query - n_top_neg);
+
 //        std::cout << "Position Last positive: " << last_pos
 //                  << " - n_neg_before_last_pos: " << n_neg_before_last_pos
-//                  << std::endl;ok tro
+//                  << std::endl;
       }
     } else {
       throw std::logic_error("Not supported!");
