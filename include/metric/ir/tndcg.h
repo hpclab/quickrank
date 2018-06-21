@@ -31,8 +31,7 @@ namespace ir {
 /**
  * This class implements a Tie-aware version of Normalized Discounted Cumulative Gain TNDCG\@k measure.
  *
- * see: McSherry, Frank, and Marc Najork. "Computing information retrieval
- * performance measures efficiently in the presence of tied scores."
+ * see: McSherry, Frank, and Marc Najork. .c
  * In Advances in information retrieval, pp. 414-421. Springer Berlin Heidelberg, 2008.
  */
 class Tndcg: public Ndcg {

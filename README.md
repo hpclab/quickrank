@@ -15,6 +15,7 @@ The LtR algorithms currently implemented are:
  - **RankBoost**: Freund, Y., Iyer, R., Schapire, R. E., & Singer, Y. *An efficient boosting algorithm for combining preferences*. JMLR, 4, 933-969 (2003).
  - **DART**: K.V. Rashmi and R. Gilad-Bachrach. *Dart: Dropouts meet multiple 
  additive regression trees*. JMLR, 38 (2015).
+ - **Selective**:  C. Lucchese, F. M. Nardini, S. Orlando, R. Perego and S. Trani. *Selective Gradient Boosting for Effective Learning to Rank*. ACM SIGIR, 2018.
 
 QuickRank also provides novel learning optimizations. Currently implemented optimizers are:
 
