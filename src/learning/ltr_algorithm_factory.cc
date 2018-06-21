@@ -90,9 +90,11 @@ std::shared_ptr<quickrank::learning::LTR_Algorithm> ltr_algorithm_factory(
               pmap.get<size_t>("end-after-rounds"),
               pmap.get<float>("collapse-leaves-factor"),
               pmap.get<int>("sampling-iterations"),
-              pmap.get<float>("max-sampling-factor"),
+              pmap.get<float>("rank-sampling-factor"),
               pmap.get<float>("random-sampling-factor"),
-              pmap.get<float>("normalization-factor")
+              pmap.get<float>("normalization-factor"),
+              pmap.get<std::string>("adaptive-strategy"),
+              pmap.get<std::string>("negative-strategy")
           ));
     }  else if (algo_name == quickrank::learning::forests::StochasticNegative::NAME_) {
       ltr_algo = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
