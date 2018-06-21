@@ -258,13 +258,16 @@ void LambdaMartSelective::learn(std::shared_ptr<quickrank::data::Dataset> traini
     }
     std::cout << std::endl;
 
-    // Rank/Random factor adaptability depending from last iter with improv.
-    improvements[m % improvements.size()] =
-        best_model_ == (ensemble_model_.get_size() - 1);
+    if (adaptive_strategy != "NO" && normalization_factor > 0) {
+      // Rank/Random factor adaptability depending from last iter with improv.
+      improvements[m % improvements.size()] =
+          best_model_ == (ensemble_model_.get_size() - 1);
 
-    float iters_improvement = (float) std::accumulate(improvements.begin(),
-                                                      improvements.end(), 0.0);
-    adapt_factor = iters_improvement / improvements.size();
+      float iters_improvement = (float) std::accumulate(improvements.begin(),
+                                                        improvements.end(),
+                                                        0.0);
+      adapt_factor = iters_improvement / improvements.size();
+    }
 
     if (partial_save != 0 and !output_basename.empty()
         and (m + 1) % partial_save == 0) {
