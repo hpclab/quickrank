@@ -114,8 +114,8 @@ int main(int argc, char *argv[]) {
   int sampling_iterations = 0;
   float rank_sampling_factor = 1.0;
   float random_sampling_factor = 0.0;
-  float normalization_factor = 0.3;
-  std::string adaptive_strategy = "FIXED";
+  float normalization_factor = 100;
+  std::string adaptive_strategy = "NO";
   std::string negative_strategy = "RATIO";
 
   std::string sample_type =
