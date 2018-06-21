@@ -19,7 +19,7 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#include "learning/forests/lambdamartsampling.h"
+#include "learning/forests/lambdamartselective.h"
 
 #include <fstream>
 #include <iomanip>
@@ -30,20 +30,20 @@ namespace quickrank {
 namespace learning {
 namespace forests {
 
-const std::string LambdaMartSampling::NAME_ = "LAMBDAMART-SAMPLING";
+const std::string LambdaMartSelective::NAME_ = "LAMBDAMART-SELECTIVE";
 
 
 void
-LambdaMartSampling::init(
+LambdaMartSelective::init(
     std::shared_ptr<quickrank::data::VerticalDataset> training_dataset) {
   LambdaMart::init(training_dataset);
 }
 
-void LambdaMartSampling::clear(size_t num_features) {
+void LambdaMartSelective::clear(size_t num_features) {
   LambdaMart::clear(num_features);
 }
 
-void LambdaMartSampling::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
+void LambdaMartSelective::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
                  std::shared_ptr<quickrank::data::Dataset> validation_dataset,
                  std::shared_ptr<quickrank::metric::ir::Metric> scorer,
                  size_t partial_save, const std::string output_basename) {
@@ -103,6 +103,46 @@ void LambdaMartSampling::learn(std::shared_ptr<quickrank::data::Dataset> trainin
   std::cout << "# iter. training validation" << std::endl;
   std::cout << "# -------------------------" << std::endl;
 
+  // Used for document sampling and node splitting
+  size_t nsampleids = training_dataset->num_instances();
+  size_t *sampleids = new size_t[nsampleids];
+  size_t *sampleids_orig = NULL;
+  size_t *npositives = NULL;
+  size_t nsampleids_iter = nsampleids;
+  bool *sample_presence = NULL;
+
+  if (rank_sampling_factor > 0)
+    sample_presence = new bool[nsampleids];
+
+  // If we do not use document sampling, we fill the sampleids only once
+  #pragma omp parallel for
+  for (size_t i = 0; i < nsampleids; ++i) {
+    sampleids[i] = i;
+    if (sample_presence != NULL)
+      sample_presence[i] = true;
+  }
+
+  if (rank_sampling_factor > 0) {
+    sampleids_orig = new size_t[nsampleids];
+    memcpy(sampleids_orig, sampleids, sizeof(size_t) * nsampleids);
+
+    npositives = new size_t[training_dataset->num_queries()];
+    #pragma omp parallel for
+    for (size_t q=0; q<training_dataset->num_queries(); ++q) {
+
+      size_t start_offset = training_dataset->offset(q);
+      size_t end_offset = training_dataset->offset(q + 1);
+
+      size_t num_pos = 0;
+      for (size_t d = start_offset; d < end_offset; ++d) {
+        if (training_dataset->getLabel(d) > 0)
+          ++num_pos;
+      }
+
+      npositives[q] = num_pos;
+    }
+  }
+
   // shows the performance of the already trained model..
   if (ensemble_model_.is_notempty()) {
     std::cout << std::setw(7) << ensemble_model_.get_size()
@@ -116,99 +156,57 @@ void LambdaMartSampling::learn(std::shared_ptr<quickrank::data::Dataset> trainin
 
   auto chrono_train_start = std::chrono::high_resolution_clock::now();
 
-  // Used for document sampling and node splitting
-  size_t nsampleids = training_dataset->num_instances();
-  size_t *sampleids = new size_t[nsampleids];
-  size_t *npositives = NULL;
-  size_t n_positives_overall = 0;
-  size_t n_negatives_overall = 0;
-  size_t nsampleids_iter = nsampleids;
-  size_t sampling_count = 0;
-  bool *sample_presence = NULL;
+  float rank_factor = rank_sampling_factor;
+  float random_factor = random_sampling_factor;
 
-  float step_factor_sampling = 0;
-  if (sampling_iterations > 0 && max_sampling_factor > 0) {
-    step_factor_sampling = (1.0f - max_sampling_factor) /
-            (((float) ntrees_ / sampling_iterations) - 1);
-  }
-
-  if (step_factor_sampling > 0 || subsample_ != 1.0f) {
-    sample_presence = new bool[nsampleids];
-
-    npositives = new size_t[training_dataset->num_queries()];
-    #pragma omp parallel for
-    for (size_t q = 0; q < training_dataset->num_queries(); ++q) {
-
-      size_t start_offset = training_dataset->offset(q);
-      size_t end_offset = training_dataset->offset(q + 1);
-
-      size_t num_pos = 0;
-      for (size_t d = start_offset; d < end_offset; ++d) {
-        if (training_dataset->getLabel(d) > 0)
-          ++num_pos;
-      }
-
-      npositives[q] = num_pos;
-      n_positives_overall += num_pos;
-    }
-
-    n_negatives_overall = nsampleids - n_positives_overall;
-  }
-
-  // If we do not use document sampling, we fill the sampleids only once
-  #pragma omp parallel for
-  for (size_t i = 0; i < nsampleids; ++i) {
-    sampleids[i] = i;
-    if (sample_presence != NULL)
-      sample_presence[i] = true;
-  }
+  /* initialize random seed: */
+  srand(0);
+//      srand(time(NULL));
 
   // start iterations from 0 or (ensemble_size - 1)
+  std::vector<bool> improvements((int) normalization_factor, true);
+  float delta_score = 0;
   for (size_t m = ensemble_model_.get_size(); m < ntrees_; ++m) {
     if (validation_dataset
         && (valid_iterations_ && m > best_model_ + valid_iterations_))
       break;
 
-    if (step_factor_sampling > 0 && m > 0 && m % sampling_iterations == 0) {
+    if (rank_sampling_factor > 0 && m % sampling_iterations == 0 && m > 0) {
 
-      size_t prev_nsample = n_positives_overall + (size_t) std::floor(
-          (1 - (sampling_count * step_factor_sampling)) * n_negatives_overall);
+      std::cout << "Delta: " << delta_score*100
+                << " - Rank Factor: " << rank_factor
+                << " - Random Factor: " << random_factor
+                << std::setprecision(4) << std::endl;
 
-      std::sort(&sampleids[0], &sampleids[prev_nsample],
-                [this, &training_dataset](size_t i1, size_t i2) {
-
-                  bool grt = scores_on_training_[i1] > scores_on_training_[i2];
-
-                  return training_dataset->getLabel(i1) > 0 ?
-                         training_dataset->getLabel(i2) == 0 || grt :
-                         training_dataset->getLabel(i2) == 0 && grt;
-                });
-
-      ++sampling_count;
-      nsampleids_iter = n_positives_overall + (size_t) std::floor(
-          (1 - (sampling_count * step_factor_sampling)) * n_negatives_overall);
+      // Reset sampleids and reorder on a query basis
+      memcpy(sampleids, sampleids_orig, sizeof(size_t) * nsampleids);
+      nsampleids_iter = top_negative_sampling_query_level(training_dataset,
+                                                          sampleids,
+                                                          npositives,
+                                                          rank_factor,
+                                                          random_factor);
 
       std::cout << "Reducing training size from "
-                << prev_nsample << " to "
+                << nsampleids << " to "
                 << nsampleids_iter << std::endl;
     }
 
     if (subsample_ != 1.0f) {
+
+      // shuffle the sample idx with the current sample size (previous sampling)
+      auto seed = std::chrono::system_clock::now().time_since_epoch().count();
+      auto rng = std::default_random_engine(seed);
+      std::shuffle(&sampleids[0],
+                   &sampleids[nsampleids_iter],
+                   rng);
 
       if (subsample_ > 1.0f) {
         // >1: Max feature is the number of features to use
         nsampleids_iter = (size_t) std::min((size_t) subsample_, nsampleids_iter);
       } else {
         // <1: Max feature is the fraction of features to use
-        nsampleids_iter = (size_t) std::ceil(subsample_ * nsampleids_iter);
+        nsampleids_iter = (size_t) std::floor(subsample_ * nsampleids_iter);
       }
-
-      // shuffle the sample idx
-      auto seed = std::chrono::system_clock::now().time_since_epoch().count();
-      auto rng = std::default_random_engine(seed);
-      std::shuffle(&sampleids[0],
-                   &sampleids[nsampleids],
-                   rng);
     }
 
     // If we are training on a sample of the full dataset, we need to update
@@ -258,6 +256,20 @@ void LambdaMartSampling::learn(std::shared_ptr<quickrank::data::Dataset> trainin
         best_model_ = ensemble_model_.get_size() - 1;
         std::cout << " *";
       }
+
+//      delta_score = float(abs(
+//          metric_on_training - metric_on_validation) / metric_on_validation);
+//      rank_factor = 10.0f * delta_score *
+//          rank_sampling_factor / normalization_factor;
+//      random_factor = 10.0f * delta_score *
+//          random_sampling_factor / normalization_factor;
+
+//      if (rank_factor + random_factor > 1) {
+//        float sum_factor = rank_factor + random_factor;
+//        rank_factor /= sum_factor;
+//        random_factor /= sum_factor;
+//      }
+
     } else {
       if (metric_on_training > best_metric_on_training_) {
         best_metric_on_training_ = metric_on_training;
@@ -267,6 +279,20 @@ void LambdaMartSampling::learn(std::shared_ptr<quickrank::data::Dataset> trainin
     }
     std::cout << std::endl;
 
+    // Rank/Random factor adaptability depending from last iter with improv.
+    improvements[m % improvements.size()] =
+        best_model_ == (ensemble_model_.get_size() - 1);
+
+    float iters_improvement = std::accumulate(improvements.begin(),
+                                             improvements.end(), 0.0);
+    float adapt_factor = iters_improvement / improvements.size();
+
+    std::cout << "adapt_factor: " << adapt_factor << std::endl;
+
+    float sum_factors = rank_sampling_factor + random_sampling_factor;
+    rank_factor = sum_factors * adapt_factor;
+    random_factor = sum_factors - rank_factor;
+
     if (partial_save != 0 and !output_basename.empty()
         and (m + 1) % partial_save == 0) {
       save(output_basename, m + 1);
@@ -274,9 +300,14 @@ void LambdaMartSampling::learn(std::shared_ptr<quickrank::data::Dataset> trainin
 
   }
 
-  delete(sampleids);
-  delete(sample_presence);
-  delete(npositives);
+  delete[] sampleids;
+  if (sampleids_orig)
+    delete[] sampleids_orig;
+  if (npositives)
+    delete[] npositives;
+  if (sample_presence)
+    delete[] sample_presence;
+
 
   //Rollback to the best model observed on the validation data
   if (validation_dataset) {
@@ -307,13 +338,77 @@ void LambdaMartSampling::learn(std::shared_ptr<quickrank::data::Dataset> trainin
             << " s." << std::endl;
 }
 
-std::ostream &LambdaMartSampling::put(std::ostream &os) const {
+std::ostream &LambdaMartSelective::put(std::ostream &os) const {
   Mart::put(os);
   if (sampling_iterations != 0)
     os << "# sampling iterations = " << sampling_iterations << std::endl;
-  if (max_sampling_factor != 0)
-    os << "# max sampling factor = " << max_sampling_factor << std::endl;
+  if (rank_sampling_factor != 0)
+    os << "# max sampling factor = " << rank_sampling_factor << std::endl;
+  if (random_sampling_factor != 0)
+    os << "# random sampling factor = " << random_sampling_factor << std::endl;
   return os;
+}
+
+size_t LambdaMartSelective::top_negative_sampling_query_level(
+    std::shared_ptr<data::Dataset> dataset,
+    size_t *sampleids,
+    size_t *npositives,
+    float rank_factor,
+    float random_factor) {
+
+  if (!sampling_iterations || !rank_factor || random_factor == 1.0f)
+    return dataset->num_instances();
+
+  size_t cursor = 0;
+  for (size_t q=0; q<dataset->num_queries(); ++q) {
+
+    size_t start_offset = dataset->offset(q);
+    size_t end_offset = dataset->offset(q + 1);
+    size_t query_size = end_offset - start_offset;
+
+    size_t n_neg_query = query_size - npositives[q];
+    size_t n_top_neg = (size_t) std::ceil(rank_factor * n_neg_query);
+    size_t n_random_neg = (size_t) std::ceil(
+        random_factor * n_neg_query);
+    size_t n_total_neg = n_top_neg + n_random_neg;
+    if (n_total_neg > n_neg_query) {
+      n_total_neg = n_neg_query;
+      n_random_neg = n_neg_query - n_top_neg;
+    }
+
+    std::sort(&sampleids[start_offset], &sampleids[end_offset],
+              [this, &dataset](size_t i1, size_t i2) {
+
+                bool grt = scores_on_training_[i1] > scores_on_training_[i2];
+
+                return dataset->getLabel(i1) > 0 ?
+                        dataset->getLabel(i2) == 0 || grt :
+                        dataset->getLabel(i2) == 0 && grt;
+              });
+
+    if (cursor > 0) {
+      for (size_t j = 0; j < npositives[q] + n_top_neg; ++j) {
+        std::swap(sampleids[cursor + j],
+                  sampleids[start_offset + j]);
+      }
+    }
+
+    if (n_random_neg > 0) {
+
+      std::vector<int> indices(query_size - npositives[q] - n_top_neg);
+      std::iota(indices.begin(), indices.end(), npositives[q] + n_top_neg);
+      std::random_shuffle(indices.begin(), indices.end());
+
+      for (size_t j=0; j<n_random_neg; ++j) {
+        std::swap(sampleids[cursor + npositives[q] + n_top_neg + j],
+                  sampleids[start_offset + indices[j]]);
+      }
+    }
+
+    cursor += npositives[q] + n_total_neg;
+  }
+
+  return cursor;
 }
 
 }  // namespace forests

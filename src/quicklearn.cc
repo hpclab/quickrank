@@ -45,7 +45,8 @@
 #include "learning/forests/mart.h"
 #include "learning/forests/dart.h"
 #include "learning/forests/lambdamart.h"
-#include "learning/forests/lambdamartsampling.h"
+#include "learning/forests/lambdamartselective.h"
+#include "learning/forests/stochasticnegative.h"
 #include "learning/forests/obliviousmart.h"
 #include "learning/forests/obliviouslambdamart.h"
 #include "learning/forests/rankboost.h"
@@ -112,6 +113,8 @@ int main(int argc, char *argv[]) {
   float collapse_leaves_factor = 0;
   int sampling_iterations = 0;
   float max_sampling_factor = 1.0;
+  float random_sampling_factor = 0.0;
+  float normalization_factor = 0.3;
 
   std::string sample_type =
       quickrank::learning::forests::Dart::get_sampling_type(
@@ -144,7 +147,9 @@ int main(int argc, char *argv[]) {
       + "|"
       + quickrank::learning::forests::LambdaMart::NAME_
       + "|"
-      + quickrank::learning::forests::LambdaMartSampling::NAME_
+      + quickrank::learning::forests::LambdaMartSelective::NAME_
+      + "|"
+      + quickrank::learning::forests::StochasticNegative::NAME_
       + "|"
       + quickrank::learning::forests::RandomForest::NAME_
       + "|"
@@ -256,6 +261,18 @@ int main(int argc, char *argv[]) {
                          "during a sampling iteration. The sampling ratio",
                          "varies from 0 to the max. (if 1.0 disabled)"},
                         max_sampling_factor);
+
+  pmap.addOptionWithArg("random-sampling-factor",
+                        {"describe the fraction of documents to random sample",
+                         "during a sampling iteration. The sampling ratio",
+                         "varies from 0 to the 1.0. (if 1.0 disabled)"},
+                        random_sampling_factor);
+
+  pmap.addOptionWithArg("normalization-factor",
+                        {"describe the normalization factor used to linearly",
+                         "increase the random and top ranking sampling factor",
+                         "computed on the delta score train - vali."},
+                        normalization_factor);
 
 // --------------------------------------------------------
   pmap.addMessage({"Training phase - specific options for Meta LtR models:"});

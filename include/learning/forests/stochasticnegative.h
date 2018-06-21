@@ -31,7 +31,7 @@ namespace quickrank {
 namespace learning {
 namespace forests {
 
-class LambdaMartSampling2: public LambdaMart {
+class StochasticNegative: public LambdaMart {
  public:
   /// Initializes a new LambdaMart instance with the given learning parameters.
   ///
@@ -42,22 +42,19 @@ class LambdaMartSampling2: public LambdaMart {
   /// \param minleafsupport Minimum number of instances in each leaf.
   /// \param esr Early stopping if no improvement after \esr iterations
   /// on the validation set.
-  LambdaMartSampling2(size_t ntrees, double shrinkage, size_t nthresholds,
+  StochasticNegative(size_t ntrees, double shrinkage, size_t nthresholds,
              size_t ntreeleaves, size_t minleafsupport, float subsample,
-             float max_features, size_t esr, float collapse_leaves_factor,
-             int sampling_iterations, float max_sampling_factor)
+             float max_features, size_t esr, float collapse_leaves_factor)
       : LambdaMart(ntrees, shrinkage, nthresholds, ntreeleaves, minleafsupport,
-             subsample, max_features, esr, collapse_leaves_factor),
-        sampling_iterations(sampling_iterations),
-        max_sampling_factor(max_sampling_factor) {
+             subsample, max_features, esr, collapse_leaves_factor) {
   }
 
   /// Generates a LTR_Algorithm instance from a previously saved XML model.
-  LambdaMartSampling2(const pugi::xml_document &model)
+  StochasticNegative(const pugi::xml_document &model)
       : LambdaMart(model) {
   }
 
-  virtual ~LambdaMartSampling2() {
+  virtual ~StochasticNegative() {
   }
 
   /// Returns the name of the ranker.
@@ -81,24 +78,11 @@ class LambdaMartSampling2: public LambdaMart {
   /// De-allocates private data structure after training has taken place.
   virtual void clear(size_t num_features);
 
-  /// Prints the description of Algorithm, including its parameters.
-  virtual std::ostream &put(std::ostream &os) const;
-
-  size_t top_negative_sampling_query_level(
+  size_t stochastic_negative_sampling_query_level(
       std::shared_ptr<data::Dataset> training_dataset,
       size_t *sampleids,
       size_t *npositives
   );
-
-  size_t top_negative_sampling_overall(
-      std::shared_ptr<data::Dataset> training_dataset,
-      size_t *sampleids,
-      size_t *npositives
-  );
-
- private:
-  int sampling_iterations;
-  float max_sampling_factor;
 };
 
 }  // namespace forests

@@ -43,15 +43,6 @@ class RTNodeEnriched {
 typedef MaxHeap<RTNode *> rt_maxheap;
 typedef MaxHeap<RTNodeEnriched *> rt_maxheap_enriched;
 
-class DevianceMaxHeap: public rt_maxheap {
- public:
-  DevianceMaxHeap(unsigned int initsize)
-      : rt_maxheap(initsize) {
-  }
-  void push_chidrenof(RTNode *parent);
-  void pop();
-};
-
 class RegressionTree {
  protected:
   // 0 for unlimited number of nodes (the size of the tree will then be
