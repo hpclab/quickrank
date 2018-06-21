@@ -22,38 +22,38 @@
 #pragma once
 
 #include "types.h"
-#include "learning/forests/lambdamart.h"
-#include "learning/tree/ot.h"
+#include "learning/forests/mart.h"
+#include "learning/tree/rt.h"
 #include "learning/tree/ensemble.h"
 
 namespace quickrank {
 namespace learning {
 namespace forests {
 
-class ObliviousLambdaMart: public LambdaMart {
+class RandomForest: public Mart {
  public:
-  /// Initializes a new ObliviousLambdaMart instance with the given learning parameters.
+  /// Initializes a new RandomForest instance with the given learning
+  /// parameters.
   ///
   /// \param ntrees Maximum number of trees.
   /// \param shrinkage Learning rate.
   /// \param nthresholds Number of bins in discretization. 0 means no discretization.
-  /// \param treedepth Maximum depth of each tree.
+  /// \param ntreeleaves Maximum number of leaves in each tree.
   /// \param minleafsupport Minimum number of instances in each leaf.
   /// \param esr Early stopping if no improvement after \esr iterations
   /// on the validation set.
-  ObliviousLambdaMart(size_t ntrees, double shrinkage, size_t nthresholds,
-                      size_t treedepth, size_t minleafsupport,
-                      float subsample, float max_features,
-                      size_t esr, float collapse_leaves_factor)
-      : LambdaMart(ntrees, shrinkage, nthresholds, 1 << treedepth,
-                   minleafsupport, subsample, max_features,
-                   esr, collapse_leaves_factor),
-        treedepth_(treedepth) {
+  RandomForest(size_t ntrees, double shrinkage, size_t nthresholds,
+               size_t ntreeleaves, size_t minleafsupport, float subsample,
+               float max_features, size_t esr, float collapse_leaves_factor)
+      : Mart(ntrees, shrinkage, nthresholds, ntreeleaves, minleafsupport,
+             subsample, max_features, esr, collapse_leaves_factor) {
   }
 
-  ObliviousLambdaMart(const pugi::xml_document &model);
+  /// Generates a LTR_Algorithm instance from a previously saved XML model.
+  RandomForest(const pugi::xml_document &model) : Mart(model) {
+  }
 
-  virtual ~ObliviousLambdaMart() {
+  virtual ~RandomForest() {
   }
 
   /// Returns the name of the ranker.
@@ -61,32 +61,19 @@ class ObliviousLambdaMart: public LambdaMart {
     return NAME_;
   }
 
-  virtual pugi::xml_document *get_xml_model() const;
-
-  virtual bool import_model_state(LTR_Algorithm &other);
-
   static const std::string NAME_;
 
  protected:
-  /// Fits a regression tree on the gradient given by the pseudo residuals
+  /// Prepares private data structurs befor training takes place.
+  virtual void init(std::shared_ptr<data::VerticalDataset> training_dataset);
+
+  /// Computes pseudo responses.
   ///
-  /// \param training_dataset The dataset used for training
-  virtual std::unique_ptr<RegressionTree> fit_regressor_on_gradient(
+  /// \param training_dataset The training data.
+  /// \param metric The metric to be optimized.
+  virtual void compute_pseudoresponses(
       std::shared_ptr<data::VerticalDataset> training_dataset,
-      size_t *sampleids);
-
-  size_t treedepth_;  //>0
-
- private:
-  /// The output stream operator.
-  friend std::ostream &operator<<(std::ostream &os,
-                                  const ObliviousLambdaMart &a) {
-    return a.put(os);
-  }
-
-  /// Prints the description of Algorithm, including its parameters.
-  virtual std::ostream &put(std::ostream &os) const;
-
+      metric::ir::Metric *metric);
 };
 
 }  // namespace forests

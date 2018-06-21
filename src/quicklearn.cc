@@ -38,12 +38,15 @@
 #include <unistd.h>
 #include <fstream>
 #include <metric/ir/rmse.h>
+#include <learning/forests/randomforest.h>
 
 #include "paramsmap/paramsmap.h"
 
 #include "learning/forests/mart.h"
 #include "learning/forests/dart.h"
 #include "learning/forests/lambdamart.h"
+#include "learning/forests/lambdamartselective.h"
+#include "learning/forests/stochasticnegative.h"
 #include "learning/forests/obliviousmart.h"
 #include "learning/forests/obliviouslambdamart.h"
 #include "learning/forests/rankboost.h"
@@ -105,6 +108,13 @@ int main(int argc, char *argv[]) {
   std::string test_metric_string = quickrank::metric::ir::Ndcg::NAME_;
   size_t test_cutoff = 10;
   size_t partial_save = 100;
+  float subsample = 1.0f;
+  float max_features = 1.0f;
+  float collapse_leaves_factor = 0;
+  int sampling_iterations = 0;
+  float max_sampling_factor = 1.0;
+  float random_sampling_factor = 0.0;
+  float normalization_factor = 0.3;
 
   std::string sample_type =
       quickrank::learning::forests::Dart::get_sampling_type(
@@ -136,6 +146,12 @@ int main(int argc, char *argv[]) {
       + quickrank::learning::forests::Mart::NAME_
       + "|"
       + quickrank::learning::forests::LambdaMart::NAME_
+      + "|"
+      + quickrank::learning::forests::LambdaMartSelective::NAME_
+      + "|"
+      + quickrank::learning::forests::StochasticNegative::NAME_
+      + "|"
+      + quickrank::learning::forests::RandomForest::NAME_
       + "|"
       + quickrank::learning::forests::ObliviousMart::NAME_
       + "|"
@@ -216,6 +232,47 @@ int main(int argc, char *argv[]) {
                         {"set tree depth",
                          "[applies only to ObliviousMART/ObliviousLambdaMART]."},
                         treedepth);
+
+  pmap.addOptionWithArg("subsample",
+                        {"the fraction of samples to be used for individual",
+                         "base learners."},
+                        subsample);
+
+  pmap.addOptionWithArg("max-features",
+                        {"The number of features to consider when looking for",
+                         "the best split."},
+                        max_features);
+
+  pmap.addOptionWithArg("collapse-leaves-factor",
+                        {"prune the deepest leaves until the total number of ",
+                         "nodes in the tree is greater or equals than the ",
+                         "fraction of the maximum possible number of nodes in ",
+                         "the tree given its depth (if 0 disabled)."},
+                        collapse_leaves_factor);
+
+  pmap.addOptionWithArg("sampling-iterations",
+                        {"describe the number of iterations between two ",
+                         "consecutive dataset sampling operations.",
+                         "(if 0 disabled)."},
+                        sampling_iterations);
+
+  pmap.addOptionWithArg("max-sampling-factor",
+                        {"describe the maximum fraction of documents to sample",
+                         "during a sampling iteration. The sampling ratio",
+                         "varies from 0 to the max. (if 1.0 disabled)"},
+                        max_sampling_factor);
+
+  pmap.addOptionWithArg("random-sampling-factor",
+                        {"describe the fraction of documents to random sample",
+                         "during a sampling iteration. The sampling ratio",
+                         "varies from 0 to the 1.0. (if 1.0 disabled)"},
+                        random_sampling_factor);
+
+  pmap.addOptionWithArg("normalization-factor",
+                        {"describe the normalization factor used to linearly",
+                         "increase the random and top ranking sampling factor",
+                         "computed on the delta score train - vali."},
+                        normalization_factor);
 
 // --------------------------------------------------------
   pmap.addMessage({"Training phase - specific options for Meta LtR models:"});

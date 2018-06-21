@@ -25,12 +25,12 @@
 
 class RTNodeHistogram {
  public:
-  float **thresholds = NULL;  //[0..nfeatures-1]x[0..thresholds_size[i]-1]
-  size_t *thresholds_size = NULL;
-  size_t **stmap = NULL;  //[0..nfeatures-1]x[0..nthresholds-1]
+  float **thresholds = NULL;      // [nfeatures] x [thresholds_size[i]]
+  size_t *thresholds_size = NULL; // [nfeatures]
+  size_t **stmap = NULL;          // [nfeatures] x [nthresholds]
   const size_t nfeatures = 0;
-  double **sumlbl = NULL;  //[0..nfeatures-1]x[0..nthresholds-1]
-  size_t **count = NULL;  //[0..nfeatures-1]x[0..nthresholds-1]
+  double **sumlbl = NULL;         // [nfeatures] x [nthresholds]
+  size_t **count = NULL;          // [nfeatures] x [nthresholds]
   double squares_sum_ = 0.0;
 
   RTNodeHistogram(float **thresholds,
@@ -52,6 +52,10 @@ class RTNodeHistogram {
   void update(double *labels,
               const size_t nlabels);
 
+  void update(double *labels,
+              const size_t nlabels,
+              const size_t *sampleids);
+
   void transform_intorightchild(RTNodeHistogram const *left);
 
   void quick_dump(size_t f, size_t num_t);
@@ -59,7 +63,7 @@ class RTNodeHistogram {
 
 class RTRootHistogram: public RTNodeHistogram {
  public:
-  RTRootHistogram(quickrank::data::VerticalDataset *dps,
+  RTRootHistogram(quickrank::data::VerticalDataset *dataset,
                   size_t **sortedidx,
                   size_t sortedidxsize,
                   float **thresholds,

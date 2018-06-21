@@ -42,11 +42,11 @@ class ObliviousMart: public Mart {
   /// \param esr Early stopping if no improvement after \esr iterations
   /// on the validation set.
   ObliviousMart(size_t ntrees, double shrinkage, size_t nthresholds,
-                size_t treedepth, size_t minleafsupport,
-                size_t esr)
+                size_t treedepth, size_t minleafsupport, float subsample,
+                float max_features, size_t esr, float collapse_leaves_factor)
       : Mart(ntrees, shrinkage, nthresholds, 1 << treedepth, minleafsupport,
-             esr),
-        treedepth_(treedepth) {
+             subsample, max_features, esr, collapse_leaves_factor),
+             treedepth_(treedepth) {
   }
 
   ObliviousMart(const pugi::xml_document &model);
@@ -68,7 +68,8 @@ class ObliviousMart: public Mart {
   ///
   /// \param training_dataset The dataset used for training
   virtual std::unique_ptr<RegressionTree> fit_regressor_on_gradient(
-      std::shared_ptr<data::VerticalDataset> training_dataset);
+      std::shared_ptr<data::VerticalDataset> training_dataset,
+      size_t *sampleids);
 
   virtual pugi::xml_document *get_xml_model() const;
 

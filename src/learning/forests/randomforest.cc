@@ -19,33 +19,38 @@
  * Contributor:
  *   HPC. Laboratory - ISTI - CNR - http://hpc.isti.cnr.it/
  */
-#pragma once
+#include "learning/forests/randomforest.h"
 
-#include <cfloat>
-#include <cmath>
+#include <fstream>
+#include <iomanip>
 
-#include "learning/tree/rt.h"
+namespace quickrank {
+namespace learning {
+namespace forests {
 
-class ObliviousRT: public RegressionTree {
- public:
+const std::string RandomForest::NAME_ = "RANDOMFOREST";
 
-  ObliviousRT(size_t nodes,
-              quickrank::data::VerticalDataset *dps,
-              double *labels,
-              size_t minls,
-              size_t treedepth,
-              float collapse_leaves_factor)
-      : RegressionTree(nodes, dps, labels, minls, collapse_leaves_factor),
-        treedepth(treedepth) {
+
+void RandomForest::init(
+    std::shared_ptr<quickrank::data::VerticalDataset> training_dataset) {
+
+  Mart::init(training_dataset);
+
+  const size_t nentries = training_dataset->num_instances();
+  #pragma omp parallel for
+  for (size_t i = 0; i < nentries; i++) {
+    pseudoresponses_[i] = training_dataset->getLabel(i);
   }
-  void fit(RTNodeHistogram *hist,
-           size_t *sampleids);
+}
 
- protected:
-  const size_t treedepth = 0;
+void RandomForest::compute_pseudoresponses(
+    std::shared_ptr<quickrank::data::VerticalDataset> training_dataset,
+    quickrank::metric::ir::Metric *scorer) {
 
- private:
-  void fill(double **sumvar, const size_t nfeaturesamples,
-            RTNodeHistogram const *hist);
-  const double invalid = -DBL_MAX;
-};
+  // Do Nothing here, pseudoresponses_ does not change among iterations!
+  return;
+}
+
+}  // namespace forests
+}  // namespace learning
+}  // namespace quickrank

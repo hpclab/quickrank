@@ -48,13 +48,17 @@ class Mart: public LTR_Algorithm {
   /// on the validation set.
   Mart(size_t ntrees, double shrinkage, size_t nthresholds,
        size_t ntreeleaves, size_t minleafsupport,
-       size_t valid_iterations)
+       float subsample, float max_features,
+       size_t valid_iterations, float collapse_leaves_factor)
       : ntrees_(ntrees),
         shrinkage_(shrinkage),
         nthresholds_(nthresholds),
         nleaves_(ntreeleaves),
         minleafsupport_(minleafsupport),
-        valid_iterations_(valid_iterations) {
+        subsample_(subsample),
+        max_features_(max_features),
+        valid_iterations_(valid_iterations),
+        collapse_leaves_factor_(collapse_leaves_factor) {
   }
 
   /// Generates a LTR_Algorithm instance from a previously saved XML model.
@@ -122,13 +126,15 @@ class Mart: public LTR_Algorithm {
   /// \param metric The metric to be optimized.
   virtual void compute_pseudoresponses(
       std::shared_ptr<data::VerticalDataset> training_dataset,
-      metric::ir::Metric *metric);
+      metric::ir::Metric *metric,
+      bool *sample_presence);
 
   /// Fits a regression tree on the gradient given by the pseudo residuals
   ///
   /// \param training_dataset The dataset used for training
   virtual std::unique_ptr<RegressionTree> fit_regressor_on_gradient(
-      std::shared_ptr<data::VerticalDataset> training_dataset);
+      std::shared_ptr<data::VerticalDataset> training_dataset,
+      size_t *sampleids);
 
   /// Updates scores with the last learnt regression tree.
   ///
@@ -162,9 +168,19 @@ class Mart: public LTR_Algorithm {
   size_t nthresholds_;  //if ==0 then no. of thresholds is not limited
   size_t nleaves_;  //>0
   size_t minleafsupport_;  //>0
+  float subsample_;
+  float max_features_;
   size_t valid_iterations_;  // If no performance gain on validation data is
                           // observed in 'esr' rounds, stop the training
                           // process right away (if esr==0 feature is disabled).
+
+  float collapse_leaves_factor_; // >= 0
+  // used to implement the strategy proposed by Lin and Asadi to build the
+  // tree with a focus on depth and balance. If the value is zero it means
+  // the algorithm will behave in a standard way. Otherwise, it prune
+  // deepest leaves until the total number of nodes in the tree is greater or
+  // equals than the fraction of the maximum possible number of nodes in the
+  // tree given its depth.
 
   size_t **sortedsid_ = NULL;
   size_t sortedsize_ = 0;
@@ -176,6 +192,7 @@ class Mart: public LTR_Algorithm {
     return a.put(os);
   }
 
+ protected:
   /// Prints the description of Algorithm, including its parameters.
   virtual std::ostream &put(std::ostream &os) const;
 

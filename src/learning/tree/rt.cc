@@ -23,69 +23,140 @@
 
 #ifdef _OPENMP
 #include <omp.h>
+#include <random>
+#include <chrono>
+#include <algorithm>
+#include <math.h>
 #else
 #include "utils/omp-stubs.h"
 #endif
 
-void DevianceMaxHeap::push_chidrenof(RTNode *parent) {
-  push(parent->left->deviance, parent->left);
-  push(parent->right->deviance, parent->right);
-}
-void DevianceMaxHeap::pop() {
-  RTNode *node = top();
-  delete[] node->sampleids, delete node->hist;
-  node->sampleids = NULL, node->nsampleids = 0, node->hist = NULL;
-  rt_maxheap::pop();
-}
-
 /// \todo TODO: memory management of regression tree is wrong!!!
 RegressionTree::~RegressionTree() {
-  if (root) {
-    delete[] root->sampleids;
-    root->sampleids = NULL, root->nsampleids = 0;
-  }
-  //if leaves[0] is the root, hist cannot be deallocated and sampleids has been already deallocated
+  // if leaves[0] is the root, hist cannot be deallocated and sampleids has
+  // been already deallocated
   for (size_t i = 0; i < nleaves; ++i)
     if (leaves[i] != root) {
-      delete[] leaves[i]->sampleids, delete leaves[i]->hist;
-      leaves[i]->hist = NULL, leaves[i]->sampleids = NULL,
-          leaves[i]->nsampleids =
-              0;
+      delete[] leaves[i]->sampleids;
+      delete leaves[i]->hist;
+      leaves[i]->hist = NULL;
+      leaves[i]->sampleids = NULL;
+      leaves[i]->nsampleids = 0;
     }
   free(leaves);
 }
 
-void RegressionTree::fit(RTNodeHistogram *hist) {
-  DevianceMaxHeap heap(nrequiredleaves);
+void RegressionTree::fit(RTNodeHistogram *hist,
+                         size_t *sampleids,
+                         float max_features) {
+  rt_maxheap heap(nrequiredleaves);
   size_t taken = 0;
-  size_t
-      nsampleids = training_dataset->num_instances();  //set->get_ndatapoints();
-  size_t *sampleids = new size_t[nsampleids];
-#pragma omp parallel for
-  for (size_t i = 0; i < nsampleids; ++i)
-    sampleids[i] = i;
+  size_t n_nodes = 1; // root
+  double max_deviance = 0.0;
 
   root = new RTNode(sampleids, hist);
-  if (split(root, 1.0f, false))
-    heap.push_chidrenof(root);
-  while (heap.is_notempty()
-      && (nrequiredleaves == 0 or taken + heap.get_size() < nrequiredleaves)) {
+  if (split(root, max_features, false)) {
+    heap.push(root->left->deviance, root->left);
+    heap.push(root->right->deviance, root->right);
+    n_nodes += 2;
+    max_deviance = root->deviance;
+  }
+  while (heap.is_notempty() &&
+      (nrequiredleaves == 0 or taken + heap.get_size() < nrequiredleaves)) {
     //get node with highest deviance from heap
     RTNode *node = heap.top();
-    // TODO: Cla missing check non leaf size or avoid putting them into the heap
-    //try split current node
-    if (split(node, 1.0f, false))
-      heap.push_chidrenof(node);
-    else
-      ++taken;  //unsplitable (i.e. null variance, or after split variance is higher than before, or #samples<minlsd)
-    //remove node from heap
     heap.pop();
+
+    // TODO: Cla missing check non leaf size or avoid putting them into the heap
+    // try split current node
+    if (split(node, max_features, false)) {
+      heap.push(node->left->deviance, node->left);
+      heap.push(node->right->deviance, node->right);
+      n_nodes += 2;
+      max_deviance = std::max(node->left->deviance, max_deviance);
+      max_deviance = std::max(node->right->deviance, max_deviance);
+    } else
+      ++taken;  // unsplitable (i.e. null variance, or after split variance
+      // is higher than before, or #samples < minls)
+
+    // Clear node histogram
+    delete node->hist;
+    node->hist = NULL;
+
+    if (!collapse_leaves_factor && node != root && !node->is_leaf()) {
+      delete[] node->sampleids;
+      node->sampleids = NULL;
+    }
   }
+
+  size_t n_leaves = nrequiredleaves;
+  if (collapse_leaves_factor > 0) {
+
+    rt_maxheap_enriched heap_nodes(n_nodes);
+    // Add the root
+    heap_nodes.push(0, new RTNodeEnriched(root, nullptr, 0));
+    // Full the heap of nodes, navigating the tree
+    tree_heap_nodes(heap_nodes, root, 0, max_deviance);
+
+    while (heap_nodes.is_notempty()) {
+
+      RTNodeEnriched* enriched_node = heap_nodes.top();
+
+      // We skip leaf already merged in the parent node!
+      if (enriched_node->depth > 0 && !enriched_node->parent->is_leaf()) {
+
+        auto max_n_nodes = pow(2, enriched_node->depth + 1) - 1;
+
+        if (n_nodes > max_n_nodes * collapse_leaves_factor)
+          break;
+
+        // lets the parent become a leaf node (and delete the two children)
+        if (enriched_node->parent->left->hist != NULL)
+          delete enriched_node->parent->left->hist;
+        delete[] enriched_node->parent->left->sampleids;
+        delete enriched_node->parent->left;
+        enriched_node->parent->left = NULL;
+
+        if (enriched_node->parent->right->hist != NULL)
+          delete enriched_node->parent->right->hist;
+        delete[] enriched_node->parent->right->sampleids;
+        delete enriched_node->parent->right;
+        enriched_node->parent->right = NULL;
+
+        enriched_node->parent->threshold = 0.0f;
+        enriched_node->parent->set_feature(uint_max, uint_max);
+
+          --n_leaves;
+        n_nodes -= 2;
+      }
+
+      delete enriched_node;
+      heap_nodes.pop();
+    }
+
+    // Still need to clear all remaining EnrichedNode(s)
+    while (heap_nodes.is_notempty()) {
+      RTNodeEnriched* enriched_node = heap_nodes.top();
+
+      if (enriched_node->node != root && !enriched_node->node->is_leaf()) {
+        // Free useless resources in RTNode
+        if (enriched_node->node->sampleids != NULL)
+          delete[] enriched_node->node->sampleids;
+        enriched_node->node->sampleids = NULL;
+        enriched_node->node->nsampleids = 0;
+      }
+
+      delete enriched_node;
+      heap_nodes.pop();
+    }
+  }
+
   //visit tree and save leaves in a leaves[] array
-  size_t capacity = nrequiredleaves;
-  leaves = capacity ? (RTNode **) malloc(sizeof(RTNode *) * capacity) : NULL,
-      nleaves =
-          0;
+  size_t capacity = nrequiredleaves > 0 ? n_leaves : 0;
+  leaves = capacity ?
+           (RTNode **) malloc(sizeof(RTNode *) * capacity) :
+           NULL;
+  nleaves = 0;
   root->save_leaves(leaves, nleaves, capacity);
 
   // TODO: (by cla) is memory of "unpopped" de-allocated?
@@ -93,7 +164,7 @@ void RegressionTree::fit(RTNodeHistogram *hist) {
 
 double RegressionTree::update_output(double const *pseudoresponses) {
   double maxlabel = -DBL_MAX;
-#pragma omp parallel for reduction(max:maxlabel)
+  #pragma omp parallel for reduction(max:maxlabel)
   for (size_t i = 0; i < nleaves; ++i) {
     double psum = 0.0f;
     const size_t nsampleids = leaves[i]->nsampleids;
@@ -102,6 +173,8 @@ double RegressionTree::update_output(double const *pseudoresponses) {
       size_t k = sampleids[j];
       psum += pseudoresponses[k];
     }
+    // Set the output value of the leaf to the mean pseudo-response of the
+    // samples ending in it.
     leaves[i]->avglabel = psum / nsampleids;
 
     if (leaves[i]->avglabel > maxlabel)
@@ -113,7 +186,7 @@ double RegressionTree::update_output(double const *pseudoresponses) {
 double RegressionTree::update_output(double const *pseudoresponses,
                                      double const *cachedweights) {
   double maxlabel = -DBL_MAX;
-#pragma omp parallel for reduction(max:maxlabel)
+  #pragma omp parallel for reduction(max:maxlabel)
   for (size_t i = 0; i < nleaves; ++i) {
     double s1 = 0.0;
     double s2 = 0.0;
@@ -123,11 +196,8 @@ double RegressionTree::update_output(double const *pseudoresponses,
       size_t k = sampleids[j];
       s1 += pseudoresponses[k];
       s2 += cachedweights[k];
-      //					printf("## %d: %.15f \t %.15f \n", k, pseudoresponses[k], cachedweights[k]);
     }
     leaves[i]->avglabel = s2 >= DBL_EPSILON ? s1 / s2 : 0.0;
-
-    //				printf("## Leaf with size: %d  ##  s1/s2: %.15f / %.15f = %.15f\n", nsampleids, s1, s2, leaves[i]->avglabel);
 
     if (leaves[i]->avglabel > maxlabel)
       maxlabel = leaves[i]->avglabel;
@@ -136,46 +206,55 @@ double RegressionTree::update_output(double const *pseudoresponses,
   return maxlabel;
 }
 
-bool RegressionTree::split(RTNode *node, const float featuresamplingrate,
+bool RegressionTree::split(RTNode *node, const float max_features,
                            const bool require_devianceltparent) {
-  //			printf("### Splitting a node of size: %d and deviance: %f\n", node->nsampleids, node->deviance);
 
   if (node->deviance > 0.0f) {
-    // const double initvar = require_devianceltparent ? node->deviance : -1; //DBL_MAX;
     const double initvar = -1;  // minimum split score
-    //get current nod hidtogram pointer
+    // get current node histogram pointer
     RTNodeHistogram *h = node->hist;
-    //featureidxs to be used for tree splitnodeting
-    size_t nfeaturesamples =
-        training_dataset->num_features();  //training_set->get_nfeatures();
-    size_t *featuresamples = NULL;
+
+    // feature idx to be used for tree split node
+    size_t nfeaturesamples = training_dataset->num_features();
+    size_t *featuresamples = NULL; // NULL means it will use all the features
+
     //need to make a sub-sampling
-    if (featuresamplingrate < 1.0f) {
-      featuresamples = new size_t[nfeaturesamples];
-      for (size_t i = 0; i < nfeaturesamples; ++i)
-        featuresamples[i] = i;
-      //need to make a sub-sampling
-      const size_t reduced_nfeaturesamples = floor(
-          featuresamplingrate * nfeaturesamples);
-      while (nfeaturesamples > reduced_nfeaturesamples && nfeaturesamples > 1) {
-        const size_t i = rand() % nfeaturesamples;
-        featuresamples[i] = featuresamples[--nfeaturesamples];
+    if (max_features != 1.0f) {
+
+      size_t nfeatures = training_dataset->num_features();
+
+      if (max_features > 1.0f) {
+        // >1: Max feature is the number of features to use
+        nfeaturesamples = (size_t) max_features;
+      } else {
+        // <1: Max feature is the fraction of features to use
+        nfeaturesamples = (size_t) std::ceil(max_features * nfeatures);
       }
+
+      featuresamples = new size_t[nfeatures];
+      #pragma omp parallel for
+      for (size_t i = 0; i < nfeatures; ++i)
+        featuresamples[i] = i;
+
+      // shuffle the sample idx
+      auto seed = std::chrono::system_clock::now().time_since_epoch().count();
+      auto rng = std::default_random_engine(seed);
+      std::shuffle(&featuresamples[0], &featuresamples[nfeatures], rng);
     }
+
     // ---------------------------
     // find best split
     const int nth = omp_get_num_procs();
-    double *thread_best_score = new double[nth];  // double thread_minvar[nth];
-    size_t *thread_best_featureidx =
-        new size_t[nth];  // size_t thread_best_featureidx[nth];
-    size_t *thread_best_thresholdid =
-        new size_t[nth];  // size_t thread_best_thresholdid[nth];
-    for (int i = 0; i < nth; ++i)
-      thread_best_score[i] = initvar, thread_best_featureidx[i] = uint_max,
-      thread_best_thresholdid[i] =
-          uint_max;
+    double *thread_best_score = new double[nth];
+    size_t *thread_best_featureidx = new size_t[nth];
+    size_t *thread_best_thresholdid = new size_t[nth];
+    for (int i = 0; i < nth; ++i) {
+      thread_best_score[i] = initvar;
+      thread_best_featureidx[i] = uint_max;
+      thread_best_thresholdid[i] = uint_max;
+    }
 
-#pragma omp parallel for
+    #pragma omp parallel for
     for (size_t i = 0; i < nfeaturesamples; ++i) {
       //get feature idx
       const size_t f = featuresamples ? featuresamples[i] : i;
@@ -197,7 +276,12 @@ bool RegressionTree::split(RTNode *node, const float featuresamplingrate,
           double lsum = sumlabels[t];
           double rsum = s - lsum;
           double score = lsum * lsum / (double) lcount
-              + rsum * rsum / (double) rcount;
+                       + rsum * rsum / (double) rcount;
+          // NOTE by cla: to compute the correct squared error reduction
+          // the variable score should be decreases by ( s*s/(double) c ).
+          // Since this is invariant within the same node, and since
+          // score is not user later, e.g., to select next splitting node,
+          // we avoid such computation.
           if (score > thread_best_score[ith]) {
             thread_best_score[ith] = score;
             thread_best_featureidx[ith] = f;
@@ -206,20 +290,22 @@ bool RegressionTree::split(RTNode *node, const float featuresamplingrate,
         }
       }
     }
+
     //free feature samples
     delete[] featuresamples;
     //get best minvar among thread partial results
     double best_score = thread_best_score[0];
     size_t best_featureidx = thread_best_featureidx[0];
     size_t best_thresholdid = thread_best_thresholdid[0];
-    for (int i = 1; i < nth; ++i)
-      if (thread_best_score[i] > best_score)
-        best_score = thread_best_score[i], best_featureidx =
-            thread_best_featureidx[i], best_thresholdid =
-            thread_best_thresholdid[i];
+    for (int i = 1; i < nth; ++i) {
+      if (thread_best_score[i] > best_score) {
+        best_score = thread_best_score[i];
+        best_featureidx = thread_best_featureidx[i];
+        best_thresholdid = thread_best_thresholdid[i];
+      }
+    }
     // free some memory
     delete[] thread_best_score;
-    delete[] featuresamples;
     delete[] thread_best_featureidx;
     delete[] thread_best_thresholdid;
     //if minvar is the same of initvalue then the node is unsplitable
@@ -227,8 +313,7 @@ bool RegressionTree::split(RTNode *node, const float featuresamplingrate,
       return false;
 
     //set some result values related to minvar
-    const size_t last_thresholdidx = h->thresholds_size[best_featureidx]
-        - 1;
+    const size_t last_thresholdidx = h->thresholds_size[best_featureidx] - 1;
     const float best_threshold =
         h->thresholds[best_featureidx][best_thresholdid];
 
@@ -239,16 +324,15 @@ bool RegressionTree::split(RTNode *node, const float featuresamplingrate,
     //split samples between left and right child
     size_t *lsamples = new size_t[lcount], lsize = 0;
     size_t *rsamples = new size_t[rcount], rsize = 0;
-    float const *features = training_dataset->at(0,
-                                                 best_featureidx);  //training_set->get_fvector(best_featureidx);
-    for (size_t i = 0, nsampleids = node->nsampleids; i < nsampleids;
-         ++i) {
-      size_t k = node->sampleids[i];
-      if (features[k] <= best_threshold)
-        lsamples[lsize++] = k;
+    float const *features = training_dataset->at(0, best_featureidx);
+    for (size_t i = 0; i < node->nsampleids; ++i) {
+      size_t s = node->sampleids[i];
+      if (features[s] <= best_threshold)
+        lsamples[lsize++] = s;
       else
-        rsamples[rsize++] = k;
+        rsamples[rsize++] = s;
     }
+
     //create histograms for children
     RTNodeHistogram *lhist = new RTNodeHistogram(node->hist, lsamples, lsize,
                                                  training_labels);
@@ -257,24 +341,44 @@ bool RegressionTree::split(RTNode *node, const float featuresamplingrate,
       rhist = new RTNodeHistogram(node->hist, lhist);
     else {
       //save some new/delete by converting parent histogram into the right-child one
-      node->hist->transform_intorightchild(lhist), rhist = node->hist;
-      node->hist = NULL;
+      node->hist->transform_intorightchild(lhist);
+      rhist = node->hist;
+      node->hist = NULL; // Used to avoid deleting it!
     }
 
     //update current node
     node->set_feature(
         best_featureidx,
-        best_featureidx + 1/*training_set->get_featureid(best_featureidx)*/);
+        best_featureidx + 1);
     node->threshold = best_threshold;
 
     //create children
     node->left = new RTNode(lsamples, lhist);
     node->right = new RTNode(rsamples, rhist);
 
-    // rhist->quick_dump(128,10);
-    // lhist->quick_dump(25,10);
-
     return true;
   }
   return false;
+}
+
+size_t inline RegressionTree::tree_heap_nodes(rt_maxheap_enriched& heap,
+                                              RTNode* node, size_t depth,
+                                              double max_deviance) {
+
+  // key of maxheap ranges in [depth, depth+1]
+  if (!node->is_leaf()) {
+
+    heap.push(depth+1 + node->left->deviance / max_deviance,
+              new RTNodeEnriched(node->left, node, depth+1));
+    heap.push(depth+1 + node->right->deviance / max_deviance,
+              new RTNodeEnriched(node->right, node, depth+1));
+
+    size_t depth_l = tree_heap_nodes(heap, node->left, depth+1, max_deviance);
+    size_t depth_r = tree_heap_nodes(heap, node->right, depth+1, max_deviance);
+    return std::max(depth_l, depth_r);
+
+  } else {
+
+    return depth;
+  }
 }

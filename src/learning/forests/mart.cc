@@ -24,6 +24,7 @@
 #include <fstream>
 #include <iomanip>
 #include <chrono>
+#include <random>
 
 #include "utils/radix.h"
 
@@ -40,6 +41,7 @@ Mart::Mart(const pugi::xml_document &model) {
   nleaves_ = 0;
   minleafsupport_ = 0;
   valid_iterations_ = 0;
+  collapse_leaves_factor_ = 0;
 
   pugi::xml_node model_info = model.child("ranker").child("info");
   pugi::xml_node model_tree = model.child("ranker").child("ensemble");
@@ -50,7 +52,20 @@ Mart::Mart(const pugi::xml_document &model) {
   minleafsupport_ = model_info.child("leafsupport").text().as_int();
   nthresholds_ = model_info.child("discretization").text().as_int();
   valid_iterations_ = model_info.child("estop").text().as_int();
-  shrinkage_ = model_info.child("shrinkage").text().as_double();
+  shrinkage_ = model_info.child("shrinkage").text(). as_double();
+
+  if (model_info.child("subsample")) {
+    subsample_ = model_info.child("subsample").text().as_float();
+  }
+
+  if (model_info.child("max_features")) {
+    max_features_ = model_info.child("max_features").text().as_float();
+  }
+
+  if (model_info.child("collapse_leaves_factor")) {
+    collapse_leaves_factor_ =
+        model_info.child("collapse_leaves_factor").text().as_float();
+  }
 
   // read ensemble
   ensemble_model_.set_capacity(ntrees_);
@@ -58,7 +73,7 @@ Mart::Mart(const pugi::xml_document &model) {
   // loop over trees
   for (const auto &tree: model_tree.children()) {
     RTNode *root = NULL;
-    float tree_weight = tree.attribute("weight").as_float();
+    double tree_weight = tree.attribute("weight").as_double();
 
     const auto &root_split = tree.child("split");
     if (root_split)
@@ -83,6 +98,12 @@ std::ostream &Mart::put(std::ostream &os) const {
      << "# no. of tree leaves = " << nleaves_ << std::endl
      << "# shrinkage = " << shrinkage_ << std::endl
      << "# min leaf support = " << minleafsupport_ << std::endl;
+  if (subsample_)
+    os << "# subsample = " << subsample_ << std::endl;
+  if (max_features_)
+    os << "# max_features = " << max_features_ << std::endl;
+  if (collapse_leaves_factor_)
+    os << "# collapse leaves factor = " << collapse_leaves_factor_ << std::endl;
   if (nthresholds_)
     os << "# no. of thresholds = " << nthresholds_ << std::endl;
   else
@@ -103,15 +124,16 @@ void Mart::init(
   sortedsid_ = new size_t * [nfeatures];
   sortedsize_ = nentries;
 
-#pragma omp parallel for
-  for (size_t i = 0; i < nfeatures; ++i)
+  #pragma omp parallel for
+  for (size_t i = 0; i < nfeatures; ++i) {
     sortedsid_[i] = idx_radixsort(training_dataset->at(0, i),
                                   training_dataset->num_instances()).release();
+  }
 
   thresholds_ = new float *[nfeatures];
   thresholds_size_ = new size_t[nfeatures];
 
-#pragma omp parallel for
+  #pragma omp parallel for
   for (size_t i = 0; i < nfeatures; ++i) {
     //select feature array related to the current feature index
     float const *features = training_dataset->at(0, i);  // ->get_fvector(i);
@@ -119,14 +141,11 @@ void Mart::init(
     size_t *idx = sortedsid_[i];
     //get_ sample indexes sorted by the fid-th feature
     size_t uniqs_size = 0;
-    float *uniqs = (float *) malloc(
-        sizeof(float)
-            * (nthresholds_ == 0 ? sortedsize_ + 1 : nthresholds_ + 1));
+    float *uniqs = (float *) malloc(sizeof(float) *
+        (nthresholds_ == 0 ? sortedsize_ + 1 : nthresholds_ + 1));
     //skip samples with the same feature value. early stop for if nthresholds!=size_max
     uniqs[uniqs_size++] = features[idx[0]];
-    for (size_t j = 1;
-         j < sortedsize_
-             && (nthresholds_ == 0 || uniqs_size != nthresholds_ + 1); ++j) {
+    for (size_t j = 1; j < sortedsize_ && (nthresholds_ == 0 || uniqs_size != nthresholds_ + 1); ++j) {
       const float fval = features[idx[j]];
       if (uniqs[uniqs_size - 1] < fval)
         uniqs[uniqs_size++] = fval;
@@ -135,17 +154,15 @@ void Mart::init(
     //define thresholds
     if (uniqs_size <= nthresholds_ || nthresholds_ == 0) {
       uniqs[uniqs_size++] = FLT_MAX;
-      thresholds_size_[i] = uniqs_size, thresholds_[i] =
-                                            (float *) realloc(uniqs,
-                                                              sizeof(float)
-                                                                  * uniqs_size);
+      thresholds_size_[i] = uniqs_size;
+      thresholds_[i] =(float *) realloc(uniqs, sizeof(float) * uniqs_size);
     } else {
       free(uniqs);
       thresholds_size_[i] = nthresholds_ + 1;
       thresholds_[i] = (float *) malloc(sizeof(float) * (nthresholds_ + 1));
       float t = features[idx[0]];  //equals fmin
-      const float step = fabs(features[idx[sortedsize_ - 1]] - t)
-          / nthresholds_;  //(fmax-fmin)/nthresholds
+      const float step =
+          (float) fabs(features[idx[sortedsize_ - 1]] - t) / nthresholds_;  //(fmax-fmin)/nthresholds
       for (size_t j = 0; j != nthresholds_; t += step)
         thresholds_[i][j++] = t;
       thresholds_[i][nthresholds_] = FLT_MAX;
@@ -153,7 +170,8 @@ void Mart::init(
   }
 
   // here, pseudo responses is empty !
-  hist_ = new RTRootHistogram(training_dataset.get(), sortedsid_, sortedsize_,
+  hist_ = new RTRootHistogram(training_dataset.get(),
+                              sortedsid_, sortedsize_,
                               thresholds_, thresholds_size_);
 }
 
@@ -260,21 +278,65 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
 
   auto chrono_train_start = std::chrono::high_resolution_clock::now();
 
+  // Used for document sampling and node splitting
+  size_t nsampleids = training_dataset->num_instances();
+  size_t *sampleids = new size_t[nsampleids];
+  size_t nsampleids_iter = nsampleids;
+  bool *sample_presence = NULL;
+
+  if (subsample_ != 1) {
+    sample_presence = new bool[nsampleids];
+    if (subsample_ > 1.0f) {
+      // >1: Max feature is the number of features to use
+      nsampleids_iter = (size_t) std::min((size_t) subsample_, nsampleids);
+    } else {
+      // <1: Max feature is the fraction of features to use
+      nsampleids_iter = (size_t) std::floor(subsample_ * nsampleids);
+    }
+  }
+
+  // If we do not use document sampling, we fill the sampleids only once
+  #pragma omp parallel for
+  for (size_t i = 0; i < nsampleids; ++i) {
+    sampleids[i] = i;
+    if (sample_presence != NULL)
+      sample_presence[i] = true;
+  }
+
   // start iterations from 0 or (ensemble_size - 1)
   for (size_t m = ensemble_model_.get_size(); m < ntrees_; ++m) {
     if (validation_dataset
         && (valid_iterations_ && m > best_model_ + valid_iterations_))
       break;
 
-    compute_pseudoresponses(vertical_training, scorer.get());
+    if (subsample_ != 1.0f) {
+
+      // shuffle the sample idx
+      auto seed = std::chrono::system_clock::now().time_since_epoch().count();
+      auto rng = std::default_random_engine(seed);
+      std::shuffle(&sampleids[0],
+                   &sampleids[nsampleids],
+                   rng);
+    }
+
+    // If we are training on a sample of the full dataset, we need to update
+    // the presence map
+    if (nsampleids_iter < nsampleids) {
+      #pragma omp parallel for
+      for (size_t i=0; i<training_dataset->num_instances(); ++i) {
+        sample_presence[sampleids[i]] = i < nsampleids_iter;
+      }
+    }
+
+    compute_pseudoresponses(vertical_training, scorer.get(), sample_presence);
 
     // update the histogram with these training_setting labels
     // (the feature histogram will be used to find the best tree rtnode)
-    hist_->update(pseudoresponses_, training_dataset->num_instances());
+    hist_->update(pseudoresponses_, nsampleids_iter, sampleids);
 
-    //Fit a regression tree
-    std::unique_ptr<RegressionTree>
-        tree = fit_regressor_on_gradient(vertical_training);
+    // Fit a regression tree
+    std::unique_ptr<RegressionTree> tree =
+        fit_regressor_on_gradient(vertical_training, sampleids);
 
     //add this tree to the ensemble (our model)
     ensemble_model_.push(tree->get_proot(), shrinkage_, 0);  // maxlabel);
@@ -320,6 +382,10 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
 
   }
 
+  delete(sampleids);
+  if (sample_presence)
+    delete[] sample_presence;
+
   //Rollback to the best model observed on the validation data
   if (validation_dataset) {
     while (ensemble_model_.is_notempty()
@@ -351,22 +417,29 @@ void Mart::learn(std::shared_ptr<quickrank::data::Dataset> training_dataset,
 
 void Mart::compute_pseudoresponses(
     std::shared_ptr<quickrank::data::VerticalDataset> training_dataset,
-    quickrank::metric::ir::Metric *scorer) {
+    quickrank::metric::ir::Metric *scorer,
+    bool *sample_presence) {
+
   const size_t nentries = training_dataset->num_instances();
-  for (size_t i = 0; i < nentries; i++)
-    pseudoresponses_[i] = training_dataset->getLabel(i)
-        - scores_on_training_[i];
+  for (size_t i = 0; i < nentries; i++) {
+
+    if (sample_presence == NULL || sample_presence[i]) {
+      pseudoresponses_[i] = training_dataset->getLabel(i) -
+                            scores_on_training_[i];
+    }
+  }
 }
 
 std::unique_ptr<RegressionTree> Mart::fit_regressor_on_gradient(
-    std::shared_ptr<data::VerticalDataset> training_dataset) {
+    std::shared_ptr<data::VerticalDataset> training_dataset,
+    size_t *sampleids) {
   //Fit a regression tree
   /// \todo TODO: memory management of regression tree is wrong!!!
   RegressionTree *tree = new RegressionTree(nleaves_, training_dataset.get(),
-                                            pseudoresponses_, minleafsupport_);
-  tree->fit(hist_);
+                                            pseudoresponses_, minleafsupport_,
+                                            collapse_leaves_factor_);
+  tree->fit(hist_, sampleids, max_features_);
   //update the outputs of the tree (with gamma computed using the Newton-Raphson pruning_method)
-  //float maxlabel =
   tree->update_output(pseudoresponses_);
   return std::unique_ptr<RegressionTree>(tree);
 }
@@ -390,8 +463,7 @@ void Mart::update_modelscores(std::shared_ptr<data::VerticalDataset> dataset,
   const size_t offset = dataset->num_instances();
   #pragma omp parallel for
   for (size_t i = 0; i < dataset->num_instances(); ++i) {
-    scores[i] += shrinkage_ * tree->get_proot()->score_instance(
-        d + i, offset);
+    scores[i] += shrinkage_ * tree->get_proot()->score_instance(d + i, offset);
   }
 }
 
@@ -408,6 +480,10 @@ pugi::xml_document *Mart::get_xml_model() const {
   info.append_child("leafsupport").text() = minleafsupport_;
   info.append_child("discretization").text() = nthresholds_;
   info.append_child("estop").text() = valid_iterations_;
+
+  info.append_child("subsample").text() = subsample_;
+  info.append_child("max_features").text() = max_features_;
+  info.append_child("collapse_leaves_factor").text() = collapse_leaves_factor_;
 
   ensemble_model_.append_xml_model(root);
 
