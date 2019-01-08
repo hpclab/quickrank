@@ -63,6 +63,10 @@ Finally to compile Quickrank:
 
 	make
 
+To compile tests:
+
+	make unit-tests
+
 And wait for the compilation to finish. The result will be the QuickRank executable placed in the bin directory of the project root.
 
 If you would like to execute the unit-tests, you need to run in the root directory:
