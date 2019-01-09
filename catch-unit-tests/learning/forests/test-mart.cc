@@ -50,10 +50,15 @@ TEST_CASE( "Testing Mart", "[learning][forests][mart]" ) {
   unsigned int esr = 100;
   unsigned int partial_save = -1;
   unsigned int ndcg_cutoff = 10;
+  float subsample = 1.0f;
+  float max_features = 1.0f;
+  float collapse_leaves_factor = 0;
 
   auto ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
       new quickrank::learning::forests::Mart(ntrees, shrinkage, nthresholds,
-                                             ntreeleaves, minleafsupport, esr));
+                                             ntreeleaves, minleafsupport,
+                                             subsample, max_features, 
+                                             esr, collapse_leaves_factor));
 
   auto training_metric = std::shared_ptr<quickrank::metric::ir::Metric>(
       new quickrank::metric::ir::Ndcg(ndcg_cutoff));
@@ -133,6 +138,6 @@ TEST_CASE( "Testing Mart", "[learning][forests][mart]" ) {
   // NDCG@10 on test data: 0.3706
 
   REQUIRE( training_score >= 0.7153);
-  REQUIRE( validation_score >= 0.4580);
+  REQUIRE( validation_score >= 0.4570);
   REQUIRE( test_score >= 0.3706);
 }

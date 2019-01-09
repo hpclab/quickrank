@@ -51,10 +51,14 @@ TEST_CASE( "Testing LambdaMart", "[learning][forests][lmart]" ) {
   unsigned int esr = 100;
   unsigned int partial_save = -1;
   unsigned int ndcg_cutoff = 10;
+  float subsample = 1.0f;
+  float max_features = 1.0f;
+  float collapse_leaves_factor = 0;
 
   auto ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
       new quickrank::learning::forests::LambdaMart(ntrees, shrinkage, nthresholds,
-                                             ntreeleaves, minleafsupport, esr));
+                                             ntreeleaves, minleafsupport, subsample, max_features, 
+                                             esr, collapse_leaves_factor));
 
   auto training_metric = std::shared_ptr<quickrank::metric::ir::Metric>(
       new quickrank::metric::ir::Ndcg(ndcg_cutoff));
@@ -132,7 +136,7 @@ TEST_CASE( "Testing LambdaMart", "[learning][forests][lmart]" ) {
   // NDCG@10 on validation data: 0.4343
   // NDCG@10 on test data: 0.3367
 
-  REQUIRE( training_score >= 0.74055);
-  REQUIRE( validation_score >= 0.4402);
+  REQUIRE( training_score >= 0.74035);
+  REQUIRE( validation_score >= 0.4401);
   REQUIRE( test_score >= 0.3519);
 }

@@ -50,10 +50,15 @@ TEST_CASE( "Testing ObliviousMart", "[learning][forests][omart]" ) {
   unsigned int esr = 100;
   unsigned int partial_save = -1;
   unsigned int ndcg_cutoff = 10;
+  float subsample = 1.0f;
+  float max_features = 1.0f;
+  float collapse_leaves_factor = 0;
 
   auto ranking_algorithm = std::shared_ptr<quickrank::learning::LTR_Algorithm>(
       new quickrank::learning::forests::ObliviousMart(ntrees, shrinkage, nthresholds,
-                                             treedepth, minleafsupport, esr));
+                                             treedepth, minleafsupport,
+                                             subsample, max_features,
+                                             esr, collapse_leaves_factor));
 
   auto training_metric = std::shared_ptr<quickrank::metric::ir::Metric>(
       new quickrank::metric::ir::Ndcg(ndcg_cutoff));
