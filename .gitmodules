@@ -6,4 +6,4 @@
 	url = http://git.hpc.isti.cnr.it/quickrank/ParamsMap.git
 [submodule "lib/catch"]
 	path = lib/catch
-	url = https://github.com/philsquared/Catch.git
+	url = https://github.com/catchorg/Catch2
